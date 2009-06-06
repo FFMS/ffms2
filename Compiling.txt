@@ -1,0 +1,37 @@
+Core library (define FFMS_EXPORTS):
+Hint: define HAALISOURCE to use haali's splitters for some containers (only works on windows)
+coparser.h
+guids.h
+MatroskaParser.h
+MatroskaParser.c
+stdiostream.h
+stdiostream.c
+ffaudiosource.h
+ffaudiosource.cpp
+ffvideosource.h
+ffvideosource.cpp
+ffms.h
+ffms.cpp
+wave64writer.h
+wave64writer.cpp
+utils.h
+utils.cpp
+indexing.h
+indexing.cpp
+
+Avisynth plugin (normal windows compile):
+All core library files and settings
+avisynth.h
+ffavisynth.h
+ffavisynth.cpp
+ffavsfilters.cpp
+ffpp.h
+ffpp.cpp
+ffswscale.h
+ffswscale.cpp
+
+Command line indexer:
+ffmsindex.cpp
+
+Command line regression test application:
+ffms2rt.cpp
