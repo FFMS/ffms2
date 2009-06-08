@@ -123,6 +123,7 @@ private:
 	AVCodec *Codec[32];
 	uint8_t *CodecPrivate[32];
 	int CodecPrivateSize[32];
+	int64_t Duration;
 public:
 	FFHaaliIndexer(const char *Filename, int SourceMode, char *ErrorMsg, unsigned MsgSize);
 	~FFHaaliIndexer() { for (int i = 0; i < 32; i++) delete[] CodecPrivate[i]; }

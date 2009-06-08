@@ -47,7 +47,7 @@ std::string AudioFile;
 FFIndex *Index;
 
 
-void PrintUsage () {
+static void PrintUsage () {
 	using namespace std;
 	cout << "FFmpegSource2 indexing app" << endl
 		<< "Usage: ffmsindex [options] inputfile [outputfile]" << endl
@@ -62,7 +62,7 @@ void PrintUsage () {
 }
 
 
-void ParseCMDLine (int argc, char *argv[]) {
+static void ParseCMDLine (int argc, char *argv[]) {
 	if (argc <= 1) {
 		PrintUsage();
 		throw "";
@@ -145,16 +145,16 @@ static int FFMS_CC UpdateProgress(int64_t Current, int64_t Total, void *Private)
 }
 
 
-static int FFMS_CC GenAudioFilename(const char *SourceFile, int Track, const TAudioProperties *AP, char *FileName, void *Private) {
+static int FFMS_CC GenAudioFilename(const char *SourceFile, int Track, const TAudioProperties *AP, char *FileName, int FNSize, void *Private) {
 	const char * FormatString = AudioFile.c_str();
 	if (FileName == NULL)
 		return _snprintf(NULL, 0, FormatString, SourceFile, Track) + 1;
 	else
-		return _snprintf(FileName, 999999, FormatString, SourceFile, Track) + 1;
+		return _snprintf(FileName, FNSize, FormatString, SourceFile, Track) + 1;
 }
 
 
-void DoIndexing () {
+static void DoIndexing () {
 	char FFMSErrMsg[1024];
 	int MsgSize = sizeof(FFMSErrMsg);
 	int Progress = 0;

@@ -74,7 +74,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <p>
 <b>SWScale(clip, width = -1, height = -1, resizer = "BICUBIC", colorspace = "")</b><br />
-  Separate postprocessing which also seems to include a few simple deinterlacers
+  A resizing filter that does nothing special at all
 </p>
 
 <b>FFSetLogLevel(int Level)</b><br />
@@ -256,7 +256,9 @@ Note that --enable-w32threads or --enable-pthreads is required for multithreaded
 <h2>Changes</h2>
 <ul>
 <li>2.00 beta 10<ul>
+<li>Indexing with Haali's splitters should now show progress in most cases</li>
 <li>Now checks for failed seeking when LAVF is used and retries with more aggressive seeking options before failing</li>
+<li>Updated FFmpeg to rev X (now compiled with the opencore amr decoder)</li>
 </ul></li>
 
 <li>2.00 beta 9<ul>

@@ -216,12 +216,12 @@ FFMS_API(FFIndex *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int Du
 	return FFMS_DoIndexing(Indexer, IndexMask, DumpMask, ANC, ANCPrivate, IgnoreDecodeErrors, IC, ICPrivate, ErrorMsg, MsgSize);
 }
 
-FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const TAudioProperties *AP, char *FileName, void *Private) {
+FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const TAudioProperties *AP, char *FileName, int FNSize, void *Private) {
 	const char * FormatString = "%s.Track%d.delay%dms.w64";
 	if (FileName == NULL)
 		return _snprintf(NULL, 0, FormatString, SourceFile, Track, (int)AP->FirstTime) + 1;
 	else
-		return _snprintf(FileName, 999999, FormatString, SourceFile, Track, (int)AP->FirstTime) + 1;
+		return _snprintf(FileName, FNSize, FormatString, SourceFile, Track, (int)AP->FirstTime) + 1;
 }
 
 FFMS_API(FFIndexer *) FFMS_CreateIndexer(const char *SourceFile, char *ErrorMsg, unsigned MsgSize) {

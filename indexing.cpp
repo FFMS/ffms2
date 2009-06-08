@@ -147,8 +147,9 @@ bool FFIndexer::WriteAudio(SharedAudioContext &AudioContext, FFIndex *Index, int
 		if (!AudioContext.W64W) {
 			TAudioProperties AP;
 			FillAP(AP, AudioContext.CTX, (*Index)[Track]);
-			char *WName = new char[(*ANC)(SourceFile, Track, &AP, NULL, ANCPrivate)];
-			(*ANC)(SourceFile, Track, &AP, WName, ANCPrivate);
+			int FNSize = (*ANC)(SourceFile, Track, &AP, NULL, 0, ANCPrivate);
+			char *WName = new char[FNSize];
+			(*ANC)(SourceFile, Track, &AP, WName, FNSize, ANCPrivate);
 			std::string WN(WName);
 			delete[] WName;
 			try {
@@ -174,6 +175,7 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *Error
 	memset(Codec, 0, sizeof(Codec));
 	memset(CodecPrivate, 0, sizeof(CodecPrivate));
 	memset(CodecPrivateSize, 0, sizeof(CodecPrivateSize));
+	Duration = 0;
 
 	CLSID clsid = HAALI_TS_Parser;
 	if (SourceMode == 1)
@@ -208,6 +210,11 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *Error
 		_snprintf(ErrorMsg, MsgSize, "Can't parse file");
 		throw ErrorMsg;
 	}
+
+	CComQIPtr<IPropertyBag> pBag2 = pMMC;
+	CComVariant pV2;
+	if (SUCCEEDED(pBag2->Read(L"Duration", &pV2, NULL)) && SUCCEEDED(pV2.ChangeType(VT_UI8)))
+		Duration = pV2.ullVal;
 
 	NumTracks = 0;
 	CComPtr<IEnumUnknown> pEU;
@@ -287,19 +294,28 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 	InitNullPacket(&TempPacket);
 
 	for (;;) {
-		if (IC) {
-			if ((*IC)(0, 1, ICPrivate)) {
-				_snprintf(ErrorMsg, MsgSize, "Cancelled by user");
-				return NULL;
-			}
-		}
-
 		CComPtr<IMMFrame> pMMF;
 		if (pMMC->ReadFrame(NULL, &pMMF) != S_OK)
 			break;
 
 		REFERENCE_TIME Ts, Te;
 		HRESULT hr = pMMF->GetTime(&Ts, &Te);
+
+		if (IC) {
+			if (Duration > 0) {
+				if (SUCCEEDED(hr)) {
+					if ((*IC)(Ts, Duration, ICPrivate)) {
+						_snprintf(ErrorMsg, MsgSize, "Cancelled by user");
+						return NULL;
+					}
+				}
+			} else {
+				if ((*IC)(0, 1, ICPrivate)) {
+					_snprintf(ErrorMsg, MsgSize, "Cancelled by user");
+					return NULL;
+				}
+			}
+		}
 
 		unsigned int Track = pMMF->GetTrack();
 
