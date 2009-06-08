@@ -21,8 +21,9 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include "ffms.h"
 #include <vector>
+#include "ffms.h"
+#include "compat.h"
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -45,17 +46,17 @@ extern "C" {
 #	include "guids.h"
 #endif
 
+
+
 struct TFrameInfo {
 	FFMS_FRAMEINFO_COMMON
 	int64_t SampleStart;
 	int64_t FilePos;
 	unsigned int FrameSize;
-#ifdef FFMS_EXPORTS
 	TFrameInfo(int64_t DTS, bool KeyFrame);
 	TFrameInfo(int64_t DTS, int64_t FilePos, unsigned int FrameSize, bool KeyFrame);
 	TFrameInfo(int64_t DTS, int64_t SampleStart, bool KeyFrame);
 	TFrameInfo(int64_t DTS, int64_t SampleStart, int64_t FilePos, unsigned int FrameSize, bool KeyFrame);
-#endif
 };
 
 class FFTrack : public std::vector<TFrameInfo> {
@@ -76,6 +77,7 @@ public:
 class FFIndex : public std::vector<FFTrack> {
 public:
 	int Decoder;
+	void Sort();
 	int WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize);
 	int ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize);
 };

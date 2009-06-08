@@ -30,11 +30,11 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 </li>
 <li>FFIndex() will silently ignore fatal decoding errors when indexing. This means that indexing a specific track may have failed even if FFIndex() succeeds.</li>
 <li>Requires <a href='http://haali.cs.msu.ru/mkv/'>Haali's Media Splitter</a> if ogm or mpeg ps/ts is to be opened.</li>
-<li>Avi files with NVOPs (sometimes occurs in xvid and such) will desync when these frames are encountered. Remux to mkv/mp4 before opening to solve it for now.</li>
+<li>All files with NVOPs (sometimes occurs in xvid and such) will desync when these frames are encountered.</li>
 <li>There are still some issues with FFAudioSource but it should be good enough for actual use in many cases now.</li>
 </ul>
 
-<h2>Compatibility - Video</h2>
+<h2>Compatibility</h2>
 <ul>
 <li>AVI, MKV, MP4, FLV: Frame accurate</li>
 <li>WMV: Frame accurate(?) but avformat seems to pick keyframes relatively far away</li>
@@ -43,12 +43,6 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 <li>MPG: Seeking seems to be off by one or two frames now and then</li>
 <li>M2TS, TS: Seeking seems to be off a few frames here and there</li>
 <li>Image files: Most formats can be opened if seekmode=-1 is set, no animation support</li>
-</ul>
-
-<h2>Compatibility - Audio</h2>
-<ul>
-<li>All formats are written to separate wave64 files</li>
-<li>No wave64 reader is provided</li>
 </ul>
 
 <h2>Usage</h2>

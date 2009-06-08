@@ -39,8 +39,8 @@ extern "C" {
 #	include <tchar.h>
 #	include <atlbase.h>
 #	include <dshow.h>
-#	include "CoParser.h"
 #	include <initguid.h>
+#	include "CoParser.h"
 #	include "guids.h"
 #endif
 

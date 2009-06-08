@@ -26,10 +26,7 @@ extern "C" {
 #include "ffvideosource.h"
 #include "ffaudiosource.h"
 #include "indexing.h"
-
-#ifdef __UNIX__
-#define _snprintf snprintf
-#endif
+#include "compat.h"
 
 static bool FFmpegInited = false;
 
@@ -51,12 +48,12 @@ FFMS_API(void) FFMS_SetLogLevel(int Level) {
 
 FFMS_API(FFVideo *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFIndex *Index, const char *PP, int Threads, int SeekMode, char *ErrorMsg, unsigned MsgSize) {
 	if (Track < 0 || Track >= Index->size()) {
-		_snprintf(ErrorMsg, MsgSize, "Out of bounds track index selected");
+		snprintf(ErrorMsg, MsgSize, "Out of bounds track index selected");
 		return NULL;
 	}
 
 	if (Index->at(Track).TT != FFMS_TYPE_VIDEO) {
-		_snprintf(ErrorMsg, MsgSize, "Not a video track");
+		snprintf(ErrorMsg, MsgSize, "Not a video track");
 		return NULL;
 	}
 
@@ -69,7 +66,7 @@ FFMS_API(FFVideo *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FF
 			case 3: return new FFHaaliVideo(SourceFile, Track, Index, PP, Threads, 1, ErrorMsg, MsgSize);
 #endif
 			default: 
-				_snprintf(ErrorMsg, MsgSize, "Unsupported format");
+				snprintf(ErrorMsg, MsgSize, "Unsupported format");
 				return NULL;
 		}
 	} catch (...) {
@@ -79,12 +76,12 @@ FFMS_API(FFVideo *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FF
 
 FFMS_API(FFAudio *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFIndex *Index, char *ErrorMsg, unsigned MsgSize) {
 	if (Track < 0 || Track >= Index->size()) {
-		_snprintf(ErrorMsg, MsgSize, "Out of bounds track index selected");
+		snprintf(ErrorMsg, MsgSize, "Out of bounds track index selected");
 		return NULL;
 	}
 
 	if (Index->at(Track).TT != FFMS_TYPE_AUDIO) {
-		_snprintf(ErrorMsg, MsgSize, "Not an audio track");
+		snprintf(ErrorMsg, MsgSize, "Not an audio track");
 		return NULL;
 	}
 
@@ -97,7 +94,7 @@ FFMS_API(FFAudio *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FF
 			case 3: return new FFHaaliAudio(SourceFile, Track, Index, 1, ErrorMsg, MsgSize);
 #endif
 			default: 
-				_snprintf(ErrorMsg, MsgSize, "Unsupported format");
+				snprintf(ErrorMsg, MsgSize, "Unsupported format");
 				return NULL;
 		}
 	} catch (...) {
@@ -149,7 +146,7 @@ FFMS_API(int) FFMS_GetFirstTrackOfType(FFIndex *Index, int TrackType, char *Erro
 	for (int i = 0; i < static_cast<int>(Index->size()); i++)
 		if ((*Index)[i].TT == TrackType)
 			return i;
-	_snprintf(ErrorMsg, MsgSize, "No suitable, indexed track found");
+	snprintf(ErrorMsg, MsgSize, "No suitable, indexed track found");
 	return -1;
 }
 
@@ -157,7 +154,7 @@ FFMS_API(int) FFMS_GetFirstIndexedTrackOfType(FFIndex *Index, int TrackType, cha
 	for (int i = 0; i < static_cast<int>(Index->size()); i++)
 		if ((*Index)[i].TT == TrackType && (*Index)[i].size() > 0)
 			return i;
-	_snprintf(ErrorMsg, MsgSize, "No suitable, indexed track found");
+	snprintf(ErrorMsg, MsgSize, "No suitable, indexed track found");
 	return -1;
 }
 
@@ -219,9 +216,9 @@ FFMS_API(FFIndex *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int Du
 FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const TAudioProperties *AP, char *FileName, int FNSize, void *Private) {
 	const char * FormatString = "%s.Track%d.delay%dms.w64";
 	if (FileName == NULL)
-		return _snprintf(NULL, 0, FormatString, SourceFile, Track, (int)AP->FirstTime) + 1;
+		return snprintf(NULL, 0, FormatString, SourceFile, Track, (int)AP->FirstTime) + 1;
 	else
-		return _snprintf(FileName, FNSize, FormatString, SourceFile, Track, (int)AP->FirstTime) + 1;
+		return snprintf(FileName, FNSize, FormatString, SourceFile, Track, (int)AP->FirstTime) + 1;
 }
 
 FFMS_API(FFIndexer *) FFMS_CreateIndexer(const char *SourceFile, char *ErrorMsg, unsigned MsgSize) {

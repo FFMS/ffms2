@@ -19,13 +19,7 @@
 //  THE SOFTWARE.
 
 #include "stdiostream.h"
-#include <errno.h>
-
-#ifdef __UNIX__
-#define _fseeki64 fseeko
-#define _ftelli64 ftello
-#endif
-
+#include "compat.h"
 
 /* StdIoStream methods */
 
@@ -34,7 +28,7 @@
  */
 int StdIoRead(StdIoStream *st, ulonglong pos, void *buffer, int count) {
   size_t  rd;
-  if (_fseeki64(st->fp, pos, SEEK_SET)) {
+  if (fseeko(st->fp, pos, SEEK_SET)) {
     st->error = errno;
     return -1;
   }
@@ -56,13 +50,13 @@ longlong StdIoScan(StdIoStream *st, ulonglong start, unsigned signature) {
   unsigned    cmp = 0;
   FILE	      *fp = st->fp;
 
-  if (_fseeki64(fp, start, SEEK_SET))
+  if (fseeko(fp, start, SEEK_SET))
     return -1;
 
   while ((c = getc(fp)) != EOF) {
     cmp = ((cmp << 8) | c) & 0xffffffff;
     if (cmp == signature)
-      return _ftelli64(fp) - 4;
+      return ftello(fp) - 4;
   }
 
   return -1;
@@ -100,10 +94,10 @@ int StdIoProgress(StdIoStream *st, ulonglong cur, ulonglong max) {
 
 longlong StdIoGetFileSize(StdIoStream *st) {
 	longlong epos = 0;
-	longlong cpos = _ftelli64(st->fp);
-	_fseeki64(st->fp, 0, SEEK_END);
-	epos = _ftelli64(st->fp);
-	_fseeki64(st->fp, cpos, SEEK_SET);
+	longlong cpos = ftello(st->fp);
+	fseeko(st->fp, 0, SEEK_END);
+	epos = ftello(st->fp);
+	fseeko(st->fp, cpos, SEEK_SET);
 	return epos;
 }
 

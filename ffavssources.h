@@ -18,8 +18,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#ifndef FFAVISYNTH_H
-#define FFAVISYNTH_H
+#ifndef FFAVSSOURCES_H
+#define FFAVSSOURCES_H
 
 #include <windows.h>
 #include "avisynth.h"

@@ -18,12 +18,14 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#include "utils.h"
-#include "indexing.h"
 #include <string.h>
 #include <errno.h>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
+#include "utils.h"
+#include "indexing.h"
+
 #ifdef _MSC_VER
 #	include <intrin.h>
 #endif
@@ -40,12 +42,6 @@ extern const CodecTags ff_mkv_codec_tags[];
 extern const AVCodecTag codec_movvideo_tags[];
 extern const AVCodecTag codec_wav_tags[];
 }
-
-#ifdef __UNIX__
-#define _fseeki64 fseeko
-#define _ftelli64 ftello
-#define _snprintf snprintf
-#endif
 
 TFrameInfo::TFrameInfo(int64_t DTS, bool KeyFrame) {
 	this->DTS = DTS;
@@ -83,7 +79,7 @@ int FFTrack::WriteTimecodes(const char *TimecodeFile, char *ErrorMsg, unsigned M
 	std::ofstream Timecodes(TimecodeFile, std::ios::out | std::ios::trunc);
 
 	if (!Timecodes.is_open()) {
-		_snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for writing", TimecodeFile);
+		snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for writing", TimecodeFile);
 		return 1;
 	}
 
@@ -146,11 +142,20 @@ FFTrack::FFTrack(int64_t Num, int64_t Den, FFMS_TrackType TT) {
 	this->TB.Den = Den;
 }
 
+static bool DTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
+	return FI1.DTS < FI2.DTS;
+}
+
+void FFIndex::Sort() {
+	for (FFIndex::iterator Cur=begin(); Cur!=end(); Cur++)
+		std::sort(Cur->begin(), Cur->end(), DTSComparison);
+}
+
 int FFIndex::WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) {
 	std::ofstream IndexStream(IndexFile, std::ios::out | std::ios::binary | std::ios::trunc);
 
 	if (!IndexStream.is_open()) {
-		_snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for writing", IndexFile);
+		snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for writing", IndexFile);
 		return 1;
 	}
 
@@ -189,7 +194,7 @@ int FFIndex::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) 
 	std::ifstream Index(IndexFile, std::ios::in | std::ios::binary);
 
 	if (!Index.is_open()) {
-		_snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for reading", IndexFile);
+		snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for reading", IndexFile);
 		return 1;
 	}
 	
@@ -197,19 +202,19 @@ int FFIndex::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) 
 	IndexHeader IH;
 	Index.read(reinterpret_cast<char *>(&IH), sizeof(IH));
 	if (IH.Id != INDEXID) {
-		_snprintf(ErrorMsg, MsgSize, "'%s' is not a valid index file", IndexFile);
+		snprintf(ErrorMsg, MsgSize, "'%s' is not a valid index file", IndexFile);
 		return 2;
 	}
 
 	if (IH.Version != INDEXVERSION) {
-		_snprintf(ErrorMsg, MsgSize, "'%s' is not the expected index version", IndexFile);
+		snprintf(ErrorMsg, MsgSize, "'%s' is not the expected index version", IndexFile);
 		return 3;
 	}
 
 	if (IH.LAVUVersion != LIBAVUTIL_VERSION_INT || IH.LAVFVersion != LIBAVFORMAT_VERSION_INT ||
 		IH.LAVCVersion != LIBAVCODEC_VERSION_INT || IH.LSWSVersion != LIBSWSCALE_VERSION_INT ||
 		IH.LPPVersion != LIBPOSTPROC_VERSION_INT) {
-		_snprintf(ErrorMsg, MsgSize, "A different FFmpeg build was used to create '%s'", IndexFile);
+		snprintf(ErrorMsg, MsgSize, "A different FFmpeg build was used to create '%s'", IndexFile);
 		return 4;
 	}
 
@@ -236,7 +241,7 @@ int FFIndex::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) 
 		}
 
 	} catch (...) {
-		_snprintf(ErrorMsg, MsgSize, "Unknown error while reading index information in '%s'", IndexFile);	
+		snprintf(ErrorMsg, MsgSize, "Unknown error while reading index information in '%s'", IndexFile);	
 		return 5;
 	}
 
@@ -282,7 +287,7 @@ int ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, M
 		for (;;) {
 			int ReadBytes = cs_ReadData(CS, CSBuffer, sizeof(CSBuffer));
 			if (ReadBytes < 0) {
-				_snprintf(ErrorMsg, MsgSize, "Error decompressing data: %s", cs_GetLastError(CS));
+				snprintf(ErrorMsg, MsgSize, "Error decompressing data: %s", cs_GetLastError(CS));
 				return 1;
 			}
 			if (ReadBytes == 0) {
@@ -294,7 +299,7 @@ int ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, M
 				Context.BufferSize = FrameSize;
 				Context.Buffer = (uint8_t *)realloc(Context.Buffer, Context.BufferSize + 16);
 				if (Context.Buffer == NULL)  {
-					_snprintf(ErrorMsg, MsgSize, "Out of memory");
+					snprintf(ErrorMsg, MsgSize, "Out of memory");
 					return 2;
 				}
 			}
@@ -303,8 +308,8 @@ int ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, M
 			DecompressedFrameSize += ReadBytes;
 		}
 	} else {
-		if (_fseeki64(Context.ST.fp, FilePos, SEEK_SET)) {
-			_snprintf(ErrorMsg, MsgSize, "fseek(): %s", strerror(errno));
+		if (fseeko(Context.ST.fp, FilePos, SEEK_SET)) {
+			snprintf(ErrorMsg, MsgSize, "fseek(): %s", strerror(errno));
 			return 3;
 		}
 
@@ -312,7 +317,7 @@ int ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, M
 			Context.BufferSize = FrameSize;
 			Context.Buffer = (uint8_t *)realloc(Context.Buffer, Context.BufferSize + 16);
 			if (Context.Buffer == NULL) {
-				_snprintf(ErrorMsg, MsgSize, "Out of memory");
+				snprintf(ErrorMsg, MsgSize, "Out of memory");
 				return 4;
 			}
 		}
@@ -321,17 +326,17 @@ int ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, M
 		if (ReadBytes != FrameSize) {
 			if (ReadBytes == 0) {
 				if (feof(Context.ST.fp)) {
-					_snprintf(ErrorMsg, MsgSize, "Unexpected EOF while reading frame");
+					snprintf(ErrorMsg, MsgSize, "Unexpected EOF while reading frame");
 					return 5;
 				} else {
-					_snprintf(ErrorMsg, MsgSize, "Error reading frame: %s", strerror(errno));
+					snprintf(ErrorMsg, MsgSize, "Error reading frame: %s", strerror(errno));
 					return 6;
 				}
 			} else {
-				_snprintf(ErrorMsg, MsgSize, "Short read while reading frame");
+				snprintf(ErrorMsg, MsgSize, "Short read while reading frame");
 				return 7;
 			}
-			_snprintf(ErrorMsg, MsgSize, "Unknown read error");
+			snprintf(ErrorMsg, MsgSize, "Unknown read error");
 			return 8;
 		}
 

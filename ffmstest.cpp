@@ -49,7 +49,7 @@ static int FFMS_CC UpdateProgress(int64_t Current, int64_t Total, void *Private)
 	return 0;
 }
 
-void TestFullDump1(char *SrcFile, bool WithAudio) {
+static void TestFullDump1(char *SrcFile, bool WithAudio) {
 	int Private;
 	int ret;
 	char ErrorMsg[2000];
