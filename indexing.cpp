@@ -28,6 +28,9 @@ SharedAudioContext::SharedAudioContext() {
 
 SharedAudioContext::~SharedAudioContext() {
 	delete W64W;
+}
+
+FFAudioContext::~FFAudioContext() {
 	if (CTX)
 		avcodec_close(CTX);
 }
@@ -39,6 +42,7 @@ MatroskaAudioContext::MatroskaAudioContext() {
 
 MatroskaAudioContext::~MatroskaAudioContext() {
 	if (CTX) {
+		avcodec_close(CTX);
 		av_free(CTX);
 	}
 

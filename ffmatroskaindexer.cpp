@@ -43,8 +43,6 @@ public:
 
 	~MatroskaIndexMemory() {
 		delete[] AudioContexts;
-		mkv_Close(MF);
-		fclose(MC->ST.fp);
 	}
 };
 

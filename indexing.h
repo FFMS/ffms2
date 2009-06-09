@@ -61,6 +61,8 @@ public:
 };
 
 class FFAudioContext : public SharedAudioContext {
+public:
+	~FFAudioContext();
 };
 
 class MatroskaAudioContext : public SharedAudioContext {

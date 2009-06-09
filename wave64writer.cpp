@@ -99,7 +99,7 @@ void Wave64Writer::WriteHeader(bool Initial, bool IsFloat) {
 	else
 		Header[13] = BytesWritten + 24;
 
-	std::ios::streampos CPos = tellp();
+	std::streampos CPos = tellp();
 	seekp(0, std::ios::beg);
 	write(reinterpret_cast<const char *>(Header), sizeof(Header));
 	if (!Initial)
