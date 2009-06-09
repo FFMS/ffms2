@@ -6,6 +6,7 @@ Define HAALISOURCE to use haali's splitters for some containers (only works on w
 Link to FFmpeg and zlib
 
 Files:
+compat.h
 coparser.h
 guids.h
 MatroskaParser.h
@@ -14,8 +15,14 @@ stdiostream.h
 stdiostream.c
 ffaudiosource.h
 ffaudiosource.cpp
+ffhaaliaudio.cpp
+fflavfaudio.cpp
+ffmatroskaaudio.cpp
 ffvideosource.h
 ffvideosource.cpp
+ffhaalivideo.cpp
+fflavfvideo.cpp
+ffmatroskavideo.cpp
 ffms.h
 ffms.cpp
 wave64writer.h
@@ -24,7 +31,9 @@ utils.h
 utils.cpp
 indexing.h
 indexing.cpp
-
+ffhaaliindexer.cpp
+fflavfindexer.cpp
+ffmatroskaindexer.cpp
 
 
 Avisynth plugin (normal windows compile)
@@ -32,9 +41,9 @@ All core library files and settings
 
 Files:
 avisynth.h
-ffavisynth.h
 ffavisynth.cpp
-ffavsfilters.cpp
+ffavssources.h
+ffavssources.cpp
 ffpp.h
 ffpp.cpp
 ffswscale.h
