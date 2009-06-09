@@ -44,7 +44,7 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 	const char *CacheFile = Args[1].AsString("");
 	int IndexMask = Args[2].AsInt(-1);
 	int DumpMask = Args[3].AsInt(0);
-	const char *AudioFile = Args[4].AsString("");
+	const char *AudioFile = Args[4].AsString("%sourcefile%.%trackzn%.w64");
 	bool OverWrite = Args[5].AsBool(false);
 
 	std::string DefaultCache(Source);
@@ -53,7 +53,7 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 		CacheFile = DefaultCache.c_str();
 
 	if (!strcmp(AudioFile, ""))
-		AudioFile = Source;
+		Env->ThrowError("FFIndex: Specifying an empty audio filename is not allowed");
 
 	// Return values
 	// 0: Index already present
@@ -62,7 +62,7 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 
 	FFIndex *Index = NULL;
 	if (OverWrite || !(Index = FFMS_ReadIndex(CacheFile, ErrorMsg, MsgSize))) {
-		if (!(Index = FFMS_MakeIndex(Source, IndexMask, DumpMask, FFMS_DefaultAudioFilename, NULL, true, NULL, NULL, ErrorMsg, MsgSize)))
+		if (!(Index = FFMS_MakeIndex(Source, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, true, NULL, NULL, ErrorMsg, MsgSize)))
 			Env->ThrowError("FFIndex: %s", ErrorMsg);
 		if (FFMS_WriteIndex(CacheFile, Index, ErrorMsg, MsgSize)) {
 			FFMS_DestroyIndex(Index);

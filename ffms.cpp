@@ -22,11 +22,12 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
+#include <sstream>
+#include <iomanip>
 #include "ffms.h"
 #include "ffvideosource.h"
 #include "ffaudiosource.h"
 #include "indexing.h"
-#include "compat.h"
 
 static bool FFmpegInited = false;
 
@@ -130,11 +131,11 @@ FFMS_API(int) FFMS_GetAudio(FFAudio *A, void *Buf, int64_t Start, int64_t Count,
 	return A->GetAudio(Buf, Start, Count, ErrorMsg, MsgSize);
 }
 
-FFMS_API(int) FFMS_SetOutputFormat(FFVideo *V, int64_t TargetFormats, int Width, int Height, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(int) FFMS_SetOutputFormatV(FFVideo *V, int64_t TargetFormats, int Width, int Height, char *ErrorMsg, unsigned MsgSize) {
 	return V->SetOutputFormat(TargetFormats, Width, Height, ErrorMsg, MsgSize);
 }
 
-FFMS_API(void) FFMS_ResetOutputFormat(FFVideo *V) {
+FFMS_API(void) FFMS_ResetOutputFormatV(FFVideo *V) {
 	V->ResetOutputFormat();
 }
 
@@ -213,12 +214,39 @@ FFMS_API(FFIndex *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int Du
 	return FFMS_DoIndexing(Indexer, IndexMask, DumpMask, ANC, ANCPrivate, IgnoreDecodeErrors, IC, ICPrivate, ErrorMsg, MsgSize);
 }
 
+/* Used by FFMS_DefaultAudioFilename */ 
+
+static std::string IntToStr(int i, int zp = 0) {
+	std::stringstream s;
+	s.fill('0');
+	s.width(zp);
+	s << i;
+	return s.str();
+}
+
+static void ReplaceString(std::string &s, std::string from, std::string to) {
+	int idx;
+	while ((idx = s.find(from)) != std::string::npos)
+		s.replace(idx, from.length(), to);
+}
+
 FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const TAudioProperties *AP, char *FileName, int FNSize, void *Private) {
-	const char * FormatString = "%s.Track%d.delay%dms.w64";
-	if (FileName == NULL)
-		return snprintf(NULL, 0, FormatString, SourceFile, Track, (int)AP->FirstTime) + 1;
-	else
-		return snprintf(FileName, FNSize, FormatString, SourceFile, Track, (int)AP->FirstTime) + 1;
+	std::string s = static_cast<char *>(Private);
+
+	ReplaceString(s, "%sourcefile%", SourceFile);
+	ReplaceString(s, "%trackn%", IntToStr(Track));
+	ReplaceString(s, "%trackzn%", IntToStr(Track, 2));
+	ReplaceString(s, "%samplerate%", IntToStr(AP->SampleRate));
+	ReplaceString(s, "%channels%", IntToStr(AP->Channels));
+	ReplaceString(s, "%bps%", IntToStr(AP->BitsPerSample));
+	ReplaceString(s, "%delay%", IntToStr(AP->FirstTime));
+	
+	if (FileName == NULL) {
+		return s.length() + 1;
+	} else {
+		strcpy(FileName, s.c_str());
+		return 0;
+	}
 }
 
 FFMS_API(FFIndexer *) FFMS_CreateIndexer(const char *SourceFile, char *ErrorMsg, unsigned MsgSize) {

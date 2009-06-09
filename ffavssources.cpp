@@ -69,7 +69,7 @@ AvisynthVideoSource::~AvisynthVideoSource() {
 void AvisynthVideoSource::InitOutputFormat(IScriptEnvironment *Env) {
 	const TVideoProperties *VP = FFMS_GetVideoProperties(V);
 
-	if (FFMS_SetOutputFormat(V, (1 << FFMS_GetPixFmt("yuvj420p")) |
+	if (FFMS_SetOutputFormatV(V, (1 << FFMS_GetPixFmt("yuvj420p")) |
 		(1 << FFMS_GetPixFmt("yuv420p")) | (1 << FFMS_GetPixFmt("yuyv422")) |
 		(1 << FFMS_GetPixFmt("rgb32")) | (1 << FFMS_GetPixFmt("bgr24")),
 		VP->Width, VP->Height, NULL, 0))

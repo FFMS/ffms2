@@ -47,7 +47,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <h2>Usage</h2>
 <p>
-<b>FFIndex(string source, string cachefile = source + ".ffindex", int indexmask = -1, int dumpmask = 0, string audiofile = source, bool overwrite = false)</b><br />
+<b>FFIndex(string source, string cachefile = source + ".ffindex", int indexmask = -1, int dumpmask = 0, string audiofile = "%sourcefile%.%trackzn%.w64", bool overwrite = false)</b><br />
  Used to invoke indexing separately and to write audio tracks to disk as wave64 files
 </p>
 
@@ -91,7 +91,16 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <p>
 <b>audiofile:</b>
-  The base name to use for the decoded audio. Track number and delay is appended.
+  The filename to use for dumped audio tracks. Make sure to include a track number variable to avoid multiple file access errors. The variables are case sensitive. The available variables are:
+<ul>
+<li>%sourcefile% - same as the source argument, the file the audio is decoded from</li>
+<li>%trackn% - the track number</li>
+<li>%trackzn% - the track number zero padded to 2 digits</li>
+<li>%samplerate% - self explanatory</li>
+<li>%channels% - self explanatory</li>
+<li>%bps% - bits per sample</li>
+<li>%delay% - delay, or more exactly the first timestamp encountered in the audio stream</li>
+</ul>
 </p>
 
 <p>
@@ -250,7 +259,9 @@ Note that --enable-w32threads or --enable-pthreads is required for multithreaded
 <h2>Changes</h2>
 <ul>
 <li>2.00 beta 10<ul>
+<li>The output audio filename can now be specified in avisynth (was ignored previously) with variables such as track number and delay possible to use</li>
 <li>Indexing with Haali's splitters should now show progress in most cases</li>
+<li>Fixed a few more memory leaks in indexing</li>
 <li>Now checks for failed seeking when LAVF is used and retries with more aggressive seeking options before failing</li>
 <li>Updated FFmpeg to rev X (now compiled with the opencore amr decoder)</li>
 </ul></li>

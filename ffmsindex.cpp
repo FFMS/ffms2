@@ -26,14 +26,11 @@ extern "C" {
 #include <objbase.h>
 #endif
 
-#ifdef __UNIX__
-#define _snprintf snprintf
-#endif
-
 #include <iostream> 
 #include <string>
 #include <stdlib.h>
 #include "ffms.h"
+#include "compat.h"
 
 int TrackMask;
 int DumpMask;
@@ -148,9 +145,9 @@ static int FFMS_CC UpdateProgress(int64_t Current, int64_t Total, void *Private)
 static int FFMS_CC GenAudioFilename(const char *SourceFile, int Track, const TAudioProperties *AP, char *FileName, int FNSize, void *Private) {
 	const char * FormatString = AudioFile.c_str();
 	if (FileName == NULL)
-		return _snprintf(NULL, 0, FormatString, SourceFile, Track) + 1;
+		return snprintf(NULL, 0, FormatString, SourceFile, Track) + 1;
 	else
-		return _snprintf(FileName, FNSize, FormatString, SourceFile, Track) + 1;
+		return snprintf(FileName, FNSize, FormatString, SourceFile, Track) + 1;
 }
 
 
