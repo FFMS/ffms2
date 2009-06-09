@@ -35,8 +35,13 @@ ffhaaliindexer.cpp
 fflavfindexer.cpp
 ffmatroskaindexer.cpp
 
+Common name:
+Undecided outside windows/FFMS2Core.dll
+
+
 
 Avisynth plugin (normal windows compile)
+
 All core library files and settings
 
 Files:
@@ -49,12 +54,31 @@ ffpp.cpp
 ffswscale.h
 ffswscale.cpp
 
+Common name:
+FFMS2.dll
+
 
 
 Command line indexer:
+
+Settings:
+Link to FFMS2
+
+Files:
 ffmsindex.cpp
 
+Common name:
+ffmsindex(.exe)
 
 
-Command line regression test application:
-ffms2rt.cpp
+
+Command line regression test application
+
+Settings:
+Link to FFMS2
+
+Files:
+ffmstest.cpp
+
+Common name:
+ffmstest(.exe)
