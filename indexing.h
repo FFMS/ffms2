@@ -24,7 +24,7 @@
 #include "utils.h"
 #include "wave64writer.h"
 
-#ifdef _WIN32
+#ifdef HAALISOURCE
 #	define _WIN32_DCOM
 #	include <windows.h>
 #	include <tchar.h>
