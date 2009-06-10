@@ -66,11 +66,6 @@ enum FFMS_TrackType {
     FFMS_TYPE_ATTACHMENT
 };
 
-// This is a subset of the original AVFrame only containing the most used parts.
-// Even if it might seem like a good idea to cast it back to a full AVFrame to
-// access a few more values you really shouldn't do that. Only the values present
-// in TAVFrameLite are actually updated when postprocessing is used.
-
 struct TAVFrameLite {
     uint8_t *Data[4];
     int Linesize[4];
