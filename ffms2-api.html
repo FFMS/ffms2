@@ -1,8 +1,11 @@
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <title>
 FFmpegSource2 API Documentation
 </title>
+<link href="style.css" media="screen" rel="Stylesheet" type="text/css" />
 </head>
 <body>
 <h1>FFmpegSource2 API Documentation</h1>
@@ -20,12 +23,14 @@ FFMS2 does not mux or encode anything. FFMS2 does not give you fine control over
 
 
 <h2>Compilation</h2>
-FFMS2 has the following dependencies:
+<p>FFMS2 has the following dependencies:</p>
 <ul>
-<li><b><a href="http://www.ffmpeg.org">ffmpeg</a></b> (no, really)</li>
+<li><b><a href="http://www.ffmpeg.org">ffmpeg</a></b> (no, really)
 <ul><li>Revision <del>18378 (2009-04-08) or later</del> very fucking recent (usually latest SVN) is required.</li>
 <li>Needs to have libpostproc and libswscale compiled in (pass <tt>--enable-gpl --enable-postproc --enable-swscale</tt> to its ./configure).</li>
-<li>If you're on Win32 you need to pass <tt>--enable-memalign-hack</tt> to ffmpeg's ./configure as well.</li></ul>
+<li>If you're on Win32 you need to pass <tt>--enable-memalign-hack</tt> to ffmpeg's ./configure as well.</li>
+</ul>
+</li>
 <li><b><a href="http://www.zlib.net/">zlib</a></b></li>
 </ul>
 <p>
@@ -154,7 +159,7 @@ To create an index object from a saved disk file, use <tt>FFMS_ReadIndex</tt>. N
 
 
 <h2>Function Reference</h2>
-<p>Most functions that can fail in one way or another (as well as some that should be able to but currently don't) support error reporting using the <tt>ErrorMsg</tt> and <tt>MsgSize</tt> parameters. Example:
+<p>Most functions that can fail in one way or another (as well as some that should be able to but currently don't) support error reporting using the <tt>ErrorMsg</tt> and <tt>MsgSize</tt> parameters. Example:</p>
 <pre>char err[1024];
 unsigned errsize = sizeof(err);
 
@@ -164,14 +169,13 @@ if (frame == NULL) {
 	printf("failed to get frame number %d, error message: %s", frameno, err);
 	/* etc... */
 }</pre>
-
+<p>
 How many characters you want to allocate to the error message is up to you; if you allocate too few the messages may get truncated. 1024 should be enough for anyone.
 </p>
 
 <h3>FFMS_Init - initializes the library</h3>
-<p>
 <pre>void FFMS_Init()</pre>
-Initializes the FFMS2 library. This function must be called once at the start of your program, before doing any other FFMS2 function calls. If you are on Windows, you should also initialize COM before calling this function, since the library might have been built with <tt>HAALISOURCE</tt>. If it was indeed built with <tt>HAALISOURCE</tt> but you do not intialize COM, all MPEG-TS/PS and OGM files will cause an error when you try to open them. All other file types will work normally. Typically, you'd initialize COM something like the following:
+<p>Initializes the FFMS2 library. This function must be called once at the start of your program, before doing any other FFMS2 function calls. If you are on Windows, you should also initialize COM before calling this function, since the library might have been built with <tt>HAALISOURCE</tt>. If it was indeed built with <tt>HAALISOURCE</tt> but you do not intialize COM, all MPEG-TS/PS and OGM files will cause an error when you try to open them. All other file types will work normally. Typically, you'd initialize COM something like the following:</p>
 <pre>#include &lt;objbase.h&gt;
 /* later on, in the actual code... */
 bool com_inited = false;
@@ -186,25 +190,20 @@ else if (res != RPC_E_CHANGED_MODE) {
 if (com_inited)
 	CoUninitialize();
 </pre>
-</p>
 
 <h3>FFMS_GetLogLevel - gets ffmpeg message level</h3>
-<p>
 <pre>int FFMS_GetLogLevel()</pre>
-Retrieves ffmpeg's current logging/message level (i.e. how much diagnostic noise it prints to <tt>STDERR</tt>). If you want to make any sense of the returned value you'd better <tt>#include &lt;libavutil/log.h&gt;</tt> from the ffmpeg source tree to get the relevant constant definitions. Alternatively, just copy the relevant constant definitions into your own code and hope the ffmpeg devs doesn't change them randomly for no particular reason like they do with everything else.
+<p>Retrieves ffmpeg's current logging/message level (i.e. how much diagnostic noise it prints to <tt>STDERR</tt>). If you want to make any sense of the returned value you'd better <tt>#include &lt;libavutil/log.h&gt;</tt> from the ffmpeg source tree to get the relevant constant definitions. Alternatively, just copy the relevant constant definitions into your own code and hope the ffmpeg devs doesn't change them randomly for no particular reason like they do with everything else.
 </p>
 
 <h3>FFMS_SetLogLevel - sets ffmpeg message level</h3>
-<p>
 <pre>void FFMS_SetLogLevel(int Level)</pre>
-Sets ffmpeg's logging/message level; see <tt>FFMS_GetLogLevel()</tt> for details.
-</p>
+<p>Sets ffmpeg's logging/message level; see <tt>FFMS_GetLogLevel()</tt> for details.</p>
 
 <h3>FFMS_CreateVideoSource - creates a video source object</h3>
-<p>
 <pre>FFVideo *FFMS_CreateVideoSource(const char *SourceFile, int Track, FFIndex *Index, const char *PP,
 	int Threads, int SeekMode, char *ErrorMsg, unsigned MsgSize)</pre>
-Creates a <tt>FFVideo</tt> object with the given properties. The <tt>FFVideo</tt> object represents a video stream, and can be passed to other functions to retreive frames and metadata from said stream. The video stream in question must be indexed first (see the indexing functions). Note that the index object is copied into the <tt>FFVideo</tt> object upon its creation, so once you've created the video source you can generally destroy the index object immediately, since all info you can retrieve from it is also retrievable from the <tt>FFVideo</tt> object.
+<p>Creates a <tt>FFVideo</tt> object with the given properties. The <tt>FFVideo</tt> object represents a video stream, and can be passed to other functions to retreive frames and metadata from said stream. The video stream in question must be indexed first (see the indexing functions). Note that the index object is copied into the <tt>FFVideo</tt> object upon its creation, so once you've created the video source you can generally destroy the index object immediately, since all info you can retrieve from it is also retrievable from the <tt>FFVideo</tt> object.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>const char *SourceFile</tt></b><br />
@@ -225,40 +224,36 @@ See above.</p>
 <p>Returns a pointer to the created <tt>FFVideo</tt> object on success. Returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.</p>
 
 <h3>FFMS_CreateAudioSource - creates an audio source object</h3>
-<p>
 <pre>FFAudio *FFMS_CreateAudioSource(const char *SourceFile, int Track, FFIndex *Index,
 	char *ErrorMsg, unsigned MsgSize)</pre>
+<p>
 Does exactly the same thing as <tt>FFMS_CreateVideoSource</tt>, but for audio tracks. Arguments and return values are identical. Do note that audio support is somewhat experimental and not guaranteed to be sample-accurate.
 </p>
 
 <h3>FFMS_DestroyVideoSource - deallocates a video source object</h3>
-<p>
 <pre>void FFMS_DestroyVideoSource(FFVideo *V)</pre>
+<p>
 Deallocates the given <tt>FFVideo</tt> object and frees the memory allocated by <tt>FFMS_CreateVideoSource</tt>.
 </p>
 
 <h3>FFMS_DestroyAudioSource - deallocates an audio source object</h3>
-<p>
 <pre>void FFMS_DestroyAudioSource(FFAudio *A)</pre>
-Deallocates the given <tt>FFAudio</tt> object and frees the memory allocated by <tt>FFMS_CreateAudioSource</tt>.
+<p>Deallocates the given <tt>FFAudio</tt> object and frees the memory allocated by <tt>FFMS_CreateAudioSource</tt>.
 </p>
 
 <h3>FFMS_GetVideoProperties - retrieves video properties</h3>
-<p>
 <pre>const TVideoProperties *FFMS_GetVideoProperties(FFVideo *V)</pre>
-Retreives the video properties from the given <tt>FFVideo</tt> object and stores them in a <tt>TVideoProperties</tt> struct (see the "Data Structures" section below). Returns a pointer to said struct.
+<p>Retreives the video properties from the given <tt>FFVideo</tt> object and stores them in a <tt>TVideoProperties</tt> struct (see the "Data Structures" section below). Returns a pointer to said struct.
 </p>
 
 <h3>FFMS_GetAudioProperties - retrieves audio properties</h3>
-<p>
 <pre>const TAudioProperties *FFMS_GetAudioProperties(FFAudio *A)</pre>
-Does the exact same thing as <tt>FFMS_GetVideoProperties</tt>, but for an <tt>FFAudio</tt> object.
+<p>Does the exact same thing as <tt>FFMS_GetVideoProperties</tt>, but for an <tt>FFAudio</tt> object.
 </p>
 
 <h3>FFMS_GetFrame - retrieves a given video frame</h3>
-<p>
 <pre>const TAVFrameLite *FFMS_GetFrame(FFVideo *V, int n, char *ErrorMsg, unsigned MsgSize)</pre>
-Gets and decodes a video frame from the video stream represented by the given <tt>FFVideo</tt> object and stores it in a <tt>TAVFrameLite</tt> struct. The colorspace and resolution of the frame can be changed by calling <tt>FFMS_SetOutputFormat</tt> with the appropriate parameters before calling this function. Note that this function is not threadsafe; you can only request one frame at a time from a given <tt>FFVideo</tt> object.
+<p>Gets and decodes a video frame from the video stream represented by the given <tt>FFVideo</tt> object and stores it in a <tt>TAVFrameLite</tt> struct. The colorspace and resolution of the frame can be changed by calling <tt>FFMS_SetOutputFormat</tt> with the appropriate parameters before calling this function. Note that this function is not threadsafe; you can only request one frame at a time from a given <tt>FFVideo</tt> object.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFVideo *V</tt></b><br />
@@ -271,15 +266,13 @@ See above.</p>
 <p>Returns a pointer to the <tt>AVFrameLite</tt> on success. Returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.</p>
 
 <h3>FFMS_GetFrameByTime - retrieves a video frame at a given timestamp</h3>
-<p>
 <pre>const TAVFrameLite *FFMS_GetFrameByTime(FFVideo *V, double Time, char *ErrorMsg, unsigned MsgSize)</pre>
-Does the exact same thing as <tt>FFMS_GetFrame</tt> except instead of giving it a frame number you give it a timestamp, in seconds, and it will retrieve the frame that starts closest to that timestamp. This function exists for the people who are too lazy to build and traverse a mapping between frame numbers and timestamps themselves.
+<p>Does the exact same thing as <tt>FFMS_GetFrame</tt> except instead of giving it a frame number you give it a timestamp, in seconds, and it will retrieve the frame that starts closest to that timestamp. This function exists for the people who are too lazy to build and traverse a mapping between frame numbers and timestamps themselves.
 </p>
 
 <h3>FFMS_GetAudio - decodes a number of audio samples</h3>
-<p>
 <pre>int FFMS_GetAudio(FFAudio *A, void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize)</pre>
-Decodes the requested audio samples from the audio stream represented by the given <tt>FFAudio</tt> object and stores them in the given buffer. Note that this function is not threadsafe; you can only request one decoding operation at a time from a given <tt>FFAudio</tt> object.
+<p>Decodes the requested audio samples from the audio stream represented by the given <tt>FFAudio</tt> object and stores them in the given buffer. Note that this function is not threadsafe; you can only request one decoding operation at a time from a given <tt>FFAudio</tt> object.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFAudio *A</tt></b><br />
@@ -295,16 +288,15 @@ See above.</p>
 <p>Returns 0 on success. Returns non-0 and sets <tt>ErrorMsg</tt> on failure.</p>
 
 <h3>FFMS_SetOutputFormat - sets the output format for video frames</h3>
-<p>
 <pre>int FFMS_SetOutputFormat(FFVideo *V, int64_t TargetFormats, int Width, int Height,
 	char *ErrorMsg, unsigned MsgSize)</pre>
-Sets the colorspace and frame dimensions to be used for output of frames from the given <tt>FFVideo</tt> by all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt>, until next time you call <tt>FFMS_SetOutputFormat</tt> or <tt>FFMS_ResetOutputFormat</tt>. You can change the output format at any time without having to reinitialize the <tt>FFVideo</tt> object or anything else. Can be used to convert the video to grayscale or monochrome if you are so inclined. If you provided a list of more than one colorspace/pixelformat, you may want to use <tt>FFMS_GetVideoProperties</tt> afterwards to see which one got selected.
+<p>Sets the colorspace and frame dimensions to be used for output of frames from the given <tt>FFVideo</tt> by all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt>, until next time you call <tt>FFMS_SetOutputFormat</tt> or <tt>FFMS_ResetOutputFormat</tt>. You can change the output format at any time without having to reinitialize the <tt>FFVideo</tt> object or anything else. Can be used to convert the video to grayscale or monochrome if you are so inclined. If you provided a list of more than one colorspace/pixelformat, you may want to use <tt>FFMS_GetVideoProperties</tt> afterwards to see which one got selected.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFVideo *V</tt></b><br />
 A pointer to the <tt>FFVideo</tt> object that represents the video stream you want to change the output format for.</p>
 <p><b><tt>int64_t TargetFormats</tt></b><br />
-The desired output colorspace(s). You may binary OR several colorspaces you are willing to accept together; the function will then choose the colorspace that gives the least lossy conversion from the source colorspace. To get the integer constant representing a given colorspace, see <tt>FFMS_GetPixFmt</tt>. Once you have the integer constant(s), shift 1 left by each constant to get the value suitable for passing as this argument. Example: <tt>int64_t targetformats = (1 << pixfmt1) | (1 << pixfmt2) | (1 << pixfmt3);</tt></p>
+The desired output colorspace(s). You may binary OR several colorspaces you are willing to accept together; the function will then choose the colorspace that gives the least lossy conversion from the source colorspace. To get the integer constant representing a given colorspace, see <tt>FFMS_GetPixFmt</tt>. Once you have the integer constant(s), shift 1 left by each constant to get the value suitable for passing as this argument. Example: <tt>int64_t targetformats = (1 &lt;&lt; pixfmt1) | (1 &lt;&lt; pixfmt2) | (1 &lt;&lt; pixfmt3);</tt></p>
 <p><b><tt>int Width, int Height</tt></b><br />
 The desired image dimensions, in pixels. If you do not want to resize just pass the input dimensions. Passing invalid dimensions (like 0 or negative) has undefined behavior.</p>
 <p><b><tt>char *ErrorMsg, unsigned MsgSize</tt></b><br />
@@ -313,21 +305,18 @@ See above.</p>
 <p>Returns 0 on success. Returns non-0 and sets <tt>ErrorMsg</tt> on failure.</p>
 
 <h3>FFMS_ResetOutputFormat - resets the video output format</h3>
-<p>
 <pre>void FFMS_ResetOutputFormat(FFVideo *V)</pre>
-Resets the output format for the given <tt>FFVideo</tt> object so that no conversion takes place. Is a shorthand way of saying <tt>FFMS_SetOutputFormat(V, TVideoProperties->VPixelFormat, TVideoProperties->Width, TVideoProperties->Height, ErrorMsg, MsgSize)</tt>.
+<p>Resets the output format for the given <tt>FFVideo</tt> object so that no conversion takes place. Is a shorthand way of saying <tt>FFMS_SetOutputFormat(V, TVideoProperties->VPixelFormat, TVideoProperties->Width, TVideoProperties->Height, ErrorMsg, MsgSize)</tt>.
 </p>
 
 <h3>FFMS_DestroyFFIndex - deallocates an index object</h3>
-<p>
 <pre>void FFMS_DestroyFFIndex(FFIndex *Index)</pre>
-Deallocates the given <tt>FFIndex</tt> object and frees the memory that was allocated when it was created.
+<p>Deallocates the given <tt>FFIndex</tt> object and frees the memory that was allocated when it was created.
 </p>
 
 <h3>FFMS_GetFirstTrackOfType - gets the track number of the first track of a given type</h3>
-<p>
 <pre>int FFMS_GetFirstTrackOfType(FFIndex *Index, int TrackType, char *ErrorMsg, unsigned MsgSize)</pre>
-Finds the first track of the given <tt>FFMS_TrackType</tt> in the given <tt>FFIndex</tt> and returns its track number, suitable for use as an argument to <tt>FFMS_CreateVideoSource</tt> or <tt>FFMS_CreateAudioSource</tt> as well as some other functions.
+<p>Finds the first track of the given <tt>FFMS_TrackType</tt> in the given <tt>FFIndex</tt> and returns its track number, suitable for use as an argument to <tt>FFMS_CreateVideoSource</tt> or <tt>FFMS_CreateAudioSource</tt> as well as some other functions.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFIndex *Index</tt></b><br />
@@ -340,51 +329,43 @@ See above.</p>
 <p>Returns the track number (an integer greater than or equal to 0) on success. Returns a negative integer and sets ErrorMsg on failure (i.e. if no track of the given type was found).</p>
 
 <h3>FFMS_GetFirstIndexedTrackOfType - gets the track number of the first track of a given type</h3>
-<p>
 <pre>int FFMS_GetFirstIndexedTrackOfType(FFIndex *Index, int TrackType, char *ErrorMsg, unsigned MsgSize)</pre>
-Does the exact same thing as <tt>FFMS_GetFirstTrackOfType</tt> but ignores tracks that have not been indexed.
+<p>Does the exact same thing as <tt>FFMS_GetFirstTrackOfType</tt> but ignores tracks that have not been indexed.
 </p>
 
 <h3>FFMS_GetNumTracks - gets the number of tracks in a given index</h3>
-<p>
 <pre>int FFMS_GetNumTracks(FFIndex *Index)</pre>
-Returns the total number of tracks in the media file represented by the given <tt>FFIndex</tt>.
+<p>Returns the total number of tracks in the media file represented by the given <tt>FFIndex</tt>.
 </p>
 
 <h3>FFMS_GetNumTracksI - gets the number of tracks in a given indexer</h3>
-<p>
 <pre>int FFMS_GetNumTracksI(FFIndexer *Indexer)</pre>
-Returns the total number of tracks in the media file represented by the given <tt>FFIndexer</tt>. In other words, does the same thing as <tt>FFMS_GetNumTracks</tt> but does not require indexing the entire file first.
+<p>Returns the total number of tracks in the media file represented by the given <tt>FFIndexer</tt>. In other words, does the same thing as <tt>FFMS_GetNumTracks</tt> but does not require indexing the entire file first.
 </p>
 
 <h3>FFMS_GetTrackType - gets the track type of a given track</h3>
-<p>
 <pre>FFMS_TrackType FFMS_GetTrackType(FFTrack *T)</pre>
-Returns the <tt>FFMS_TrackType</tt> (see the Constants and Preprocessor Definitions section) of the track represented by the given <tt>FFTrack</tt> object.
+<p>Returns the <tt>FFMS_TrackType</tt> (see the Constants and Preprocessor Definitions section) of the track represented by the given <tt>FFTrack</tt> object.
 </p>
 
 <h3>FFMS_GetTrackTypeI - gets the track type of a given track</h3>
-<p>
 <pre>FFMS_TrackType FFMS_GetTrackTypeI(FFIndexer *Indexer, int Track)</pre>
-Returns the <tt>FFMS_TrackType</tt> (see the Constants and Preprocessor Definitions section) of the track number <tt>Track</tt> in the media file represented by the given <tt>FFIndexer</tt>. In other words, does the same thing as <tt>FFMS_GetTrackType</tt>, but does not require having indexed the file first. If you have indexed the file, use <tt>FFMS_GetTrackType</tt> instead since the <tt>FFIndexer</tt> object is destructed when the index is created.
+<p>Returns the <tt>FFMS_TrackType</tt> (see the Constants and Preprocessor Definitions section) of the track number <tt>Track</tt> in the media file represented by the given <tt>FFIndexer</tt>. In other words, does the same thing as <tt>FFMS_GetTrackType</tt>, but does not require having indexed the file first. If you have indexed the file, use <tt>FFMS_GetTrackType</tt> instead since the <tt>FFIndexer</tt> object is destructed when the index is created.
 </p>
 
 <h3>FFMS_GetCodecNameI - gets the name of the codec used for a given track</h3>
-<p>
 <pre>const char *FFMS_GetCodecNameI(FFIndexer *Indexer, int Track)</pre>
-Returns the human-readable name ("long name" in ffmpeg terms) of the codec used in the given track number in the media file represented by the given <tt>FFIndexer</tt> object. Useful if you want to, say, pop up a menu asking the user which tracks he or she wishes to index.
+<p>Returns the human-readable name ("long name" in ffmpeg terms) of the codec used in the given track number in the media file represented by the given <tt>FFIndexer</tt> object. Useful if you want to, say, pop up a menu asking the user which tracks he or she wishes to index.
 </p>
 
 <h3>FFMS_GetNumFrames - gets the number of frames in a given track</h3>
-<p>
 <pre>int FFMS_GetNumFrames(FFTrack *T)</pre>
-Returns the number of frames in the track represented by the given <tt>FFTrack</tt>. For a video track this is the number of video frames, which can be useful; for an audio track it's the number of "packets", which is almost never useful. A return value of 0 indicates the track has not been indexed.
+<p>Returns the number of frames in the track represented by the given <tt>FFTrack</tt>. For a video track this is the number of video frames, which can be useful; for an audio track it's the number of "packets", which is almost never useful. A return value of 0 indicates the track has not been indexed.
 </p>
 
 <h3>FFMS_GetFrameInfo - gets information about a given frame</h3>
-<p>
 <pre>const FFFrameInfo *FFMS_GetFrameInfo(FFTrack *T, int Frame)</pre>
-Gets information about the given frame (identified by its frame number) from the indexing information in the given <tt>FFTrack</tt> and stores it in a <tt>FFFrameInfo</tt> struct. See the "Data Structures" section below for more information. Using this function on a <tt>FFTrack</tt> representing a non-video track has undefined behavior.
+<p>Gets information about the given frame (identified by its frame number) from the indexing information in the given <tt>FFTrack</tt> and stores it in a <tt>FFFrameInfo</tt> struct. See the "Data Structures" section below for more information. Using this function on a <tt>FFTrack</tt> representing a non-video track has undefined behavior.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFTrack *T</tt></b><br />
@@ -397,9 +378,8 @@ See above.</p>
 <p>Returns a pointer to the <tt>FFFrameInfo</tt> struct on success. Returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.</p>
 
 <h3>FFMS_GetTrackFromIndex - retrieves track info from an index</h3>
-<p>
 <pre>FFTrack *FFMS_GetTrackFromIndex(FFIndex *Index, int Track)</pre>
-Gets track data for the given track number from the given <tt>FFIndex</tt> object, stores it in a <tt>FFTrack</tt> object and returns a pointer to it. Use this function if you don't want to (or cannot) open the track with <tt>FFMS_CreateVideoSource</tt> or <tt>FFMS_CreateAudioSource</tt> first. If you already have a <tt>FFVideo</tt> or <tt>FFAudio</tt> object it's safer to use <tt>FFMS_GetTrackFromVideo</tt> or <tt>FFMS_GetTrackFromAudio</tt> (see below) instead. Note that specifying a nonexistent or invalid track number leads to undefined behavior (usually an access violation). Also note that the returned <tt>FFTrack</tt> object is only valid until its parent <tt>FFIndex</tt> object is destroyed.
+<p>Gets track data for the given track number from the given <tt>FFIndex</tt> object, stores it in a <tt>FFTrack</tt> object and returns a pointer to it. Use this function if you don't want to (or cannot) open the track with <tt>FFMS_CreateVideoSource</tt> or <tt>FFMS_CreateAudioSource</tt> first. If you already have a <tt>FFVideo</tt> or <tt>FFAudio</tt> object it's safer to use <tt>FFMS_GetTrackFromVideo</tt> or <tt>FFMS_GetTrackFromAudio</tt> (see below) instead. Note that specifying a nonexistent or invalid track number leads to undefined behavior (usually an access violation). Also note that the returned <tt>FFTrack</tt> object is only valid until its parent <tt>FFIndex</tt> object is destroyed.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFIndex *Index</tt></b><br />
@@ -412,22 +392,19 @@ See above.</p>
 <p>Returns the <tt>FFTrack</tt> on success. Note that requesting indexing information for a track that has not been indexed is not an error, it will just return an empty <tt>FFTrack</tt> (check for >0 frames using <tt>FFMS_GetNumFrames</tt> to see if the returned object actually contains indexing information).</p>
 
 <h3>FFMS_GetTrackFromVideo, FFMS_GetTrackFromAudio - retrieves track info from audio or video source</h3>
-<p>
 <pre>FFTrack *FFMS_GetTrackFromVideo(FFVideo *V)
 FFTrack *FFMS_GetTrackFromAudio(FFAudio *A)</pre>
-Gets information about the track represented by the given <tt>FFVideo</tt> or <tt>FFAudio</tt> object and returns a pointer to a <tt>FFTrack</tt> object containing said information. It's generally safer to use these functions instead of <tt>FFMS_GetTrackFromIndex</tt>, since unlike that function they cannot cause random access violations, return a <tt>FFTrack</tt> that doesn't actually contain any indexing information, or return an object that ceases to be valid when the index is destroyed. Note that the returned <tt>FFTrack</tt> object is only valid until its parent <tt>FFVideo</tt> or <tt>FFAudio</tt> object is destroyed.
+<p>Gets information about the track represented by the given <tt>FFVideo</tt> or <tt>FFAudio</tt> object and returns a pointer to a <tt>FFTrack</tt> object containing said information. It's generally safer to use these functions instead of <tt>FFMS_GetTrackFromIndex</tt>, since unlike that function they cannot cause random access violations, return a <tt>FFTrack</tt> that doesn't actually contain any indexing information, or return an object that ceases to be valid when the index is destroyed. Note that the returned <tt>FFTrack</tt> object is only valid until its parent <tt>FFVideo</tt> or <tt>FFAudio</tt> object is destroyed.
 </p>
 
 <h3>FFMS_GetTimeBase - retrieves the time base for the given track</h3>
-<p>
 <pre>const TTrackTimeBase *FFMS_GetTimeBase(FFTrack *T)</pre>
-Finds the basic time unit for the track represented by the given <tt>FFTrack</tt>, stores it in a <tt>TTrackTimeBase</tt> struct and returns a pointer to said struct. See the Data Structures section for information about the time base; note that it is only meaningful for video tracks.
+<p>Finds the basic time unit for the track represented by the given <tt>FFTrack</tt>, stores it in a <tt>TTrackTimeBase</tt> struct and returns a pointer to said struct. See the Data Structures section for information about the time base; note that it is only meaningful for video tracks.
 </p>
 
 <h3>FFMS_WriteTimecodes - writes timecodes for the given track to disk</h3>
-<p>
 <pre>int FFMS_WriteTimecodes(FFTrack *T, const char *TimecodeFile, char *ErrorMsg, unsigned MsgSize)</pre>
-Writes Matroska v2 timecodes for the track represented by the given <tt>FFTrack</tt> to the given file. Only meaningful for video tracks.
+<p>Writes Matroska v2 timecodes for the track represented by the given <tt>FFTrack</tt> to the given file. Only meaningful for video tracks.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFTrack *T</tt></b><br />
@@ -440,11 +417,10 @@ See above.</p>
 <p>Returns 0 on success. Returns non-0 and sets <tt>ErrorMsg</tt> on failure.</p>
 
 <h3>FFMS_MakeIndex - indexes a given source file</h3>
-<p>
 <pre>FFIndex *FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask,
 	TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate,
 	char *ErrorMsg, unsigned MsgSize)</pre>
-Indexes all video tracks and the given audio tracks in the given media file and returns a <tt>FFIndex</tt> object representing the file in question. Can also decode and write audio tracks to Wave64 files on disk while indexing.
+<p>Indexes all video tracks and the given audio tracks in the given media file and returns a <tt>FFIndex</tt> object representing the file in question. Can also decode and write audio tracks to Wave64 files on disk while indexing.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>const char *SourceFile</tt></b><br />
@@ -467,20 +443,22 @@ A pointer of your choice that will be passed as an argument to the progress repo
 See above.</p>
 <h4>Callbacks</h4>
 <p>This function has two potential callbacks. One can, if you so desire, call your code back intermittently so you can see how the indexing is progressing. This is accomplished using a function pointer to a function with the following signature:
+</p>
 <pre>int FFMS_CC FunctionName(int64_t Current, int64_t Total, void *ICPrivate)</pre>
-The callback function's arguments are as follows:<br />
+<p> The callback function's arguments are as follows:</p>
 <ul>
 <li><tt><b>int64_t Current, int64_t Total</b></tt> - The indexing progress (amount done/total amount).</li>
 <li><tt><b>void *Private</b></tt> - the same pointer as the one you passed as the <tt>Private</tt> argument to <tt>FFMS_MakeIndex</tt>. Can be used for anything you like, but one example (in a GUI program) is to use it for passing a progress ticker object that you can update with each call to the indexing function.</li>
 </ul>
-Return 0 from the callback function to continue indexing, non-0 to cancel indexing (returning non-0 will make <tt>FFMS_MakeIndex</tt> fail with the reason "indexing cancelled by user").
+<p>Return 0 from the callback function to continue indexing, non-0 to cancel indexing (returning non-0 will make <tt>FFMS_MakeIndex</tt> fail with the reason "indexing cancelled by user").
 </p>
 <p>
 The other callback is used to generate the filename(s) of the audio file(s) written if <tt>DumpMask</tt> is non-zero. It has the following signature:
+</p>
 <pre>int FFMS_CC FunctionName(const char *SourceFile, int Track, const TAudioProperties *AP,
 	char *FileName, int FNSize, void *Private)</pre>
-The callback function is called twice for each audio file generated. The first time <tt>FileName</tt> is NULL, and you should return the number of characters your generated filename will use plus one, and do nothing else. The second time <tt>FileName</tt> is a pointer to a pre-allocated array of char; you should write your generated filename to that and return the number of characters actually written plus one. Generally the easiest way to do this in both cases is to use <tt>snprintf</tt>. See the implementation of <tt>GenAudioFilename</tt> in ffmsindex.cpp for an example on how to do it.<br />
-The callback function's arguments are as follows:<br />
+<p>The callback function is called twice for each audio file generated. The first time <tt>FileName</tt> is NULL, and you should return the number of characters your generated filename will use plus one, and do nothing else. The second time <tt>FileName</tt> is a pointer to a pre-allocated array of char; you should write your generated filename to that and return the number of characters actually written plus one. Generally the easiest way to do this in both cases is to use <tt>snprintf</tt>. See the implementation of <tt>GenAudioFilename</tt> in ffmsindex.cpp for an example on how to do it.<br />
+The callback function's arguments are as follows:</p>
 <ul>
 <li><tt><b>const char *SourceFile</b></tt> - The name of the source media file.</li>
 <li><tt><b>int Track</b></tt> - The track number of the audio track being dumped.</li>
@@ -489,7 +467,7 @@ The callback function's arguments are as follows:<br />
 <li><tt><b>int FNSize</b></tt> - The length of the <tt>FileName</tt> string.</li>
 <li><tt><b>void *Private</b></tt> - The <tt>ANCPrivate</tt> pointer passed to <tt>FFMS_MakeIndex</tt>. Can be used to store data between calls, or to give audio tracks individual names that aren't just based on their properties.</li>
 </ul>
-Most of the parameters may seem pointless since you don't need to use them, but they are passed so that you can easily generate a filename based on the audio track's properties if you want to.
+<p>Most of the parameters may seem pointless since you don't need to use them, but they are passed so that you can easily generate a filename based on the audio track's properties if you want to.
 </p>
 <h4>Return values</h4>
 <p>Returns a pointer to the created <tt>FFIndex</tt> on success. Returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.</p>
@@ -498,34 +476,34 @@ Most of the parameters may seem pointless since you don't need to use them, but 
 <p>This function generates a default audio filename for use when dumping audio tracks to disk as Wave64 files during indexing. Its only use in the public API is as a default callback for <tt>FFMS_MakeIndex</tt> and <tt>FFMS_DoIndexing</tt>; you should never call it directly. See <tt>FFMS_MakeIndex</tt> for a description of its arguments.</p>
 
 <h3>FFMS_CreateIndexer - creates an indexer object for the given file</h3>
-<p><pre>FFIndexer *FFMS_CreateIndexer(const char *SourceFile, char *ErrorMsg, unsigned MsgSize)</pre>
-Creates a <tt>FFIndexer</tt> object for the given <tt>SourceFile</tt> and returns a pointer to it. See Indexing and You for details on how to use the indexer.</p>
+<pre>FFIndexer *FFMS_CreateIndexer(const char *SourceFile, char *ErrorMsg, unsigned MsgSize)</pre>
+<p>Creates a <tt>FFIndexer</tt> object for the given <tt>SourceFile</tt> and returns a pointer to it. See Indexing and You for details on how to use the indexer.</p>
 <h4>Return values</h4>
 <p>Returns a pointer to the <tt>FFIndexer</tt> on success. Returns NULL and sets <tt>ErrorMsg</tt> on failure.</p>
 
 <h3>FFMS_DoIndexing - indexes the file represented by an indexer object</h3>
-<p><pre>FFIndex *FFMS_DoIndexing(FFIndexer *Indexer, int IndexMask, int DumpMask,
+<pre>FFIndex *FFMS_DoIndexing(FFIndexer *Indexer, int IndexMask, int DumpMask,
 	TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate,
 	char *ErrorMsg, unsigned MsgSize)</pre>
-Does the exact same thing as <tt>FFMS_MakeIndex</tt>, but takes an indexer object instead of a source filename. Return values and arguments are identical to <tt>FFMS_MakeIndex</tt>; see that function for details. See the Indexing and You section for more details about indexing. Note that calling this function destroys the <tt>FFIndexer</tt> object and frees the memory allocated by <tt>FFMS_CreateIndexer</tt>.</p>
+<p>Does the exact same thing as <tt>FFMS_MakeIndex</tt>, but takes an indexer object instead of a source filename. Return values and arguments are identical to <tt>FFMS_MakeIndex</tt>; see that function for details. See the Indexing and You section for more details about indexing. Note that calling this function destroys the <tt>FFIndexer</tt> object and frees the memory allocated by <tt>FFMS_CreateIndexer</tt>.</p>
 
 <h3>FFMS_CancelIndexing - destroys the given indexer object</h3>
-<p><pre>void FFMS_CancelIndexing(FFIndexer *Indexer)</pre>
-Destroys the given <tt>FFIndexer</tt> object and frees the memory allocated by <tt>FFMS_CreateIndexer</tt>.</p>
+<pre>void FFMS_CancelIndexing(FFIndexer *Indexer)</pre>
+<p>Destroys the given <tt>FFIndexer</tt> object and frees the memory allocated by <tt>FFMS_CreateIndexer</tt>.</p>
 
 <h3>FFMS_ReadIndex - reads an index file from disk</h3>
-<p><pre>FFIndex *FFMS_ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize)</pre>
-Attempts to read indexing information from the given <tt>IndexFile</tt>, which can be an absolute or relative path. Returns the <tt>FFIndex</tt> on success; returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.
+<pre>FFIndex *FFMS_ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize)</pre>
+<p>Attempts to read indexing information from the given <tt>IndexFile</tt>, which can be an absolute or relative path. Returns the <tt>FFIndex</tt> on success; returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.
 </p>
 
 <h3>FFMS_WriteIndex - writes an index object to disk</h3>
-<p><pre>int FFMS_WriteIndex(const char *IndexFile, FFIndex *TrackIndices, char *ErrorMsg, unsigned MsgSize)</pre>
-Writes the indexing information from the given <tt>FFIndex</tt> to the given <tt>IndexFile</tt> (which can be an absolute or relative path; it will be truncated and overwritten if it already exists). Returns 0 on success; returns non-0 and sets <tt>ErrorMsg</tt> on failure.
+<pre>int FFMS_WriteIndex(const char *IndexFile, FFIndex *TrackIndices, char *ErrorMsg, unsigned MsgSize)</pre>
+<p>Writes the indexing information from the given <tt>FFIndex</tt> to the given <tt>IndexFile</tt> (which can be an absolute or relative path; it will be truncated and overwritten if it already exists). Returns 0 on success; returns non-0 and sets <tt>ErrorMsg</tt> on failure.
 </p>
 
 <h3>FFMS_GetPixFmt - gets a colorspace identifier from a colorspace name</h3>
-<p><pre>int FFMS_GetPixFmt(const char *Name)</pre>
-Translates a given colorspace/pixel format <tt>Name</tt> to an integer constant representing it, suitable for passing to <tt>FFMS_SetOutputFormat</tt> (after some manipulation, see that function for details). This function exists so that you don't have to include a ffmpeg header file in every single program you ever write. For a list of colorspaces and their names, see <tt>libavutil/pixfmt.h</tt>. To get the name of a colorspace, strip the leading <tt>PIX_FMT_</tt> and convert the remainder to lowercase. For example, the name of <tt>PIX_FMT_YUV420P</tt> is <tt>yuv420p</tt>. It is strongly recommended to use this function instead of including pixfmt.h directly, since this function guarantees that you will always get the constant definitions from the version of ffmpeg that FFMS2 was linked against.
+<pre>int FFMS_GetPixFmt(const char *Name)</pre>
+<p>Translates a given colorspace/pixel format <tt>Name</tt> to an integer constant representing it, suitable for passing to <tt>FFMS_SetOutputFormat</tt> (after some manipulation, see that function for details). This function exists so that you don't have to include a ffmpeg header file in every single program you ever write. For a list of colorspaces and their names, see <tt>libavutil/pixfmt.h</tt>. To get the name of a colorspace, strip the leading <tt>PIX_FMT_</tt> and convert the remainder to lowercase. For example, the name of <tt>PIX_FMT_YUV420P</tt> is <tt>yuv420p</tt>. It is strongly recommended to use this function instead of including pixfmt.h directly, since this function guarantees that you will always get the constant definitions from the version of ffmpeg that FFMS2 was linked against.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>const char *Name</tt></b><br />
@@ -540,14 +518,14 @@ The following public data structures may be of interest.
 </p>
 
 <h3>TAVFrameLite</h3>
-<p><pre>struct TAVFrameLite {
+<pre>struct TAVFrameLite {
     uint8_t *Data[4];
     int Linesize[4];
     uint8_t *Base[4];
     int KeyFrame;
     int PictType;
 };</pre>
-A struct representing a video frame. The fields are:
+<p>A struct representing a video frame. The fields are:</p>
 <ul>
 <li><b><tt>uint8_t *Data[4]</tt></b> - An array of pointers to the picture planes (fields containing actual pixel data). Planar formats use more than one plane, for example YV12 uses one plane each for the Y, U and V data. Packed formats (such as the various RGB32 flavors) use only the first plane. If you want to determine if plane <tt>i</tt> contains data or not, check for <tt>Linesize[i] &gt; 0</tt>.</li>
 <li><b><tt>int Linesize[4]</tt></b> - An array of integers representing the length of each scan line in each of the four picture planes, in bytes. In alternative terminology, this is the "pitch" of the plane. The total size in bytes of picture plane <tt>i</tt> is <tt>Linesize[i] * frame_height_in_pixels</tt>.</li>
@@ -555,32 +533,28 @@ A struct representing a video frame. The fields are:
 <li><b><tt>int KeyFrame</tt></b> - Nonzero if the frame is a keyframe, 0 otherwise.</li>
 <li><b><tt>int PictType</tt></b> - The coding type (I/B/P etc) of the compressed frame. See the various <tt>FF_X_TYPE</tt> constant definitions in <tt>libavcodec/avcodec.h</tt> if you want to know what integer represents what type.</li>
 </ul>
-</p>
 
 <h3>TTrackTimeBase</h3>
-<p>
 <pre>struct TTrackTimeBase {
 	int64_t Num;
 	int64_t Den;
 };</pre>
+<p>
 A struct representing the basic time unit of a track, as a rational number where <tt>Num</tt> is the numerator and <tt>Den</tt> is the denominator. Note that while this rational number may occasionally turn out to be equal to 1/framerate for some CFR video tracks, it really has no relation whatsoever with the video framerate and you should definitely not assume anything framerate-related based on it.
 </p>
 
 <h3>FFFrameInfo</h3>
-<p>
 <pre>struct FFFrameInfo {
 	int64_t DTS;
 	bool KeyFrame;
 };</pre>
-A struct representing basic metadata about a given video frame. The fields are:
+<p>A struct representing basic metadata about a given video frame. The fields are:</p>
 <ul>
 <li><b><tt>int64_t DTS</tt></b> - The decoding timestamp of the frame. To convert this to a timestamp in wallclock milliseconds, use the relation <tt>int64_t timestamp = (int64_t)((FFFrameInfo-&gt;DTS * TTrackTimeBase-&gt;Num) / (double)TTrackTimeBase-&gt;Den)</tt>.</li>
 <li><b><tt>bool KeyFrame</tt></b> - True if the frame is a keyframe, false otherwise.</li>
 </ul>
-</p>
 
 <h3>TVideoProperties</h3>
-<p>
 <pre>struct TVideoProperties {
 	int Width;
 	int Height;
@@ -597,20 +571,18 @@ A struct representing basic metadata about a given video frame. The fields are:
 	double FirstTime;
 	double LastTime;
 };</pre>
-A struct containing metadata about a video track. The fields are:
+<p>A struct containing metadata about a video track. The fields are:</p>
 <ul>
 <li><b><tt>int Width; int Height;</tt></b> - The width and height of the video frames, in pixels.</li>
 <li><b><tt>int FPSDenominator; int FPSNumerator;</tt></b> - The nominal framerate of the track, as a rational number. For Matroska files, this number is based on the average frame duration of all frames, while for everything else it's based on the duration of the first frame. While it might seem tempting to use these values to extrapolate wallclock timestamps for each frame, you really shouldn't do that since it makes your code unable to handle variable framerate properly. The ugly reality is that these values are pretty much only useful for informational purposes; they are only somewhat reliable for antiquated containers like AVI. Normally they should never be used for practical purposes; generate individual frame timestamps from <tt>FFFrameInfo-&gt;DTS</tt> instead.</li>
 <li><b><tt>int NumFrames;</tt></b> - The number of frames in the video track.</li>
 <li><b><tt>int VPixelFormat;</tt></b> - An integer constant representing the colorspace/pixel format of the video frames output by <tt>FFMS_GetFrame</tt> and its variants, as set by <tt>FFMS_SetOutputFormat</tt> and <tt>FFMS_ResetOutputFormat</tt>. See also <tt>FFMS_GetPixFmt</tt> and <tt>libavutil/pixfmt.h</tt>.</li>
-<li><b><tt>int SARNum; int SARDen;</tt></b> - The sample aspect ratio of the video frames, as a rational number where <tt>SARNum</tt> is the numerator and <tt>SARDen</tt> is the denominator</tt>.</li>
+<li><b><tt>int SARNum; int SARDen;</tt></b> - The sample aspect ratio of the video frames, as a rational number where <tt>SARNum</tt> is the numerator and <tt>SARDen</tt> is the denominator.</li>
 <li><b><tt>int CropTop; int CropBottom; int CropLeft; int CropRight;</tt></b> - The number of pixels the video frame should be cropped in each direction before being displayed.</li>
 <li><b><tt>double FirstTime; double LastTime;</tt></b> - The first and last timestamp of the stream respectively, in milliseconds. Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.</li>
 </ul>
-</p>
 
 <h3>TAudioProperties</h3>
-<p>
 <pre>struct TAudioProperties {
 	int SampleRate;
 	int Channels;
@@ -620,7 +592,7 @@ A struct containing metadata about a video track. The fields are:
 	double FirstTime;
 	double LastTime;
 };</pre>
-A struct containing metadata about an audio track. The fields are:
+<p>A struct containing metadata about an audio track. The fields are:</p>
 <ul>
 <li><b><tt>int SampleRate</tt></b> - The audio samplerate, in samples per second.</li>
 <li><b><tt>int Channels</tt></b> - The number of audio channels. Figuring out the channel ordering is left as an exercise for the reader (hint: consult ffmpeg internals).</li>
@@ -629,29 +601,28 @@ A struct containing metadata about an audio track. The fields are:
 <li><b><tt>int64_t NumSamples</tt></b> - The number of samples in the audio track.</li>
 <li><b><tt>double FirstTime; double LastTime;</tt></b> - The first and last timestamp of the stream respectively, in milliseconds. Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.</li>
 </ul>
-</p>
 
 
 <h2>Constants and Preprocessor Definitions</h2>
 <p>Here is a list of useful constants and preprocessor definitions defined by ffms.h.</p>
 
 <h3>FFMS_SeekMode</h3>
-<p><pre>enum FFMS_SeekMode {
+<pre>enum FFMS_SeekMode {
 	FFMS_SEEK_LINEAR_NO_RW  = -1,
 	FFMS_SEEK_LINEAR = 0,
 	FFMS_SEEK_NORMAL = 1,
 	FFMS_SEEK_UNSAFE = 2,
 	FFMS_SEEK_AGGRESSIVE = 3,
 };</pre>
-Used in <tt>FFMS_CreateVideoSource</tt> to control the way seeking is handled. Explanation of the values:
+<p>Used in <tt>FFMS_CreateVideoSource</tt> to control the way seeking is handled. Explanation of the values:</p>
 <ul><li><b><tt>FFMS_SEEK_LINEAR_NO_RW</tt></b> - Linear access without rewind; i.e. will throw an error if each successive requested frame number isn't bigger than the last one. Only intended for opening images but might work on well with some obscure video format.</li>
 <li><b><tt>FFMS_SEEK_LINEAR</tt></b> - Linear access (i.e. if you request frame n without having requested frames 0 to n-1 in order first, all frames from 0 to n will have to be decoded before n can be delivered). The definition of slow, but should make some formats "usable".</li>
 <li><b><tt>FFMS_SEEK_NORMAL</tt></b> - Safe normal. Bases seeking decisions on the keyframe positions reported by libavformat.</li>
 <li><b><tt>FFMS_SEEK_UNSAFE</tt></b> - Unsafe normal. Same as <tt>FFMS_SEEK_NORMAL</tt> but no error will be thrown if the exact destination has to be guessed.</li>
-<li><b><tt>FFMS_SEEK_AGGRESSIVE</tt></b> - Aggressive. Seeks in the forward direction even if no closer keyframe is known to exist. Only useful for testing and containers where libavformat doesn't report keyframes properly.</li></ul></p>
+<li><b><tt>FFMS_SEEK_AGGRESSIVE</tt></b> - Aggressive. Seeks in the forward direction even if no closer keyframe is known to exist. Only useful for testing and containers where libavformat doesn't report keyframes properly.</li></ul>
 
 <h3>FFMS_TrackType</h3>
-<p><pre>enum FFMS_TrackType {
+<pre>enum FFMS_TrackType {
 	FFMS_TYPE_UNKNOWN = -1,
 	FFMS_TYPE_VIDEO,
 	FFMS_TYPE_AUDIO,
@@ -659,24 +630,24 @@ Used in <tt>FFMS_CreateVideoSource</tt> to control the way seeking is handled. E
 	FFMS_TYPE_SUBTITLE,
 	FFMS_TYPE_ATTACHMENT
 };</pre>
+<p>
 Used for determining the type of a given track. Note that there are currently no functions to handle any type of track other than <tt>FFMS_TYPE_VIDEO</tt> and <tt>FFMS_TYPE_AUDIO</tt>. See <tt>FFMS_GetTrackType</tt>, <tt>FFMS_GetFirstTrackOfType</tt> and their variants.
 </p>
 
 <h3>FFMS_CC</h3>
-<p>
 <pre>#ifdef _WIN32
 #	define FFMS_CC __stdcall
 #else
 #	define FFMS_CC
 #endif
 </pre>
+<p>
 The calling convention used by FFMS2 API functions and callbacks. Defined to <tt>__stdcall</tt> if <tt>_WIN32</tt> is defined. Otherwise defined, but not used.
 </p>
 
 
 <h2>Audio Filename Format Strings</h2>
-<p>
-The following variables can be used:
+<p>The following variables can be used:</p>
 <ul>
 <li>%sourcefile% - same as the source file name, i.e. the file the audio is decoded from</li>
 <li>%trackn% - the track number</li>
@@ -686,6 +657,7 @@ The following variables can be used:
 <li>%bps% - bits per sample</li>
 <li>%delay% - delay, or more exactly the first timestamp encountered in the audio stream</li>
 </ul>
+<p>
 Example string: <tt>%sourcefile%_track%trackzn%.w64</tt>
 </p>
 
@@ -700,9 +672,9 @@ short  long name       short   long option     Description
                        y       nochrom         chrominance filtering disabled
                        n       noluma          luma filtering disabled
 hb     hdeblock        (2 threshold)           horizontal deblocking filter
-       1. difference factor: default=32, higher -> more deblocking
-       2. flatness threshold: default=39, lower -> more deblocking
-                       the h & v deblocking filters share these
+       1. difference factor: default=32, higher -&gt; more deblocking
+       2. flatness threshold: default=39, lower -&gt; more deblocking
+                       the h &amp; v deblocking filters share these
                        so you can't set different thresholds for h / v
 vb     vdeblock        (2 threshold)           vertical deblocking filter
 ha     hadeblock       (2 threshold)           horizontal deblocking filter
@@ -722,10 +694,10 @@ de     default                                 hb:a,vb:a,dr:a
 fa     fast                                    h1:a,v1:a,dr:a
 ac                                             ha:a:128:7,va:a,dr:a
 tn     tmpnoise        (3 threshold)           temporal noise reducer
-                     1. <= 2. <= 3.            larger -> stronger filtering
-fq     forceQuant      <quantizer>             force quantizer
+                     1. &lt;= 2. &lt;= 3.            larger -&gt; stronger filtering
+fq     forceQuant      &lt;quantizer&gt;             force quantizer
 Usage:
-<filterName>[:<option>[:<option>...]][[,|/][-]<filterName>[:<option>...]]...
+&lt;filterName&gt;[:&lt;option&gt;[:&lt;option&gt;...]][[,|/][-]&lt;filterName&gt;[:&lt;option&gt;...]]...
 long form example:
 vdeblock:autoq/hdeblock:autoq/linblenddeint    default,-vdeblock
 short form example:

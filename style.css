@@ -1,0 +1,41 @@
+body {
+	background-color: #fffffb;
+	font-family: sans-serif;
+	font-size: 9pt;
+}
+table {
+	border-collapse: collapse;
+	margin: 3pt;
+	font-family: sans-serif;
+	font-size: 9pt;
+}
+td {
+	padding: 1pt;
+	padding-left: 3pt;
+	padding-right: 3pt;
+}
+td.minpadding {
+	padding: 1pt;
+}
+th {
+	padding: 1pt;
+	padding-left: 3pt;
+	padding-right: 3pt;
+}
+a:link {
+	color: #40b070;
+}
+a:visited {
+	color: #103020;
+}
+h1 {
+	margin: 0pt;
+}
+img {
+	border-width: 0px;
+}
+img.w3cicon {
+	width: 88px;
+	height: 31px;
+}
+
