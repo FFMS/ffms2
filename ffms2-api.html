@@ -8,6 +8,7 @@ FFmpegSource2 API Documentation
 <link href="style.css" media="screen" rel="Stylesheet" type="text/css" />
 </head>
 <body>
+<div class="maincontent">
 <h1>FFmpegSource2 API Documentation</h1>
 <p>
 FFmpegSource2 (FFMS2) is a wrapper library around ffmpeg, plus some additional components to deal with file formats libavformat has (or used to have) problems with. It gives you a convenient way to say "open and decompress this media file for me, I don't care how you do it", without having to bother with the sometimes less than straightforward and less than perfectly documented ffmpeg internals. May be frame and/or sample accurate on good days. The library is written in C++, but the public API is C-friendly and it should be possible to simply include and link directly with a pure C application. </p>
@@ -26,7 +27,7 @@ FFMS2 does not mux or encode anything. FFMS2 does not give you fine control over
 <p>FFMS2 has the following dependencies:</p>
 <ul>
 <li><b><a href="http://www.ffmpeg.org">ffmpeg</a></b> (no, really)
-<ul><li>Revision <del>18378 (2009-04-08) or later</del> very fucking recent (usually latest SVN) is required.</li>
+<ul><li>Revision <del>18378 (2009-04-08) or later</del> something very fucking recent (usually latest SVN; in fact just use the latest SVN revision you can get to compile) is required.</li>
 <li>Needs to have libpostproc and libswscale compiled in (pass <tt>--enable-gpl --enable-postproc --enable-swscale</tt> to its ./configure).</li>
 <li>If you're on Win32 you need to pass <tt>--enable-memalign-hack</tt> to ffmpeg's ./configure as well.</li>
 </ul>
@@ -37,7 +38,7 @@ FFMS2 does not mux or encode anything. FFMS2 does not give you fine control over
 Compiling the library itself is fairly straightforward, although you do need to note that some parts of the library are Windows-only, and that the source contains (in addition to the library itself) code for an Avisynth source filter, a standalone indexing application and a basic (but not yet very functional) automatic regression test tool. Take a look in <tt>Compiling.txt</tt> in the source tree if you are confused as to which files you need to compile and which ones you can ignore.
 </p>
 <p>
-If you are compiling with Microsoft Visual C++, you need to <tt>#define FFMS_EXPORTS</tt> somewhere when building the library. You may also <tt>#define HAALISOURCE</tt> if you wish to read MPEG-TS and OGM using Haali's DirectShow filter instead of relying on ffmpeg's somewhat less than optimal handling of these formats. Note that this part of the library is the Windows-only part mentioned above, and that using it requires that the user has the Haali Media Splitter DirectShow filter installed.
+If you are compiling with Microsoft Visual C++, you need to <tt>#define FFMS_EXPORTS</tt> somewhere when building the library. You may also <tt>#define HAALISOURCE</tt> if you wish to read MPEG-TS/PS and OGM using Haali's DirectShow filter instead of relying on ffmpeg's somewhat less than optimal handling of these formats. Note that this part of the library is the Windows-only part mentioned above, and that using it requires that the user has the Haali Media Splitter DirectShow filter installed.
 </p>
 
 
@@ -52,10 +53,10 @@ If you don't want to know anything about anything and just want to open some vid
 #endif
 
 int main (...) {
-	/* If you are on Windows you should first initialize COM, or all MPEG-TS/OGM
+	/* If you are on Windows you should first initialize COM, or all MPEG-TS/PS and OGM
 	files may return an error when you try to open them (if the library was built
 	with HAALISOURCE defined). All other formats will work normally. */
-	#ifdef _WIN32
+#ifdef _WIN32
 	bool com_inited = false;
 	HRESULT res = CoInitializeEx(NULL, COINIT_MULTITHREADED);
 	if (SUCCEEDED(res)) 
@@ -63,7 +64,7 @@ int main (...) {
 	else if (res != RPC_E_CHANGED_MODE) {
 		/* com initialization failed, handle error */
 	}
-	#endif
+#endif
 
 	/* Initialize the library itself */
 	FFMS_Init();
@@ -111,7 +112,7 @@ int main (...) {
 	To get the name of a given pixel format, strip the leading PIX_FMT_
 	and convert to lowercase. For example, PIX_FMT_YUV420P becomes "yuv420p". */
 	int pixfmt = 1 &lt;&lt; FFMS_GetPixFmt("bgra");
-	if (FFMS_SetOutputFormat(videosource, (int64_t)pixfmt, videoprops-&gt;Width, videoprops-&gt;Height, errmsg, msgsize)) {
+	if (FFMS_SetOutputFormatV(videosource, (int64_t)pixfmt, videoprops-&gt;Width, videoprops-&gt;Height, errmsg, msgsize)) {
 		/* handle error */
 	}
 
@@ -126,10 +127,10 @@ int main (...) {
 
 	/* now it's time to clean up */
 	FFMS_DestroyVideoSource(videosource);
-	#ifdef _WIN32
+#ifdef _WIN32
 	if (com_inited)
 		CoUninitialize();
-	#endif
+#endif
 	
 	exit 0;
 }
@@ -243,7 +244,7 @@ Deallocates the given <tt>FFVideo</tt> object and frees the memory allocated by 
 
 <h3>FFMS_GetVideoProperties - retrieves video properties</h3>
 <pre>const TVideoProperties *FFMS_GetVideoProperties(FFVideo *V)</pre>
-<p>Retreives the video properties from the given <tt>FFVideo</tt> object and stores them in a <tt>TVideoProperties</tt> struct (see the "Data Structures" section below). Returns a pointer to said struct.
+<p>Retreives the video properties from the given <tt>FFVideo</tt> object and stores them in a <tt>TVideoProperties</tt> struct (see the Data Structures section below). Returns a pointer to said struct.
 </p>
 
 <h3>FFMS_GetAudioProperties - retrieves audio properties</h3>
@@ -253,7 +254,7 @@ Deallocates the given <tt>FFVideo</tt> object and frees the memory allocated by 
 
 <h3>FFMS_GetFrame - retrieves a given video frame</h3>
 <pre>const TAVFrameLite *FFMS_GetFrame(FFVideo *V, int n, char *ErrorMsg, unsigned MsgSize)</pre>
-<p>Gets and decodes a video frame from the video stream represented by the given <tt>FFVideo</tt> object and stores it in a <tt>TAVFrameLite</tt> struct. The colorspace and resolution of the frame can be changed by calling <tt>FFMS_SetOutputFormat</tt> with the appropriate parameters before calling this function. Note that this function is not threadsafe; you can only request one frame at a time from a given <tt>FFVideo</tt> object.
+<p>Gets and decodes a video frame from the video stream represented by the given <tt>FFVideo</tt> object and stores it in a <tt>TAVFrameLite</tt> struct. The colorspace and resolution of the frame can be changed by calling <tt>FFMS_SetOutputFormatV</tt> with the appropriate parameters before calling this function. Note that this function is not threadsafe; you can only request one frame at a time from a given <tt>FFVideo</tt> object.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFVideo *V</tt></b><br />
@@ -287,16 +288,16 @@ See above.</p>
 <h4>Return values</h4>
 <p>Returns 0 on success. Returns non-0 and sets <tt>ErrorMsg</tt> on failure.</p>
 
-<h3>FFMS_SetOutputFormat - sets the output format for video frames</h3>
-<pre>int FFMS_SetOutputFormat(FFVideo *V, int64_t TargetFormats, int Width, int Height,
+<h3>FFMS_SetOutputFormatV - sets the output format for video frames</h3>
+<pre>int FFMS_SetOutputFormatV(FFVideo *V, int64_t TargetFormats, int Width, int Height,
 	char *ErrorMsg, unsigned MsgSize)</pre>
-<p>Sets the colorspace and frame dimensions to be used for output of frames from the given <tt>FFVideo</tt> by all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt>, until next time you call <tt>FFMS_SetOutputFormat</tt> or <tt>FFMS_ResetOutputFormat</tt>. You can change the output format at any time without having to reinitialize the <tt>FFVideo</tt> object or anything else. Can be used to convert the video to grayscale or monochrome if you are so inclined. If you provided a list of more than one colorspace/pixelformat, you may want to use <tt>FFMS_GetVideoProperties</tt> afterwards to see which one got selected.
+<p>Sets the colorspace and frame dimensions to be used for output of frames from the given <tt>FFVideo</tt> by all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt>, until next time you call <tt>FFMS_SetOutputFormatV</tt> or <tt>FFMS_ResetOutputFormatV</tt>. You can change the output format at any time without having to reinitialize the <tt>FFVideo</tt> object or anything else. Can be used to convert the video to grayscale or monochrome if you are so inclined. If you provided a list of more than one colorspace/pixelformat, you may want to use <tt>FFMS_GetVideoProperties</tt> afterwards to see which one got selected.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFVideo *V</tt></b><br />
 A pointer to the <tt>FFVideo</tt> object that represents the video stream you want to change the output format for.</p>
 <p><b><tt>int64_t TargetFormats</tt></b><br />
-The desired output colorspace(s). You may binary OR several colorspaces you are willing to accept together; the function will then choose the colorspace that gives the least lossy conversion from the source colorspace. To get the integer constant representing a given colorspace, see <tt>FFMS_GetPixFmt</tt>. Once you have the integer constant(s), shift 1 left by each constant to get the value suitable for passing as this argument. Example: <tt>int64_t targetformats = (1 &lt;&lt; pixfmt1) | (1 &lt;&lt; pixfmt2) | (1 &lt;&lt; pixfmt3);</tt></p>
+The desired output colorspace(s). You may binary OR several colorspaces you are willing to accept together; the function will then choose the colorspace that gives the least lossy conversion from the source colorspace. To get the integer constant representing a given colorspace, see <tt>FFMS_GetPixFmt</tt>. Once you have the integer constant(s), shift 1 left by each constant to get the value suitable for passing as this argument. Example:<br /><tt>int64_t targetformats = (1 &lt;&lt; pixfmt1) | (1 &lt;&lt; pixfmt2) | (1 &lt;&lt; pixfmt3);</tt></p>
 <p><b><tt>int Width, int Height</tt></b><br />
 The desired image dimensions, in pixels. If you do not want to resize just pass the input dimensions. Passing invalid dimensions (like 0 or negative) has undefined behavior.</p>
 <p><b><tt>char *ErrorMsg, unsigned MsgSize</tt></b><br />
@@ -304,9 +305,9 @@ See above.</p>
 <h4>Return values</h4>
 <p>Returns 0 on success. Returns non-0 and sets <tt>ErrorMsg</tt> on failure.</p>
 
-<h3>FFMS_ResetOutputFormat - resets the video output format</h3>
-<pre>void FFMS_ResetOutputFormat(FFVideo *V)</pre>
-<p>Resets the output format for the given <tt>FFVideo</tt> object so that no conversion takes place. Is a shorthand way of saying <tt>FFMS_SetOutputFormat(V, TVideoProperties->VPixelFormat, TVideoProperties->Width, TVideoProperties->Height, ErrorMsg, MsgSize)</tt>.
+<h3>FFMS_ResetOutputFormatV - resets the video output format</h3>
+<pre>void FFMS_ResetOutputFormatV(FFVideo *V)</pre>
+<p>Resets the output format for the given <tt>FFVideo</tt> object so that no conversion takes place. Is a shorthand way of saying <tt>FFMS_SetOutputFormatV(V, TVideoProperties->VPixelFormat, TVideoProperties->Width, TVideoProperties->Height, ErrorMsg, MsgSize)</tt>.
 </p>
 
 <h3>FFMS_DestroyFFIndex - deallocates an index object</h3>
@@ -365,7 +366,7 @@ See above.</p>
 
 <h3>FFMS_GetFrameInfo - gets information about a given frame</h3>
 <pre>const FFFrameInfo *FFMS_GetFrameInfo(FFTrack *T, int Frame)</pre>
-<p>Gets information about the given frame (identified by its frame number) from the indexing information in the given <tt>FFTrack</tt> and stores it in a <tt>FFFrameInfo</tt> struct. See the "Data Structures" section below for more information. Using this function on a <tt>FFTrack</tt> representing a non-video track has undefined behavior.
+<p>Gets information about the given frame (identified by its frame number) from the indexing information in the given <tt>FFTrack</tt> and stores it in a <tt>FFFrameInfo</tt> struct. See the Data Structures section below for more information. Using this function on a <tt>FFTrack</tt> representing a non-video track has undefined behavior.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFTrack *T</tt></b><br />
@@ -428,7 +429,7 @@ The filename of the media file to index. Can be a relative or absolute path.</p>
 <p><b><tt>int IndexMask, int DumpMask</tt></b><br />
 Binary masks of the track numbers of the audio tracks to index and decode to disk, respectively. Pass 0 to index/decode no audio tracks, or -1 to index/decode all. Decoding a track means it will automatically be indexed regardless of what the <tt>IndexMask</tt> says, but indexing a track does not automatically mean that it will be decoded.</p>
 <p><b><tt>TAudioNameCallback ANC</tt></b><br />
-A function pointer to a callback function that will generate the filename(s) for the dumped audio tracks. To get the default filename(s), pass <tt>&amp;FFMS_DefaultAudioFilename</tt>. See Callbacks below for details if you want to write your own function. If the <tt>DumpMask</tt> is 0, you may pass NULL here.
+A function pointer to a callback function that will generate the filename(s) for the dumped audio tracks. To get the default filename(s), pass <tt>&amp;FFMS_DefaultAudioFilename</tt>. See <i>Callbacks</i> below for details if you want to write your own function. If the <tt>DumpMask</tt> is 0, you may pass NULL here.
 </p>
 <p><b><tt>void *ANCPrivate</tt></b><br />
 A pointer of your choice that will be passed as an argument to the audio filename generation callback function. See <i>Callbacks</i> below for details. If <tt>DumpMask</tt> is 0, you may pass NULL here. If you are using <tt>FFMS_DefaultAudioFilename</tt>, you must pass a format string here. See the Audio Filename Format Strings section for details.
@@ -503,7 +504,7 @@ The callback function's arguments are as follows:</p>
 
 <h3>FFMS_GetPixFmt - gets a colorspace identifier from a colorspace name</h3>
 <pre>int FFMS_GetPixFmt(const char *Name)</pre>
-<p>Translates a given colorspace/pixel format <tt>Name</tt> to an integer constant representing it, suitable for passing to <tt>FFMS_SetOutputFormat</tt> (after some manipulation, see that function for details). This function exists so that you don't have to include a ffmpeg header file in every single program you ever write. For a list of colorspaces and their names, see <tt>libavutil/pixfmt.h</tt>. To get the name of a colorspace, strip the leading <tt>PIX_FMT_</tt> and convert the remainder to lowercase. For example, the name of <tt>PIX_FMT_YUV420P</tt> is <tt>yuv420p</tt>. It is strongly recommended to use this function instead of including pixfmt.h directly, since this function guarantees that you will always get the constant definitions from the version of ffmpeg that FFMS2 was linked against.
+<p>Translates a given colorspace/pixel format <tt>Name</tt> to an integer constant representing it, suitable for passing to <tt>FFMS_SetOutputFormatV</tt> (after some manipulation, see that function for details). This function exists so that you don't have to include a ffmpeg header file in every single program you ever write. For a list of colorspaces and their names, see <tt>libavutil/pixfmt.h</tt>. To get the name of a colorspace, strip the leading <tt>PIX_FMT_</tt> and convert the remainder to lowercase. For example, the name of <tt>PIX_FMT_YUV420P</tt> is <tt>yuv420p</tt>. It is strongly recommended to use this function instead of including pixfmt.h directly, since this function guarantees that you will always get the constant definitions from the version of ffmpeg that FFMS2 was linked against.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>const char *Name</tt></b><br />
@@ -576,7 +577,7 @@ A struct representing the basic time unit of a track, as a rational number where
 <li><b><tt>int Width; int Height;</tt></b> - The width and height of the video frames, in pixels.</li>
 <li><b><tt>int FPSDenominator; int FPSNumerator;</tt></b> - The nominal framerate of the track, as a rational number. For Matroska files, this number is based on the average frame duration of all frames, while for everything else it's based on the duration of the first frame. While it might seem tempting to use these values to extrapolate wallclock timestamps for each frame, you really shouldn't do that since it makes your code unable to handle variable framerate properly. The ugly reality is that these values are pretty much only useful for informational purposes; they are only somewhat reliable for antiquated containers like AVI. Normally they should never be used for practical purposes; generate individual frame timestamps from <tt>FFFrameInfo-&gt;DTS</tt> instead.</li>
 <li><b><tt>int NumFrames;</tt></b> - The number of frames in the video track.</li>
-<li><b><tt>int VPixelFormat;</tt></b> - An integer constant representing the colorspace/pixel format of the video frames output by <tt>FFMS_GetFrame</tt> and its variants, as set by <tt>FFMS_SetOutputFormat</tt> and <tt>FFMS_ResetOutputFormat</tt>. See also <tt>FFMS_GetPixFmt</tt> and <tt>libavutil/pixfmt.h</tt>.</li>
+<li><b><tt>int VPixelFormat;</tt></b> - An integer constant representing the colorspace/pixel format of the video frames output by <tt>FFMS_GetFrame</tt> and its variants, as set by <tt>FFMS_SetOutputFormatV</tt> and <tt>FFMS_ResetOutputFormatV</tt>. See also <tt>FFMS_GetPixFmt</tt> and <tt>libavutil/pixfmt.h</tt>.</li>
 <li><b><tt>int SARNum; int SARDen;</tt></b> - The sample aspect ratio of the video frames, as a rational number where <tt>SARNum</tt> is the numerator and <tt>SARDen</tt> is the denominator.</li>
 <li><b><tt>int CropTop; int CropBottom; int CropLeft; int CropRight;</tt></b> - The number of pixels the video frame should be cropped in each direction before being displayed.</li>
 <li><b><tt>double FirstTime; double LastTime;</tt></b> - The first and last timestamp of the stream respectively, in milliseconds. Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.</li>
@@ -683,7 +684,7 @@ h1     x1hdeblock                              experimental h deblock filter 1
 v1     x1vdeblock                              experimental v deblock filter 1
 dr     dering                                  deringing filter
 al     autolevels                              automatic brightness / contrast
-                       f        fullyrange     stretch luminance to (0..255)
+f      fullyrange                              stretch luminance to (0..255)
 lb     linblenddeint                           linear blend deinterlacer
 li     linipoldeint                            linear interpolating deinterlace
 ci     cubicipoldeint                          cubic interpolating deinterlacer
@@ -705,6 +706,8 @@ vb:a/hb:a/lb                                   de,-vb
 more examples:
 tn:64:128:256
 </pre>
+
+</div>
 
 </body>
 </html>
