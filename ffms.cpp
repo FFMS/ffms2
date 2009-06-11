@@ -239,7 +239,7 @@ FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const
 	ReplaceString(s, "%samplerate%", IntToStr(AP->SampleRate));
 	ReplaceString(s, "%channels%", IntToStr(AP->Channels));
 	ReplaceString(s, "%bps%", IntToStr(AP->BitsPerSample));
-	ReplaceString(s, "%delay%", IntToStr(AP->FirstTime));
+	ReplaceString(s, "%delay%", IntToStr(static_cast<int>(AP->FirstTime)));
 	
 	if (FileName == NULL) {
 		return s.length() + 1;

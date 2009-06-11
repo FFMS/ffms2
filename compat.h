@@ -22,9 +22,14 @@
 #define	COMPAT_H
 
 #ifdef _WIN32
-#define snprintf _snprintf
-#define fseeko _fseeki64
-#define ftello _ftelli64
+#	define snprintf _snprintf
+#	ifdef __MINGW32__
+#		define fseeko fseeko64
+#		define ftello ftello64
+#	else
+#		define fseeko _fseeki64
+#		define ftello _ftelli64
+#	endif
 #endif
 
 #endif // COMPAT_H

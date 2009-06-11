@@ -109,7 +109,7 @@ FFVideo::~FFVideo() {
 }
 
 TAVFrameLite *FFVideo::GetFrameByTime(double Time, char *ErrorMsg, unsigned MsgSize) {
-	int Frame = Frames.ClosestFrameFromDTS((Time * 1000 * Frames.TB.Den) / Frames.TB.Num);
+	int Frame = Frames.ClosestFrameFromDTS(static_cast<int64_t>((Time * 1000 * Frames.TB.Den) / Frames.TB.Num));
 	return GetFrame(Frame, ErrorMsg, MsgSize);
 }
 
