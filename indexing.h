@@ -21,6 +21,7 @@
 #ifndef INDEXING_H
 #define	INDEXING_H
 
+#include <memory>
 #include "utils.h"
 #include "wave64writer.h"
 

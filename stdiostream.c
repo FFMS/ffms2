@@ -20,6 +20,7 @@
 
 #include "stdiostream.h"
 #include "compat.h"
+#include <errno.h>
 
 /* StdIoStream methods */
 
