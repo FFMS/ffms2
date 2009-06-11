@@ -45,7 +45,7 @@
 #define	EVCBUG
 #endif
 
-#include "MatroskaParser.h"
+#include "matroskaparser.h"
 
 #ifdef MATROSKA_COMPRESSION_SUPPORT
 #include <zlib.h>

@@ -35,7 +35,7 @@ SET(FFMS2_LIBS ${FFMPEG_LIBRARIES} ${FFMPEG_SWS_LIBRARIES}
             ${FFMPEG_PP_LIBRARIES} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES}
             ${EXTRA_LIBS})
             
-SET(FFMS2_SRCS MatroskaParser.c stdiostream.c ffaudiosource.cpp
+SET(FFMS2_SRCS matroskaparser.c stdiostream.c ffaudiosource.cpp
                ffhaaliaudio.cpp fflavfaudio.cpp ffmatroskaaudio.cpp
                ffvideosource.cpp ffhaalivideo.cpp fflavfvideo.cpp
                ffmatroskavideo.cpp ffms.cpp wave64writer.cpp utils.cpp
