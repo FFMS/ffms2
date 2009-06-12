@@ -25,9 +25,9 @@
 #include "ffms.h"
 #include "ffmscompat.h"
 #include "matroskaparser.h"
-#include "stdiostream.h"
 
 extern "C" {
+#include "stdiostream.h"
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
