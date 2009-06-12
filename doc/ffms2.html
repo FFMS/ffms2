@@ -1,13 +1,17 @@
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <title>
-FFmpegSource2 Documentation
+FFmpegSource2 User Manual
 </title>
+<link href="style.css" media="screen" rel="Stylesheet" type="text/css" />
 </head>
 <body>
-<h1>FFmpegSource2 Documentation</h1>
+<div class="maincontent">
+<h1>FFmpegSource2 User Manual</h1>
 <p>
-Opens files using ffmpeg and nothing else. May be frame accurate on good days. The source is MIT licensed and can be obtained from "http://svn.aegisub.net/trunk/aegisub/FFmpegSource2/". The precompiled binary is GPL licensed. If you are religious you may consider this the second coming.
+Opens files using ffmpeg and nothing else. May be frame accurate on good days. The source is MIT licensed and can be obtained from <a href="http://code.google.com/p/ffmpegsource/source/checkout">http://code.google.com/p/ffmpegsource/source/checkout</a>. The precompiled binary is GPL licensed. If you are religious you may consider this the second coming.
 </p>
 
 <h2>Known issues</h2>
@@ -71,10 +75,12 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
   A resizing filter that does nothing special at all
 </p>
 
+<p>
 <b>FFSetLogLevel(int Level)</b><br />
   Sets the log FFmpeg logging level, defaults to quiet (-8) and the FFmpeg default is 16, all different values can be found in avutil/log.h
 </p>
 
+<p>
 <b>FFGetLogLevel()</b><br />
   Returns the current level of logging as an int
 </p>
@@ -92,6 +98,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 <p>
 <b>audiofile:</b>
   The filename to use for dumped audio tracks. Make sure to include a track number variable to avoid multiple file access errors. The variables are case sensitive. The available variables are:
+</p>
 <ul>
 <li>%sourcefile% - same as the source argument, the file the audio is decoded from</li>
 <li>%trackn% - the track number</li>
@@ -101,7 +108,6 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 <li>%bps% - bits per sample</li>
 <li>%delay% - delay, or more exactly the first timestamp encountered in the audio stream</li>
 </ul>
-</p>
 
 <p>
 <b>overwrite:</b>
@@ -115,7 +121,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <p>
 <b>fpsnum &amp; fpsden:</b>
-  For VFR -> CFR conversion. Setting fpsnum <= 0 means a 1:1 relation with the encoded frames.
+  For VFR -&gt; CFR conversion. Setting fpsnum &lt;= 0 means a 1:1 relation with the encoded frames.
 </p>
 
 <p>
@@ -182,16 +188,17 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 <p>
 <b>FFPICT_TYPE:</b>
  The picture type of the most recently requested frame. Use after_frame=true in Avisynth's conditional scripting for proper results. The FFmpeg source definition of the numbers:
+</p>
 <pre>
-FF_I_TYPE  1 ///< Intra
-FF_P_TYPE  2 ///< Predicted
-FF_B_TYPE  3 ///< Bi-dir predicted
-FF_S_TYPE  4 ///< S(GMC)-VOP MPEG4
-FF_SI_TYPE 5 ///< Switching Intra
-FF_SP_TYPE 6 ///< Switching Predicted
+FF_I_TYPE  1 ///&lt; Intra
+FF_P_TYPE  2 ///&lt; Predicted
+FF_B_TYPE  3 ///&lt; Bi-dir predicted
+FF_S_TYPE  4 ///&lt; S(GMC)-VOP MPEG4
+FF_SI_TYPE 5 ///&lt; Switching Intra
+FF_SP_TYPE 6 ///&lt; Switching Predicted
 FF_BI_TYPE 7
 </pre>
-</p>
+
 
 
 <h2>PP string format</h2>
@@ -204,9 +211,9 @@ short  long name       short   long option     Description
                        y       nochrom         chrominance filtering disabled
                        n       noluma          luma filtering disabled
 hb     hdeblock        (2 threshold)           horizontal deblocking filter
-       1. difference factor: default=32, higher -> more deblocking
-       2. flatness threshold: default=39, lower -> more deblocking
-                       the h & v deblocking filters share these
+       1. difference factor: default=32, higher -&amp;gt; more deblocking
+       2. flatness threshold: default=39, lower -&amp;gt; more deblocking
+                       the h &amp; v deblocking filters share these
                        so you can't set different thresholds for h / v
 vb     vdeblock        (2 threshold)           vertical deblocking filter
 ha     hadeblock       (2 threshold)           horizontal deblocking filter
@@ -226,10 +233,10 @@ de     default                                 hb:a,vb:a,dr:a
 fa     fast                                    h1:a,v1:a,dr:a
 ac                                             ha:a:128:7,va:a,dr:a
 tn     tmpnoise        (3 threshold)           temporal noise reducer
-                     1. <= 2. <= 3.            larger -> stronger filtering
-fq     forceQuant      <quantizer>             force quantizer
+                     1. &amp;lt;= 2. &amp;lt;= 3.            larger -&amp;gt; stronger filtering
+fq     forceQuant      &amp;lt;quantizer&amp;gt;             force quantizer
 Usage:
-<filterName>[:<option>[:<option>...]][[,|/][-]<filterName>[:<option>...]]...
+&amp;lt;filterName&amp;gt;[:&amp;lt;option&amp;gt;[:&amp;lt;option&amp;gt;...]][[,|/][-]&amp;lt;filterName&amp;gt;[:&amp;lt;option&amp;gt;...]]...
 long form example:
 vdeblock:autoq/hdeblock:autoq/linblenddeint    default,-vdeblock
 short form example:
@@ -247,7 +254,7 @@ tn:64:128:256
 <p><b>pthreads</b> only required for FFmpeg-mt compiles</p>
 
 <p><b>Required FFmpeg Configuration:</b>
-./configure --enable-memalign-hack --enable-gpl --enable-postproc
+./configure --enable-memalign-hack --enable-gpl --enable-postproc</p>
 
 <p><b>Suggested Additional Options:</b>
 --enable-w32threads --disable-encoders --disable-muxers --disable-network --disable-debug --enable-libfaad --disable-decoder=aac</p>
@@ -259,7 +266,6 @@ Note that --enable-w32threads or --enable-pthreads is required for multithreaded
 <h2>Changes</h2>
 <ul>
 <li>2.00 beta 10<ul>
-<li>Added proper API documentation by TheFluff</li>
 <li>The output audio filename can now be specified in avisynth (was ignored previously) with variables such as track number and delay possible to use</li>
 <li>Indexing with Haali's splitters should now show progress in most cases</li>
 <li>Fixed a few more memory leaks in indexing</li>
@@ -354,6 +360,8 @@ Note that --enable-w32threads or --enable-pthreads is required for multithreaded
 </ul></li>
 
 </ul>
+
+</div>
 
 </body>
 </html>
