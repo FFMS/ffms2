@@ -18,8 +18,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#ifndef COMPAT_H
-#define	COMPAT_H
+#ifndef FFMSCOMPAT_H
+#define	FFMSCOMPAT_H
 
 #ifdef _WIN32
 #	define snprintf _snprintf
@@ -32,4 +32,4 @@
 #	endif
 #endif
 
-#endif // COMPAT_H
+#endif // FFMSCOMPAT_H
