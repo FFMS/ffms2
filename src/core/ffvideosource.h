@@ -30,8 +30,8 @@ extern "C" {
 
 #include <vector>
 #include "indexing.h"
-#include <utils.h>
-#include <ffms.h>
+#include "utils.h"
+#include "ffms.h"
 
 #ifdef HAALISOURCE
 #	define _WIN32_DCOM

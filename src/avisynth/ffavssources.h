@@ -23,7 +23,7 @@
 
 #include <windows.h>
 #include "avisynth.h"
-#include <ffms.h>
+#include "ffms.h"
 
 class AvisynthVideoSource : public IClip {
 private:

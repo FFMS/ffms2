@@ -23,7 +23,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <utils.h>
+#include "utils.h"
 #include "indexing.h"
 
 #ifdef _MSC_VER
