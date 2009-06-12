@@ -26,7 +26,7 @@ extern "C" {
 #include <cassert>
 #include <iostream>
 #include <fstream>
-#include "ffms.h"
+#include <ffms.h>
 
 using namespace std;
 

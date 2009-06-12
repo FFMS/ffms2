@@ -24,7 +24,7 @@ extern "C" {
 
 #include <sstream>
 #include <iomanip>
-#include "ffms.h"
+#include <ffms.h>
 #include "ffvideosource.h"
 #include "ffaudiosource.h"
 #include "indexing.h"

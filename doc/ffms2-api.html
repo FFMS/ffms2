@@ -28,6 +28,7 @@ FFMS2 does not mux or encode anything. FFMS2 does not give you fine control over
 <ul>
 <li><b><a href="http://www.ffmpeg.org">ffmpeg</a></b> (no, really)
 <ul><li>Revision <del>18378 (2009-04-08) or later</del> something very fucking recent (usually latest SVN; in fact just use the latest SVN revision you can get to compile) is required.</li>
+<li><a href="http://gitorious.org/ffmpeg/ffmpeg-mt">ffmpeg-mt</a> with pthreads may also be used instead.</li>
 <li>Needs to have libpostproc and libswscale compiled in (pass <tt>--enable-gpl --enable-postproc --enable-swscale</tt> to its ./configure).</li>
 <li>If you're on Win32 you need to pass <tt>--enable-memalign-hack</tt> to ffmpeg's ./configure as well.</li>
 </ul>

@@ -19,7 +19,7 @@
 //  THE SOFTWARE.
 
 #include <string>
-#include "ffms.h"
+#include <ffms.h>
 #include "ffavssources.h"
 #include "ffswscale.h"
 #include "ffpp.h"

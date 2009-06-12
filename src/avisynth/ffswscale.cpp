@@ -19,7 +19,7 @@
 //  THE SOFTWARE.
 
 #include "ffswscale.h"
-#include "utils.h"
+#include <utils.h>
 
 static PixelFormat CSNameToPIXFMT(const char * ACSName, PixelFormat ADefault) {
 	if (!_stricmp(ACSName, ""))

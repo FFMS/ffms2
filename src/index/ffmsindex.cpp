@@ -29,7 +29,7 @@ extern "C" {
 #include <iostream>
 #include <string>
 #include <stdlib.h>
-#include "ffms.h"
+#include <ffms.h>
 #include "ffmscompat.h"
 
 int TrackMask;
