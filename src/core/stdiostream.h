@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "MatroskaParser.h"
+#include "matroskaparser.h"
 
 #define	CACHESIZE 65536
 

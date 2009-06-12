@@ -24,6 +24,8 @@
 #include <vector>
 #include "ffms.h"
 #include "compat.h"
+#include "matroskaparser.h"
+#include "stdiostream.h"
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -31,8 +33,6 @@ extern "C" {
 #include <libswscale/swscale.h>
 #include <libpostproc/postprocess.h>
 #include <libavutil/sha1.h>
-#include "MatroskaParser.h"
-#include "stdiostream.h"
 }
 
 #ifdef HAALISOURCE

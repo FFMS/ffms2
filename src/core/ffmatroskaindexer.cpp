@@ -19,11 +19,11 @@
 //  THE SOFTWARE.
 
 #include "indexing.h"
+#include "matroskaparser.h"
+#include "stdiostream.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
-#include "MatroskaParser.h"
-#include "stdiostream.h"
 }
 
 
