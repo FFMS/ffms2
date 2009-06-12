@@ -30,7 +30,7 @@ extern "C" {
 #include <string>
 #include <stdlib.h>
 #include "ffms.h"
-#include "compat.h"
+#include "ffmscompat.h"
 
 int TrackMask;
 int DumpMask;

@@ -19,7 +19,7 @@
 //  THE SOFTWARE.
 
 #include "stdiostream.h"
-#include "compat.h"
+#include "ffmscompat.h"
 #include <errno.h>
 
 /* StdIoStream methods */
