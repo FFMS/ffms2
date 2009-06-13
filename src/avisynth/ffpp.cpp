@@ -19,7 +19,7 @@
 //  THE SOFTWARE.
 
 #include "ffpp.h"
-#include "../core/utils.h"
+#include "avsutils.h"
 
 FFPP::FFPP(PClip AChild, const char *PP, IScriptEnvironment *Env) : GenericVideoFilter(AChild) {
 	if (!strcmp(PP, ""))
@@ -37,14 +37,14 @@ FFPP::FFPP(PClip AChild, const char *PP, IScriptEnvironment *Env) : GenericVideo
 	if (!PPMode)
 		Env->ThrowError("FFPP: Invalid postprocesing settings");
 
-	int Flags = GetCPUFlags();
+	int Flags = AvisynthToFFCPUFlags(Env->GetCPUFlags());
 
 	if (vi.IsYV12()) {
 		Flags |= PP_FORMAT_420;
 	} else if (vi.IsYUY2()) {
 		Flags |= PP_FORMAT_422;
-		SWSTo422P = sws_getContext(vi.width, vi.height, PIX_FMT_YUYV422, vi.width, vi.height, PIX_FMT_YUV422P, GetCPUFlags() | SWS_BICUBIC, NULL, NULL, NULL);
-		SWSFrom422P = sws_getContext(vi.width, vi.height, PIX_FMT_YUV422P, vi.width, vi.height, PIX_FMT_YUYV422, GetCPUFlags() | SWS_BICUBIC, NULL, NULL, NULL);
+		SWSTo422P = sws_getContext(vi.width, vi.height, PIX_FMT_YUYV422, vi.width, vi.height, PIX_FMT_YUV422P, Flags | SWS_BICUBIC, NULL, NULL, NULL);
+		SWSFrom422P = sws_getContext(vi.width, vi.height, PIX_FMT_YUV422P, vi.width, vi.height, PIX_FMT_YUYV422, Flags | SWS_BICUBIC, NULL, NULL, NULL);
 		avpicture_alloc(&InputPicture, PIX_FMT_YUV422P, vi.width, vi.height);
 		avpicture_alloc(&OutputPicture, PIX_FMT_YUV422P, vi.width, vi.height);
 	} else {

@@ -19,7 +19,7 @@
 //  THE SOFTWARE.
 
 #include "ffswscale.h"
-#include "../core/utils.h"
+#include "avsutils.h"
 
 static PixelFormat CSNameToPIXFMT(const char * ACSName, PixelFormat ADefault) {
 	if (!_stricmp(ACSName, ""))
@@ -111,7 +111,8 @@ SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char 
 		Env->ThrowError("SWScale: mod 2 output width required");
 
 	// may one day need a SWS_CS_DEFAULT in flags
-	Context = sws_getContext(OrigWidth, OrigHeight, ConvertFromFormat, vi.width, vi.height, ConvertToFormat, GetCPUFlags() | Resizer, NULL, NULL, NULL);
+	Context = sws_getContext(OrigWidth, OrigHeight, ConvertFromFormat, vi.width, vi.height, ConvertToFormat,
+		AvisynthToFFCPUFlags(Env->GetCPUFlags()) | Resizer, NULL, NULL, NULL);
 	if (Context == NULL)
 		Env->ThrowError("SWScale: Context creation failed");
 }
