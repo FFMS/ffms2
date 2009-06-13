@@ -11,7 +11,7 @@ FFmpegSource2 API Documentation
 <div class="maincontent">
 <h1>FFmpegSource2 API Documentation</h1>
 <p>
-FFmpegSource2 (FFMS2) is a wrapper library around ffmpeg, plus some additional components to deal with file formats libavformat has (or used to have) problems with. It gives you a convenient way to say "open and decompress this media file for me, I don't care how you do it", without having to bother with the sometimes less than straightforward and less than perfectly documented ffmpeg internals. May be frame and/or sample accurate on good days. The library is written in C++, but the public API is C-friendly and it should be possible to simply include and link directly with a pure C application. </p>
+FFmpegSource2 (FFMS2) is a wrapper library around ffmpeg, plus some additional components to deal with file formats libavformat has (or used to have) problems with. It gives you a convenient way to say "open and decompress this media file for me, I don't care how you do it", without having to bother with the sometimes less than straightforward and less than perfectly documented ffmpeg internals. May be frame and/or sample accurate on good days. The library is written in C++, but the public API is C-friendly and it should be possible to simply include and link directly with a pure C application.</p>
 
 <p>The source is MIT licensed and can be obtained from the Google Code project SVN; see <a href="http://code.google.com/p/ffmpegsource/source/checkout">http://code.google.com/p/ffmpegsource/source/checkout</a>.
 </p>
@@ -28,7 +28,7 @@ FFMS2 does not mux or encode anything. FFMS2 does not give you fine control over
 <ul>
 <li><b><a href="http://www.ffmpeg.org">ffmpeg</a></b> (no, really)
 <ul><li>Revision <del>18378 (2009-04-08) or later</del> something very fucking recent (usually latest SVN; in fact just use the latest SVN revision you can get to compile) is required.</li>
-<li><a href="http://gitorious.org/ffmpeg/ffmpeg-mt">ffmpeg-mt</a> with pthreads may also be used instead.</li>
+<li><a href="http://gitorious.org/ffmpeg/ffmpeg-mt">ffmpeg-mt</a> with pthreads may be used instead of vanilla ffmpeg.</li>
 <li>Needs to have libpostproc and libswscale compiled in (pass <tt>--enable-gpl --enable-postproc --enable-swscale</tt> to its ./configure).</li>
 <li>If you're on Win32 you need to pass <tt>--enable-memalign-hack</tt> to ffmpeg's ./configure as well.</li>
 </ul>
@@ -232,15 +232,11 @@ See above.</p>
 Does exactly the same thing as <tt>FFMS_CreateVideoSource</tt>, but for audio tracks. Arguments and return values are identical. Do note that audio support is somewhat experimental and not guaranteed to be sample-accurate.
 </p>
 
-<h3>FFMS_DestroyVideoSource - deallocates a video source object</h3>
-<pre>void FFMS_DestroyVideoSource(FFVideo *V)</pre>
+<h3>FFMS_DestroyVideoSource, FFMS_DestroyAudioSource - deallocates a video or audio source object</h3>
+<pre>void FFMS_DestroyVideoSource(FFVideo *V)
+void FFMS_DestroyAudioSource(FFAudio *A)</pre>
 <p>
-Deallocates the given <tt>FFVideo</tt> object and frees the memory allocated by <tt>FFMS_CreateVideoSource</tt>.
-</p>
-
-<h3>FFMS_DestroyAudioSource - deallocates an audio source object</h3>
-<pre>void FFMS_DestroyAudioSource(FFAudio *A)</pre>
-<p>Deallocates the given <tt>FFAudio</tt> object and frees the memory allocated by <tt>FFMS_CreateAudioSource</tt>.
+Deallocates the given <tt>FFVideo</tt> or <tt>FFAudio</tt> object and frees the memory allocated by <tt>FFMS_CreateVideoSource</tt> or <tt>FFMS_CreateAudioSource</tt>, respectively.
 </p>
 
 <h3>FFMS_GetVideoProperties - retrieves video properties</h3>
@@ -269,7 +265,7 @@ See above.</p>
 
 <h3>FFMS_GetFrameByTime - retrieves a video frame at a given timestamp</h3>
 <pre>const TAVFrameLite *FFMS_GetFrameByTime(FFVideo *V, double Time, char *ErrorMsg, unsigned MsgSize)</pre>
-<p>Does the exact same thing as <tt>FFMS_GetFrame</tt> except instead of giving it a frame number you give it a timestamp, in seconds, and it will retrieve the frame that starts closest to that timestamp. This function exists for the people who are too lazy to build and traverse a mapping between frame numbers and timestamps themselves.
+<p>Does the exact same thing as <tt>FFMS_GetFrame</tt> except instead of giving it a frame number you give it a timestamp in milliseconds, and it will retrieve the frame that starts closest to that timestamp. This function exists for the people who are too lazy to build and traverse a mapping between frame numbers and timestamps themselves.
 </p>
 
 <h3>FFMS_GetAudio - decodes a number of audio samples</h3>
@@ -352,12 +348,12 @@ See above.</p>
 
 <h3>FFMS_GetTrackTypeI - gets the track type of a given track</h3>
 <pre>FFMS_TrackType FFMS_GetTrackTypeI(FFIndexer *Indexer, int Track)</pre>
-<p>Returns the <tt>FFMS_TrackType</tt> (see the Constants and Preprocessor Definitions section) of the track number <tt>Track</tt> in the media file represented by the given <tt>FFIndexer</tt>. In other words, does the same thing as <tt>FFMS_GetTrackType</tt>, but does not require having indexed the file first. If you have indexed the file, use <tt>FFMS_GetTrackType</tt> instead since the <tt>FFIndexer</tt> object is destructed when the index is created.
+<p>Returns the <tt>FFMS_TrackType</tt> (see the Constants and Preprocessor Definitions section) of the track number <tt>Track</tt> in the media file represented by the given <tt>FFIndexer</tt>. In other words, does the same thing as <tt>FFMS_GetTrackType</tt>, but does not require having indexed the file first. If you have indexed the file, use <tt>FFMS_GetTrackType</tt> instead since the <tt>FFIndexer</tt> object is destructed when the index is created. Note that specifying an invalid track number may lead to undefined behavior.
 </p>
 
 <h3>FFMS_GetCodecNameI - gets the name of the codec used for a given track</h3>
 <pre>const char *FFMS_GetCodecNameI(FFIndexer *Indexer, int Track)</pre>
-<p>Returns the human-readable name ("long name" in ffmpeg terms) of the codec used in the given track number in the media file represented by the given <tt>FFIndexer</tt> object. Useful if you want to, say, pop up a menu asking the user which tracks he or she wishes to index.
+<p>Returns the human-readable name ("long name" in ffmpeg terms) of the codec used in the given track number in the media file represented by the given <tt>FFIndexer</tt> object. Useful if you want to, say, pop up a menu asking the user which tracks he or she wishes to index. Note that specifying an invalid track number may lead to undefined behavior.
 </p>
 
 <h3>FFMS_GetNumFrames - gets the number of frames in a given track</h3>
@@ -391,7 +387,7 @@ The track number, as seen by the relevant demuxer (see <tt>FFMS_GetNumTracks</tt
 <p><b><tt>char *ErrorMsg, unsigned MsgSize</tt></b><br />
 See above.</p>
 <h4>Return values</h4>
-<p>Returns the <tt>FFTrack</tt> on success. Note that requesting indexing information for a track that has not been indexed is not an error, it will just return an empty <tt>FFTrack</tt> (check for >0 frames using <tt>FFMS_GetNumFrames</tt> to see if the returned object actually contains indexing information).</p>
+<p>Returns the <tt>FFTrack</tt> on success. Note that requesting indexing information for a track that has not been indexed will not cause an error, it will just return an empty <tt>FFTrack</tt> (check for >0 frames using <tt>FFMS_GetNumFrames</tt> to see if the returned object actually contains indexing information).</p>
 
 <h3>FFMS_GetTrackFromVideo, FFMS_GetTrackFromAudio - retrieves track info from audio or video source</h3>
 <pre>FFTrack *FFMS_GetTrackFromVideo(FFVideo *V)
@@ -511,7 +507,7 @@ The callback function's arguments are as follows:</p>
 <p><b><tt>const char *Name</tt></b><br />
 The name of the desired colorspace/pixel format.</p>
 <h4>Return values</h4>
-<p>Returns the integer constant representing the given colorspace/pixel format on success. Returns the integer constant representing <tt>PIX_FMT_NONE</tt> (that is -1) on failure (i.e. if no matching colorspace was found), but note that you can call <tt>FFMS_GetPixFmt("none")</tt> and get the same return value without it being a failed call, strictly speaking.</p>
+<p>Returns the integer constant representing the given colorspace/pixel format on success. Returns the integer constant representing <tt>PIX_FMT_NONE</tt> (that is, -1) on failure (i.e. if no matching colorspace was found), but note that you can call <tt>FFMS_GetPixFmt("none")</tt> and get the same return value without it being a failed call, strictly speaking.</p>
 
 
 <h2>Data Structures</h2>
@@ -531,7 +527,7 @@ The following public data structures may be of interest.
 <ul>
 <li><b><tt>uint8_t *Data[4]</tt></b> - An array of pointers to the picture planes (fields containing actual pixel data). Planar formats use more than one plane, for example YV12 uses one plane each for the Y, U and V data. Packed formats (such as the various RGB32 flavors) use only the first plane. If you want to determine if plane <tt>i</tt> contains data or not, check for <tt>Linesize[i] &gt; 0</tt>.</li>
 <li><b><tt>int Linesize[4]</tt></b> - An array of integers representing the length of each scan line in each of the four picture planes, in bytes. In alternative terminology, this is the "pitch" of the plane. The total size in bytes of picture plane <tt>i</tt> is <tt>Linesize[i] * frame_height_in_pixels</tt>.</li>
-<li><b><tt>uint8_t *Base[4]</tt></b> - Internal secrets, no user serviceable parts inside, keep out.</li>
+<li><b><tt>uint8_t *Base[4]</tt></b> - Heavy machinery, no user serviceable parts inside, keep out.</li>
 <li><b><tt>int KeyFrame</tt></b> - Nonzero if the frame is a keyframe, 0 otherwise.</li>
 <li><b><tt>int PictType</tt></b> - The coding type (I/B/P etc) of the compressed frame. See the various <tt>FF_X_TYPE</tt> constant definitions in <tt>libavcodec/avcodec.h</tt> if you want to know what integer represents what type.</li>
 </ul>
@@ -575,7 +571,7 @@ A struct representing the basic time unit of a track, as a rational number where
 };</pre>
 <p>A struct containing metadata about a video track. The fields are:</p>
 <ul>
-<li><b><tt>int Width; int Height;</tt></b> - The width and height of the video frames, in pixels.</li>
+<li><b><tt>int Width; int Height;</tt></b> - The width and height in pixels of the video frames output by calls to <tt>FFMS_GetFrame</tt> and its variants, as set by <tt>FFMS_SetOutputFormatV</tt> and <tt>FFMS_ResetOutputFormatV</tt>.</li>
 <li><b><tt>int FPSDenominator; int FPSNumerator;</tt></b> - The nominal framerate of the track, as a rational number. For Matroska files, this number is based on the average frame duration of all frames, while for everything else it's based on the duration of the first frame. While it might seem tempting to use these values to extrapolate wallclock timestamps for each frame, you really shouldn't do that since it makes your code unable to handle variable framerate properly. The ugly reality is that these values are pretty much only useful for informational purposes; they are only somewhat reliable for antiquated containers like AVI. Normally they should never be used for practical purposes; generate individual frame timestamps from <tt>FFFrameInfo-&gt;DTS</tt> instead.</li>
 <li><b><tt>int NumFrames;</tt></b> - The number of frames in the video track.</li>
 <li><b><tt>int VPixelFormat;</tt></b> - An integer constant representing the colorspace/pixel format of the video frames output by <tt>FFMS_GetFrame</tt> and its variants, as set by <tt>FFMS_SetOutputFormatV</tt> and <tt>FFMS_ResetOutputFormatV</tt>. See also <tt>FFMS_GetPixFmt</tt> and <tt>libavutil/pixfmt.h</tt>.</li>
@@ -618,7 +614,7 @@ A struct representing the basic time unit of a track, as a rational number where
 };</pre>
 <p>Used in <tt>FFMS_CreateVideoSource</tt> to control the way seeking is handled. Explanation of the values:</p>
 <ul><li><b><tt>FFMS_SEEK_LINEAR_NO_RW</tt></b> - Linear access without rewind; i.e. will throw an error if each successive requested frame number isn't bigger than the last one. Only intended for opening images but might work on well with some obscure video format.</li>
-<li><b><tt>FFMS_SEEK_LINEAR</tt></b> - Linear access (i.e. if you request frame n without having requested frames 0 to n-1 in order first, all frames from 0 to n will have to be decoded before n can be delivered). The definition of slow, but should make some formats "usable".</li>
+<li><b><tt>FFMS_SEEK_LINEAR</tt></b> - Linear access (i.e. if you request frame <tt>n</tt> without having requested frames 0 to <tt>n-1</tt> in order first, all frames from 0 to <tt>n</tt> will have to be decoded before <tt>n</tt> can be delivered). The definition of slow, but should make some formats "usable".</li>
 <li><b><tt>FFMS_SEEK_NORMAL</tt></b> - Safe normal. Bases seeking decisions on the keyframe positions reported by libavformat.</li>
 <li><b><tt>FFMS_SEEK_UNSAFE</tt></b> - Unsafe normal. Same as <tt>FFMS_SEEK_NORMAL</tt> but no error will be thrown if the exact destination has to be guessed.</li>
 <li><b><tt>FFMS_SEEK_AGGRESSIVE</tt></b> - Aggressive. Seeks in the forward direction even if no closer keyframe is known to exist. Only useful for testing and containers where libavformat doesn't report keyframes properly.</li></ul>
@@ -651,13 +647,13 @@ The calling convention used by FFMS2 API functions and callbacks. Defined to <tt
 <h2>Audio Filename Format Strings</h2>
 <p>The following variables can be used:</p>
 <ul>
-<li>%sourcefile% - same as the source file name, i.e. the file the audio is decoded from</li>
-<li>%trackn% - the track number</li>
-<li>%trackzn% - the track number zero padded to 2 digits</li>
-<li>%samplerate% - the audio sample rate</li>
-<li>%channels% - number of audio channels</li>
-<li>%bps% - bits per sample</li>
-<li>%delay% - delay, or more exactly the first timestamp encountered in the audio stream</li>
+<li><tt>%sourcefile%</tt> - same as the source file name, i.e. the file the audio is decoded from</li>
+<li><tt>%trackn%</tt> - the track number</li>
+<li><tt>%trackzn%</tt> - the track number zero padded to 2 digits</li>
+<li><tt>%samplerate%</tt> - the audio sample rate</li>
+<li><tt>%channels%</tt> - number of audio channels</li>
+<li><tt>%bps%</tt> - bits per sample</li>
+<li><tt>%delay%</tt> - delay, or more exactly the first timestamp encountered in the audio stream</li>
 </ul>
 <p>
 Example string: <tt>%sourcefile%_track%trackzn%.w64</tt>
