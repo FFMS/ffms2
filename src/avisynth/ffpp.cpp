@@ -19,7 +19,7 @@
 //  THE SOFTWARE.
 
 #include "ffpp.h"
-#include "utils.h"
+#include "../core/utils.h"
 
 FFPP::FFPP(PClip AChild, const char *PP, IScriptEnvironment *Env) : GenericVideoFilter(AChild) {
 	if (!strcmp(PP, ""))
