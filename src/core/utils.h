@@ -48,40 +48,6 @@ extern "C" {
 
 
 
-struct TFrameInfo {
-	FFMS_FRAMEINFO_COMMON
-	int64_t SampleStart;
-	int64_t FilePos;
-	unsigned int FrameSize;
-	TFrameInfo(int64_t DTS, bool KeyFrame);
-	TFrameInfo(int64_t DTS, int64_t FilePos, unsigned int FrameSize, bool KeyFrame);
-	TFrameInfo(int64_t DTS, int64_t SampleStart, bool KeyFrame);
-	TFrameInfo(int64_t DTS, int64_t SampleStart, int64_t FilePos, unsigned int FrameSize, bool KeyFrame);
-};
-
-class FFTrack : public std::vector<TFrameInfo> {
-public:
-	FFMS_TrackType TT;
-	TTrackTimeBase TB;
-
-	int FindClosestVideoKeyFrame(int Frame);
-	int FindClosestAudioKeyFrame(int64_t Sample);
-	int FrameFromDTS(int64_t DTS);
-	int ClosestFrameFromDTS(int64_t DTS);
-	int WriteTimecodes(const char *TimecodeFile, char *ErrorMsg, unsigned MsgSize);
-
-	FFTrack();
-	FFTrack(int64_t Num, int64_t Den, FFMS_TrackType TT);
-};
-
-class FFIndex : public std::vector<FFTrack> {
-public:
-	int Decoder;
-	void Sort();
-	int WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize);
-	int ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize);
-};
-
 struct MatroskaReaderContext {
 public:
 	StdIoStream ST;
