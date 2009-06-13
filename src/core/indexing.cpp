@@ -177,11 +177,11 @@ int FFIndex::WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize)
 	IH.Version = INDEXVERSION;
 	IH.Tracks = size();
 	IH.Decoder = Decoder;
-	IH.LAVUVersion = LIBAVUTIL_VERSION_INT;
-	IH.LAVFVersion = LIBAVFORMAT_VERSION_INT;
-	IH.LAVCVersion = LIBAVCODEC_VERSION_INT;
-	IH.LSWSVersion = LIBSWSCALE_VERSION_INT;
-	IH.LPPVersion = LIBPOSTPROC_VERSION_INT;
+	IH.LAVUVersion = avutil_version();
+	IH.LAVFVersion = avformat_version();
+	IH.LAVCVersion = avcodec_version();
+	IH.LSWSVersion = swscale_version();
+	IH.LPPVersion = postproc_version();
 
 	IndexStream.write(reinterpret_cast<char *>(&IH), sizeof(IH));
 
@@ -223,9 +223,9 @@ int FFIndex::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) 
 		return 3;
 	}
 
-	if (IH.LAVUVersion != LIBAVUTIL_VERSION_INT || IH.LAVFVersion != LIBAVFORMAT_VERSION_INT ||
-		IH.LAVCVersion != LIBAVCODEC_VERSION_INT || IH.LSWSVersion != LIBSWSCALE_VERSION_INT ||
-		IH.LPPVersion != LIBPOSTPROC_VERSION_INT) {
+	if (IH.LAVUVersion != avutil_version() || IH.LAVFVersion != avformat_version() ||
+		IH.LAVCVersion != avcodec_version() || IH.LSWSVersion != swscale_version() ||
+		IH.LPPVersion != postproc_version()) {
 		snprintf(ErrorMsg, MsgSize, "A different FFmpeg build was used to create '%s'", IndexFile);
 		return 4;
 	}
