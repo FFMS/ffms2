@@ -49,42 +49,50 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 <li>Image files: Most formats can be opened if seekmode=-1 is set, no animation support</li>
 </ul>
 
-<h2>Usage</h2>
+<h2>Functions</h2>
+<p>
+<b>FFmpegSource2(string source, int vtrack = -1, int atrack = -2, bool cache = true,
+ string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1, string pp, int threads = -1,
+	string timecodes, int seekmode = 1, bool overwrite = false)</b><br />
+ Approximates the syntax later versions of the 1.x series. Can be convenient to use with atrack=-1 to load both audio and video at the same time. Requires ffms2.avsi to be loaded.
+</p>
+
 <p>
 <b>FFIndex(string source, string cachefile = source + ".ffindex", int indexmask = -1, int dumpmask = 0, string audiofile = "%sourcefile%.%trackzn%.w64", bool overwrite = false)</b><br />
- Used to invoke indexing separately and to write audio tracks to disk as wave64 files
+ Used to invoke indexing separately with a few additional options and to write audio tracks to disk as wave64 files. It can be useful to use to avoid remaking the index twice or if some audio tracks are unsupported/broken and cannot be indexed properly.
 </p>
 
 <p>
 <b>FFVideoSource(string source, int track, bool cache = true, string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1, string pp, int threads = -1, string timecodes, int seekmode = 1)</b><br />
- Opens video, will invoke indexing with the defaults if no preexisting index is found
+ Opens video, will invoke indexing of all video tracks if no usable index is found.
 </p>
 
 <p>
 <b>FFAudioSource(string source, int track, bool cache = true, string cachefile = source + ".ffindex")</b><br />
- Opens audio, <b>if an index already exists it needs to contain a suitable audio index or empty audio will be returned</b>, will invoke indexing with the defaults if no preexisting index is found
+ Opens audio, will invoke indexing of all tracks if no index exists or the requested track is not present in the index.
 </p>
 
 <p>
 <b>FFPP(clip, string pp)</b><br />
-  Separate postprocessing which also seems to include a few simple deinterlacers
+  Separate postprocessing which also seems to include a few simple deinterlacers. Use the pp argument in FFVideoSource whenever possible as it will also have access to the video quantizers and thus adapt better to the video.
 </p>
 
 <p>
 <b>SWScale(clip, width = -1, height = -1, resizer = "BICUBIC", colorspace = "")</b><br />
-  A resizing filter that does nothing special at all
+  A resizing/colorspace conversion filter that does nothing special at all. May be useful in some cases just because it does not do things exactly like avisynth.
 </p>
 
 <p>
-<b>FFSetLogLevel(int Level)</b><br />
-  Sets the log FFmpeg logging level, defaults to quiet (-8) and the FFmpeg default is 16, all different values can be found in avutil/log.h
+<b>FFSetLogLevel(int Level = -8)</b><br />
+  Sets the log FFmpeg logging level. Defaults to quiet (-8) and the FFmpeg default is 16. All possible different values can be found in avutil/log.h.
 </p>
 
 <p>
 <b>FFGetLogLevel()</b><br />
-  Returns the current level of logging as an int
+  Returns the current level of logging as an int.
 </p>
 
+<h2>Function arguments</h2>
 <p>
 <b>source:</b>
   Source file.
@@ -116,7 +124,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <p>
 <b>track:</b>
-  Track number as seen by the relevant demuxer, starts from 0, -1 means it will pick the first suitable track.
+  Track number as seen by the relevant demuxer. Starts from 0, -1 means it will pick the first suitable track. This may however NOT be the first video/audio track found if it is not indexed but a later one is.
 </p>
 
 <p>
@@ -126,12 +134,12 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <p>
 <b>timecodes:</b>
-  File to output timecodes to, if the file exists it will be overwritten.
+  File to output timecodes to. If the file exists it will be overwritten.
 </p>
 
 <p>
 <b>cache:</b>
-  Write indexing information to a file for later use. This setting does not control if the video index is loaded which it always is if it exists.
+  Write indexing information to a file for later use. This setting controls both loading of existing indices and the writing of new ones.
 </p>
 
 <p>
@@ -146,12 +154,12 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <p>
 <b>threads:</b>
-  Sets the number of decoder threads used. Defaults to the number of cpus reported by windows. Ignored by lavc if the used decoder doesn't implement it.
+  Sets the number of decoder threads used. Defaults to the number of logical cpus reported by windows. Ignored by lavc if the used decoder doesn't implement it.
 </p>
 
 <p>
 <b>seekmode:</b>
-  Force how seeking is handled, has no effect on matroska files which always use the equivalent of seekmode=1<br />
+  Control how seeking is handled, has no effect on matroska or haali splitter opened files which always use the equivalent of seekmode=1<br />
     <b>-1:</b> linear access without rewind, will throw an error if each successive requested frame number isn't bigger than the last one, only intended for opening images but might work on well with some obscure video format<br />
     <b>0:</b> linear access, the definition of slow but should make some formats "usable"<br />
     <b>1:</b> safe normal, bases seeking decisions on the reported keyframe positions<br />
@@ -177,7 +185,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 <h2>Exported Avisynth variables</h2>
 <p>
 <b>FFSAR_NUM, FFSAR_DEN, FFSAR:</b>
- The playback aspect ratio specified by the container. FFSAR_NUM and FFSAR_DEN make up the rational number of the ratio and FFSAR is only provided for convenience.
+ The playback aspect ratio specified by the container. FFSAR_NUM and FFSAR_DEN make up the rational number of the ratio and FFSAR is only provided for convenience and may not be set in case it cannot be calculated (FFSAR_DEN=0).
 </p>
 
 <p>
@@ -266,6 +274,8 @@ Note that --enable-w32threads or --enable-pthreads is required for multithreaded
 <h2>Changes</h2>
 <ul>
 <li>2.00 beta 10<ul>
+<li>Added a proper cmake based build system and vs2008 project files to make developement and use easier</li>
+<li>Added API documentation by TheFluff and revised many argument descriptions to reflect how they currently work.</li>
 <li>The output audio filename can now be specified in avisynth (was ignored previously) with variables such as track number and delay possible to use</li>
 <li>Indexing with Haali's splitters should now show progress in most cases</li>
 <li>Fixed a few more memory leaks in indexing</li>
