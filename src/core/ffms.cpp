@@ -48,7 +48,7 @@ FFMS_API(void) FFMS_SetLogLevel(int Level) {
 }
 
 FFMS_API(FFVideo *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFIndex *Index, const char *PP, int Threads, int SeekMode, char *ErrorMsg, unsigned MsgSize) {
-	if (Track < 0 || Track >= Index->size()) {
+	if (Track < 0 || Track >= static_cast<int>(Index->size())) {
 		snprintf(ErrorMsg, MsgSize, "Out of bounds track index selected");
 		return NULL;
 	}
@@ -76,7 +76,7 @@ FFMS_API(FFVideo *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FF
 }
 
 FFMS_API(FFAudio *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFIndex *Index, char *ErrorMsg, unsigned MsgSize) {
-	if (Track < 0 || Track >= Index->size()) {
+	if (Track < 0 || Track >= static_cast<int>(Index->size())) {
 		snprintf(ErrorMsg, MsgSize, "Out of bounds track index selected");
 		return NULL;
 	}
