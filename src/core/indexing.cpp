@@ -333,7 +333,7 @@ bool FFIndexer::WriteAudio(SharedAudioContext &AudioContext, FFIndex *Index, int
 			delete[] WName;
 			try {
 				AudioContext.W64W = new Wave64Writer(WN.c_str(), av_get_bits_per_sample_format(AudioContext.CTX->sample_fmt),
-					AudioContext.CTX->channels, AudioContext.CTX->sample_rate, AudioFMTIsFloat(AudioContext.CTX->sample_fmt));
+					AudioContext.CTX->channels, AudioContext.CTX->sample_rate, (AudioContext.CTX->sample_fmt == SAMPLE_FMT_FLT) || (AudioContext.CTX->sample_fmt == SAMPLE_FMT_DBL));
 			} catch (...) {
 				snprintf(ErrorMsg, MsgSize, "Failed to write wave data");
 				return false;

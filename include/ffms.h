@@ -66,6 +66,14 @@ enum FFMS_TrackType {
     FFMS_TYPE_ATTACHMENT
 };
 
+enum FFMS_SampleFormat {
+    FFMS_FMT_U8 = 0,
+    FFMS_FMT_S16,
+    FFMS_FMT_S32,
+    FFMS_FMT_FLT,
+    FFMS_FMT_DBL
+};
+
 struct TAVFrameLite {
     uint8_t *Data[4];
     int Linesize[4];
@@ -103,10 +111,11 @@ struct TVideoProperties {
 };
 
 struct TAudioProperties {
+	FFMS_SampleFormat SampleFormat;
 	int SampleRate;
-	int Channels;
 	int BitsPerSample;
-	bool Float;
+	int Channels;
+	int64_t ChannelLayout;
 	int64_t NumSamples;
 	double FirstTime;
 	double LastTime;

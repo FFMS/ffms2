@@ -137,16 +137,6 @@ int ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, M
 	}
 }
 
-bool AudioFMTIsFloat(SampleFormat FMT){
-	switch (FMT) {
-		case SAMPLE_FMT_FLT:
-		case SAMPLE_FMT_DBL:
-			  return true;
-		default:
-			return false;
-	}
-}
-
 void InitNullPacket(AVPacket *pkt) {
 	av_init_packet(pkt);
 	pkt->data = NULL;
@@ -154,9 +144,13 @@ void InitNullPacket(AVPacket *pkt) {
 }
 
 void FillAP(TAudioProperties &AP, AVCodecContext *CTX, FFTrack &Frames) {
+	AP.SampleFormat = static_cast<FFMS_SampleFormat>(CTX->sample_fmt);
 	AP.BitsPerSample = av_get_bits_per_sample_format(CTX->sample_fmt);
+	if (CTX->sample_fmt == SAMPLE_FMT_S32)
+		AP.BitsPerSample = CTX->bits_per_raw_sample;
+
 	AP.Channels = CTX->channels;;
-	AP.Float = AudioFMTIsFloat(CTX->sample_fmt);
+	AP.ChannelLayout = CTX->channel_layout;
 	AP.SampleRate = CTX->sample_rate;
 	AP.NumSamples = (Frames.back()).SampleStart;
 	AP.FirstTime = ((Frames.front().DTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;

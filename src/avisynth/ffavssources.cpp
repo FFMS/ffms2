@@ -144,22 +144,17 @@ AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFIn
 	if (!A)
 		Env->ThrowError(ErrorMsg);
 
-	const TAudioProperties AP = *FFMS_GetAudioProperties(A);
+	const TAudioProperties *AP = FFMS_GetAudioProperties(A);
+	VI.nchannels = AP->Channels;
+	VI.num_audio_samples = AP->NumSamples;
+	VI.audio_samples_per_second = AP->SampleRate;
 
-	VI.nchannels = AP.Channels;
-	VI.num_audio_samples = AP.NumSamples;
-	VI.audio_samples_per_second = AP.SampleRate;
-
-	if (AP.Float && AP.BitsPerSample == 32) {
-		VI.sample_type = SAMPLE_FLOAT;
-	} else {
-		switch (AP.BitsPerSample) {
-			case 8: VI.sample_type = SAMPLE_INT8; break;
-			case 16: VI.sample_type = SAMPLE_INT16; break;
-			case 24: VI.sample_type = SAMPLE_INT24; break;
-			case 32: VI.sample_type = SAMPLE_INT32; break;
-			default: Env->ThrowError("FFAudioSource: Bad audio format");
-		}
+	switch (AP->SampleFormat) {
+		case FFMS_FMT_U8: VI.sample_type = SAMPLE_INT8; break;
+		case FFMS_FMT_S16: VI.sample_type = SAMPLE_INT16; break;
+		case FFMS_FMT_S32: VI.sample_type = SAMPLE_INT32; break;
+		case FFMS_FMT_FLT: VI.sample_type = SAMPLE_FLOAT; break;
+		default: Env->ThrowError("FFAudioSource: Bad audio format");
 	}
 }
 
