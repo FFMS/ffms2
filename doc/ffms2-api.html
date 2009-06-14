@@ -36,7 +36,7 @@ FFMS2 does not mux or encode anything. FFMS2 does not give you fine control over
 <li><b><a href="http://www.zlib.net/">zlib</a></b></li>
 </ul>
 <p>
-Compiling the library itself is fairly straightforward. For the basics, just add the <tt>include</tt> folder to your include paths and compile everything in <tt>src/core</tt>; everything else can be skipped. <tt>src/avisynth</tt> contains code for some Avisynth filters (optional and Windows-only); <tt>src/config</tt> is some MSVC-specific configuration; <tt>src/index</tt> is a stand-alone indexing application (built separately and linked against the main FFMS2 library); and <tt>src/test</tt> is an (incomplete) automatic regression test tool (also built separately). Take a look in <tt>Compiling.txt</tt> in the source tree for further details.
+Compiling the library itself is fairly straightforward. For the basics, just add the <tt>include</tt> folder to your include paths and compile everything in <tt>src/core</tt>; everything else can be skipped. <tt>src/avisynth</tt> contains code for some Avisynth filters (optional and Windows-only); <tt>src/config</tt> is some MSVC-specific configuration; <tt>src/index</tt> is a stand-alone indexing application (built separately and linked against the main FFMS2 library); and <tt>src/test</tt> is an (incomplete) automatic regression test tool (also built separately). Take a look in <tt>doc/compiling.txt</tt> in the source tree for further details.
 </p>
 <h3>Windows-specific compilation notes</h3>
 <p>
@@ -601,7 +601,7 @@ A struct representing the basic time unit of a track, as a rational number where
 <li><b><tt>int SampleRate</tt></b> - The audio samplerate, in samples per second.</li>
 <li><b><tt>int BitsPerSample</tt></b> - The number of bits per audio sample. Note that this signifies the number of bits actually used, not the number of bits used to store each sample, and may hence be different from what the <tt>SampleFormat</tt> would imply.</li>
 <li><b><tt>int Channels</tt></b> - The number of audio channels.</li>
-<li><b><tt>int64_t ChannelLayout</tt></b> - The channel layout of the audio stream. Constructed by binary OR'ing the relevant integers from <tt>FFMS_AudioChannel</tt> together, which means that if the audio has the channel <tt>FFMS_CH_EXAMPLE</tt>, the operation <tt>(ChannelOrder & FFMS_CH_EXAMPLE)</tt> will evaluate to true. The samples are interleaved in the order the channels are listed in the <tt>FFMS_AudioChannel</tt> enum; see that part of the Constants and Preprocessor Definitions sections for more details.</li>
+<li><b><tt>int64_t ChannelLayout</tt></b> - The channel layout of the audio stream. Constructed by binary OR'ing the relevant integers from <tt>FFMS_AudioChannel</tt> together, which means that if the audio has the channel <tt>FFMS_CH_EXAMPLE</tt>, the operation <tt>(ChannelOrder &amp; FFMS_CH_EXAMPLE)</tt> will evaluate to true. The samples are interleaved in the order the channels are listed in the <tt>FFMS_AudioChannel</tt> enum; see that part of the Constants and Preprocessor Definitions sections for more details.</li>
 <li><b><tt>int64_t NumSamples</tt></b> - The number of samples in the audio track.</li>
 <li><b><tt>double FirstTime; double LastTime;</tt></b> - The first and last timestamp of the stream respectively, in milliseconds. Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.</li>
 </ul>
@@ -612,11 +612,11 @@ A struct representing the basic time unit of a track, as a rational number where
 
 <h3>FFMS_SeekMode</h3>
 <pre>enum FFMS_SeekMode {
-	FFMS_SEEK_LINEAR_NO_RW	= -1,
-	FFMS_SEEK_LINEAR		= 0,
-	FFMS_SEEK_NORMAL		= 1,
-	FFMS_SEEK_UNSAFE		= 2,
-	FFMS_SEEK_AGGRESSIVE	= 3
+	FFMS_SEEK_LINEAR_NO_RW  = -1,
+	FFMS_SEEK_LINEAR        = 0,
+	FFMS_SEEK_NORMAL        = 1,
+	FFMS_SEEK_UNSAFE        = 2,
+	FFMS_SEEK_AGGRESSIVE    = 3
 };</pre>
 <p>Used in <tt>FFMS_CreateVideoSource</tt> to control the way seeking is handled. Explanation of the values:</p>
 <ul>
@@ -659,26 +659,26 @@ Used for determining the type of a given track. Note that there are currently no
 
 <h3>FFMS_AudioChannel</h3>
 <pre>enum FFMS_AudioChannel {
-	FFMS_CH_FRONT_LEFT				= 0x00000001,
-	FFMS_CH_FRONT_RIGHT				= 0x00000002,
-	FFMS_CH_FRONT_CENTER			= 0x00000004,
-	FFMS_CH_LOW_FREQUENCY			= 0x00000008,
-	FFMS_CH_BACK_LEFT				= 0x00000010,
-	FFMS_CH_BACK_RIGHT				= 0x00000020,
-	FFMS_CH_FRONT_LEFT_OF_CENTER	= 0x00000040,
-	FFMS_CH_FRONT_RIGHT_OF_CENTER	= 0x00000080,
-	FFMS_CH_BACK_CENTER				= 0x00000100,
-	FFMS_CH_SIDE_LEFT				= 0x00000200,
-	FFMS_CH_SIDE_RIGHT				= 0x00000400,
-	FFMS_CH_TOP_CENTER				= 0x00000800,
-	FFMS_CH_TOP_FRONT_LEFT			= 0x00001000,
-	FFMS_CH_TOP_FRONT_CENTER		= 0x00002000,
-	FFMS_CH_TOP_FRONT_RIGHT			= 0x00004000,
-	FFMS_CH_TOP_BACK_LEFT			= 0x00008000,
-	FFMS_CH_TOP_BACK_CENTER			= 0x00010000,
-	FFMS_CH_TOP_BACK_RIGHT			= 0x00020000,
-	FFMS_CH_STEREO_LEFT				= 0x20000000,
-	FFMS_CH_STEREO_RIGHT			= 0x40000000
+	FFMS_CH_FRONT_LEFT              = 0x00000001,
+	FFMS_CH_FRONT_RIGHT             = 0x00000002,
+	FFMS_CH_FRONT_CENTER            = 0x00000004,
+	FFMS_CH_LOW_FREQUENCY           = 0x00000008,
+	FFMS_CH_BACK_LEFT               = 0x00000010,
+	FFMS_CH_BACK_RIGHT              = 0x00000020,
+	FFMS_CH_FRONT_LEFT_OF_CENTER    = 0x00000040,
+	FFMS_CH_FRONT_RIGHT_OF_CENTER   = 0x00000080,
+	FFMS_CH_BACK_CENTER             = 0x00000100,
+	FFMS_CH_SIDE_LEFT               = 0x00000200,
+	FFMS_CH_SIDE_RIGHT              = 0x00000400,
+	FFMS_CH_TOP_CENTER              = 0x00000800,
+	FFMS_CH_TOP_FRONT_LEFT          = 0x00001000,
+	FFMS_CH_TOP_FRONT_CENTER        = 0x00002000,
+	FFMS_CH_TOP_FRONT_RIGHT         = 0x00004000,
+	FFMS_CH_TOP_BACK_LEFT           = 0x00008000,
+	FFMS_CH_TOP_BACK_CENTER         = 0x00010000,
+	FFMS_CH_TOP_BACK_RIGHT          = 0x00020000,
+	FFMS_CH_STEREO_LEFT             = 0x20000000,
+	FFMS_CH_STEREO_RIGHT            = 0x40000000
 };</pre>
 <p>
 Describes various audio channel configurations. The names should be self-explanatory. The audio samples are interleaved in the order these channels are listed in; i.e. in the stereo case the left channel (<tt>FFMS_CH_FRONT_LEFT</tt>) comes first.
