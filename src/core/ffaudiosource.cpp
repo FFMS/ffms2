@@ -58,7 +58,7 @@ void TAudioCache::CacheBlock(int64_t Start, int64_t Samples, uint8_t *SrcData) {
 			}
 		}
 
-		push_front(new TAudioBlock(Start, Samples, SrcData, Samples * BytesPerSample));
+		push_front(new TAudioBlock(Start, Samples, SrcData, static_cast<size_t>(Samples * BytesPerSample)));
 		if (static_cast<int>(size()) >= MaxCacheBlocks) {
 			delete back();
 			pop_back();
@@ -78,7 +78,7 @@ int64_t TAudioCache::FillRequest(int64_t Start, int64_t Samples, uint8_t *Dst) {
 		int64_t DstOffset = FFMAX(0, (*it)->Start - Start);
 		int64_t CopySamples = FFMIN((*it)->Samples - SrcOffset, Samples - DstOffset);
 		if (CopySamples > 0) {
-			memcpy(Dst + DstOffset * BytesPerSample, (*it)->Data + SrcOffset * BytesPerSample, CopySamples * BytesPerSample);
+			memcpy(Dst + DstOffset * BytesPerSample, (*it)->Data + SrcOffset * BytesPerSample, static_cast<size_t>(CopySamples * BytesPerSample));
 			UsedBlocks.push_back(*it);
 		}
 	}

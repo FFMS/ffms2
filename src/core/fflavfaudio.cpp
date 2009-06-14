@@ -131,7 +131,7 @@ Done:
 
 int FFLAVFAudio::GetAudio(void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize) {
 	const int64_t SizeConst = (av_get_bits_per_sample_format(CodecContext->sample_fmt) * CodecContext->channels) / 8;
-	memset(Buf, 0, SizeConst * Count);
+	memset(Buf, 0, static_cast<size_t>(SizeConst * Count));
 
 	int PreDecBlocks = 0;
 	uint8_t *DstBuf = static_cast<uint8_t *>(Buf);
