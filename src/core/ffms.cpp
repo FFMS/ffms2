@@ -282,6 +282,10 @@ FFMS_API(FFIndex *) FFMS_ReadIndex(const char *IndexFile, char *ErrorMsg, unsign
 	}
 }
 
+FFMS_API(int) FFMS_IndexBelongsToFile(FFIndex *Index, const char *SourceFile, char *ErrorMsg, unsigned MsgSize) {
+	return Index->CompareFileSignature(SourceFile, ErrorMsg, MsgSize);
+}
+
 FFMS_API(int) FFMS_WriteIndex(const char *IndexFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize) {
 	return Index->WriteIndex(IndexFile, ErrorMsg, MsgSize);
 }
