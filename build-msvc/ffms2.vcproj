@@ -171,14 +171,6 @@
 			Name="Audio"
 			>
 			<File
-				RelativePath="..\src\avisynth\avsutils.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\src\avisynth\avsutils.h"
-				>
-			</File>
-			<File
 				RelativePath="..\src\core\ffaudiosource.cpp"
 				>
 			</File>
@@ -328,6 +320,14 @@
 			>
 			<File
 				RelativePath="..\src\avisynth\avisynth.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\avisynth\avsutils.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\avisynth\avsutils.h"
 				>
 			</File>
 			<File
