@@ -23,6 +23,26 @@
 #include <fstream>
 #include <algorithm>
 
+extern "C" {
+#include <libavutil/sha1.h>
+}
+
+
+
+struct IndexHeader {
+	uint32_t Id;
+	uint32_t Version;
+	uint32_t Tracks;
+	uint32_t Decoder;
+	uint32_t LAVUVersion;
+	uint32_t LAVFVersion;
+	uint32_t LAVCVersion;
+	uint32_t LSWSVersion;
+	uint32_t LPPVersion;
+	int64_t FileSize;
+	uint8_t FileSignature[20];
+};
+
 SharedAudioContext::SharedAudioContext() {
 	W64W = NULL;
 	CTX = NULL;
@@ -154,6 +174,58 @@ FFTrack::FFTrack(int64_t Num, int64_t Den, FFMS_TrackType TT) {
 	this->TB.Den = Den;
 }
 
+int FFIndex::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20], char *ErrorMsg, unsigned MsgSize) {
+	std::ifstream SFile(Filename, std::ios::in | std::ios::binary);
+	if (!SFile.is_open()) {
+		snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for hashing", Filename);
+		return 1;
+	}
+
+	const int BlockSize = 2*1024*1024;
+	uint8_t *FileBuffer = new uint8_t[BlockSize];
+	uint8_t *ctxmem = new uint8_t[av_sha1_size];
+	AVSHA1 *ctx = (AVSHA1 *)ctxmem;
+	av_sha1_init(ctx);
+
+	memset(FileBuffer, 0, BlockSize);
+	SFile.read((char *)FileBuffer, BlockSize);
+	if (SFile.fail()) {
+		snprintf(ErrorMsg, MsgSize, "Failed to perform operation on '%s' for hashing", Filename);
+		av_sha1_final(ctx, Digest);
+		delete [] ctxmem;
+		delete [] FileBuffer;
+		return 1;
+	}
+	av_sha1_update(ctx, FileBuffer, BlockSize);
+
+	SFile.seekg(-BlockSize, std::ios::end);
+	memset(FileBuffer, 0, BlockSize);
+	SFile.read((char *)FileBuffer, BlockSize);
+	if (SFile.fail()) {
+		snprintf(ErrorMsg, MsgSize, "Failed to perform operation on '%s' for hashing", Filename);
+		av_sha1_final(ctx, Digest);
+		delete [] ctxmem;
+		delete [] FileBuffer;
+		return 1;
+	}
+	av_sha1_update(ctx, FileBuffer, BlockSize);
+
+	SFile.seekg(0, std::ios::end);
+	if (SFile.fail()) {
+		snprintf(ErrorMsg, MsgSize, "Failed to perform operation on '%s' for hashing", Filename);
+		av_sha1_final(ctx, Digest);
+		delete [] ctxmem;
+		delete [] FileBuffer;
+		return 1;
+	}
+	*Filesize = SFile.tellg();
+
+	av_sha1_final(ctx, Digest);
+	delete [] ctxmem;
+	delete [] FileBuffer;
+	return 0;
+}
+
 static bool DTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
 	return FI1.DTS < FI2.DTS;
 }
@@ -161,6 +233,19 @@ static bool DTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
 void FFIndex::Sort() {
 	for (FFIndex::iterator Cur=begin(); Cur!=end(); Cur++)
 		std::sort(Cur->begin(), Cur->end(), DTSComparison);
+}
+
+int FFIndex::CompareFileSignature(const char *Filename, char *ErrorMsg, unsigned MsgSize) {
+	int64_t CFilesize;
+	uint8_t CDigest[20];
+	CalculateFileSignature(Filename, &CFilesize, CDigest, ErrorMsg, MsgSize);
+
+	if (CFilesize != Filesize || memcmp(CDigest, Digest, sizeof(Digest))) {
+		snprintf(ErrorMsg, MsgSize, "Index and source file signature mismatch");
+		return 1;
+	}
+
+	return 0;
 }
 
 int FFIndex::WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) {
@@ -182,11 +267,13 @@ int FFIndex::WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize)
 	IH.LAVCVersion = avcodec_version();
 	IH.LSWSVersion = swscale_version();
 	IH.LPPVersion = postproc_version();
+	IH.FileSize = Filesize;
+	memcpy(IH.FileSignature, Digest, sizeof(Digest));
 
 	IndexStream.write(reinterpret_cast<char *>(&IH), sizeof(IH));
 
 	for (unsigned int i = 0; i < IH.Tracks; i++) {
-		FFMS_TrackType TT = at(i).TT;
+		uint32_t TT = at(i).TT;
 		IndexStream.write(reinterpret_cast<char *>(&TT), sizeof(TT));
 		int64_t Num = at(i).TB.Num;
 		IndexStream.write(reinterpret_cast<char *>(&Num), sizeof(Num));
@@ -230,12 +317,15 @@ int FFIndex::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) 
 		return 4;
 	}
 
+	Decoder = IH.Decoder;
+	Filesize = IH.FileSize;
+	memcpy(Digest, IH.FileSignature, sizeof(Digest));
+
 	try {
-		Decoder = IH.Decoder;
 
 		for (unsigned int i = 0; i < IH.Tracks; i++) {
 			// Read how many records belong to the current stream
-			FFMS_TrackType TT;
+			uint32_t TT;
 			Index.read(reinterpret_cast<char *>(&TT), sizeof(TT));
 			int64_t Num;
 			Index.read(reinterpret_cast<char *>(&Num), sizeof(Num));
@@ -243,7 +333,7 @@ int FFIndex::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) 
 			Index.read(reinterpret_cast<char *>(&Den), sizeof(Den));
 			int64_t Frames;
 			Index.read(reinterpret_cast<char *>(&Frames), sizeof(Frames));
-			push_back(FFTrack(Num, Den, TT));
+			push_back(FFTrack(Num, Den, static_cast<FFMS_TrackType>(TT)));
 
 			TFrameInfo FI(0, false);
 			for (size_t j = 0; j < Frames; j++) {
@@ -258,6 +348,15 @@ int FFIndex::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) 
 	}
 
 	return 0;
+}
+
+FFIndex::FFIndex() {
+	// this comment documents nothing
+}
+
+FFIndex::FFIndex(int64_t Filesize, uint8_t Digest[20]) {
+	this->Filesize = Filesize;
+	memcpy(this->Digest, Digest, sizeof(this->Digest));
 }
 
 void FFIndexer::SetIndexMask(int IndexMask) {
@@ -312,7 +411,9 @@ FFIndexer *FFIndexer::CreateFFIndexer(const char *Filename, char *ErrorMsg, unsi
 	return new FFLAVFIndexer(Filename, FormatContext, ErrorMsg, MsgSize);
 }
 
-FFIndexer::FFIndexer() {
+FFIndexer::FFIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) {
+	if (FFIndex::CalculateFileSignature(Filename, &Filesize, Digest, ErrorMsg, MsgSize))
+		throw ErrorMsg;
 	DecodingBuffer = new int16_t[AVCODEC_MAX_AUDIO_FRAME_SIZE * 5];
 }
 

@@ -95,7 +95,10 @@ int64_t TAudioCache::FillRequest(int64_t Start, int64_t Samples, uint8_t *Dst) {
 
 /* FFAudio base class */
 
-FFAudio::FFAudio() {
+FFAudio::FFAudio(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize) {
+	if (Index->CompareFileSignature(SourceFile, ErrorMsg, MsgSize))
+		throw ErrorMsg;
+
 	CurrentSample = 0;
 	DecodingBuffer = new uint8_t[AVCODEC_MAX_AUDIO_FRAME_SIZE * 10];
 }

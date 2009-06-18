@@ -29,7 +29,8 @@ void FFLAVFVideo::Free(bool CloseCodec) {
 }
 
 FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFIndex *Index,
-	const char *PP, int Threads, int SeekMode, char *ErrorMsg, unsigned MsgSize) {
+	const char *PP, int Threads, int SeekMode, char *ErrorMsg, unsigned MsgSize)
+	: FFVideo(SourceFile, Index, ErrorMsg, MsgSize) {
 
 	FormatContext = NULL;
 	AVCodec *Codec = NULL;

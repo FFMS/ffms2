@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="9,00"
 	Name="ffms2"
 	ProjectGUID="{AA137613-96A1-4388-8905-71345B4F8F87}"
 	RootNamespace="ffms2"

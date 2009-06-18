@@ -31,7 +31,8 @@ void FFHaaliVideo::Free(bool CloseCodec) {
 
 FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	FFIndex *Index, const char *PP,
-	int Threads, int SourceMode, char *ErrorMsg, unsigned MsgSize) {
+	int Threads, int SourceMode, char *ErrorMsg, unsigned MsgSize)
+	: FFVideo(SourceFile, Index, ErrorMsg, MsgSize) {
 
 	CodecPrivate = NULL;
 	AVCodec *Codec = NULL;

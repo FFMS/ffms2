@@ -45,7 +45,7 @@ public:
 	}
 };
 
-FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) {
+FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) : FFIndexer(Filename, ErrorMsg, MsgSize) {
 	memset(Codec, 0, sizeof(Codec));
 	SourceFile = Filename;
 	char ErrorMessage[256];
@@ -128,7 +128,7 @@ FFIndex *FFMatroskaIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 	int64_t SourceSize = ftello(MC.ST.fp);
 	fseeko(MC.ST.fp, CurrentPos, SEEK_SET);
 
-	std::auto_ptr<FFIndex> TrackIndices(new FFIndex());
+	std::auto_ptr<FFIndex> TrackIndices(new FFIndex(Filesize, Digest));
 	TrackIndices->Decoder = 1;
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++)

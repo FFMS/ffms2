@@ -274,6 +274,7 @@ Note that --enable-w32threads or --enable-pthreads is required for multithreaded
 <h2>Changes</h2>
 <ul>
 <li>2.00 beta 10<ul>
+<li>Added proper detection of when the opened file and index is mismatched and throws an error when it happens instead of undefined behavior, should not add a noticable delay to file opening</li>
 <li>Added a proper cmake based build system and vs2008 project files to make developement and use easier</li>
 <li>Added API documentation by TheFluff and revised many argument descriptions to reflect how they currently work.</li>
 <li>The output audio filename can now be specified in avisynth (was ignored previously) with variables such as track number and delay possible to use</li>

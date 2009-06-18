@@ -44,7 +44,7 @@ public:
 	}
 };
 
-FFLAVFIndexer::FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContext, char *ErrorMsg, unsigned MsgSize) {
+FFLAVFIndexer::FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContext, char *ErrorMsg, unsigned MsgSize) : FFIndexer(Filename, ErrorMsg, MsgSize) {
 	SourceFile = Filename;
 	this->FormatContext = FormatContext;
 	IsIndexing = false;
@@ -91,7 +91,7 @@ FFIndex *FFLAVFIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 
 	//
 
-	std::auto_ptr<FFIndex> TrackIndices(new FFIndex());
+	std::auto_ptr<FFIndex> TrackIndices(new FFIndex(Filesize, Digest));
 	TrackIndices->Decoder = 0;
 
 	for (unsigned int i = 0; i < FormatContext->nb_streams; i++)

@@ -32,7 +32,6 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
 #include <libpostproc/postprocess.h>
-#include <libavutil/sha1.h>
 }
 
 #ifdef HAALISOURCE

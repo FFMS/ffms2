@@ -60,7 +60,7 @@ protected:
 	int	CurrentFrame;
 	AVCodecContext *CodecContext;
 
-	FFVideo();
+	FFVideo(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize);
 	int InitPP(const char *PP, PixelFormat PixelFormat, char *ErrorMsg, unsigned MsgSize);
 	TAVFrameLite *OutputFrame(AVFrame *Frame);
 public:

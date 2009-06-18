@@ -77,7 +77,7 @@ protected:
 	int AudioTrack;
 	TAudioProperties AP;
 public:
-	FFAudio();
+	FFAudio(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize);
 	virtual ~FFAudio();
 	FFTrack *GetFFTrack() { return &Frames; }
 	const TAudioProperties& GetTAudioProperties() { return AP; }

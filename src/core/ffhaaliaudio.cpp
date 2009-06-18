@@ -84,7 +84,9 @@ Done:
 	return Ret;
 }
 
-FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFIndex *Index, int SourceMode, char *ErrorMsg, unsigned MsgSize) {
+FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFIndex *Index,
+						   int SourceMode, char *ErrorMsg, unsigned MsgSize)
+						   : FFAudio(SourceFile, Index, ErrorMsg, MsgSize) {
 	CodecPrivate = NULL;
 	AVCodec *Codec = NULL;
 	CodecContext = NULL;

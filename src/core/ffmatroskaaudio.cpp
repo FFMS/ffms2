@@ -32,7 +32,9 @@ void FFMatroskaAudio::Free(bool CloseCodec) {
 	av_free(CodecContext);
 }
 
-FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFIndex *Index, char *ErrorMsg, unsigned MsgSize) {
+FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track,
+								 FFIndex *Index, char *ErrorMsg, unsigned MsgSize)
+								 : FFAudio(SourceFile, Index, ErrorMsg, MsgSize) {
 	CodecContext = NULL;
 	AVCodec *Codec = NULL;
 	TrackInfo *TI = NULL;

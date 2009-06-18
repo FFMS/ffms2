@@ -18,16 +18,14 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-extern "C" {
-#include <libavcodec/avcodec.h>
-}
-
 #include <sstream>
 #include <iomanip>
 #include "ffms.h"
 #include "ffvideosource.h"
 #include "ffaudiosource.h"
 #include "indexing.h"
+
+
 
 static bool FFmpegInited = false;
 int CPUFeatures = 0;

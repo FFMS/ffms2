@@ -77,7 +77,10 @@ TAVFrameLite *FFVideo::OutputFrame(AVFrame *Frame) {
 	return reinterpret_cast<TAVFrameLite *>(FinalFrame);
 }
 
-FFVideo::FFVideo() {
+FFVideo::FFVideo(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize) {
+	if (Index->CompareFileSignature(SourceFile, ErrorMsg, MsgSize))
+		throw ErrorMsg;
+
 	memset(&VP, 0, sizeof(VP));
 	PPContext = NULL;
 	PPMode = NULL;

@@ -36,20 +36,8 @@
 #	include "guids.h"
 #endif
 
-#define INDEXVERSION 26
+#define INDEXVERSION 27
 #define INDEXID 0x53920873
-
-struct IndexHeader {
-	uint32_t Id;
-	uint32_t Version;
-	uint32_t Tracks;
-	uint32_t Decoder;
-	uint32_t LAVUVersion;
-	uint32_t LAVFVersion;
-	uint32_t LAVCVersion;
-	uint32_t LSWSVersion;
-	uint32_t LPPVersion;
-};
 
 class SharedAudioContext {
 public:
@@ -103,10 +91,19 @@ public:
 
 class FFIndex : public std::vector<FFTrack> {
 public:
+	static int CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20], char *ErrorMsg, unsigned MsgSize);
+
 	int Decoder;
+	int64_t Filesize;
+	uint8_t Digest[20];
+
 	void Sort();
+	int CompareFileSignature(const char *Filename, char *ErrorMsg, unsigned MsgSize);
 	int WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize);
 	int ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize);
+
+	FFIndex();
+	FFIndex(int64_t Filesize, uint8_t Digest[20]);
 };
 
 class FFIndexer {
@@ -121,10 +118,13 @@ protected:
 	const char *SourceFile;
 	int16_t *DecodingBuffer;
 
+	int64_t Filesize;
+	uint8_t Digest[20];
+
 	bool WriteAudio(SharedAudioContext &AudioContext, FFIndex *Index, int Track, int DBSize, char *ErrorMsg, unsigned MsgSize);
 public:
 	static FFIndexer *CreateFFIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize);
-	FFIndexer();
+	FFIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize);
 	virtual ~FFIndexer();
 	void SetIndexMask(int IndexMask);
 	void SetDumpMask(int DumpMask);

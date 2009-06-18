@@ -42,7 +42,7 @@ public:
 	}
 };
 
-FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *ErrorMsg, unsigned MsgSize) {
+FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *ErrorMsg, unsigned MsgSize) : FFIndexer(Filename, ErrorMsg, MsgSize) {
 	SourceFile = Filename;
 	this->SourceMode = SourceMode;
 	memset(TrackType, FFMS_TYPE_UNKNOWN, sizeof(TrackType));
@@ -130,7 +130,7 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 	MatroskaAudioContext *AudioContexts;
 	HaaliIndexMemory IM = HaaliIndexMemory(NumTracks, AudioContexts);
 
-	std::auto_ptr<FFIndex> TrackIndices(new FFIndex());
+	std::auto_ptr<FFIndex> TrackIndices(new FFIndex(Filesize, Digest));
 	TrackIndices->Decoder = 2;
 	if (SourceMode == 1)
 		TrackIndices->Decoder = 3;
