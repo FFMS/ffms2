@@ -49,6 +49,14 @@ FFMS_CLASS_TYPE FFIndexer;
 FFMS_CLASS_TYPE FFIndex;
 FFMS_CLASS_TYPE FFTrack;
 
+enum FFMS_CPUFeatures {
+	FFMS_CPU_CAPS_MMX		= 0x01,
+	FFMS_CPU_CAPS_MMX2		= 0x02,
+	FFMS_CPU_CAPS_3DNOW		= 0x04,
+	FFMS_CPU_CAPS_ALTIVEC	= 0x08,
+	FFMS_CPU_CAPS_BFIN		= 0x10
+};
+
 enum FFMS_SeekMode {
 	FFMS_SEEK_LINEAR_NO_RW	= -1,
 	FFMS_SEEK_LINEAR		= 0,
@@ -134,7 +142,7 @@ struct TVideoProperties {
 };
 
 struct TAudioProperties {
-	FFMS_SampleFormat SampleFormat;
+	int SampleFormat;
 	int SampleRate;
 	int BitsPerSample;
 	int Channels;
@@ -148,8 +156,8 @@ typedef int (FFMS_CC *TIndexCallback)(int64_t Current, int64_t Total, void *ICPr
 typedef int (FFMS_CC *TAudioNameCallback)(const char *SourceFile, int Track, const TAudioProperties *AP, char *FileName, int FNSize, void *Private);
 
 // Most functions return 0 on success
-// Functions without error message output can be assumed to never fail
-FFMS_API(void) FFMS_Init();
+// Functions without error message output can be assumed to never fail in a graceful way
+FFMS_API(void) FFMS_Init(int CPUFeatures);
 FFMS_API(int) FFMS_GetLogLevel();
 FFMS_API(void) FFMS_SetLogLevel(int Level);
 FFMS_API(FFVideo *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFIndex *Index, const char *PP, int Threads, int SeekMode, char *ErrorMsg, unsigned MsgSize);
@@ -168,8 +176,8 @@ FFMS_API(int) FFMS_GetFirstTrackOfType(FFIndex *Index, int TrackType, char *Erro
 FFMS_API(int) FFMS_GetFirstIndexedTrackOfType(FFIndex *Index, int TrackType, char *ErrorMsg, unsigned MsgSize);
 FFMS_API(int) FFMS_GetNumTracks(FFIndex *Index);
 FFMS_API(int) FFMS_GetNumTracksI(FFIndexer *Indexer);
-FFMS_API(FFMS_TrackType) FFMS_GetTrackType(FFTrack *T);
-FFMS_API(FFMS_TrackType) FFMS_GetTrackTypeI(FFIndexer *Indexer, int Track);
+FFMS_API(int) FFMS_GetTrackType(FFTrack *T);
+FFMS_API(int) FFMS_GetTrackTypeI(FFIndexer *Indexer, int Track);
 FFMS_API(const char *) FFMS_GetCodecNameI(FFIndexer *Indexer, int Track);
 FFMS_API(int) FFMS_GetNumFrames(FFTrack *T);
 FFMS_API(const FFFrameInfo *) FFMS_GetFrameInfo(FFTrack *T, int Frame);

@@ -30,7 +30,7 @@ int FFVideo::InitPP(const char *PP, PixelFormat PixelFormat, char *ErrorMsg, uns
 		return 1;
 	}
 
-	int Flags =  GetCPUFlags();
+	int Flags =  GetPPCPUFlags();
 
 	switch (PixelFormat) {
 		case PIX_FMT_YUV420P: Flags |= PP_FORMAT_420; break;
@@ -125,7 +125,7 @@ int FFVideo::SetOutputFormat(int64_t TargetFormats, int Width, int Height, char 
 	SwsContext *NewSWS = NULL;
 	if (CodecContext->pix_fmt != OutputFormat || Width != CodecContext->width || Height != CodecContext->height) {
 		NewSWS = sws_getContext(CodecContext->width, CodecContext->height, CodecContext->pix_fmt, Width, Height,
-			OutputFormat, GetCPUFlags() | SWS_BICUBIC, NULL, NULL, NULL);
+			OutputFormat, GetSWSCPUFlags() | SWS_BICUBIC, NULL, NULL, NULL);
 		if (NewSWS == NULL) {
 			snprintf(ErrorMsg, MsgSize, "Failed to allocate SWScale context");
 			return 1;

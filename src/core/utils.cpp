@@ -41,21 +41,36 @@ extern const AVCodecTag codec_movvideo_tags[];
 extern const AVCodecTag codec_wav_tags[];
 }
 
-int GetCPUFlags() {
-// FIXME Add proper feature detection when msvc isn't used
-	int Flags = PP_CPU_CAPS_MMX | PP_CPU_CAPS_MMX2;
+extern int CPUFeatures;
 
-#ifdef _MSC_VER
-	Flags = 0;
-	int CPUInfo[4];
-	__cpuid(CPUInfo, 0);
+int GetSWSCPUFlags() {
+	int Flags = 0;
 
-	// PP and SWS defines have the same values for their defines so this actually works
-	if (CPUInfo[3] & (1 << 23))
+	if (CPUFeatures & FFMS_CPU_CAPS_MMX)
+		Flags |= SWS_CPU_CAPS_MMX;
+	if (CPUFeatures & FFMS_CPU_CAPS_MMX2)
+		Flags |= SWS_CPU_CAPS_MMX2;
+	if (CPUFeatures & FFMS_CPU_CAPS_3DNOW)
+		Flags |= SWS_CPU_CAPS_3DNOW;
+	if (CPUFeatures & FFMS_CPU_CAPS_ALTIVEC)
+		Flags |= SWS_CPU_CAPS_ALTIVEC;
+	if (CPUFeatures & FFMS_CPU_CAPS_BFIN)
+		Flags |= SWS_CPU_CAPS_BFIN;
+
+	return Flags;
+}
+
+int GetPPCPUFlags() {
+	int Flags = 0;
+
+	if (CPUFeatures & FFMS_CPU_CAPS_MMX)
 		Flags |= PP_CPU_CAPS_MMX;
-	if (CPUInfo[3] & (1 << 25))
+	if (CPUFeatures & FFMS_CPU_CAPS_MMX2)
 		Flags |= PP_CPU_CAPS_MMX2;
-#endif
+	if (CPUFeatures & FFMS_CPU_CAPS_3DNOW)
+		Flags |= PP_CPU_CAPS_3DNOW;
+	if (CPUFeatures & FFMS_CPU_CAPS_ALTIVEC)
+		Flags |= PP_CPU_CAPS_ALTIVEC;
 
 	return Flags;
 }

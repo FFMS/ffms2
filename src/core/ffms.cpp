@@ -30,11 +30,13 @@ extern "C" {
 #include "indexing.h"
 
 static bool FFmpegInited = false;
+int CPUFeatures = 0;
 
-FFMS_API(void) FFMS_Init() {
+FFMS_API(void) FFMS_Init(int CPUFeatures) {
 	if (!FFmpegInited) {
 		av_register_all();
 		av_log_set_level(AV_LOG_QUIET);
+		::CPUFeatures = CPUFeatures;
 		FFmpegInited = true;
 	}
 }
@@ -167,11 +169,11 @@ FFMS_API(int) FFMS_GetNumTracksI(FFIndexer *Indexer) {
 	return Indexer->GetNumberOfTracks();
 }
 
-FFMS_API(FFMS_TrackType) FFMS_GetTrackType(FFTrack *T) {
+FFMS_API(int) FFMS_GetTrackType(FFTrack *T) {
 	return T->TT;
 }
 
-FFMS_API(FFMS_TrackType) FFMS_GetTrackTypeI(FFIndexer *Indexer, int Track) {
+FFMS_API(int) FFMS_GetTrackTypeI(FFIndexer *Indexer, int Track) {
 	return Indexer->GetTrackType(Track);
 }
 

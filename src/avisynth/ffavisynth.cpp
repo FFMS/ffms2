@@ -23,6 +23,7 @@
 #include "ffavssources.h"
 #include "ffswscale.h"
 #include "ffpp.h"
+#include "avsutils.h"
 
 static int GetNumberOfLogicalCPUs() {
 	SYSTEM_INFO SI;
@@ -31,7 +32,7 @@ static int GetNumberOfLogicalCPUs() {
 }
 
 static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	FFMS_Init();
+	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()));
 
 	char ErrorMsg[1024];
 	unsigned MsgSize = sizeof(ErrorMsg);
@@ -80,7 +81,7 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 }
 
 static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	FFMS_Init();
+	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()));
 
 	char ErrorMsg[1024];
 	unsigned MsgSize = sizeof(ErrorMsg);
@@ -158,7 +159,7 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 }
 
 static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	FFMS_Init();
+	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()));
 
 	char ErrorMsg[1024];
 	unsigned MsgSize = sizeof(ErrorMsg);

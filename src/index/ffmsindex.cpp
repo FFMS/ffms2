@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
 	}
 #endif /* _WIN32 */
 
-	FFMS_Init();
+	FFMS_Init(0);
 
 	if (Verbose)
 		FFMS_SetLogLevel(AV_LOG_INFO);

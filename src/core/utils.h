@@ -65,7 +65,8 @@ public:
 	}
 };
 
-int GetCPUFlags();
+int GetSWSCPUFlags();
+int GetPPCPUFlags();
 FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT);
 int ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, MatroskaReaderContext &Context, char *ErrorMsg, unsigned MsgSize);
 bool AudioFMTIsFloat(SampleFormat FMT);

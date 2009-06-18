@@ -20,10 +20,7 @@
 
 #include <windows.h>
 #include "avisynth.h"
-
-extern "C" {
-#include <libpostproc/postprocess.h>
-}
+#include "ffms.h"
 
 
 
@@ -31,10 +28,10 @@ int AvisynthToFFCPUFlags(long AvisynthFlags) {
 	int Flags = 0;
 
 	if (AvisynthFlags & CPUF_MMX)
-		Flags |= PP_CPU_CAPS_MMX;
+		Flags |= FFMS_CPU_CAPS_MMX;
 
 	if (AvisynthFlags & CPUF_INTEGER_SSE)
-		Flags |= PP_CPU_CAPS_MMX2;
+		Flags |= FFMS_CPU_CAPS_MMX2;
 
 	return Flags;
 }
