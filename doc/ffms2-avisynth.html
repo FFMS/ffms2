@@ -11,7 +11,7 @@ FFmpegSource2 User Manual
 <div class="maincontent">
 <h1>FFmpegSource2 User Manual</h1>
 <p>
-Opens files using ffmpeg and nothing else. May be frame accurate on good days. The source is MIT licensed and can be obtained from <a href="http://code.google.com/p/ffmpegsource/source/checkout">http://code.google.com/p/ffmpegsource/source/checkout</a>. The precompiled binary is GPL licensed. If you are religious you may consider this the second coming.
+Opens files using ffmpeg and nothing else. May be frame accurate on good days. The source is MIT licensed and can be obtained from <a href="http://code.google.com/p/ffmpegsource/source/checkout">http://code.google.com/p/ffmpegsource/source/checkout</a>. The precompiled binary is GPL3 licensed. If you are religious you may consider this the second coming.
 </p>
 
 <h2>Known issues</h2>
@@ -252,125 +252,6 @@ vb:a/hb:a/lb                                   de,-vb
 more examples:
 tn:64:128:256
 </pre>
-
-<h2>Compiling</h2>
-
-<p><b>zlib</b> from http://www.zlib.net/</p>
-
-<p><b>FFmpeg svn</b> from http://ffmpeg.mplayerhq.hu/</p>
-
-<p><b>pthreads</b> only required for FFmpeg-mt compiles</p>
-
-<p><b>Required FFmpeg Configuration:</b>
-./configure --enable-memalign-hack --enable-gpl --enable-postproc</p>
-
-<p><b>Suggested Additional Options:</b>
---enable-w32threads --disable-encoders --disable-muxers --disable-network --disable-debug --enable-libfaad --disable-decoder=aac</p>
-
-<p>
-Note that --enable-w32threads or --enable-pthreads is required for multithreaded decoding to work. For FFmpeg-mt only --enable-pthreads will work.
-</p>
-
-<h2>Changes</h2>
-<ul>
-<li>2.00 beta 10<ul>
-<li>Added proper detection of when the opened file and index is mismatched and throws an error when it happens instead of undefined behavior, should not add a noticable delay to file opening</li>
-<li>Added a proper cmake based build system and vs2008 project files to make developement and use easier</li>
-<li>Added API documentation by TheFluff and revised many argument descriptions to reflect how they currently work.</li>
-<li>The output audio filename can now be specified in avisynth (was ignored previously) with variables such as track number and delay possible to use</li>
-<li>Indexing with Haali's splitters should now show progress in most cases</li>
-<li>Fixed a few more memory leaks in indexing</li>
-<li>Now checks for failed seeking when LAVF is used and retries with more aggressive seeking options before failing</li>
-<li>Updated FFmpeg to rev X (now compiled with the opencore amr decoder)</li>
-</ul></li>
-
-<li>2.00 beta 9<ul>
-<li>Dumping audio now actually implies indexing too in FFIndex, previously nothing would be done if the index mask wasn't set as well</li>
-<li>FFAudioSource will now first load the index and returns the first indexed audio track with track=-1, if no audio tracks are indexed or the chosen track isn't indexed the equivalent of FFIndex(indexmask = -1, overwrite = cache) is executed first</li>
-<li>Codec lookup for non-lavf opened files now to a large part use the same lookup tables as lavf, this should improve the number of properly recognized codecs</li>
-<li>Now uses the average framerate for files opened with Haali's splitters, before it was always reported as 30 fps</li>
-<li>Implemented audio decoding using Haali's splitters, FFAudioSource now works on ts, ps and ogm</li>
-<li>Can now be compiled with ICL 10.1 (probably other versions too)</li>
-<li>How indexing works has been split internally so the track numbers and types are reported, this makes it possible to create an interactive GUI or ask which audio tracks are to be indexed</li>
-<li>Now has stricter index checking to detect when different FFmpeg versions were used to create an index of the same version</li>
-<li>Fixed memory leaks when audio sources were destroyed and when errors happened during indexing</li>
-<li>Fixed access violations occurring when a track of the wrong type was specified or didn't exist in FFVideoSource and FFAudioSource</li>
-<li>Fixed access violations occurring when unindexed or empty audio tracks in matroska/lavf read files were opened</li>
-<li>Less type conversion/signedness warnings</li>
-<li>When audio track dumping is performed a custom callback can now be supplied to name the tracks</li>
-<li>The audio track delay is now exposed in the API in the same way as video tracks</li>
-<li>A big type and argument name cleanup in the API, many things have been renamed to be clearer and ffms.h should be completely C friendly now</li>
-<li>Removed FFNoLog and replaced it with FFSetLogLevel and FFGetLogLevel, the default logging is now also set to quiet, the magical numbers to supply it can be found in avutil/log.h</li>
-<li>Updated FFmpeg to rev 18972 (now with faad2 again by popular demand, updated to GCC 4.4.0 for compiling all libraries)</li>
-</ul></li>
-
-<li>2.00 beta 8<ul>
-<li>Improved the audio decoding quality a lot by adding a simple cache, no more seeking is done when playing a file linearly and pops and other artifacts should be much more uncommon</li>
-<li>Fixed a bug that would most of the time drop frame 0 and sometimes frame 1</li>
-<li>Updated Haali's matroska parser code to the latest version</li>
-<li>Updated FFmpeg to rev 18774</li>
-</ul></li>
-
-
-<li>2.00 beta 7<ul>
-<li>Using ffms2 as a library no longer requires an installed pixfmt.h from libavutil, it is however still required to compile ffms2 and the avisynth plugin part</li>
-<li>Fix a crash bug at the end of files with b-frames in beta 6 caused by uninitialized null packets</li>
-<li>Includes TheFluff's wrapper function for 1.21 style syntax</li>
-<li>Added a simple regression test application to the source</li>
-<li>Removed a few pointless functions from the API</li>
-<li>Fixed the accessing of codecprivate data with Haali's splitters</li>
-<li>Timecode output should be fixed to include decimals AND not be in scientific format</li>
-<li>Fixed a memory leak when using Haali's splitters</li>
-<li>Updated FFmpeg to rev 18717</li>
-</ul></li>
-
-<li>2.00 beta 6<ul>
-<li>Haali's splitters have been improved for video and now have audio dumping during indexing implemented</li>
-<li>SeekMode=1 has improved logic which will make it go back and decode more frames if necessary to figure out where it is, in theory SeekMode=0 should now be mostly obsolete</li>
-<li>Haali's splitters are now used to open mpeg ps and ogm in addition to mpeg ts, only ogm is frame accurate at this time</li>
-<li>Negative timecodes and other bugs caused by an integer overflow fixed</li>
-<li>Updated FFmpeg to rev 18442 (once again compilation fixes for the changes)</li>
-</ul></li>
-
-<li>2.00 beta 5<ul>
-<li>FFMSIndex should now print the progress properly when another application reads its output</li>
-<li>Added missing variables and explanations to the manual</li>
-<li>Can now directly be compiled as a library for use in *nix</li>
-<li>Fixed the missing decimals in saved timecode files</li>
-</ul></li>
-
-<li>2.00 beta 4<ul>
-<li>Added the function FFNoLog which suppresses all messages from ffmpeg</li>
-<li>Experimental new TS parsing using Haali's splitter (with bugs)</li>
-<li>Everything is now compiled with VS2008 and GCC 4.3.2</li>
-<li>Updated FFmpeg to rev 16383 (no libfaad2 this time)</li>
-</ul></li>
-
-<li>2.00 beta 3<ul>
-<li>Compiled with libfaad2 again (has anyone seen a single aac file lavc can open right now?)</li>
-<li>More API changes (and even more are likely to come)</li>
-<li>Several access violations and memory leaks on opening and indexing files fixed</li>
-<li>Added a VFR to CFR mode</li>
-<li>Readded FFAudioSource support for other containers (glitches still present now and then but no separate raw cache is required and possibly less buggy)</li>
-<li>Renamed the dll to FFMS2.dll, FFMS2 is now the official short name of the project</li>
-<li>Updated FFmpeg to rev 15522</li>
-</ul></li>
-
-<li>2.00 beta 2<ul>
-<li>More API changes (and more are likely to come)</li>
-<li>Includes a simple CLI indexing application</li>
-<li>FFIndex now takes a few more arguments</li>
-<li>Readded FFAudioSource (only matroska supported for now)</li>
-<li>Updated FFmpeg to rev 15396</li>
-</ul></li>
-
-<li>2.00 beta 1<ul>
-<li>Can now be used as a stand alone library for making indices and retrieving frames</li>
-<li>Rewrote most things</li>
-<li>Updated FFmpeg to rev 15301</li>
-</ul></li>
-
-</ul>
 
 </div>
 
