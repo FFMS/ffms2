@@ -103,7 +103,7 @@ int main (...) {
 
 	/* Retrieve video properties so we know what we're getting.
 	As the lack of the errmsg parameter indicates, this function cannot fail. */
-	const FFVideoProperties *videoprops = FFMS_GetFFVideoProperties(videosource);
+	const FFVideoProperties *videoprops = FFMS_GetVideoProperties(videosource);
 
 	/* 
 	now you may want to do something with the info; particularly interesting values are:
@@ -245,15 +245,15 @@ void FFMS_DestroyAudioSource(FFAudio *A)</pre>
 Deallocates the given <tt>FFVideo</tt> or <tt>FFAudio</tt> object and frees the memory allocated by <tt>FFMS_CreateVideoSource</tt> or <tt>FFMS_CreateAudioSource</tt>, respectively.
 </p>
 
-<h3>FFMS_GetFFVideoProperties - retrieves video properties</h3>
-<pre>const FFVideoProperties *FFMS_GetFFVideoProperties(FFVideo *V)</pre>
+<h3>FFMS_GetVideoProperties - retrieves video properties</h3>
+<pre>const FFVideoProperties *FFMS_GetVideoProperties(FFVideo *V)</pre>
 <p>
 Retreives the video properties from the given <tt>FFVideo</tt> object and stores them in a <tt>FFVideoProperties</tt> struct (see the Data Structures section below). Returns a pointer to said struct. Note that some of the properties (i.e. frame width/height and the pixel format) may be changed by calls to <tt>FFMS_SetOutputFormatV</tt> and <tt>FFMS_ResetOutputFormatV</tt>, so if you want to keep the video properties updated you'll need to call this function each time you've changed the output format.
 </p>
 
-<h3>FFMS_GetFFAudioProperties - retrieves audio properties</h3>
-<pre>const FFAudioProperties *FFMS_GetFFAudioProperties(FFAudio *A)</pre>
-<p>Does the exact same thing as <tt>FFMS_GetFFVideoProperties</tt>, but for an <tt>FFAudio</tt> object.
+<h3>FFMS_GetAudioProperties - retrieves audio properties</h3>
+<pre>const FFAudioProperties *FFMS_GetAudioProperties(FFAudio *A)</pre>
+<p>Does the exact same thing as <tt>FFMS_GetVideoProperties</tt>, but for an <tt>FFAudio</tt> object.
 </p>
 
 <h3>FFMS_GetFrame - retrieves a given video frame</h3>
@@ -295,7 +295,7 @@ See above.</p>
 <h3>FFMS_SetOutputFormatV - sets the output format for video frames</h3>
 <pre>int FFMS_SetOutputFormatV(FFVideo *V, int64_t TargetFormats, int Width, int Height,
 	char *ErrorMsg, unsigned MsgSize)</pre>
-<p>Sets the colorspace and frame dimensions to be used for output of frames from the given <tt>FFVideo</tt> by all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt>, until next time you call <tt>FFMS_SetOutputFormatV</tt> or <tt>FFMS_ResetOutputFormatV</tt>. You can change the output format at any time without having to reinitialize the <tt>FFVideo</tt> object or anything else. Can be used to convert the video to grayscale or monochrome if you are so inclined. If you provided a list of more than one colorspace/pixelformat, you may want to use <tt>FFMS_GetFFVideoProperties</tt> afterwards to see which one got selected.
+<p>Sets the colorspace and frame dimensions to be used for output of frames from the given <tt>FFVideo</tt> by all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt>, until next time you call <tt>FFMS_SetOutputFormatV</tt> or <tt>FFMS_ResetOutputFormatV</tt>. You can change the output format at any time without having to reinitialize the <tt>FFVideo</tt> object or anything else. Can be used to convert the video to grayscale or monochrome if you are so inclined. If you provided a list of more than one colorspace/pixelformat, you may want to use <tt>FFMS_GetVideoProperties</tt> afterwards to see which one got selected.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFVideo *V</tt></b><br />
