@@ -61,7 +61,7 @@ int FFVideo::InitPP(const char *PP, PixelFormat PixelFormat, char *ErrorMsg, uns
 	return 0;
 }
 
-TAVFrameLite *FFVideo::OutputFrame(AVFrame *Frame) {
+FFAVFrame *FFVideo::OutputFrame(AVFrame *Frame) {
 	if (PPContext) {
 		pp_postprocess(const_cast<const uint8_t **>(Frame->data), Frame->linesize, PPFrame->data, PPFrame->linesize, VP.Width, VP.Height, Frame->qscale_table, Frame->qstride, PPMode, PPContext, Frame->pict_type | (Frame->qscale_type ? PP_PICT_TYPE_QP2 : 0));
 		PPFrame->key_frame = Frame->key_frame;
@@ -74,7 +74,7 @@ TAVFrameLite *FFVideo::OutputFrame(AVFrame *Frame) {
 		FinalFrame->pict_type = PPFrame->pict_type;
 	}
 
-	return reinterpret_cast<TAVFrameLite *>(FinalFrame);
+	return reinterpret_cast<FFAVFrame *>(FinalFrame);
 }
 
 FFVideo::FFVideo(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize) {
@@ -111,7 +111,7 @@ FFVideo::~FFVideo() {
 	av_free(DecodeFrame);
 }
 
-TAVFrameLite *FFVideo::GetFrameByTime(double Time, char *ErrorMsg, unsigned MsgSize) {
+FFAVFrame *FFVideo::GetFrameByTime(double Time, char *ErrorMsg, unsigned MsgSize) {
 	int Frame = Frames.ClosestFrameFromDTS(static_cast<int64_t>((Time * 1000 * Frames.TB.Den) / Frames.TB.Num));
 	return GetFrame(Frame, ErrorMsg, MsgSize);
 }

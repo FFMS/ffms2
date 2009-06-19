@@ -158,7 +158,7 @@ void InitNullPacket(AVPacket *pkt) {
 	pkt->size = 0;
 }
 
-void FillAP(TAudioProperties &AP, AVCodecContext *CTX, FFTrack &Frames) {
+void FillAP(FFAudioProperties &AP, AVCodecContext *CTX, FFTrack &Frames) {
 	AP.SampleFormat = static_cast<FFMS_SampleFormat>(CTX->sample_fmt);
 	AP.BitsPerSample = av_get_bits_per_sample_format(CTX->sample_fmt);
 	if (CTX->sample_fmt == SAMPLE_FMT_S32)

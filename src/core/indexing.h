@@ -77,7 +77,7 @@ struct TFrameInfo {
 class FFTrack : public std::vector<TFrameInfo> {
 public:
 	FFMS_TrackType TT;
-	TTrackTimeBase TB;
+	FFTrackTimeBase TB;
 
 	int FindClosestVideoKeyFrame(int Frame);
 	int FindClosestAudioKeyFrame(int64_t Sample);

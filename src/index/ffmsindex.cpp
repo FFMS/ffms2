@@ -142,7 +142,7 @@ static int FFMS_CC UpdateProgress(int64_t Current, int64_t Total, void *Private)
 }
 
 
-static int FFMS_CC GenAudioFilename(const char *SourceFile, int Track, const TAudioProperties *AP, char *FileName, int FNSize, void *Private) {
+static int FFMS_CC GenAudioFilename(const char *SourceFile, int Track, const FFAudioProperties *AP, char *FileName, int FNSize, void *Private) {
 	const char * FormatString = AudioFile.c_str();
 	if (FileName == NULL)
 		return snprintf(NULL, 0, FormatString, SourceFile, Track) + 1;

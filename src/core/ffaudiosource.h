@@ -75,12 +75,12 @@ protected:
 	FFTrack Frames;
 	AVCodecContext *CodecContext;
 	int AudioTrack;
-	TAudioProperties AP;
+	FFAudioProperties AP;
 public:
 	FFAudio(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize);
 	virtual ~FFAudio();
 	FFTrack *GetFFTrack() { return &Frames; }
-	const TAudioProperties& GetTAudioProperties() { return AP; }
+	const FFAudioProperties& GetFFAudioProperties() { return AP; }
 	virtual int GetAudio(void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize) = 0;
 };
 

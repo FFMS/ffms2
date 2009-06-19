@@ -111,20 +111,20 @@ FFMS_API(void) FFMS_DestroyAudioSource(FFAudio *A) {
 	delete A;
 }
 
-FFMS_API(const TVideoProperties *) FFMS_GetVideoProperties(FFVideo *V) {
-	return &V->GetTVideoProperties();
+FFMS_API(const FFVideoProperties *) FFMS_GeFFVideoProperties(FFVideo *V) {
+	return &V->GetFFVideoProperties();
 }
 
-FFMS_API(const TAudioProperties *) FFMS_GetAudioProperties(FFAudio *A) {
-	return &A->GetTAudioProperties();
+FFMS_API(const FFAudioProperties *) FFMS_GeFFAudioProperties(FFAudio *A) {
+	return &A->GetFFAudioProperties();
 }
 
-FFMS_API(const TAVFrameLite *) FFMS_GetFrame(FFVideo *V, int n, char *ErrorMsg, unsigned MsgSize) {
-	return (TAVFrameLite *)V->GetFrame(n, ErrorMsg, MsgSize);
+FFMS_API(const FFAVFrame *) FFMS_GetFrame(FFVideo *V, int n, char *ErrorMsg, unsigned MsgSize) {
+	return (FFAVFrame *)V->GetFrame(n, ErrorMsg, MsgSize);
 }
 
-FFMS_API(const TAVFrameLite *) FFMS_GetFrameByTime(FFVideo *V, double Time, char *ErrorMsg, unsigned MsgSize) {
-	return (TAVFrameLite *)V->GetFrameByTime(Time, ErrorMsg, MsgSize);
+FFMS_API(const FFAVFrame *) FFMS_GetFrameByTime(FFVideo *V, double Time, char *ErrorMsg, unsigned MsgSize) {
+	return (FFAVFrame *)V->GetFrameByTime(Time, ErrorMsg, MsgSize);
 }
 
 FFMS_API(int) FFMS_GetAudio(FFAudio *A, void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize) {
@@ -199,7 +199,7 @@ FFMS_API(FFTrack *) FFMS_GetTrackFromAudio(FFAudio *A) {
 	return A->GetFFTrack();
 }
 
-FFMS_API(const TTrackTimeBase *) FFMS_GetTimeBase(FFTrack *T) {
+FFMS_API(const FFTrackTimeBase *) FFMS_GetTimeBase(FFTrack *T) {
 	return &T->TB;
 }
 
@@ -230,7 +230,7 @@ static void ReplaceString(std::string &s, std::string from, std::string to) {
 		s.replace(idx, from.length(), to);
 }
 
-FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const TAudioProperties *AP, char *FileName, int FNSize, void *Private) {
+FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFAudioProperties *AP, char *FileName, int FNSize, void *Private) {
 	std::string s = static_cast<char *>(Private);
 
 	ReplaceString(s, "%sourcefile%", SourceFile);

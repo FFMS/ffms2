@@ -33,7 +33,7 @@ private:
 	int FPSDen;
 
 	void InitOutputFormat(IScriptEnvironment *Env);
-	PVideoFrame OutputFrame(const TAVFrameLite *SrcPicture, IScriptEnvironment *Env);
+	PVideoFrame OutputFrame(const FFAVFrame *SrcPicture, IScriptEnvironment *Env);
 public:
 	AvisynthVideoSource(const char *SourceFile, int Track, FFIndex *Index, int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode, IScriptEnvironment* Env, char *ErrorMsg, unsigned MsgSize);
 	~AvisynthVideoSource();

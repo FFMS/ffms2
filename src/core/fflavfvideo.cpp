@@ -165,7 +165,7 @@ Done:
 	return 0;
 }
 
-TAVFrameLite *FFLAVFVideo::GetFrame(int n, char *ErrorMsg, unsigned MsgSize) {
+FFAVFrame *FFLAVFVideo::GetFrame(int n, char *ErrorMsg, unsigned MsgSize) {
 	// PPFrame always holds frame LastFrameNum even if no PP is applied
 	if (LastFrameNum == n)
 		return OutputFrame(DecodeFrame);
