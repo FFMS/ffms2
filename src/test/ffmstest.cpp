@@ -79,7 +79,7 @@ static void TestFullDump1(char *SrcFile, bool WithAudio) {
 		FFAudio *A = FFMS_CreateAudioSource(SrcFile, atrack, FI, ErrorMsg, sizeof(ErrorMsg));
 		assert(A);
 
-		const FFAudioProperties *AP = FFMS_GeFFAudioProperties(A);
+		const FFAudioProperties *AP = FFMS_GetAudioProperties(A);
 		for (int i = 0; i < AP->NumSamples / 1000; i++) {
 			ret = FFMS_GetAudio(A, DB, i * 1000, 1000, ErrorMsg, sizeof(ErrorMsg));
 			assert(!ret);
@@ -89,7 +89,7 @@ static void TestFullDump1(char *SrcFile, bool WithAudio) {
 		delete[] DB;
 	}
 
-	const FFVideoProperties *VP = FFMS_GeFFVideoProperties(V);
+	const FFVideoProperties *VP = FFMS_GetVideoProperties(V);
 	for (int i = 0; i < VP->NumFrames; i++) {
 		const FFAVFrame *AVF =  FFMS_GetFrame(V, i, ErrorMsg, sizeof(ErrorMsg));
 		assert(AVF);

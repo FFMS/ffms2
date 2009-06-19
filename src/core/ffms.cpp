@@ -111,11 +111,11 @@ FFMS_API(void) FFMS_DestroyAudioSource(FFAudio *A) {
 	delete A;
 }
 
-FFMS_API(const FFVideoProperties *) FFMS_GeFFVideoProperties(FFVideo *V) {
+FFMS_API(const FFVideoProperties *) FFMS_GetVideoProperties(FFVideo *V) {
 	return &V->GetFFVideoProperties();
 }
 
-FFMS_API(const FFAudioProperties *) FFMS_GeFFAudioProperties(FFAudio *A) {
+FFMS_API(const FFAudioProperties *) FFMS_GetAudioProperties(FFAudio *A) {
 	return &A->GetFFAudioProperties();
 }
 

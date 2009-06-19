@@ -37,7 +37,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFIn
 		throw;
 	}
 
-	const FFVideoProperties *VP = FFMS_GeFFVideoProperties(V);
+	const FFVideoProperties *VP = FFMS_GetVideoProperties(V);
 
 	if (FPSNum > 0 && FPSDen > 0) {
 		VI.fps_denominator = FPSDen;
@@ -67,7 +67,7 @@ AvisynthVideoSource::~AvisynthVideoSource() {
 }
 
 void AvisynthVideoSource::InitOutputFormat(IScriptEnvironment *Env) {
-	const FFVideoProperties *VP = FFMS_GeFFVideoProperties(V);
+	const FFVideoProperties *VP = FFMS_GetVideoProperties(V);
 
 	if (FFMS_SetOutputFormatV(V, (1 << FFMS_GetPixFmt("yuvj420p")) |
 		(1 << FFMS_GetPixFmt("yuv420p")) | (1 << FFMS_GetPixFmt("yuyv422")) |
@@ -75,7 +75,7 @@ void AvisynthVideoSource::InitOutputFormat(IScriptEnvironment *Env) {
 		VP->Width, VP->Height, NULL, 0))
 		Env->ThrowError("FFVideoSource: No suitable output format found");
 
-	VP = FFMS_GeFFVideoProperties(V);
+	VP = FFMS_GetVideoProperties(V);
 
 	if (VP->VPixelFormat == FFMS_GetPixFmt("yuvj420p") || VP->VPixelFormat == FFMS_GetPixFmt("yuv420p"))
 		VI.pixel_type = VideoInfo::CS_I420;
@@ -126,7 +126,8 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 	const FFAVFrame *Frame;
 
 	if (FPSNum > 0 && FPSDen > 0)
-		Frame = FFMS_GetFrameByTime(V, FFMS_GeFFVideoProperties(V)->FirstTime + (double)(n * (int64_t)FPSDen) / FPSNum, ErrorMsg, MsgSize);
+		Frame = FFMS_GetFrameByTime(V, FFMS_GetVideoProperties(V)->FirstTime +
+		(double)(n * (int64_t)FPSDen) / FPSNum, ErrorMsg, MsgSize);
 	else
 		Frame = FFMS_GetFrame(V, n, ErrorMsg, MsgSize);
 
@@ -144,7 +145,7 @@ AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFIn
 	if (!A)
 		Env->ThrowError(ErrorMsg);
 
-	const FFAudioProperties *AP = FFMS_GeFFAudioProperties(A);
+	const FFAudioProperties *AP = FFMS_GetAudioProperties(A);
 	VI.nchannels = AP->Channels;
 	VI.num_audio_samples = AP->NumSamples;
 	VI.audio_samples_per_second = AP->SampleRate;

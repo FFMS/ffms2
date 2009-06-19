@@ -164,8 +164,8 @@ FFMS_API(FFVideo *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FF
 FFMS_API(FFAudio *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFIndex *Index, char *ErrorMsg, unsigned MsgSize);
 FFMS_API(void) FFMS_DestroyVideoSource(FFVideo *V);
 FFMS_API(void) FFMS_DestroyAudioSource(FFAudio *A);
-FFMS_API(const FFVideoProperties *) FFMS_GeFFVideoProperties(FFVideo *V);
-FFMS_API(const FFAudioProperties *) FFMS_GeFFAudioProperties(FFAudio *A);
+FFMS_API(const FFVideoProperties *) FFMS_GetVideoProperties(FFVideo *V);
+FFMS_API(const FFAudioProperties *) FFMS_GetAudioProperties(FFAudio *A);
 FFMS_API(const FFAVFrame *) FFMS_GetFrame(FFVideo *V, int n, char *ErrorMsg, unsigned MsgSize);
 FFMS_API(const FFAVFrame *) FFMS_GetFrameByTime(FFVideo *V, double Time, char *ErrorMsg, unsigned MsgSize);
 FFMS_API(int) FFMS_GetAudio(FFAudio *A, void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize);
