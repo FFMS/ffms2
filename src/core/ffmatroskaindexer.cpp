@@ -23,23 +23,7 @@
 
 
 
-class MatroskaIndexMemory {
-private:
-	MatroskaAudioContext *AudioContexts;
-	MatroskaFile *MF;
-	MatroskaReaderContext *MC;
-public:
-	MatroskaIndexMemory(int Tracks, MatroskaAudioContext *&AudioContexts, MatroskaFile *MF, MatroskaReaderContext *MC) {
-		AudioContexts = new MatroskaAudioContext[Tracks];
-		this->AudioContexts = AudioContexts;
-		this->MF = MF;
-		this->MC = MC;
-	}
 
-	~MatroskaIndexMemory() {
-		delete[] AudioContexts;
-	}
-};
 
 FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) : FFIndexer(Filename, ErrorMsg, MsgSize) {
 	memset(Codec, 0, sizeof(Codec));
@@ -75,24 +59,51 @@ FFMatroskaIndexer::~FFMatroskaIndexer() {
 
 FFIndex *FFMatroskaIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 	char ErrorMessage[256];
+	std::vector<SharedAudioContext> AudioContexts(mkv_GetNumTracks(MF), SharedAudioContext(true));
+	std::vector<SharedVideoContext> VideoContexts(mkv_GetNumTracks(MF), SharedVideoContext(true));
 
-	// Audio stuff
-	MatroskaAudioContext *AudioContexts;
-	MatroskaIndexMemory IM = MatroskaIndexMemory(mkv_GetNumTracks(MF), AudioContexts, MF, &MC);
+	std::auto_ptr<FFIndex> TrackIndices(new FFIndex(Filesize, Digest));
+	TrackIndices->Decoder = 1;
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++) {
 		TrackInfo *TI = mkv_GetTrackInfo(MF, i);
+		TrackIndices->push_back(FFTrack(mkv_TruncFloat(mkv_GetTrackInfo(MF, i)->TimecodeScale), 1000000, HaaliTrackTypeToFFTrackType(mkv_GetTrackInfo(MF, i)->Type)));
+
+		if (HaaliTrackTypeToFFTrackType(TI->Type) == FFMS_TYPE_VIDEO && Codec[i] && (VideoContexts[i].Parser = av_parser_init(Codec[i]->id))) {
+
+			AVCodecContext *CodecContext = avcodec_alloc_context();
+			CodecContext->extradata = static_cast<uint8_t *>(TI->CodecPrivate);
+			CodecContext->extradata_size = TI->CodecPrivateSize;
+
+			if (avcodec_open(CodecContext, Codec[i]) < 0) {
+				av_free(CodecContext);
+				snprintf(ErrorMsg, MsgSize, "Could not open video codec");
+				return NULL;
+			}
+
+			if (TI->CompEnabled) {
+				VideoContexts[i].CS = cs_Create(MF, i, ErrorMessage, sizeof(ErrorMessage));
+				if (VideoContexts[i].CS == NULL) {
+					snprintf(ErrorMsg, MsgSize, "Can't create decompressor: %s", ErrorMessage);
+					return NULL;
+				}
+			}
+
+			VideoContexts[i].CodecContext = CodecContext;
+			VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
+		}
+
 		if (IndexMask & (1 << i) && TI->Type == TT_AUDIO) {
 			AVCodecContext *AudioCodecContext = avcodec_alloc_context();
 			AudioCodecContext->extradata = (uint8_t *)TI->CodecPrivate;
 			AudioCodecContext->extradata_size = TI->CodecPrivateSize;
-			AudioContexts[i].CTX = AudioCodecContext;
+			AudioContexts[i].CodecContext = AudioCodecContext;
 
 			if (TI->CompEnabled) {
 				AudioContexts[i].CS = cs_Create(MF, i, ErrorMessage, sizeof(ErrorMessage));
 				if (AudioContexts[i].CS == NULL) {
 					av_free(AudioCodecContext);
-					AudioContexts[i].CTX = NULL;
+					AudioContexts[i].CodecContext = NULL;
 					snprintf(ErrorMsg, MsgSize, "Can't create decompressor: %s", ErrorMessage);
 					return NULL;
 				}
@@ -101,14 +112,14 @@ FFIndex *FFMatroskaIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 			AVCodec *AudioCodec = Codec[i];
 			if (AudioCodec == NULL) {
 				av_free(AudioCodecContext);
-				AudioContexts[i].CTX = NULL;
+				AudioContexts[i].CodecContext = NULL;
 				snprintf(ErrorMsg, MsgSize, "Audio codec not found");
 				return NULL;
 			}
 
 			if (avcodec_open(AudioCodecContext, AudioCodec) < 0) {
 				av_free(AudioCodecContext);
-				AudioContexts[i].CTX = NULL;
+				AudioContexts[i].CodecContext = NULL;
 				snprintf(ErrorMsg, MsgSize, "Could not open audio codec");
 				return NULL;
 			}
@@ -119,17 +130,6 @@ FFIndex *FFMatroskaIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 
 	//
 
-	int64_t CurrentPos = ftello(MC.ST.fp);
-	fseeko(MC.ST.fp, 0, SEEK_END);
-	int64_t SourceSize = ftello(MC.ST.fp);
-	fseeko(MC.ST.fp, CurrentPos, SEEK_SET);
-
-	std::auto_ptr<FFIndex> TrackIndices(new FFIndex(Filesize, Digest));
-	TrackIndices->Decoder = 1;
-
-	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++)
-		TrackIndices->push_back(FFTrack(mkv_TruncFloat(mkv_GetTrackInfo(MF, i)->TimecodeScale), 1000000, HaaliTrackTypeToFFTrackType(mkv_GetTrackInfo(MF, i)->Type)));
-
 	ulonglong StartTime, EndTime, FilePos;
 	unsigned int Track, FrameFlags, FrameSize;
 	AVPacket TempPacket;
@@ -138,7 +138,7 @@ FFIndex *FFMatroskaIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 	while (mkv_ReadFrame(MF, 0, &Track, &StartTime, &EndTime, &FilePos, &FrameSize, &FrameFlags) == 0) {
 		// Update progress
 		if (IC) {
-			if ((*IC)(ftello(MC.ST.fp), SourceSize, ICPrivate)) {
+			if ((*IC)(ftello(MC.ST.fp), Filesize, ICPrivate)) {
 				snprintf(ErrorMsg, MsgSize, "Cancelled by user");
 				return NULL;
 			}
@@ -146,11 +146,20 @@ FFIndex *FFMatroskaIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 
 		// Only create index entries for video for now to save space
 		if (mkv_GetTrackInfo(MF, Track)->Type == TT_VIDEO) {
-			(*TrackIndices)[Track].push_back(TFrameInfo(StartTime, FilePos, FrameSize, (FrameFlags & FRAME_KF) != 0));
+			uint8_t *OB;
+			int OBSize;
+			int RepeatPict = -1;
+
+			if (VideoContexts[Track].Parser) {
+				av_parser_parse2(VideoContexts[Track].Parser, VideoContexts[Track].CodecContext, &OB, &OBSize, TempPacket.data, TempPacket.size, AV_NOPTS_VALUE, AV_NOPTS_VALUE, AV_NOPTS_VALUE);
+				RepeatPict = VideoContexts[Track].Parser->repeat_pict;
+			}
+
+			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(StartTime, RepeatPict, (FrameFlags & FRAME_KF) != 0, FilePos, FrameSize));
 		} else if (mkv_GetTrackInfo(MF, Track)->Type == TT_AUDIO && (IndexMask & (1 << Track))) {
-			(*TrackIndices)[Track].push_back(TFrameInfo(StartTime, AudioContexts[Track].CurrentSample, FilePos, FrameSize, (FrameFlags & FRAME_KF) != 0));
+			(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(StartTime, AudioContexts[Track].CurrentSample, (FrameFlags & FRAME_KF) != 0, FilePos, FrameSize));
 			ReadFrame(FilePos, FrameSize, AudioContexts[Track].CS, MC, ErrorMsg, MsgSize);
-			AVCodecContext *AudioCodecContext = AudioContexts[Track].CTX;
+			AVCodecContext *AudioCodecContext = AudioContexts[Track].CodecContext;
 			TempPacket.data = MC.Buffer;
 			TempPacket.size = FrameSize;
 			if ((FrameFlags & FRAME_KF) != 0)

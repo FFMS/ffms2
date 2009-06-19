@@ -43,68 +43,62 @@ struct IndexHeader {
 	uint8_t FileSignature[20];
 };
 
-SharedAudioContext::SharedAudioContext() {
-	W64W = NULL;
-	CTX = NULL;
+SharedVideoContext::SharedVideoContext(bool FreeCodecContext) {
+	CodecContext = NULL;
+	Parser = NULL;
+	CS = NULL;
+	this->FreeCodecContext = FreeCodecContext;
+}
+
+SharedVideoContext::~SharedVideoContext() {
+	if (CodecContext) {
+		avcodec_close(CodecContext);
+		if (FreeCodecContext)
+			av_free(CodecContext);
+	}
+
+	if (Parser)
+		av_parser_close(Parser);
+
+	if (CS)
+		cs_Destroy(CS);
+}
+
+SharedAudioContext::SharedAudioContext(bool FreeCodecContext) {
+	W64Writer = NULL;
+	CodecContext = NULL;
 	CurrentSample = 0;
+	CS = NULL;
+	this->FreeCodecContext = FreeCodecContext;
 }
 
 SharedAudioContext::~SharedAudioContext() {
-	delete W64W;
-}
-
-FFAudioContext::~FFAudioContext() {
-	if (CTX)
-		avcodec_close(CTX);
-}
-
-MatroskaAudioContext::MatroskaAudioContext() {
-	CS = NULL;
-	CodecPrivate = NULL;
-}
-
-MatroskaAudioContext::~MatroskaAudioContext() {
-	if (CTX) {
-		avcodec_close(CTX);
-		av_free(CTX);
+	delete W64Writer;
+	if (CodecContext) {
+		avcodec_close(CodecContext);
+		if (FreeCodecContext)
+			av_free(CodecContext);
 	}
 
 	if (CS)
 		cs_Destroy(CS);
-	delete[] CodecPrivate;
 }
 
-
-TFrameInfo::TFrameInfo(int64_t DTS, bool KeyFrame) {
+TFrameInfo::TFrameInfo(int64_t DTS, int64_t SampleStart, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
 	this->DTS = DTS;
-	this->KeyFrame = KeyFrame;
-	this->SampleStart = 0;
-	this->FilePos = 0;
-	this->FrameSize = 0;
-}
-
-TFrameInfo::TFrameInfo(int64_t DTS, int64_t FilePos, unsigned int FrameSize, bool KeyFrame) {
-	this->DTS = DTS;
-	this->KeyFrame = KeyFrame;
-	this->SampleStart = 0;
-	this->FilePos = FilePos;
-	this->FrameSize = FrameSize;
-}
-
-TFrameInfo::TFrameInfo(int64_t DTS, int64_t SampleStart, bool KeyFrame) {
-	this->DTS = DTS;
-	this->KeyFrame = KeyFrame;
-	this->SampleStart = SampleStart;
-	this->FilePos = 0;
-	this->FrameSize = 0;
-}
-
-TFrameInfo::TFrameInfo(int64_t DTS, int64_t SampleStart, int64_t FilePos, unsigned int FrameSize, bool KeyFrame) {
-	this->DTS = DTS;
+	this->RepeatPict = RepeatPict;
 	this->KeyFrame = KeyFrame;
 	this->SampleStart = SampleStart;
 	this->FilePos = FilePos;
 	this->FrameSize = FrameSize;
+}
+
+TFrameInfo TFrameInfo::VideoFrameInfo(int64_t DTS, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
+	return TFrameInfo(DTS, 0, RepeatPict, KeyFrame, FilePos, FrameSize);
+}
+
+TFrameInfo TFrameInfo::AudioFrameInfo(int64_t DTS, int64_t SampleStart, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
+	return TFrameInfo(DTS, SampleStart, 0, KeyFrame, FilePos, FrameSize);
 }
 
 int FFTrack::WriteTimecodes(const char *TimecodeFile, char *ErrorMsg, unsigned MsgSize) {
@@ -335,7 +329,7 @@ int FFIndex::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) 
 			Index.read(reinterpret_cast<char *>(&Frames), sizeof(Frames));
 			push_back(FFTrack(Num, Den, static_cast<FFMS_TrackType>(TT)));
 
-			TFrameInfo FI(0, false);
+			TFrameInfo FI = TFrameInfo::VideoFrameInfo(0, 0, false);
 			for (size_t j = 0; j < Frames; j++) {
 				Index.read(reinterpret_cast<char *>(&FI), sizeof(TFrameInfo));
 				at(i).push_back(FI);
@@ -424,24 +418,24 @@ FFIndexer::~FFIndexer() {
 bool FFIndexer::WriteAudio(SharedAudioContext &AudioContext, FFIndex *Index, int Track, int DBSize, char *ErrorMsg, unsigned MsgSize) {
 	// Delay writer creation until after an audio frame has been decoded. This ensures that all parameters are known when writing the headers.
 	if (DBSize > 0) {
-		if (!AudioContext.W64W) {
+		if (!AudioContext.W64Writer) {
 			FFAudioProperties AP;
-			FillAP(AP, AudioContext.CTX, (*Index)[Track]);
+			FillAP(AP, AudioContext.CodecContext, (*Index)[Track]);
 			int FNSize = (*ANC)(SourceFile, Track, &AP, NULL, 0, ANCPrivate);
 			char *WName = new char[FNSize];
 			(*ANC)(SourceFile, Track, &AP, WName, FNSize, ANCPrivate);
 			std::string WN(WName);
 			delete[] WName;
 			try {
-				AudioContext.W64W = new Wave64Writer(WN.c_str(), av_get_bits_per_sample_format(AudioContext.CTX->sample_fmt),
-					AudioContext.CTX->channels, AudioContext.CTX->sample_rate, (AudioContext.CTX->sample_fmt == SAMPLE_FMT_FLT) || (AudioContext.CTX->sample_fmt == SAMPLE_FMT_DBL));
+				AudioContext.W64Writer = new Wave64Writer(WN.c_str(), av_get_bits_per_sample_format(AudioContext.CodecContext->sample_fmt),
+					AudioContext.CodecContext->channels, AudioContext.CodecContext->sample_rate, (AudioContext.CodecContext->sample_fmt == SAMPLE_FMT_FLT) || (AudioContext.CodecContext->sample_fmt == SAMPLE_FMT_DBL));
 			} catch (...) {
 				snprintf(ErrorMsg, MsgSize, "Failed to write wave data");
 				return false;
 			}
 		}
 
-		AudioContext.W64W->WriteData(DecodingBuffer, DBSize);
+		AudioContext.W64Writer->WriteData(DecodingBuffer, DBSize);
 	}
 
 	return true;

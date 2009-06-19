@@ -22,27 +22,9 @@
 
 
 
-class FFIndexMemory {
-private:
-	FFAudioContext *AudioContexts;
-	AVFormatContext *FormatContext;
-public:
-	FFIndexMemory(int Tracks, FFAudioContext *&AudioContexts, AVFormatContext *&FormatContext) {
-		AudioContexts = new FFAudioContext[Tracks];
-		this->AudioContexts = AudioContexts;
-		this->FormatContext = FormatContext;
-	}
-
-	~FFIndexMemory() {
-		delete[] AudioContexts;
-		av_close_input_file(FormatContext);
-	}
-};
-
 FFLAVFIndexer::FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContext, char *ErrorMsg, unsigned MsgSize) : FFIndexer(Filename, ErrorMsg, MsgSize) {
 	SourceFile = Filename;
 	this->FormatContext = FormatContext;
-	IsIndexing = false;
 
 	if (av_find_stream_info(FormatContext) < 0) {
 		av_close_input_file(FormatContext);
@@ -52,18 +34,39 @@ FFLAVFIndexer::FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContex
 }
 
 FFLAVFIndexer::~FFLAVFIndexer() {
-	if (!IsIndexing)
-		av_close_input_file(FormatContext);
+	av_close_input_file(FormatContext);
 }
 
 FFIndex *FFLAVFIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
-	IsIndexing = true;
+	std::vector<SharedAudioContext> AudioContexts(FormatContext->nb_streams, SharedAudioContext(false));
+	std::vector<SharedVideoContext> VideoContexts(FormatContext->nb_streams, SharedVideoContext(false));
 
-	// Audio stuff
-	FFAudioContext *AudioContexts;
-	FFIndexMemory IM = FFIndexMemory(FormatContext->nb_streams, AudioContexts, FormatContext);
+	std::auto_ptr<FFIndex> TrackIndices(new FFIndex(Filesize, Digest));
+	TrackIndices->Decoder = 0;
 
 	for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {
+		TrackIndices->push_back(FFTrack((int64_t)FormatContext->streams[i]->time_base.num * 1000,
+			FormatContext->streams[i]->time_base.den,
+			static_cast<FFMS_TrackType>(FormatContext->streams[i]->codec->codec_type)));
+
+		if (FormatContext->streams[i]->codec->codec_type == FFMS_TYPE_VIDEO &&
+			(VideoContexts[i].Parser = av_parser_init(FormatContext->streams[i]->codec->codec_id))) {
+
+			AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codec->codec_id);
+			if (VideoCodec == NULL) {
+				snprintf(ErrorMsg, MsgSize, "Vudio codec not found");
+				return NULL;
+			}
+
+			if (avcodec_open(FormatContext->streams[i]->codec, VideoCodec) < 0) {
+				snprintf(ErrorMsg, MsgSize, "Could not open video codec");
+				return NULL;
+			}
+
+			VideoContexts[i].CodecContext = FormatContext->streams[i]->codec;
+			VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
+		}
+
 		if (IndexMask & (1 << i) && FormatContext->streams[i]->codec->codec_type == CODEC_TYPE_AUDIO) {
 			AVCodecContext *AudioCodecContext = FormatContext->streams[i]->codec;
 
@@ -78,21 +81,13 @@ FFIndex *FFLAVFIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 				return NULL;
 			}
 
-			AudioContexts[i].CTX = AudioCodecContext;
+			AudioContexts[i].CodecContext = AudioCodecContext;
 		} else {
 			IndexMask &= ~(1 << i);
 		}
 	}
 
 	//
-
-	std::auto_ptr<FFIndex> TrackIndices(new FFIndex(Filesize, Digest));
-	TrackIndices->Decoder = 0;
-
-	for (unsigned int i = 0; i < FormatContext->nb_streams; i++)
-		TrackIndices->push_back(FFTrack((int64_t)FormatContext->streams[i]->time_base.num * 1000,
-		FormatContext->streams[i]->time_base.den,
-		static_cast<FFMS_TrackType>(FormatContext->streams[i]->codec->codec_type)));
 
 	AVPacket Packet, TempPacket;
 	InitNullPacket(&Packet);
@@ -108,12 +103,22 @@ FFIndex *FFLAVFIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 
 		// Only create index entries for video for now to save space
 		if (FormatContext->streams[Packet.stream_index]->codec->codec_type == CODEC_TYPE_VIDEO) {
-			(*TrackIndices)[Packet.stream_index].push_back(TFrameInfo(Packet.dts, (Packet.flags & AV_PKT_FLAG_KEY) ? 1 : 0));
+			uint8_t *OB;
+			int OBSize;
+			int RepeatPict = -1;
+
+			if (VideoContexts[Packet.stream_index].Parser) {
+				av_parser_parse2(VideoContexts[Packet.stream_index].Parser, VideoContexts[Packet.stream_index].CodecContext, &OB, &OBSize, Packet.data, Packet.size, Packet.pts, Packet.dts, Packet.pos);
+				RepeatPict = VideoContexts[Packet.stream_index].Parser->repeat_pict;
+			}
+
+			(*TrackIndices)[Packet.stream_index].push_back(TFrameInfo::VideoFrameInfo(Packet.dts, RepeatPict, (Packet.flags & AV_PKT_FLAG_KEY) ? 1 : 0));
 		} else if (FormatContext->streams[Packet.stream_index]->codec->codec_type == CODEC_TYPE_AUDIO && (IndexMask & (1 << Packet.stream_index))) {
-			(*TrackIndices)[Packet.stream_index].push_back(TFrameInfo(Packet.dts, AudioContexts[Packet.stream_index].CurrentSample, (Packet.flags & AV_PKT_FLAG_KEY) ? 1 : 0));
+			(*TrackIndices)[Packet.stream_index].push_back(TFrameInfo::AudioFrameInfo(Packet.dts, AudioContexts[Packet.stream_index].CurrentSample, (Packet.flags & AV_PKT_FLAG_KEY) ? 1 : 0));
 			AVCodecContext *AudioCodecContext = FormatContext->streams[Packet.stream_index]->codec;
 			TempPacket.data = Packet.data;
 			TempPacket.size = Packet.size;
+			TempPacket.flags = Packet.flags;
 
 			while (TempPacket.size > 0) {
 				int dbsize = AVCODEC_MAX_AUDIO_FRAME_SIZE*10;

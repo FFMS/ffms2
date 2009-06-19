@@ -118,7 +118,7 @@ struct FFTrackTimeBase {
 	int64_t Den;
 };
 
-#define FFMS_FRAMEINFO_COMMON int64_t DTS; bool KeyFrame;
+#define FFMS_FRAMEINFO_COMMON int64_t DTS; int RepeatPict; bool KeyFrame;
 
 struct FFFrameInfo {
 	FFMS_FRAMEINFO_COMMON

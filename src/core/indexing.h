@@ -36,42 +36,45 @@
 #	include "guids.h"
 #endif
 
-#define INDEXVERSION 27
+#define INDEXVERSION 28
 #define INDEXID 0x53920873
 
-class SharedAudioContext {
+class SharedVideoContext {
+private:
+	bool FreeCodecContext;
 public:
-	Wave64Writer *W64W;
-	AVCodecContext *CTX;
-	int64_t CurrentSample;
+	AVCodecContext *CodecContext;
+	AVCodecParserContext *Parser;
+	CompressedStream *CS;
 
-	SharedAudioContext();
+	SharedVideoContext(bool FreeCodecContext);
+	~SharedVideoContext();
+};
+
+class SharedAudioContext {
+private:
+	bool FreeCodecContext;
+public:
+	AVCodecContext *CodecContext;
+	Wave64Writer *W64Writer;
+	int64_t CurrentSample;
+	CompressedStream *CS;
+
+	SharedAudioContext(bool FreeCodecContext);
 	~SharedAudioContext();
 };
 
-class FFAudioContext : public SharedAudioContext {
-public:
-	~FFAudioContext();
-};
-
-class MatroskaAudioContext : public SharedAudioContext {
-public:
-	CompressedStream *CS;
-	uint8_t *CodecPrivate;
-
-	MatroskaAudioContext();
-	~MatroskaAudioContext();
-};
-
 struct TFrameInfo {
+public:
 	FFMS_FRAMEINFO_COMMON
 	int64_t SampleStart;
 	int64_t FilePos;
 	unsigned int FrameSize;
-	TFrameInfo(int64_t DTS, bool KeyFrame);
-	TFrameInfo(int64_t DTS, int64_t FilePos, unsigned int FrameSize, bool KeyFrame);
-	TFrameInfo(int64_t DTS, int64_t SampleStart, bool KeyFrame);
-	TFrameInfo(int64_t DTS, int64_t SampleStart, int64_t FilePos, unsigned int FrameSize, bool KeyFrame);
+
+	static TFrameInfo VideoFrameInfo(int64_t DTS, int RepeatPict, bool KeyFrame, int64_t FilePos = 0, unsigned int FrameSize = 0);
+	static TFrameInfo AudioFrameInfo(int64_t DTS, int64_t SampleStart, bool KeyFrame, int64_t FilePos = 0, unsigned int FrameSize = 0);
+private:
+	TFrameInfo(int64_t DTS, int64_t SampleStart, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize);
 };
 
 class FFTrack : public std::vector<TFrameInfo> {
@@ -139,7 +142,6 @@ public:
 
 class FFLAVFIndexer : public FFIndexer {
 private:
-	bool IsIndexing;
 	AVFormatContext *FormatContext;
 public:
 	FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContext, char *ErrorMsg, unsigned MsgSize);

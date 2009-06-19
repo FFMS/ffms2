@@ -24,20 +24,6 @@
 
 
 
-class HaaliIndexMemory {
-private:
-	MatroskaAudioContext *AudioContexts;
-public:
-	HaaliIndexMemory(int Tracks, MatroskaAudioContext *&AudioContexts) {
-		AudioContexts = new MatroskaAudioContext[Tracks];
-		this->AudioContexts = AudioContexts;
-	}
-
-	~HaaliIndexMemory() {
-		delete[] AudioContexts;
-	}
-};
-
 FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *ErrorMsg, unsigned MsgSize) : FFIndexer(Filename, ErrorMsg, MsgSize) {
 	SourceFile = Filename;
 	this->SourceMode = SourceMode;
@@ -122,35 +108,47 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *Error
 }
 
 FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
-	// Audio stuff
-	MatroskaAudioContext *AudioContexts;
-	HaaliIndexMemory IM = HaaliIndexMemory(NumTracks, AudioContexts);
+	std::vector<SharedAudioContext> AudioContexts(NumTracks, SharedAudioContext(true));
+	std::vector<SharedVideoContext> VideoContexts(NumTracks, SharedVideoContext(true));
 
 	std::auto_ptr<FFIndex> TrackIndices(new FFIndex(Filesize, Digest));
 	TrackIndices->Decoder = 2;
 	if (SourceMode == 1)
 		TrackIndices->Decoder = 3;
 
-
 	for (int i = 0; i < NumTracks; i++) {
 		TrackIndices->push_back(FFTrack(1, 1000000000, TrackType[i]));
 
-		if (IndexMask & (1 << i) && TrackType[i] == FFMS_TYPE_AUDIO) {
-			AVCodecContext *AudioCodecContext = avcodec_alloc_context();
-			AudioCodecContext->extradata = CodecPrivate[i];
-			AudioCodecContext->extradata_size = CodecPrivateSize[i];
-			AudioContexts[i].CTX = AudioCodecContext;
+		if (TrackType[i] == FFMS_TYPE_VIDEO && Codec[i] && (VideoContexts[i].Parser = av_parser_init(Codec[i]->id))) {
 
+			AVCodecContext *CodecContext = avcodec_alloc_context();
+			CodecContext->extradata = CodecPrivate[i];
+			CodecContext->extradata_size = CodecPrivateSize[i];
+
+			if (avcodec_open(CodecContext, Codec[i]) < 0) {
+				av_free(CodecContext);
+				snprintf(ErrorMsg, MsgSize, "Could not open video codec");
+				return NULL;
+			}
+
+			VideoContexts[i].CodecContext = CodecContext;
+			VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
+		}
+
+		if (IndexMask & (1 << i) && TrackType[i] == FFMS_TYPE_AUDIO) {
 			if (Codec[i] == NULL) {
-				av_free(AudioCodecContext);
-				AudioContexts[i].CTX = NULL;
 				snprintf(ErrorMsg, MsgSize, "Audio codec not found");
 				return NULL;
 			}
 
-			if (avcodec_open(AudioCodecContext, Codec[i]) < 0) {
-				av_free(AudioCodecContext);
-				AudioContexts[i].CTX = NULL;
+			AVCodecContext *CodecContext = avcodec_alloc_context();
+			CodecContext->extradata = CodecPrivate[i];
+			CodecContext->extradata_size = CodecPrivateSize[i];
+			AudioContexts[i].CodecContext = CodecContext;
+
+			if (avcodec_open(CodecContext, Codec[i]) < 0) {
+				av_free(CodecContext);
+				AudioContexts[i].CodecContext = NULL;
 				snprintf(ErrorMsg, MsgSize, "Could not open audio codec");
 				return NULL;
 			}
@@ -188,15 +186,25 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 		}
 
 		unsigned int Track = pMMF->GetTrack();
+		pMMF->GetPointer(&TempPacket.data);
+		TempPacket.size = pMMF->GetActualDataLength();
 
 		// Only create index entries for video for now to save space
 		if (TrackType[Track] == FFMS_TYPE_VIDEO) {
-			(*TrackIndices)[Track].push_back(TFrameInfo(Ts, pMMF->IsSyncPoint() == S_OK));
+			uint8_t *OB;
+			int OBSize;
+			int RepeatPict = -1;
+
+			if (VideoContexts[Track].Parser) {
+				av_parser_parse2(VideoContexts[Track].Parser, VideoContexts[Track].CodecContext, &OB, &OBSize, TempPacket.data, TempPacket.size, AV_NOPTS_VALUE, AV_NOPTS_VALUE, AV_NOPTS_VALUE);
+				RepeatPict = VideoContexts[Track].Parser->repeat_pict;
+			}
+
+			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(Ts, RepeatPict, pMMF->IsSyncPoint() == S_OK));
 		} else if (TrackType[Track] == FFMS_TYPE_AUDIO && (IndexMask & (1 << Track))) {
-			(*TrackIndices)[Track].push_back(TFrameInfo(Ts, AudioContexts[Track].CurrentSample, 0 /* FIXME? */, pMMF->GetActualDataLength(), pMMF->IsSyncPoint() == S_OK));
-			AVCodecContext *AudioCodecContext = AudioContexts[Track].CTX;
-			pMMF->GetPointer(&TempPacket.data);
-			TempPacket.size = pMMF->GetActualDataLength();
+			(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(Ts, AudioContexts[Track].CurrentSample, pMMF->IsSyncPoint() == S_OK));
+			AVCodecContext *AudioCodecContext = AudioContexts[Track].CodecContext;
+
 			if (pMMF->IsSyncPoint() == S_OK)
 				TempPacket.flags = AV_PKT_FLAG_KEY;
 			else
