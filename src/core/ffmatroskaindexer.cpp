@@ -21,10 +21,6 @@
 #include "indexing.h"
 #include "matroskaparser.h"
 
-extern "C" {
-#include <libavcodec/avcodec.h>
-}
-
 
 
 class MatroskaIndexMemory {

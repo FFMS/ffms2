@@ -160,14 +160,6 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 	}
 //
 
-	AVCodecParserContext *s = av_parser_init(Codec[0]->id);
-	s->flags = PARSER_FLAG_COMPLETE_FRAMES;
-	AVCodecContext *CodecContext = avcodec_alloc_context();
-	if (avcodec_open(CodecContext, Codec[0]) < 0) {
-		snprintf(ErrorMsg, MsgSize, "Could not open video codec");
-		return NULL;
-	}
-
 	AVPacket TempPacket;
 	InitNullPacket(&TempPacket);
 
@@ -199,11 +191,6 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 
 		// Only create index entries for video for now to save space
 		if (TrackType[Track] == FFMS_TYPE_VIDEO) {
-			uint8_t *ob;
-			int obsize;
-			pMMF->GetPointer(&TempPacket.data);
-			TempPacket.size = pMMF->GetActualDataLength();
-			av_parser_parse2(s, CodecContext, &ob, &obsize, TempPacket.data, TempPacket.size, AV_NOPTS_VALUE, AV_NOPTS_VALUE, AV_NOPTS_VALUE);
 			(*TrackIndices)[Track].push_back(TFrameInfo(Ts, pMMF->IsSyncPoint() == S_OK));
 		} else if (TrackType[Track] == FFMS_TYPE_AUDIO && (IndexMask & (1 << Track))) {
 			(*TrackIndices)[Track].push_back(TFrameInfo(Ts, AudioContexts[Track].CurrentSample, 0 /* FIXME? */, pMMF->GetActualDataLength(), pMMF->IsSyncPoint() == S_OK));
@@ -242,8 +229,6 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 			}
 		}
 	}
-
-	av_parser_close(s);
 
 	TrackIndices->Sort();
 	return TrackIndices.release();
