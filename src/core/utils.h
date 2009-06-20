@@ -22,6 +22,7 @@
 #define UTILS_H
 
 #include <vector>
+#include <fstream>
 #include "ffms.h"
 #include "ffmscompat.h"
 #include "matroskaparser.h"
@@ -35,6 +36,7 @@ extern "C" {
 }
 
 #ifdef HAALISOURCE
+#	define WIN32_LEAN_AND_MEAN
 #	define _WIN32_DCOM
 #	include <windows.h>
 #	include <tchar.h>
@@ -44,7 +46,6 @@ extern "C" {
 #	include "CoParser.h"
 #	include "guids.h"
 #endif
-
 
 
 struct MatroskaReaderContext {
@@ -62,6 +63,12 @@ public:
 	~MatroskaReaderContext() {
 		free(Buffer);
 	}
+};
+
+class ffms_fstream : public std::fstream {
+public:
+	void open(const char *filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out);
+	ffms_fstream(const char *filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out);
 };
 
 int GetSWSCPUFlags();

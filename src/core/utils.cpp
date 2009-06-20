@@ -28,6 +28,12 @@
 #	include <intrin.h>
 #endif
 
+#if defined(FFMS_USE_UTF8_PATHS) && defined(_WIN32)
+#	define WIN32_LEAN_AND_MEAN
+#	include <windows.h>
+#endif
+
+
 // Export the array but not its data type... fun...
 typedef struct CodecTags{
     char str[20];
@@ -243,3 +249,21 @@ CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate) {
 
 	return CODEC_ID_NONE;
 }
+
+void ffms_fstream::open(const char *filename, std::ios_base::openmode mode) {
+#if defined(FFMS_USE_UTF8_PATHS) && defined(_WIN32)
+	// Hack: support utf8-in-char* filenames on windows
+	wchar_t filename_wide[MAX_PATH*2];
+	if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, filename, -1, filename_wide, MAX_PATH) > 0)
+		std::fstream::open(filename_wide, mode);
+	else
+		std::fstream::open(filename, mode);
+#else
+	std::fstream::open(filename, mode);
+#endif
+}
+
+ffms_fstream::ffms_fstream(const char *filename, std::ios_base::openmode mode) {
+	open(filename, mode);
+}
+

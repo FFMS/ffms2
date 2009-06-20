@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <iostream>
 #include <fstream>
+#include "utils.h"
 
 // this is to avoid depending on windows.h etc.
 typedef struct FFMS_WAVEFORMATEX {
@@ -36,7 +37,7 @@ typedef struct FFMS_WAVEFORMATEX {
 	uint16_t cbSize;
 } FFMS_WAVEFORMATEX;
 
-class Wave64Writer : private std::ofstream {
+class Wave64Writer : private ffms_fstream {
 public:
 	Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat);
 	~Wave64Writer();

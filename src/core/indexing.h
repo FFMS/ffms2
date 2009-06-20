@@ -26,6 +26,7 @@
 #include "wave64writer.h"
 
 #ifdef HAALISOURCE
+#	define WIN32_LEAN_AND_MEAN
 #	define _WIN32_DCOM
 #	include <windows.h>
 #	include <tchar.h>

@@ -44,7 +44,7 @@ static const uint8_t Guiddata[16]={
 	0x64, 0x61, 0x74, 0x61, 0xF3, 0xAC, 0xD3, 0x11, 0x8C, 0xD1, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A
 };
 
-Wave64Writer::Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat) : std::ofstream(Filename, std::ios::out | std::ios::binary | std::ios::trunc) {
+Wave64Writer::Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat) : ffms_fstream(Filename, std::ios::out | std::ios::binary | std::ios::trunc) {
 	BytesWritten = 0;
 	this->BitsPerSample = BitsPerSample;
 	this->Channels = Channels;

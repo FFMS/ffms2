@@ -102,7 +102,7 @@ TFrameInfo TFrameInfo::AudioFrameInfo(int64_t DTS, int64_t SampleStart, bool Key
 }
 
 int FFTrack::WriteTimecodes(const char *TimecodeFile, char *ErrorMsg, unsigned MsgSize) {
-	std::ofstream Timecodes(TimecodeFile, std::ios::out | std::ios::trunc);
+	ffms_fstream Timecodes(TimecodeFile, std::ios::out | std::ios::trunc);
 
 	if (!Timecodes.is_open()) {
 		snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for writing", TimecodeFile);
@@ -169,7 +169,8 @@ FFTrack::FFTrack(int64_t Num, int64_t Den, FFMS_TrackType TT) {
 }
 
 int FFIndex::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20], char *ErrorMsg, unsigned MsgSize) {
-	std::ifstream SFile(Filename, std::ios::in | std::ios::binary);
+	ffms_fstream SFile(Filename, std::ios::in | std::ios::binary);
+
 	if (!SFile.is_open()) {
 		snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for hashing", Filename);
 		return 1;
@@ -243,7 +244,7 @@ int FFIndex::CompareFileSignature(const char *Filename, char *ErrorMsg, unsigned
 }
 
 int FFIndex::WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) {
-	std::ofstream IndexStream(IndexFile, std::ios::out | std::ios::binary | std::ios::trunc);
+	ffms_fstream IndexStream(IndexFile, std::ios::out | std::ios::binary | std::ios::trunc);
 
 	if (!IndexStream.is_open()) {
 		snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for writing", IndexFile);
@@ -284,7 +285,7 @@ int FFIndex::WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize)
 }
 
 int FFIndex::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) {
-	std::ifstream Index(IndexFile, std::ios::in | std::ios::binary);
+	ffms_fstream Index(IndexFile, std::ios::in | std::ios::binary);
 
 	if (!Index.is_open()) {
 		snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for reading", IndexFile);
