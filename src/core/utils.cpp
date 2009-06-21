@@ -254,10 +254,10 @@ FILE *ffms_fopen(const char *filename, const char *mode) {
 #ifdef FFMS_USE_UTF8_PATHS
 	// Hack: support utf8-in-char* filenames on windows
 	wchar_t filename_wide[MAX_PATH*2];
-	// 500 characters of mode string ought to be enough for everyone
-	wchar_t mode_wide[512];
-	mbstowcs(mode_wide, mode, 500);
-	if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, filename, -1, filename_wide, MAX_PATH) > 0)
+	// 64 characters of mode string ought to be more than enough for everyone
+	wchar_t mode_wide[64];
+	if ((MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, filename, -1, filename_wide, MAX_PATH) > 0)
+			&& (MultiByteToWideChar(CP_ACP, NULL, mode, -1, mode_wide, 60) > 0))
 		return _wfopen(filename_wide, mode_wide);
 	else
 		return fopen(filename, mode);
@@ -274,9 +274,11 @@ size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max) {
 		MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, mbstr, -1, wcstr, max);
 		return static_cast<size_t>(len);
 	}
-	// failed, use locale
-	else
-		return mbstowcs(wcstr, mbstr, max);
+	// failed, use local ANSI codepage
+	else {
+		len = MultiByteToWideChar(CP_ACP, NULL, mbstr, -1, wcstr, max);
+		return static_cast<size_t>(len);
+	}
 #else
 	return mbstowcs(wcstr, mbstr, max);
 #endif
