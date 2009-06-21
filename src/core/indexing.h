@@ -120,7 +120,7 @@ protected:
 	TAudioNameCallback ANC;
 	void *ANCPrivate;
 	const char *SourceFile;
-	int16_t *DecodingBuffer;
+	std::vector<int16_t> DecodingBuffer;
 
 	int64_t Filesize;
 	uint8_t Digest[20];
@@ -176,12 +176,11 @@ private:
 	int NumTracks;
 	FFMS_TrackType TrackType[32];
 	AVCodec *Codec[32];
-	uint8_t *CodecPrivate[32];
+	std::vector<uint8_t> CodecPrivate[32];
 	int CodecPrivateSize[32];
 	int64_t Duration;
 public:
 	FFHaaliIndexer(const char *Filename, int SourceMode, char *ErrorMsg, unsigned MsgSize);
-	~FFHaaliIndexer();
 	FFIndex *DoIndexing(char *ErrorMsg, unsigned MsgSize);
 	int GetNumberOfTracks();
 	FFMS_TrackType GetTrackType(int Track);

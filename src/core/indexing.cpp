@@ -398,14 +398,13 @@ FFIndexer *FFIndexer::CreateFFIndexer(const char *Filename, char *ErrorMsg, unsi
 	return new FFLAVFIndexer(Filename, FormatContext, ErrorMsg, MsgSize);
 }
 
-FFIndexer::FFIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) {
+FFIndexer::FFIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 5) {
 	if (FFIndex::CalculateFileSignature(Filename, &Filesize, Digest, ErrorMsg, MsgSize))
 		throw ErrorMsg;
-	DecodingBuffer = new int16_t[AVCODEC_MAX_AUDIO_FRAME_SIZE * 5];
 }
 
 FFIndexer::~FFIndexer() {
-	delete[] DecodingBuffer;
+
 }
 
 bool FFIndexer::WriteAudio(SharedAudioContext &AudioContext, FFIndex *Index, int Track, int DBSize, char *ErrorMsg, unsigned MsgSize) {
@@ -415,10 +414,9 @@ bool FFIndexer::WriteAudio(SharedAudioContext &AudioContext, FFIndex *Index, int
 			FFAudioProperties AP;
 			FillAP(AP, AudioContext.CodecContext, (*Index)[Track]);
 			int FNSize = (*ANC)(SourceFile, Track, &AP, NULL, 0, ANCPrivate);
-			char *WName = new char[FNSize];
-			(*ANC)(SourceFile, Track, &AP, WName, FNSize, ANCPrivate);
-			std::string WN(WName);
-			delete[] WName;
+			std::vector<char> WName(FNSize);
+			(*ANC)(SourceFile, Track, &AP, &WName[0], FNSize, ANCPrivate);
+			std::string WN(&WName[0]);
 			try {
 				AudioContext.W64Writer = new Wave64Writer(WN.c_str(), av_get_bits_per_sample_format(AudioContext.CodecContext->sample_fmt),
 					AudioContext.CodecContext->channels, AudioContext.CodecContext->sample_rate, (AudioContext.CodecContext->sample_fmt == SAMPLE_FMT_FLT) || (AudioContext.CodecContext->sample_fmt == SAMPLE_FMT_DBL));
@@ -428,7 +426,7 @@ bool FFIndexer::WriteAudio(SharedAudioContext &AudioContext, FFIndex *Index, int
 			}
 		}
 
-		AudioContext.W64Writer->WriteData(DecodingBuffer, DBSize);
+		AudioContext.W64Writer->WriteData(&DecodingBuffer[0], DBSize);
 	}
 
 	return true;

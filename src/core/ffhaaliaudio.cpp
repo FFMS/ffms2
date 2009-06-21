@@ -26,7 +26,6 @@ void FFHaaliAudio::Free(bool CloseCodec) {
 	if (CloseCodec)
 		avcodec_close(CodecContext);
 	av_free(CodecContext);
-	delete[] CodecPrivate;
 }
 
 int FFHaaliAudio::DecodeNextAudioBlock(int64_t *AFirstStartTime, int64_t *Count, char *ErrorMsg, unsigned MsgSize) {
@@ -34,7 +33,7 @@ int FFHaaliAudio::DecodeNextAudioBlock(int64_t *AFirstStartTime, int64_t *Count,
 	int Ret = -1;
 	*AFirstStartTime = -1;
 	*Count = 0;
-	uint8_t *Buf = DecodingBuffer;
+	uint8_t *Buf = &DecodingBuffer[0];
 	AVPacket Packet;
 	InitNullPacket(&Packet);
 
@@ -87,7 +86,6 @@ Done:
 FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFIndex *Index,
 						   int SourceMode, char *ErrorMsg, unsigned MsgSize)
 						   : FFAudio(SourceFile, Index, ErrorMsg, MsgSize) {
-	CodecPrivate = NULL;
 	AVCodec *Codec = NULL;
 	CodecContext = NULL;
 	AudioTrack = Track;
@@ -148,15 +146,15 @@ FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFIndex *Index,
 					pV.Clear();
 					if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
 						CodecPrivateSize = vtSize(pV);
-						CodecPrivate = new uint8_t[CodecPrivateSize];
-						vtCopy(pV, CodecPrivate);
+						CodecPrivate.resize(CodecPrivateSize);
+						vtCopy(pV, &CodecPrivate[0]);
 					}
 
 					pV.Clear();
 					if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
 						char ACodecID[2048];
 						wcstombs(ACodecID, pV.bstrVal, 2000);
-						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, CodecPrivate));
+						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, &CodecPrivate[0]));
 					}
 				}
 			}
@@ -165,7 +163,7 @@ FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFIndex *Index,
 	}
 
 	CodecContext = avcodec_alloc_context();
-	CodecContext->extradata = CodecPrivate;
+	CodecContext->extradata = &CodecPrivate[0];
 	CodecContext->extradata_size = CodecPrivateSize;
 
 	if (Codec == NULL) {
@@ -247,7 +245,7 @@ int FFHaaliAudio::GetAudio(void *Buf, int64_t Start, int64_t Count, char *ErrorM
 
 		// Cache the block if enough blocks before it have been decoded to avoid garbage
 		if (PreDecBlocks == 0) {
-			AudioCache.CacheBlock(Frames[CurrentAudioBlock].SampleStart, DecodeCount, DecodingBuffer);
+			AudioCache.CacheBlock(Frames[CurrentAudioBlock].SampleStart, DecodeCount, &DecodingBuffer[0]);
 			CacheEnd = AudioCache.FillRequest(CacheEnd, Start + Count - CacheEnd, DstBuf + (CacheEnd - Start) * SizeConst);
 		} else {
 			PreDecBlocks--;

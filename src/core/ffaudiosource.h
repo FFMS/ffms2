@@ -72,7 +72,7 @@ class FFAudio {
 protected:
 	TAudioCache AudioCache;
 	int64_t CurrentSample;
-	uint8_t *DecodingBuffer;
+	std::vector<uint8_t> DecodingBuffer;
 	FFTrack Frames;
 	AVCodecContext *CodecContext;
 	int AudioTrack;
@@ -117,7 +117,7 @@ public:
 class FFHaaliAudio : public FFAudio {
 private:
 	CComPtr<IMMContainer> pMMC;
-	uint8_t * CodecPrivate;
+	std::vector<uint8_t> CodecPrivate;
 
 	void Free(bool CloseCodec);
 	int DecodeNextAudioBlock(int64_t *AFirstStartTime, int64_t *Count, char *ErrorMsg, unsigned MsgSize);

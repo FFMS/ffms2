@@ -89,15 +89,15 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *Error
 				pV.Clear();
 				if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
 					CodecPrivateSize[NumTracks] = vtSize(pV);
-					CodecPrivate[NumTracks] = new uint8_t[CodecPrivateSize[NumTracks]];
-					vtCopy(pV, CodecPrivate[NumTracks]);
+					CodecPrivate[NumTracks].resize(CodecPrivateSize[NumTracks]);
+					vtCopy(pV, &CodecPrivate[NumTracks][0]);
 				}
 
 				pV.Clear();
 				if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
 					char CodecID[2048];
 					wcstombs(CodecID, pV.bstrVal, 2000);
-					Codec[NumTracks] = avcodec_find_decoder(MatroskaToFFCodecID(CodecID, CodecPrivate[NumTracks]));
+					Codec[NumTracks] = avcodec_find_decoder(MatroskaToFFCodecID(CodecID, &CodecPrivate[NumTracks][0]));
 				}
 			}
 
@@ -122,7 +122,7 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 		if (TrackType[i] == FFMS_TYPE_VIDEO && Codec[i] && (VideoContexts[i].Parser = av_parser_init(Codec[i]->id))) {
 
 			AVCodecContext *CodecContext = avcodec_alloc_context();
-			CodecContext->extradata = CodecPrivate[i];
+			CodecContext->extradata = &CodecPrivate[i][0];
 			CodecContext->extradata_size = CodecPrivateSize[i];
 
 			if (avcodec_open(CodecContext, Codec[i]) < 0) {
@@ -142,7 +142,7 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 			}
 
 			AVCodecContext *CodecContext = avcodec_alloc_context();
-			CodecContext->extradata = CodecPrivate[i];
+			CodecContext->extradata = &CodecPrivate[i][0];
 			CodecContext->extradata_size = CodecPrivateSize[i];
 			AudioContexts[i].CodecContext = CodecContext;
 
@@ -212,7 +212,7 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 
 			while (TempPacket.size > 0) {
 				int dbsize = AVCODEC_MAX_AUDIO_FRAME_SIZE*10;
-				int Ret = avcodec_decode_audio3(AudioCodecContext, DecodingBuffer, &dbsize, &TempPacket);
+				int Ret = avcodec_decode_audio3(AudioCodecContext, &DecodingBuffer[0], &dbsize, &TempPacket);
 				if (Ret < 0) {
 					if (IgnoreDecodeErrors) {
 						(*TrackIndices)[Track].clear();
@@ -240,11 +240,6 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 
 	TrackIndices->Sort();
 	return TrackIndices.release();
-}
-
-FFHaaliIndexer::~FFHaaliIndexer() {
-	for (int i = 0; i < 32; i++)
-		delete[] CodecPrivate[i];
 }
 
 int FFHaaliIndexer::GetNumberOfTracks() {

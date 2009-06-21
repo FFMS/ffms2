@@ -107,7 +107,7 @@ public:
 class FFHaaliVideo : public FFVideo {
 private:
 	CComPtr<IMMContainer> pMMC;
-	uint8_t * CodecPrivate;
+	std::vector<uint8_t> CodecPrivate;
 
 	void Free(bool CloseCodec);
 	int DecodeNextFrame(int64_t *AFirstStartTime, char *ErrorMsg, unsigned MsgSize);

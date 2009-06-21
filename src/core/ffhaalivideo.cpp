@@ -26,7 +26,6 @@ void FFHaaliVideo::Free(bool CloseCodec) {
 	if (CloseCodec)
 		avcodec_close(CodecContext);
 	av_free(CodecContext);
-	delete[] CodecPrivate;
 }
 
 FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
@@ -34,7 +33,6 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	int Threads, int SourceMode, char *ErrorMsg, unsigned MsgSize)
 	: FFVideo(SourceFile, Index, ErrorMsg, MsgSize) {
 
-	CodecPrivate = NULL;
 	AVCodec *Codec = NULL;
 	CodecContext = NULL;
 	VideoTrack = Track;
@@ -95,15 +93,15 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 					pV.Clear();
 					if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
 						CodecPrivateSize = vtSize(pV);
-						CodecPrivate = new uint8_t[CodecPrivateSize];
-						vtCopy(pV, CodecPrivate);
+						CodecPrivate.resize(CodecPrivateSize);
+						vtCopy(pV, &CodecPrivate[0]);
 					}
 
 					pV.Clear();
 					if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
 						char ACodecID[2048];
 						wcstombs(ACodecID, pV.bstrVal, 2000);
-						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, CodecPrivate));
+						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, &CodecPrivate[0]));
 					}
 				}
 			}
@@ -112,7 +110,7 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	}
 
 	CodecContext = avcodec_alloc_context();
-	CodecContext->extradata = CodecPrivate;
+	CodecContext->extradata = &CodecPrivate[0];
 	CodecContext->extradata_size = CodecPrivateSize;
 	CodecContext->thread_count = Threads;
 
