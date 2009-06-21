@@ -49,7 +49,7 @@ FFIndex *FFLAVFIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 			FormatContext->streams[i]->time_base.den,
 			static_cast<FFMS_TrackType>(FormatContext->streams[i]->codec->codec_type)));
 
-		if (FormatContext->streams[i]->codec->codec_type == FFMS_TYPE_VIDEO &&
+		if (static_cast<FFMS_TrackType>(FormatContext->streams[i]->codec->codec_type) == FFMS_TYPE_VIDEO &&
 			(VideoContexts[i].Parser = av_parser_init(FormatContext->streams[i]->codec->codec_id))) {
 
 			AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codec->codec_id);

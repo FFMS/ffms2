@@ -100,7 +100,7 @@ static void TestFullDump1(char *SrcFile, bool WithAudio) {
 }
 
 int main(int argc, char *argv[]) {
-	char *TestFiles1[10];
+	const char *TestFiles1[10];
 	TestFiles1[0] = "[FLV1]_The_Melancholy_of_Haruhi_Suzumiya_-_Full_Clean_Ending.flv";
 	TestFiles1[1] = "jra_jupiter.avi";
 	TestFiles1[2] = "Zero1_ITV2_TS_Test.ts";
