@@ -24,8 +24,6 @@ void FFLAVFVideo::Free(bool CloseCodec) {
 	if (CloseCodec)
 		avcodec_close(CodecContext);
 	av_close_input_file(FormatContext);
-	//FIXME how was it allocated? how was it deallocate? nobody knows
-	//av_free(FormatContext);
 }
 
 FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFIndex *Index,

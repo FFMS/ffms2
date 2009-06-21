@@ -62,19 +62,26 @@ int FFVideo::InitPP(const char *PP, PixelFormat PixelFormat, char *ErrorMsg, uns
 }
 
 FFAVFrame *FFVideo::OutputFrame(AVFrame *Frame) {
-	if (PPContext) {
+	if (PPContext)
 		pp_postprocess(const_cast<const uint8_t **>(Frame->data), Frame->linesize, PPFrame->data, PPFrame->linesize, VP.Width, VP.Height, Frame->qscale_table, Frame->qstride, PPMode, PPContext, Frame->pict_type | (Frame->qscale_type ? PP_PICT_TYPE_QP2 : 0));
-		PPFrame->key_frame = Frame->key_frame;
-		PPFrame->pict_type = Frame->pict_type;
-	}
 
-	if (SWS) {
+	if (SWS)
 		sws_scale(SWS, PPFrame->data, PPFrame->linesize, 0, VP.Height, FinalFrame->data, FinalFrame->linesize);
-		FinalFrame->key_frame = PPFrame->key_frame;
-		FinalFrame->pict_type = PPFrame->pict_type;
+
+	for (int i = 0; i < 4; i++) {
+		LocalFrame.Data[i] = FinalFrame->data[i];
+		LocalFrame.Linesize[i] = FinalFrame->linesize[i];
 	}
 
-	return reinterpret_cast<FFAVFrame *>(FinalFrame);
+	LocalFrame.Width = CodecContext->width;
+	LocalFrame.Height = CodecContext->height;
+	LocalFrame.KeyFrame = Frame->key_frame;
+	LocalFrame.PictType = Frame->pict_type;
+	LocalFrame.RepeatPict = Frame->repeat_pict;
+	LocalFrame.InterlacedFrame = Frame->interlaced_frame;
+	LocalFrame.TopFieldFirst = Frame->top_field_first;
+
+	return &LocalFrame;
 }
 
 FFVideo::FFVideo(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize) {

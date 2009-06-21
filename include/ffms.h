@@ -106,11 +106,15 @@ enum FFMS_AudioChannel {
 };
 
 struct FFAVFrame {
-    uint8_t *Data[4];
-    int Linesize[4];
-    uint8_t *Base[4];
-    int KeyFrame;
-    int PictType;
+	uint8_t *Data[4];
+	int Linesize[4];
+	int Width;
+	int Height;
+	int KeyFrame;
+	int PictType;
+	int RepeatPict;
+	int InterlacedFrame;
+	int TopFieldFirst;
 };
 
 struct FFTrackTimeBase {

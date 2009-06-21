@@ -52,6 +52,7 @@ private:
 	SwsContext *SWS;
 protected:
 	FFVideoProperties VP;
+	FFAVFrame LocalFrame;
 	AVFrame *DecodeFrame;
 	AVFrame *PPFrame;
 	AVFrame *FinalFrame;
