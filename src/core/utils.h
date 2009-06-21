@@ -23,6 +23,7 @@
 
 #include <vector>
 #include <fstream>
+#include <stdio.h>
 #include "ffms.h"
 #include "ffmscompat.h"
 #include "matroskaparser.h"
