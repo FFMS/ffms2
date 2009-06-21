@@ -177,47 +177,39 @@ int FFIndex::CalculateFileSignature(const char *Filename, int64_t *Filesize, uin
 	}
 
 	const int BlockSize = 2*1024*1024;
-	uint8_t *FileBuffer = new uint8_t[BlockSize];
-	uint8_t *ctxmem = new uint8_t[av_sha1_size];
-	AVSHA1 *ctx = (AVSHA1 *)ctxmem;
+	std::vector<uint8_t> FileBuffer(BlockSize);
+	std::vector<uint8_t> ctxmem(av_sha1_size);
+	AVSHA1 *ctx = (AVSHA1 *)&ctxmem[0];
 	av_sha1_init(ctx);
 
-	memset(FileBuffer, 0, BlockSize);
-	SFile.read((char *)FileBuffer, BlockSize);
-	if (SFile.fail()) {
+	memset(&FileBuffer[0], 0, BlockSize);
+	SFile.read((char *)&FileBuffer[0], BlockSize);
+	if (SFile.fail() && !SFile.eof()) {
 		snprintf(ErrorMsg, MsgSize, "Failed to perform operation on '%s' for hashing", Filename);
 		av_sha1_final(ctx, Digest);
-		delete [] ctxmem;
-		delete [] FileBuffer;
 		return 1;
 	}
-	av_sha1_update(ctx, FileBuffer, BlockSize);
+	av_sha1_update(ctx, &FileBuffer[0], BlockSize);
 
 	SFile.seekg(-BlockSize, std::ios::end);
-	memset(FileBuffer, 0, BlockSize);
-	SFile.read((char *)FileBuffer, BlockSize);
-	if (SFile.fail()) {
+	memset(&FileBuffer[0], 0, BlockSize);
+	SFile.read((char *)&FileBuffer[0], BlockSize);
+	if (SFile.fail() && !SFile.eof()) {
 		snprintf(ErrorMsg, MsgSize, "Failed to perform operation on '%s' for hashing", Filename);
 		av_sha1_final(ctx, Digest);
-		delete [] ctxmem;
-		delete [] FileBuffer;
 		return 1;
 	}
-	av_sha1_update(ctx, FileBuffer, BlockSize);
+	av_sha1_update(ctx, &FileBuffer[0], BlockSize);
 
 	SFile.seekg(0, std::ios::end);
 	if (SFile.fail()) {
 		snprintf(ErrorMsg, MsgSize, "Failed to perform operation on '%s' for hashing", Filename);
 		av_sha1_final(ctx, Digest);
-		delete [] ctxmem;
-		delete [] FileBuffer;
 		return 1;
 	}
 	*Filesize = SFile.tellg();
 
 	av_sha1_final(ctx, Digest);
-	delete [] ctxmem;
-	delete [] FileBuffer;
 	return 0;
 }
 
