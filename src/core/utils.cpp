@@ -24,14 +24,11 @@
 #include "utils.h"
 #include "indexing.h"
 
-#ifdef _MSC_VER
-#	include <intrin.h>
-#endif
-
 #ifdef FFMS_USE_UTF8_PATHS
 #	define WIN32_LEAN_AND_MEAN
 #	include <windows.h>
 #endif
+
 
 
 // Export the array but not its data type... fun...
