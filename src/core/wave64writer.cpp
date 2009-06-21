@@ -44,14 +44,14 @@ static const uint8_t Guiddata[16]={
 	0x64, 0x61, 0x74, 0x61, 0xF3, 0xAC, 0xD3, 0x11, 0x8C, 0xD1, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A
 };
 
-Wave64Writer::Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat) : ffms_fstream(Filename, std::ios::out | std::ios::binary | std::ios::trunc) {
+Wave64Writer::Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat) : WavFile(Filename, std::ios::out | std::ios::binary | std::ios::trunc) {
 	BytesWritten = 0;
 	this->BitsPerSample = BitsPerSample;
 	this->Channels = Channels;
 	this->SamplesPerSec = SamplesPerSec;
 	this->IsFloat = IsFloat;
 
-	if (!is_open())
+	if (!WavFile.is_open())
 		throw "Failed to open destination file for writing";
 
 	WriteHeader(true, IsFloat);
@@ -59,7 +59,7 @@ Wave64Writer::Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_
 
 Wave64Writer::~Wave64Writer() {
 	WriteHeader(false, IsFloat);
-	close();
+	WavFile.close();
 }
 
 void Wave64Writer::WriteHeader(bool Initial, bool IsFloat) {
@@ -99,14 +99,14 @@ void Wave64Writer::WriteHeader(bool Initial, bool IsFloat) {
 	else
 		Header[13] = BytesWritten + 24;
 
-	std::streampos CPos = tellp();
-	seekp(0, std::ios::beg);
-	write(reinterpret_cast<const char *>(Header), sizeof(Header));
+	std::streampos CPos = WavFile.tellp();
+	WavFile.seekp(0, std::ios::beg);
+	WavFile.write(reinterpret_cast<const char *>(Header), sizeof(Header));
 	if (!Initial)
-		seekp(CPos, std::ios::beg);
+		WavFile.seekp(CPos, std::ios::beg);
 }
 
 void Wave64Writer::WriteData(void *Data, std::streamsize Length) {
-	write(reinterpret_cast<char *>(Data), Length);
+	WavFile.write(reinterpret_cast<char *>(Data), Length);
 	BytesWritten += Length;
 }

@@ -37,12 +37,13 @@ typedef struct FFMS_WAVEFORMATEX {
 	uint16_t cbSize;
 } FFMS_WAVEFORMATEX;
 
-class Wave64Writer : private ffms_fstream {
+class Wave64Writer {
 public:
 	Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat);
 	~Wave64Writer();
 	void WriteData(void *Data, std::streamsize Length);
 private:
+	ffms_fstream WavFile;
 	int32_t BitsPerSample;
 	int32_t Channels;
 	uint32_t SamplesPerSec;
