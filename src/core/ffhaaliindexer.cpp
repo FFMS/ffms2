@@ -55,7 +55,7 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *Error
 	}
 
 	WCHAR WSourceFile[2048];
-	mbstowcs(WSourceFile, SourceFile, 2000);
+	ffms_mbstowcs(WSourceFile, SourceFile, 2000);
 	CComQIPtr<IMMStreamOpen> pMSO(pMS);
 	if (FAILED(pMSO->Open(WSourceFile))) {
 		snprintf(ErrorMsg, MsgSize, "Can't open file");

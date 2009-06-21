@@ -250,6 +250,40 @@ CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate) {
 	return CODEC_ID_NONE;
 }
 
+FILE *ffms_fopen(const char *filename, const char *mode) {
+#if defined(FFMS_USE_UTF8_PATHS) && defined(_WIN32)
+	// Hack: support utf8-in-char* filenames on windows
+	wchar_t filename_wide[MAX_PATH*2];
+	// 500 characters of mode string ought to be enough for everyone
+	wchar_t mode_wide[512];
+	mbstowcs(mode_wide, mode, 500);
+	if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, filename, -1, filename_wide, MAX_PATH) > 0)
+		return _wfopen(filename_wide, mode_wide);
+	else
+		return fopen(filename, mode);
+#else
+	return fopen(filename, mode);
+#endif
+}
+
+size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max) {
+#if defined(FFMS_USE_UTF8_PATHS) && defined(_WIN32)
+	// try utf8 first
+	int len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, mbstr, -1, NULL, 0);
+	if (len > 0) {
+		MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, mbstr, -1, wcstr, max);
+		return static_cast<size_t>(len);
+	}
+	// failed, use locale
+	else
+		return mbstowcs(wcstr, mbstr, max);
+#else
+	return mbstowcs(wcstr, mbstr, max);
+#endif
+}
+
+
+// ffms_fstream stuff
 void ffms_fstream::open(const char *filename, std::ios_base::openmode mode) {
 #if defined(FFMS_USE_UTF8_PATHS) && defined(_WIN32)
 	// Hack: support utf8-in-char* filenames on windows

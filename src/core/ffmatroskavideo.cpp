@@ -49,7 +49,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 		throw ErrorMsg;
 	}
 
-	MC.ST.fp = fopen(SourceFile, "rb");
+	MC.ST.fp = ffms_fopen(SourceFile, "rb");
 	if (MC.ST.fp == NULL) {
 		snprintf(ErrorMsg, MsgSize, "Can't open '%s': %s", SourceFile, strerror(errno));
 		throw ErrorMsg;

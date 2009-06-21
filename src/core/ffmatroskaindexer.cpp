@@ -31,7 +31,7 @@ FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename, char *ErrorMsg, unsig
 	char ErrorMessage[256];
 
 	InitStdIoStream(&MC.ST);
-	MC.ST.fp = fopen(SourceFile, "rb");
+	MC.ST.fp = ffms_fopen(SourceFile, "rb");
 	if (MC.ST.fp == NULL) {
 		snprintf(ErrorMsg, MsgSize, "Can't open '%s': %s", SourceFile, strerror(errno));
 		throw ErrorMsg;

@@ -83,5 +83,7 @@ unsigned vtSize(VARIANT &vt);
 void vtCopy(VARIANT& vt,void *dest);
 #endif
 CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate);
+FILE *ffms_fopen(const char *filename, const char *mode);
+size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max);
 
 #endif
