@@ -28,7 +28,7 @@
 #	include <intrin.h>
 #endif
 
-#if defined(FFMS_USE_UTF8_PATHS) && defined(_WIN32)
+#ifdef FFMS_USE_UTF8_PATHS
 #	define WIN32_LEAN_AND_MEAN
 #	include <windows.h>
 #endif
@@ -251,7 +251,7 @@ CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate) {
 }
 
 FILE *ffms_fopen(const char *filename, const char *mode) {
-#if defined(FFMS_USE_UTF8_PATHS) && defined(_WIN32)
+#ifdef FFMS_USE_UTF8_PATHS
 	// Hack: support utf8-in-char* filenames on windows
 	wchar_t filename_wide[MAX_PATH*2];
 	// 500 characters of mode string ought to be enough for everyone
@@ -267,7 +267,7 @@ FILE *ffms_fopen(const char *filename, const char *mode) {
 }
 
 size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max) {
-#if defined(FFMS_USE_UTF8_PATHS) && defined(_WIN32)
+#ifdef FFMS_USE_UTF8_PATHS
 	// try utf8 first
 	int len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, mbstr, -1, NULL, 0);
 	if (len > 0) {
@@ -285,7 +285,7 @@ size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max) {
 
 // ffms_fstream stuff
 void ffms_fstream::open(const char *filename, std::ios_base::openmode mode) {
-#if defined(FFMS_USE_UTF8_PATHS) && defined(_WIN32)
+#ifdef FFMS_USE_UTF8_PATHS
 	// Hack: support utf8-in-char* filenames on windows
 	wchar_t filename_wide[MAX_PATH*2];
 	if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, filename, -1, filename_wide, MAX_PATH) > 0)
