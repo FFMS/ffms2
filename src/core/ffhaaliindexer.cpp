@@ -196,7 +196,7 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 			int RepeatPict = -1;
 
 			if (VideoContexts[Track].Parser) {
-				av_parser_parse2(VideoContexts[Track].Parser, VideoContexts[Track].CodecContext, &OB, &OBSize, TempPacket.data, TempPacket.size, AV_NOPTS_VALUE, AV_NOPTS_VALUE, AV_NOPTS_VALUE);
+				av_parser_parse2(VideoContexts[Track].Parser, VideoContexts[Track].CodecContext, &OB, &OBSize, TempPacket.data, TempPacket.size, ffms_av_nopts_value, ffms_av_nopts_value, ffms_av_nopts_value);
 				RepeatPict = VideoContexts[Track].Parser->repeat_pict;
 			}
 

@@ -23,8 +23,6 @@
 
 
 
-static const int64_t ffms_av_nopts_value = static_cast<int64_t>(1) << 63;
-
 FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) : FFIndexer(Filename, ErrorMsg, MsgSize) {
 	memset(Codec, 0, sizeof(Codec));
 	SourceFile = Filename;

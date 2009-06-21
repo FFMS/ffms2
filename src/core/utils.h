@@ -49,6 +49,9 @@ extern "C" {
 #endif
 
 
+
+const int64_t ffms_av_nopts_value = static_cast<int64_t>(1) << 63;
+
 struct MatroskaReaderContext {
 public:
 	StdIoStream ST;
