@@ -186,8 +186,6 @@ int FFIndex::CalculateFileSignature(const char *Filename, int64_t *Filesize, uin
 	av_sha1_init(ctx);
 
 	memset(&FileBuffer[0], 0, BlockSize);
-	// TODO: check number of bytes read?
-	// what happens if the file is less than 2 MB?
 	fread(&FileBuffer[0], 1, BlockSize, SFile);
 	if (ferror(SFile) && !feof(SFile)) {
 		snprintf(ErrorMsg, MsgSize, "Failed to read from '%s' for hashing", Filename);
@@ -197,7 +195,7 @@ int FFIndex::CalculateFileSignature(const char *Filename, int64_t *Filesize, uin
 	}
 	av_sha1_update(ctx, &FileBuffer[0], BlockSize);
 
-	fseek(SFile, -BlockSize, SEEK_END);
+	fseeko(SFile, -BlockSize, SEEK_END);
 	memset(&FileBuffer[0], 0, BlockSize);
 	fread(&FileBuffer[0], 1, BlockSize, SFile);
 	if (ferror(SFile) && !feof(SFile)) {
@@ -208,7 +206,7 @@ int FFIndex::CalculateFileSignature(const char *Filename, int64_t *Filesize, uin
 	}
 	av_sha1_update(ctx, &FileBuffer[0], BlockSize);
 
-	fseek(SFile, 0, SEEK_END);
+	fseeko(SFile, 0, SEEK_END);
 	if (ferror(SFile)) {
 		snprintf(ErrorMsg, MsgSize, "Failed to seek to end of '%s' for hashing", Filename);
 		av_sha1_final(ctx, Digest);
