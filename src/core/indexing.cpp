@@ -185,7 +185,7 @@ int FFIndex::CalculateFileSignature(const char *Filename, int64_t *Filesize, uin
 	memset(&FileBuffer[0], 0, BlockSize);
 	SFile.read((char *)&FileBuffer[0], BlockSize);
 	if (SFile.fail() && !SFile.eof()) {
-		snprintf(ErrorMsg, MsgSize, "Failed to perform operation on '%s' for hashing", Filename);
+		snprintf(ErrorMsg, MsgSize, "Failed to read from '%s' for hashing", Filename);
 		av_sha1_final(ctx, Digest);
 		return 1;
 	}
@@ -195,7 +195,7 @@ int FFIndex::CalculateFileSignature(const char *Filename, int64_t *Filesize, uin
 	memset(&FileBuffer[0], 0, BlockSize);
 	SFile.read((char *)&FileBuffer[0], BlockSize);
 	if (SFile.fail() && !SFile.eof()) {
-		snprintf(ErrorMsg, MsgSize, "Failed to perform operation on '%s' for hashing", Filename);
+		snprintf(ErrorMsg, MsgSize, "Failed to seek with offset %d from file end in '%s' for hashing", BlockSize, Filename);
 		av_sha1_final(ctx, Digest);
 		return 1;
 	}
@@ -203,7 +203,7 @@ int FFIndex::CalculateFileSignature(const char *Filename, int64_t *Filesize, uin
 
 	SFile.seekg(0, std::ios::end);
 	if (SFile.fail()) {
-		snprintf(ErrorMsg, MsgSize, "Failed to perform operation on '%s' for hashing", Filename);
+		snprintf(ErrorMsg, MsgSize, "Failed to seek to end of '%s' for hashing", Filename);
 		av_sha1_final(ctx, Digest);
 		return 1;
 	}
