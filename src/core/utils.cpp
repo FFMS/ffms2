@@ -38,10 +38,10 @@ typedef struct CodecTags{
 } CodecTags;
 
 extern "C" {
-extern const AVCodecTag codec_bmp_tags[];
+extern const AVCodecTag ff_codec_bmp_tags[];
 extern const CodecTags ff_mkv_codec_tags[];
-extern const AVCodecTag codec_movvideo_tags[];
-extern const AVCodecTag codec_wav_tags[];
+extern const AVCodecTag ff_codec_movvideo_tags[];
+extern const AVCodecTag ff_codec_wav_tags[];
 }
 
 extern int CPUFeatures;
@@ -231,7 +231,7 @@ CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate) {
 	}
 
 /* Video codecs for "avi in mkv" mode */
-	const AVCodecTag *const tags[] = { codec_bmp_tags, 0 };
+	const AVCodecTag *const tags[] = { ff_codec_bmp_tags, 0 };
 	if (!strcmp(Codec, "V_MS/VFW/FOURCC"))
 		return av_codec_get_id(tags, ((BITMAPINFOHEADER *)CodecPrivate)->biCompression);
 
