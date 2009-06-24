@@ -213,7 +213,7 @@ int FFIndex::CalculateFileSignature(const char *Filename, int64_t *Filesize, uin
 		fclose(SFile);
 		return 1;
 	}
-	*Filesize = ftell(SFile);
+	*Filesize = ftello(SFile);
 	fclose(SFile);
 
 	av_sha1_final(ctx, Digest);
