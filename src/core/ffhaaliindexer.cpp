@@ -90,14 +90,18 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *Error
 				if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
 					CodecPrivateSize[NumTracks] = vtSize(pV);
 					CodecPrivate[NumTracks].resize(CodecPrivateSize[NumTracks]);
-					vtCopy(pV, &CodecPrivate[NumTracks][0]);
+					if (CodecPrivateSize[NumTracks] > 0)
+						vtCopy(pV, &CodecPrivate[NumTracks][0]);
 				}
 
 				pV.Clear();
 				if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
 					char CodecID[2048];
 					wcstombs(CodecID, pV.bstrVal, 2000);
-					Codec[NumTracks] = avcodec_find_decoder(MatroskaToFFCodecID(CodecID, &CodecPrivate[NumTracks][0]));
+					if (CodecPrivateSize[NumTracks] > 0)
+						Codec[NumTracks] = avcodec_find_decoder(MatroskaToFFCodecID(CodecID, &CodecPrivate[NumTracks][0]));
+					else
+						Codec[NumTracks] = avcodec_find_decoder(MatroskaToFFCodecID(CodecID, NULL));
 				}
 			}
 
@@ -122,8 +126,10 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 		if (TrackType[i] == FFMS_TYPE_VIDEO && Codec[i] && (VideoContexts[i].Parser = av_parser_init(Codec[i]->id))) {
 
 			AVCodecContext *CodecContext = avcodec_alloc_context();
-			CodecContext->extradata = &CodecPrivate[i][0];
-			CodecContext->extradata_size = CodecPrivateSize[i];
+			if (CodecPrivateSize[i] > 0) {
+				CodecContext->extradata = &CodecPrivate[i][0];
+				CodecContext->extradata_size = CodecPrivateSize[i];
+			}
 
 			if (avcodec_open(CodecContext, Codec[i]) < 0) {
 				av_free(CodecContext);
@@ -142,8 +148,10 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 			}
 
 			AVCodecContext *CodecContext = avcodec_alloc_context();
-			CodecContext->extradata = &CodecPrivate[i][0];
-			CodecContext->extradata_size = CodecPrivateSize[i];
+			if (CodecPrivateSize[i] > 0) {
+				CodecContext->extradata = &CodecPrivate[i][0];
+				CodecContext->extradata_size = CodecPrivateSize[i];
+			}
 			AudioContexts[i].CodecContext = CodecContext;
 
 			if (avcodec_open(CodecContext, Codec[i]) < 0) {

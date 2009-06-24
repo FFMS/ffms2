@@ -147,14 +147,18 @@ FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFIndex *Index,
 					if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
 						CodecPrivateSize = vtSize(pV);
 						CodecPrivate.resize(CodecPrivateSize);
-						vtCopy(pV, &CodecPrivate[0]);
+						if (CodecPrivateSize > 0)
+							vtCopy(pV, &CodecPrivate[0]);
 					}
 
 					pV.Clear();
 					if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
 						char ACodecID[2048];
 						wcstombs(ACodecID, pV.bstrVal, 2000);
-						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, &CodecPrivate[0]));
+						if (CodecPrivateSize > 0)
+							Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, &CodecPrivate[0]));
+						else
+							Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, NULL));
 					}
 				}
 			}
@@ -163,8 +167,10 @@ FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFIndex *Index,
 	}
 
 	CodecContext = avcodec_alloc_context();
-	CodecContext->extradata = &CodecPrivate[0];
-	CodecContext->extradata_size = CodecPrivateSize;
+	if (CodecPrivateSize > 0) {
+		CodecContext->extradata = &CodecPrivate[0];
+		CodecContext->extradata_size = CodecPrivateSize;
+	}
 
 	if (Codec == NULL) {
 		Free(false);
