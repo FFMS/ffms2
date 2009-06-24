@@ -50,6 +50,8 @@ extern "C" {
 
 
 
+#define FFMS_GET_VECTOR_PTR(v) (((v).size() ? &(v)[0] : NULL))
+
 const int64_t ffms_av_nopts_value = static_cast<int64_t>(1) << 63;
 
 struct MatroskaReaderContext {

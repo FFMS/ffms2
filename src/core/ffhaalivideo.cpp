@@ -94,14 +94,14 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 					if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
 						CodecPrivateSize = vtSize(pV);
 						CodecPrivate.resize(CodecPrivateSize);
-						vtCopy(pV, &CodecPrivate[0]);
+						vtCopy(pV, FFMS_GET_VECTOR_PTR(CodecPrivate));
 					}
 
 					pV.Clear();
 					if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
 						char ACodecID[2048];
 						wcstombs(ACodecID, pV.bstrVal, 2000);
-						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, &CodecPrivate[0]));
+						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, FFMS_GET_VECTOR_PTR(CodecPrivate)));
 					}
 				}
 			}
@@ -110,7 +110,7 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	}
 
 	CodecContext = avcodec_alloc_context();
-	CodecContext->extradata = &CodecPrivate[0];
+	CodecContext->extradata = FFMS_GET_VECTOR_PTR(CodecPrivate);
 	CodecContext->extradata_size = CodecPrivateSize;
 	CodecContext->thread_count = Threads;
 
