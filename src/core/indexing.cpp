@@ -22,6 +22,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <stdio.h>
 
 extern "C" {
 #include <libavutil/sha1.h>
@@ -169,9 +170,11 @@ FFTrack::FFTrack(int64_t Num, int64_t Den, FFMS_TrackType TT) {
 }
 
 int FFIndex::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20], char *ErrorMsg, unsigned MsgSize) {
-	ffms_fstream SFile(Filename, std::ios::in | std::ios::binary);
+	// use cstdio because Microsoft's implementation of std::fstream doesn't support files >4GB.
+	// please kill me now.
+	FILE *SFile = ffms_fopen(Filename,"rb");
 
-	if (!SFile.is_open()) {
+	if (SFile == NULL) {
 		snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for hashing", Filename);
 		return 1;
 	}
@@ -183,31 +186,37 @@ int FFIndex::CalculateFileSignature(const char *Filename, int64_t *Filesize, uin
 	av_sha1_init(ctx);
 
 	memset(&FileBuffer[0], 0, BlockSize);
-	SFile.read((char *)&FileBuffer[0], BlockSize);
-	if (SFile.fail() && !SFile.eof()) {
+	// TODO: check number of bytes read?
+	// what happens if the file is less than 2 MB?
+	fread(&FileBuffer[0], 1, BlockSize, SFile);
+	if (ferror(SFile) && !feof(SFile)) {
 		snprintf(ErrorMsg, MsgSize, "Failed to read from '%s' for hashing", Filename);
 		av_sha1_final(ctx, Digest);
+		fclose(SFile);
 		return 1;
 	}
 	av_sha1_update(ctx, &FileBuffer[0], BlockSize);
 
-	SFile.seekg(-BlockSize, std::ios::end);
+	fseek(SFile, -BlockSize, SEEK_END);
 	memset(&FileBuffer[0], 0, BlockSize);
-	SFile.read((char *)&FileBuffer[0], BlockSize);
-	if (SFile.fail() && !SFile.eof()) {
+	fread(&FileBuffer[0], 1, BlockSize, SFile);
+	if (ferror(SFile) && !feof(SFile)) {
 		snprintf(ErrorMsg, MsgSize, "Failed to seek with offset %d from file end in '%s' for hashing", BlockSize, Filename);
 		av_sha1_final(ctx, Digest);
+		fclose(SFile);
 		return 1;
 	}
 	av_sha1_update(ctx, &FileBuffer[0], BlockSize);
 
-	SFile.seekg(0, std::ios::end);
-	if (SFile.fail()) {
+	fseek(SFile, 0, SEEK_END);
+	if (ferror(SFile)) {
 		snprintf(ErrorMsg, MsgSize, "Failed to seek to end of '%s' for hashing", Filename);
 		av_sha1_final(ctx, Digest);
+		fclose(SFile);
 		return 1;
 	}
-	*Filesize = SFile.tellg();
+	*Filesize = ftell(SFile);
+	fclose(SFile);
 
 	av_sha1_final(ctx, Digest);
 	return 0;
