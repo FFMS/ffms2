@@ -117,7 +117,7 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 		TrackIndices->Decoder = 3;
 
 	for (int i = 0; i < NumTracks; i++) {
-		TrackIndices->push_back(FFTrack(1, 1000000000, TrackType[i]));
+		TrackIndices->push_back(FFTrack(1, 1000000, TrackType[i]));
 
 		if (TrackType[i] == FFMS_TYPE_VIDEO && Codec[i] && (VideoContexts[i].Parser = av_parser_init(Codec[i]->id))) {
 
