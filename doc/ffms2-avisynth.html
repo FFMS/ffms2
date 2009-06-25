@@ -219,8 +219,8 @@ short  long name       short   long option     Description
                        y       nochrom         chrominance filtering disabled
                        n       noluma          luma filtering disabled
 hb     hdeblock        (2 threshold)           horizontal deblocking filter
-       1. difference factor: default=32, higher -&amp;gt; more deblocking
-       2. flatness threshold: default=39, lower -&amp;gt; more deblocking
+       1. difference factor: default=32, higher -&gt; more deblocking
+       2. flatness threshold: default=39, lower -&gt; more deblocking
                        the h &amp; v deblocking filters share these
                        so you can't set different thresholds for h / v
 vb     vdeblock        (2 threshold)           vertical deblocking filter
@@ -230,7 +230,7 @@ h1     x1hdeblock                              experimental h deblock filter 1
 v1     x1vdeblock                              experimental v deblock filter 1
 dr     dering                                  deringing filter
 al     autolevels                              automatic brightness / contrast
-                       f        fullyrange     stretch luminance to (0..255)
+f      fullyrange                              stretch luminance to (0..255)
 lb     linblenddeint                           linear blend deinterlacer
 li     linipoldeint                            linear interpolating deinterlace
 ci     cubicipoldeint                          cubic interpolating deinterlacer
@@ -241,10 +241,10 @@ de     default                                 hb:a,vb:a,dr:a
 fa     fast                                    h1:a,v1:a,dr:a
 ac                                             ha:a:128:7,va:a,dr:a
 tn     tmpnoise        (3 threshold)           temporal noise reducer
-                     1. &amp;lt;= 2. &amp;lt;= 3.            larger -&amp;gt; stronger filtering
-fq     forceQuant      &amp;lt;quantizer&amp;gt;             force quantizer
+                     1. &lt;= 2. &lt;= 3.            larger -&gt; stronger filtering
+fq     forceQuant      &lt;quantizer&gt;             force quantizer
 Usage:
-&amp;lt;filterName&amp;gt;[:&amp;lt;option&amp;gt;[:&amp;lt;option&amp;gt;...]][[,|/][-]&amp;lt;filterName&amp;gt;[:&amp;lt;option&amp;gt;...]]...
+&lt;filterName&gt;[:&lt;option&gt;[:&lt;option&gt;...]][[,|/][-]&lt;filterName&gt;[:&lt;option&gt;...]]...
 long form example:
 vdeblock:autoq/hdeblock:autoq/linblenddeint    default,-vdeblock
 short form example:
