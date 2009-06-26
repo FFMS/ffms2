@@ -1,6 +1,6 @@
 Index: libavformat/os_support.c
 ===================================================================
---- libavformat/os_support.c	(revision 19242)
+--- libavformat/os_support.c	(revision 19266)
 +++ libavformat/os_support.c	(working copy)
 @@ -30,6 +30,23 @@
  #include <sys/time.h>
@@ -14,12 +14,12 @@ Index: libavformat/os_support.c
 +#ifdef HAVE_WIN_UTF8_PATHS
 +int winutf8_open(const char *filename, int oflag, int pmode)
 +{
-+	wchar_t wfilename[MAX_PATH * 2];
-+
-+	if (MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,filename,-1,wfilename,MAX_PATH) > 0)
-+		return _wopen(wfilename, oflag, pmode);
-+	else
-+		return open(filename, oflag, pmode);
++    wchar_t wfilename[MAX_PATH * 2];
++    
++    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, filename, -1, wfilename, MAX_PATH) > 0)
++        return _wopen(wfilename, oflag, pmode);
++    else
++        return _open(filename, oflag, pmode);
 +}
 +#endif
 +
@@ -28,7 +28,7 @@ Index: libavformat/os_support.c
  #if HAVE_WINSOCK2_H
 Index: libavformat/os_support.h
 ===================================================================
---- libavformat/os_support.h	(revision 19242)
+--- libavformat/os_support.h	(revision 19266)
 +++ libavformat/os_support.h	(working copy)
 @@ -34,6 +34,11 @@
  #  define lseek(f,p,w) _lseeki64((f), (p), (w))
