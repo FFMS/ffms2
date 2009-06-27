@@ -63,7 +63,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 </p>
 
 <p>
-<b>FFVideoSource(string source, int track, bool cache = true, string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1, string pp, int threads = -1, string timecodes, int seekmode = 1)</b><br />
+<b>FFVideoSource(string source, int track, bool cache = true, string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1, string pp, int threads = -1, string timecodes, int seekmode = 1, width = -1, height = -1, resizer = "BICUBIC", colorspace = "")</b><br />
  Opens video, will invoke indexing of all video tracks if no usable index is found.
 </p>
 

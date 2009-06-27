@@ -99,6 +99,10 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	int Threads = Args[7].AsInt(-1);
 	const char *Timecodes = Args[8].AsString("");
 	int SeekMode = Args[9].AsInt(1);
+	int Width = Args[10].AsInt(0);
+	int Height = Args[11].AsInt(0);
+	const char *Resizer = Args[12].AsString("BICUBIC");
+	const char *ColorSpace = Args[13].AsString("");
 
 	if (Track <= -2)
 		Env->ThrowError("FFVideoSource: No video track selected");
@@ -148,7 +152,7 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	AvisynthVideoSource *Filter;
 
 	try {
-		Filter = new AvisynthVideoSource(Source, Track, Index, FPSNum, FPSDen, PP, Threads, SeekMode, Env, ErrorMsg, MsgSize);
+		Filter = new AvisynthVideoSource(Source, Track, Index, FPSNum, FPSDen, PP, Threads, SeekMode, Width, Height, Resizer, ColorSpace, Env, ErrorMsg, MsgSize);
 	} catch (...) {
 		FFMS_DestroyIndex(Index);
 		throw;
@@ -252,7 +256,7 @@ static AVSValue __cdecl FFSetLogLevel(AVSValue Args, void* UserData, IScriptEnvi
 
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScriptEnvironment* Env) {
     Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[overwrite]b", CreateFFIndex, 0);
-	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i", CreateFFVideoSource, 0);
+	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[width]i[height]i[resizer]s[colorspace]s", CreateFFVideoSource, 0);
     Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s", CreateFFAudioSource, 0);
 	Env->AddFunction("FFPP", "c[pp]s", CreateFFPP, 0);
 	Env->AddFunction("SWScale", "c[width]i[height]i[resizer]s[colorspace]s", CreateSWScale, 0);

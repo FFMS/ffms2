@@ -32,10 +32,14 @@ private:
 	int FPSNum;
 	int FPSDen;
 
-	void InitOutputFormat(IScriptEnvironment *Env);
+	void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
+		const char *ResizerName, const char *ConvertToFormatName,IScriptEnvironment *Env);
 	PVideoFrame OutputFrame(const FFAVFrame *SrcPicture, IScriptEnvironment *Env);
 public:
-	AvisynthVideoSource(const char *SourceFile, int Track, FFIndex *Index, int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode, IScriptEnvironment* Env, char *ErrorMsg, unsigned MsgSize);
+	AvisynthVideoSource(const char *SourceFile, int Track, FFIndex *Index,
+		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode,
+		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
+		const char *ConvertToFormatName, IScriptEnvironment* Env, char *ErrorMsg, unsigned MsgSize);
 	~AvisynthVideoSource();
 	bool __stdcall GetParity(int n) { return false; }
 	void __stdcall SetCacheHints(int cachehints, int frame_range) { }

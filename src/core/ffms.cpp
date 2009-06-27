@@ -131,8 +131,8 @@ FFMS_API(int) FFMS_GetAudio(FFAudio *A, void *Buf, int64_t Start, int64_t Count,
 	return A->GetAudio(Buf, Start, Count, ErrorMsg, MsgSize);
 }
 
-FFMS_API(int) FFMS_SetOutputFormatV(FFVideo *V, int64_t TargetFormats, int Width, int Height, char *ErrorMsg, unsigned MsgSize) {
-	return V->SetOutputFormat(TargetFormats, Width, Height, ErrorMsg, MsgSize);
+FFMS_API(int) FFMS_SetOutputFormatV(FFVideo *V, int64_t TargetFormats, int Width, int Height, int Resizer, char *ErrorMsg, unsigned MsgSize) {
+	return V->SetOutputFormat(TargetFormats, Width, Height, Resizer, ErrorMsg, MsgSize);
 }
 
 FFMS_API(void) FFMS_ResetOutputFormatV(FFVideo *V) {

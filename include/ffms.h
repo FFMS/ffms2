@@ -105,6 +105,20 @@ enum FFMS_AudioChannel {
 	FFMS_CH_STEREO_RIGHT			= 0x40000000
 };
 
+enum FFMS_Resizers {
+	FFMS_RESIZER_FAST_BILINEAR	= 0x01,
+	FFMS_RESIZER_BILINEAR		= 0x02,
+	FFMS_RESIZER_BICUBIC		= 0x04,
+	FFMS_RESIZER_X				= 0x08,
+	FFMS_RESIZER_POINT			= 0x10,
+	FFMS_RESIZER_AREA			= 0x20,
+	FFMS_RESIZER_BICUBLIN		= 0x40,
+	FFMS_RESIZER_GAUSS			= 0x80,
+	FFMS_RESIZER_SINC			= 0x100,
+	FFMS_RESIZER_LANCZOS		= 0x200,
+	FFMS_RESIZER_SPLINE			= 0x400
+};
+
 struct FFAVFrame {
 	uint8_t *Data[4];
 	int Linesize[4];
@@ -177,7 +191,7 @@ FFMS_API(const FFAudioProperties *) FFMS_GetAudioProperties(FFAudio *A);
 FFMS_API(const FFAVFrame *) FFMS_GetFrame(FFVideo *V, int n, char *ErrorMsg, unsigned MsgSize);
 FFMS_API(const FFAVFrame *) FFMS_GetFrameByTime(FFVideo *V, double Time, char *ErrorMsg, unsigned MsgSize);
 FFMS_API(int) FFMS_GetAudio(FFAudio *A, void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize);
-FFMS_API(int) FFMS_SetOutputFormatV(FFVideo *V, int64_t TargetFormats, int Width, int Height, char *ErrorMsg, unsigned MsgSize);
+FFMS_API(int) FFMS_SetOutputFormatV(FFVideo *V, int64_t TargetFormats, int Width, int Height, int Resizer, char *ErrorMsg, unsigned MsgSize);
 FFMS_API(void) FFMS_ResetOutputFormatV(FFVideo *V);
 FFMS_API(void) FFMS_DestroyIndex(FFIndex *Index);
 FFMS_API(int) FFMS_GetFirstTrackOfType(FFIndex *Index, int TrackType, char *ErrorMsg, unsigned MsgSize);

@@ -299,4 +299,3 @@ void ffms_fstream::open(const char *filename, std::ios_base::openmode mode) {
 ffms_fstream::ffms_fstream(const char *filename, std::ios_base::openmode mode) {
 	open(filename, mode);
 }
-

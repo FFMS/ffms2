@@ -19,9 +19,17 @@
 //  THE SOFTWARE.
 
 #include "ffavssources.h"
+#include "avsutils.h"
 #include <cmath>
 
-AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFIndex *Index, int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode, IScriptEnvironment* Env, char *ErrorMsg, unsigned MsgSize) {
+extern "C" {
+#include <libavcodec/avcodec.h>
+}
+
+AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFIndex *Index,
+		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode,
+		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
+		const char *ConvertToFormatName, IScriptEnvironment* Env, char *ErrorMsg, unsigned MsgSize) {
 	memset(&VI, 0, sizeof(VI));
 	this->FPSNum = FPSNum;
 	this->FPSDen = FPSDen;
@@ -31,7 +39,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFIn
 		Env->ThrowError(ErrorMsg);
 
 	try {
-		InitOutputFormat(Env);
+		InitOutputFormat(ResizeToWidth, ResizeToHeight, ResizerName, ConvertToFormatName, Env);
 	} catch (AvisynthError &) {
 		FFMS_DestroyVideoSource(V);
 		throw;
@@ -66,13 +74,43 @@ AvisynthVideoSource::~AvisynthVideoSource() {
 	FFMS_DestroyVideoSource(V);
 }
 
-void AvisynthVideoSource::InitOutputFormat(IScriptEnvironment *Env) {
+void AvisynthVideoSource::InitOutputFormat(
+	int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
+	const char *ConvertToFormatName, IScriptEnvironment *Env) {
+
 	const FFVideoProperties *VP = FFMS_GetVideoProperties(V);
 
-	if (FFMS_SetOutputFormatV(V, (1 << FFMS_GetPixFmt("yuvj420p")) |
+	int64_t TargetFormats = (1 << FFMS_GetPixFmt("yuvj420p")) |
 		(1 << FFMS_GetPixFmt("yuv420p")) | (1 << FFMS_GetPixFmt("yuyv422")) |
-		(1 << FFMS_GetPixFmt("rgb32")) | (1 << FFMS_GetPixFmt("bgr24")),
-		VP->Width, VP->Height, NULL, 0))
+		(1 << FFMS_GetPixFmt("rgb32")) | (1 << FFMS_GetPixFmt("bgr24"));
+
+	// PIX_FMT_NV12 is misused as a return value different to the defined ones in the function
+	PixelFormat TargetPixelFormat = CSNameToPIXFMT(ConvertToFormatName, PIX_FMT_NV12);
+	if (TargetPixelFormat == PIX_FMT_NONE)
+		Env->ThrowError("FFVideoSource: Invalid colorspace name specified");
+
+	if (TargetPixelFormat != PIX_FMT_NV12)
+		TargetFormats = static_cast<int64_t>(1) << TargetPixelFormat;
+
+	if (ResizeToWidth <= 0)
+		ResizeToWidth = VP->Width;
+
+	if (ResizeToHeight <= 0)
+		ResizeToHeight = VP->Height;
+
+	int Resizer = ResizerNameToSWSResizer(ResizerName);
+	if (Resizer == 0)
+		Env->ThrowError("FFVideoSource: Invalid resizer name specified");
+
+	if (FFMS_SetOutputFormatV(V, TargetFormats,
+		ResizeToWidth, ResizeToHeight, Resizer, NULL, 0))
+		Env->ThrowError("FFVideoSource: No suitable output format found");
+
+	VP = FFMS_GetVideoProperties(V);
+
+	// This trick is required to first get the "best" default format and then set only that format as the output
+	if (FFMS_SetOutputFormatV(V, static_cast<int64_t>(1) << VP->VPixelFormat,
+		ResizeToWidth, ResizeToHeight, Resizer, NULL, 0))
 		Env->ThrowError("FFVideoSource: No suitable output format found");
 
 	VP = FFMS_GetVideoProperties(V);

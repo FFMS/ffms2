@@ -21,6 +21,14 @@
 #ifndef AVSUTILS_H
 #define AVSUTILS_H
 
+extern "C" {
+#include <libavcodec/avcodec.h>
+}
+
+
+
 int AvisynthToFFCPUFlags(long AvisynthFlags);
+PixelFormat CSNameToPIXFMT(const char *CSName, PixelFormat Default);
+int ResizerNameToSWSResizer(const char *ResizerName);
 
 #endif

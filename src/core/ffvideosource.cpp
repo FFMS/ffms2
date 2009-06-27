@@ -71,7 +71,7 @@ FFAVFrame *FFVideo::OutputFrame(AVFrame *Frame, char *ErrorMsg, unsigned MsgSize
 		if (ReAdjustPP(CodecContext->pix_fmt, CodecContext->width, CodecContext->height, ErrorMsg, MsgSize))
 			return NULL;
 		if (TargetHeight > 0 && TargetWidth > 0 && TargetPixelFormats != 0)
-			if (ReAdjustOutputFormat(TargetPixelFormats, TargetWidth, TargetHeight, ErrorMsg, MsgSize))
+			if (ReAdjustOutputFormat(TargetPixelFormats, TargetWidth, TargetHeight, TargetResizer, ErrorMsg, MsgSize))
 				return NULL;
 	}
 
@@ -132,6 +132,7 @@ FFVideo::FFVideo(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigne
 	TargetHeight = -1;
 	TargetWidth = -1;
 	TargetPixelFormats = 0;
+	TargetResizer = 0;
 	DecodeFrame = avcodec_alloc_frame();
 
 	// Dummy allocations so the unallocated case doesn't have to be handled later
@@ -159,14 +160,15 @@ FFAVFrame *FFVideo::GetFrameByTime(double Time, char *ErrorMsg, unsigned MsgSize
 	return GetFrame(Frame, ErrorMsg, MsgSize);
 }
 
-int FFVideo::SetOutputFormat(int64_t TargetFormats, int Width, int Height, char *ErrorMsg, unsigned MsgSize) {
+int FFVideo::SetOutputFormat(int64_t TargetFormats, int Width, int Height, int Resizer, char *ErrorMsg, unsigned MsgSize) {
 	this->TargetWidth = Width;
 	this->TargetHeight = Height;
 	this->TargetPixelFormats = TargetFormats;
-	return ReAdjustOutputFormat(TargetFormats, Width, Height, ErrorMsg, MsgSize);
+	this->TargetResizer = Resizer;
+	return ReAdjustOutputFormat(TargetFormats, Width, Height, Resizer, ErrorMsg, MsgSize);
 }
 
-int FFVideo::ReAdjustOutputFormat(int64_t TargetFormats, int Width, int Height, char *ErrorMsg, unsigned MsgSize) {
+int FFVideo::ReAdjustOutputFormat(int64_t TargetFormats, int Width, int Height, int Resizer, char *ErrorMsg, unsigned MsgSize) {
 	if (SWS) {
 		sws_freeContext(SWS);
 		SWS = NULL;
@@ -183,7 +185,7 @@ int FFVideo::ReAdjustOutputFormat(int64_t TargetFormats, int Width, int Height, 
 
 	if (CodecContext->pix_fmt != OutputFormat || Width != CodecContext->width || Height != CodecContext->height) {
 		SWS = sws_getContext(CodecContext->width, CodecContext->height, CodecContext->pix_fmt, Width, Height,
-			OutputFormat, GetSWSCPUFlags() | SWS_BICUBIC, NULL, NULL, NULL);
+			OutputFormat, GetSWSCPUFlags() | Resizer, NULL, NULL, NULL);
 		if (SWS == NULL) {
 			ResetOutputFormat();
 			snprintf(ErrorMsg, MsgSize, "Failed to allocate SWScale context");

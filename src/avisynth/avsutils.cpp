@@ -22,6 +22,10 @@
 #include "avisynth.h"
 #include "ffms.h"
 
+extern "C" {
+#include <libswscale/swscale.h>
+}
+
 
 
 int AvisynthToFFCPUFlags(long AvisynthFlags) {
@@ -34,4 +38,44 @@ int AvisynthToFFCPUFlags(long AvisynthFlags) {
 		Flags |= FFMS_CPU_CAPS_MMX2;
 
 	return Flags;
+}
+
+PixelFormat CSNameToPIXFMT(const char *CSName, PixelFormat Default) {
+	if (!_stricmp(CSName, ""))
+		return Default;
+	if (!_stricmp(CSName, "YV12"))
+		return PIX_FMT_YUV420P;
+	if (!_stricmp(CSName, "YUY2"))
+		return PIX_FMT_YUYV422;
+	if (!_stricmp(CSName, "RGB24"))
+		return PIX_FMT_BGR24;
+	if (!_stricmp(CSName, "RGB32"))
+		return PIX_FMT_RGB32;
+	return PIX_FMT_NONE;
+}
+
+int ResizerNameToSWSResizer(const char *ResizerName) {
+	if (!_stricmp(ResizerName, "FAST_BILINEAR"))
+		return SWS_FAST_BILINEAR;
+	if (!_stricmp(ResizerName, "BILINEAR"))
+		return SWS_BILINEAR;
+	if (!_stricmp(ResizerName, "BICUBIC"))
+		return SWS_BICUBIC;
+	if (!_stricmp(ResizerName, "X"))
+		return SWS_X;
+	if (!_stricmp(ResizerName, "POINT"))
+		return SWS_POINT;
+	if (!_stricmp(ResizerName, "AREA"))
+		return SWS_AREA;
+	if (!_stricmp(ResizerName, "BICUBLIN"))
+		return SWS_BICUBLIN;
+	if (!_stricmp(ResizerName, "GAUSS"))
+		return SWS_GAUSS;
+	if (!_stricmp(ResizerName, "SINC"))
+		return SWS_SINC;
+	if (!_stricmp(ResizerName, "LANCZOS"))
+		return SWS_LANCZOS;
+	if (!_stricmp(ResizerName, "SPLINE"))
+		return SWS_SPLINE;
+	return 0;
 }
