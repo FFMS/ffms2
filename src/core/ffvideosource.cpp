@@ -20,7 +20,7 @@
 
 #include "ffvideosource.h"
 
-int FFVideo::InitPP(const char *PP, PixelFormat PixelFormat, char *ErrorMsg, unsigned MsgSize) {
+int FFVideo::InitPP(const char *PP, char *ErrorMsg, unsigned MsgSize) {
 	if (PP == NULL || !strcmp(PP, ""))
 		return 0;
 
@@ -30,56 +30,87 @@ int FFVideo::InitPP(const char *PP, PixelFormat PixelFormat, char *ErrorMsg, uns
 		return 1;
 	}
 
+	return 0;
+}
+
+int FFVideo::ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height, char *ErrorMsg, unsigned MsgSize) {
+	if (!PPMode)
+		return 0;
+
 	int Flags =  GetPPCPUFlags();
 
-	switch (PixelFormat) {
+	switch (VPixelFormat) {
 		case PIX_FMT_YUV420P: Flags |= PP_FORMAT_420; break;
 		case PIX_FMT_YUV422P: Flags |= PP_FORMAT_422; break;
 		case PIX_FMT_YUV411P: Flags |= PP_FORMAT_411; break;
 		case PIX_FMT_YUV444P: Flags |= PP_FORMAT_444; break;
 		default:
 			snprintf(ErrorMsg, MsgSize, "Input format is not supported for postprocessing");
-			return 2;
+			return 1;
 	}
 
-	PPContext = pp_get_context(VP.Width, VP.Height, Flags);
+	if (PPContext)
+		pp_free_context(PPContext);
+	PPContext = pp_get_context(Width, Height, Flags);
 
-	if (!(PPFrame = avcodec_alloc_frame())) {
-		snprintf(ErrorMsg, MsgSize, "Failed to allocate temporary frame");
-		return 3;
-	}
-
-	if (avpicture_alloc((AVPicture *)PPFrame, PixelFormat, VP.Width, VP.Height) < 0) {
-		av_free(PPFrame);
-		PPFrame = NULL;
-		snprintf(ErrorMsg, MsgSize, "Failed to allocate picture");
-		return 4;
-	}
-
-	FinalFrame = PPFrame;
+	avpicture_free(&PPFrame);
+	avpicture_alloc(&PPFrame, VPixelFormat, Width, Height);
 
 	return 0;
 }
 
-FFAVFrame *FFVideo::OutputFrame(AVFrame *Frame) {
-	if (PPContext)
-		pp_postprocess(const_cast<const uint8_t **>(Frame->data), Frame->linesize, PPFrame->data, PPFrame->linesize, VP.Width, VP.Height, Frame->qscale_table, Frame->qstride, PPMode, PPContext, Frame->pict_type | (Frame->qscale_type ? PP_PICT_TYPE_QP2 : 0));
-
-	if (SWS)
-		sws_scale(SWS, PPFrame->data, PPFrame->linesize, 0, VP.Height, FinalFrame->data, FinalFrame->linesize);
-
+static void CopyAVPictureFields(AVPicture &Picture, FFAVFrame &Dst) {
 	for (int i = 0; i < 4; i++) {
-		LocalFrame.Data[i] = FinalFrame->data[i];
-		LocalFrame.Linesize[i] = FinalFrame->linesize[i];
+		Dst.Data[i] = Picture.data[i];
+		Dst.Linesize[i] = Picture.linesize[i];
+	}
+}
+
+FFAVFrame *FFVideo::OutputFrame(AVFrame *Frame, char *ErrorMsg, unsigned MsgSize) {
+	if (LastFrameWidth != CodecContext->width || LastFrameHeight != CodecContext->height || LastFramePixelFormat != CodecContext->pix_fmt) {
+		if (ReAdjustPP(CodecContext->pix_fmt, CodecContext->width, CodecContext->height, ErrorMsg, MsgSize))
+			return NULL;
+		if (TargetHeight > 0 && TargetWidth > 0 && TargetPixelFormats != 0)
+			if (ReAdjustOutputFormat(TargetPixelFormats, TargetWidth, TargetHeight, ErrorMsg, MsgSize))
+				return NULL;
 	}
 
-	LocalFrame.Width = CodecContext->width;
-	LocalFrame.Height = CodecContext->height;
+	if (PPMode) {
+		pp_postprocess(const_cast<const uint8_t **>(Frame->data), Frame->linesize, PPFrame.data, PPFrame.linesize, CodecContext->width, CodecContext->height, Frame->qscale_table, Frame->qstride, PPMode, PPContext, Frame->pict_type | (Frame->qscale_type ? PP_PICT_TYPE_QP2 : 0));
+		if (SWS) {
+			sws_scale(SWS, PPFrame.data, PPFrame.linesize, 0, CodecContext->height, SWSFrame.data, SWSFrame.linesize);
+			CopyAVPictureFields(SWSFrame, LocalFrame);
+		} else {
+			CopyAVPictureFields(PPFrame, LocalFrame);
+		}
+	} else {
+		if (SWS) {
+			sws_scale(SWS, Frame->data, Frame->linesize, 0, CodecContext->height, SWSFrame.data, SWSFrame.linesize);
+			CopyAVPictureFields(SWSFrame, LocalFrame);
+		} else {
+			// Special case to avoid ugly casts
+			for (int i = 0; i < 4; i++) {
+				LocalFrame.Data[i] = Frame->data[i];
+				LocalFrame.Linesize[i] = Frame->linesize[i];
+			}
+		}
+	}
+
+	LocalFrame.EncodedWidth = CodecContext->width;
+	LocalFrame.EncodedHeight = CodecContext->height;
+	LocalFrame.EncodedPixelFormat = CodecContext->pix_fmt;
+	LocalFrame.ScaledWidth = VP.Width;
+	LocalFrame.ScaledHeight = VP.Height;
+	LocalFrame.ConvertedPixelFormat = VP.VPixelFormat;
 	LocalFrame.KeyFrame = Frame->key_frame;
 	LocalFrame.PictType = Frame->pict_type;
 	LocalFrame.RepeatPict = Frame->repeat_pict;
 	LocalFrame.InterlacedFrame = Frame->interlaced_frame;
 	LocalFrame.TopFieldFirst = Frame->top_field_first;
+
+	LastFrameHeight = CodecContext->height;
+	LastFrameWidth = CodecContext->width;
+	LastFramePixelFormat = CodecContext->pix_fmt;
 
 	return &LocalFrame;
 }
@@ -95,26 +126,31 @@ FFVideo::FFVideo(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigne
 	LastFrameNum = 0;
 	CurrentFrame = 1;
 	CodecContext = NULL;
+	LastFrameHeight = -1;
+	LastFrameWidth = -1;
+	LastFramePixelFormat = PIX_FMT_NONE;
+	TargetHeight = -1;
+	TargetWidth = -1;
+	TargetPixelFormats = 0;
 	DecodeFrame = avcodec_alloc_frame();
-	PPFrame = DecodeFrame;
-	FinalFrame = PPFrame;
+
+	// Dummy allocations so the unallocated case doesn't have to be handled later
+	avpicture_alloc(&PPFrame, PIX_FMT_GRAY8, 16, 16);
+	avpicture_alloc(&SWSFrame, PIX_FMT_GRAY8, 16, 16);
 }
 
 FFVideo::~FFVideo() {
 	if (PPMode)
 		pp_free_mode(PPMode);
+
 	if (PPContext)
 		pp_free_context(PPContext);
+
 	if (SWS)
 		sws_freeContext(SWS);
-	if (FinalFrame != PPFrame) {
-		avpicture_free((AVPicture *)FinalFrame);
-		av_free(FinalFrame);
-	}
-	if (PPFrame != DecodeFrame) {
-		avpicture_free((AVPicture *)PPFrame);
-		av_free(PPFrame);
-	}
+
+	avpicture_free(&PPFrame);
+	avpicture_free(&SWSFrame);
 	av_free(DecodeFrame);
 }
 
@@ -124,52 +160,57 @@ FFAVFrame *FFVideo::GetFrameByTime(double Time, char *ErrorMsg, unsigned MsgSize
 }
 
 int FFVideo::SetOutputFormat(int64_t TargetFormats, int Width, int Height, char *ErrorMsg, unsigned MsgSize) {
+	this->TargetWidth = Width;
+	this->TargetHeight = Height;
+	this->TargetPixelFormats = TargetFormats;
+	return ReAdjustOutputFormat(TargetFormats, Width, Height, ErrorMsg, MsgSize);
+}
+
+int FFVideo::ReAdjustOutputFormat(int64_t TargetFormats, int Width, int Height, char *ErrorMsg, unsigned MsgSize) {
+	if (SWS) {
+		sws_freeContext(SWS);
+		SWS = NULL;
+	}
+
 	int Loss;
 	PixelFormat OutputFormat = avcodec_find_best_pix_fmt(TargetFormats,
 		CodecContext->pix_fmt, 1 /* Required to prevent pointless RGB32 => RGB24 conversion */, &Loss);
 	if (OutputFormat == PIX_FMT_NONE) {
+		ResetOutputFormat();
 		snprintf(ErrorMsg, MsgSize, "No suitable output format found");
-		return -1;
+		return 1;
 	}
 
-	SwsContext *NewSWS = NULL;
 	if (CodecContext->pix_fmt != OutputFormat || Width != CodecContext->width || Height != CodecContext->height) {
-		NewSWS = sws_getContext(CodecContext->width, CodecContext->height, CodecContext->pix_fmt, Width, Height,
+		SWS = sws_getContext(CodecContext->width, CodecContext->height, CodecContext->pix_fmt, Width, Height,
 			OutputFormat, GetSWSCPUFlags() | SWS_BICUBIC, NULL, NULL, NULL);
-		if (NewSWS == NULL) {
+		if (SWS == NULL) {
+			ResetOutputFormat();
 			snprintf(ErrorMsg, MsgSize, "Failed to allocate SWScale context");
 			return 1;
 		}
 	}
 
-	if (SWS)
-		sws_freeContext(SWS);
-	SWS = NewSWS;
-
+	VP.VPixelFormat = OutputFormat;
 	VP.Height = Height;
 	VP.Width = Width;
-	VP.VPixelFormat = OutputFormat;
 
-	// FIXME: In theory the allocations in this part could fail just like in InitPP but whatever
-	if (FinalFrame != PPFrame) {
-		avpicture_free((AVPicture *)FinalFrame);
-		av_free(FinalFrame);
-	}
-
-	if (SWS) {
-		FinalFrame = avcodec_alloc_frame();
-		avpicture_alloc((AVPicture *)FinalFrame, static_cast<PixelFormat>(VP.VPixelFormat), VP.Width, VP.Height);
-	} else {
-		FinalFrame = PPFrame;
-	}
+	avpicture_free(&SWSFrame);
+	avpicture_alloc(&SWSFrame, OutputFormat, Width, Height);
 
 	return 0;
 }
 
 void FFVideo::ResetOutputFormat() {
-	if (SWS)
+	if (SWS) {
 		sws_freeContext(SWS);
-	SWS = NULL;
+		SWS = NULL;
+	}
+
+	TargetWidth = -1;
+	TargetHeight = -1;
+	TargetPixelFormats = 0;
+
 	VP.Height = CodecContext->height;
 	VP.Width = CodecContext->width;
 	VP.VPixelFormat = CodecContext->pix_fmt;

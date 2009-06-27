@@ -108,8 +108,12 @@ enum FFMS_AudioChannel {
 struct FFAVFrame {
 	uint8_t *Data[4];
 	int Linesize[4];
-	int Width;
-	int Height;
+	int EncodedWidth;
+	int EncodedHeight;
+	int EncodedPixelFormat;
+	int ScaledWidth;
+	int ScaledHeight;
+	int ConvertedPixelFormat;
 	int KeyFrame;
 	int PictType;
 	int RepeatPict;

@@ -50,12 +50,18 @@ private:
 	pp_context_t *PPContext;
 	pp_mode_t *PPMode;
 	SwsContext *SWS;
+	int LastFrameHeight;
+	int LastFrameWidth;
+	PixelFormat LastFramePixelFormat;
+	int TargetHeight;
+	int TargetWidth;
+	int64_t TargetPixelFormats;
+	AVPicture PPFrame;
+	AVPicture SWSFrame;
 protected:
 	FFVideoProperties VP;
 	FFAVFrame LocalFrame;
 	AVFrame *DecodeFrame;
-	AVFrame *PPFrame;
-	AVFrame *FinalFrame;
 	int LastFrameNum;
 	FFTrack Frames;
 	int VideoTrack;
@@ -63,8 +69,9 @@ protected:
 	AVCodecContext *CodecContext;
 
 	FFVideo(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize);
-	int InitPP(const char *PP, PixelFormat PixelFormat, char *ErrorMsg, unsigned MsgSize);
-	FFAVFrame *OutputFrame(AVFrame *Frame);
+	int InitPP(const char *PP, char *ErrorMsg, unsigned MsgSize);
+	int ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height, char *ErrorMsg, unsigned MsgSize);
+	FFAVFrame *OutputFrame(AVFrame *Frame, char *ErrorMsg, unsigned MsgSize);
 public:
 	virtual ~FFVideo();
 	const FFVideoProperties& GetFFVideoProperties() { return VP; }
@@ -72,6 +79,7 @@ public:
 	virtual FFAVFrame *GetFrame(int n, char *ErrorMsg, unsigned MsgSize) = 0;
 	FFAVFrame *GetFrameByTime(double Time, char *ErrorMsg, unsigned MsgSize);
 	int SetOutputFormat(int64_t TargetFormats, int Width, int Height, char *ErrorMsg, unsigned MsgSize);
+	int ReAdjustOutputFormat(int64_t TargetFormats, int Width, int Height, char *ErrorMsg, unsigned MsgSize);
 	void ResetOutputFormat();
 };
 

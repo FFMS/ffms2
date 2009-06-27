@@ -12,6 +12,7 @@ FFmpegSource2 Changelog
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
 <li>2.00 beta 10<ul>
+<li>Added support for files where the video frames have changing size and colorspace</li>
 <li>The library part can now be compiled to accept UTF8 encoded strings, this allows full unicode support on windows when FFmpeg is compiled with a small patch applied (TheFluff)</li>
 <li>Added proper detection of when the opened file and index is mismatched and throws an error when it happens instead of undefined behavior, should not add a noticable delay to file opening</li>
 <li>Added a proper cmake based build system and vs2008 project files to make developement and use easier (TheFluff, JEEB, Kovensky)</li>

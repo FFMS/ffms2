@@ -148,7 +148,7 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 		throw ErrorMsg;
 	}
 
-	if (InitPP(PP, CodecContext->pix_fmt, ErrorMsg, MsgSize)) {
+	if (InitPP(PP, ErrorMsg, MsgSize)) {
 		Free(true);
 		throw ErrorMsg;
 	}
@@ -161,7 +161,10 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	}
 
 	// Output the already decoded frame so it isn't wasted
-	OutputFrame(DecodeFrame);
+	if (!OutputFrame(DecodeFrame, ErrorMsg, MsgSize)) {
+		Free(true);
+		throw ErrorMsg;
+	}
 
 	// Set AR variables
 	CComVariant pV;
@@ -230,7 +233,7 @@ Done:
 FFAVFrame *FFHaaliVideo::GetFrame(int n, char *ErrorMsg, unsigned MsgSize) {
 	// PPFrame always holds frame LastFrameNum even if no PP is applied
 	if (LastFrameNum == n)
-		return OutputFrame(DecodeFrame);
+		return OutputFrame(DecodeFrame, ErrorMsg, MsgSize);
 
 	bool HasSeeked = false;
 	int SeekOffset = 0;
@@ -266,7 +269,7 @@ ReSeek:
 	} while (CurrentFrame <= n);
 
 	LastFrameNum = n;
-	return OutputFrame(DecodeFrame);
+	return OutputFrame(DecodeFrame, ErrorMsg, MsgSize);
 }
 
 #endif // HAALISOURCE

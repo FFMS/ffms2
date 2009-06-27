@@ -103,7 +103,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFIndex *Index,
 		VP.FPSNumerator = 30;
 	}
 
-	if (InitPP(PP, CodecContext->pix_fmt, ErrorMsg, MsgSize)) {
+	if (InitPP(PP, ErrorMsg, MsgSize)) {
 			Free(true);
 			throw ErrorMsg;
 	}
@@ -116,7 +116,10 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFIndex *Index,
 
 	// Cannot "output" to PPFrame without doing all other initialization
 	// This is the additional mess required for seekmode=-1 to work in a reasonable way
-	OutputFrame(DecodeFrame);
+	if (!OutputFrame(DecodeFrame, ErrorMsg, MsgSize)) {
+		Free(true);
+		throw ErrorMsg;
+	}
 
 	// Set AR variables
 	VP.SARNum = CodecContext->sample_aspect_ratio.num;
@@ -166,7 +169,7 @@ Done:
 FFAVFrame *FFLAVFVideo::GetFrame(int n, char *ErrorMsg, unsigned MsgSize) {
 	// PPFrame always holds frame LastFrameNum even if no PP is applied
 	if (LastFrameNum == n)
-		return OutputFrame(DecodeFrame);
+		return OutputFrame(DecodeFrame, ErrorMsg, MsgSize);
 
 	bool HasSeeked = false;
 	int SeekOffset = 0;
@@ -230,5 +233,5 @@ ReSeek:
 	} while (CurrentFrame <= n);
 
 	LastFrameNum = n;
-	return OutputFrame(DecodeFrame);
+	return OutputFrame(DecodeFrame, ErrorMsg, MsgSize);
 }
