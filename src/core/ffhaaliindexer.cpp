@@ -78,6 +78,7 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *Error
 		CComPtr<IUnknown> pU;
 		while (pEU->Next(1, &pU, NULL) == S_OK) {
 			CComQIPtr<IPropertyBag> pBag = pU;
+			PropertyBags[NumTracks] = pBag;
 
 			if (pBag) {
 				CComVariant pV;
@@ -124,6 +125,8 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 			AVCodecContext *CodecContext = avcodec_alloc_context();
 			CodecContext->extradata = FFMS_GET_VECTOR_PTR(CodecPrivate[i]);
 			CodecContext->extradata_size = CodecPrivateSize[i];
+
+			InitializeCodecContextFromHaaliInfo(PropertyBags[i], CodecContext);
 
 			if (avcodec_open(CodecContext, Codec[i]) < 0) {
 				av_free(CodecContext);

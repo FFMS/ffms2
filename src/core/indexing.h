@@ -178,6 +178,7 @@ private:
 	AVCodec *Codec[32];
 	std::vector<uint8_t> CodecPrivate[32];
 	int CodecPrivateSize[32];
+	CComQIPtr<IPropertyBag> PropertyBags[32];
 	int64_t Duration;
 public:
 	FFHaaliIndexer(const char *Filename, int SourceMode, char *ErrorMsg, unsigned MsgSize);

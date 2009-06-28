@@ -120,6 +120,8 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 		throw ErrorMsg;
 	}
 
+	InitializeCodecContextFromHaaliInfo(pBag, CodecContext);
+
 	if (avcodec_open(CodecContext, Codec) < 0) {
 		Free(false);
 		snprintf(ErrorMsg, MsgSize, "Could not open video codec");
