@@ -70,8 +70,8 @@ FFIndex *FFMatroskaIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 		if (HaaliTrackTypeToFFTrackType(TI->Type) == FFMS_TYPE_VIDEO && Codec[i] && (VideoContexts[i].Parser = av_parser_init(Codec[i]->id))) {
 
 			AVCodecContext *CodecContext = avcodec_alloc_context();
-			CodecContext->extradata = static_cast<uint8_t *>(TI->CodecPrivate);
-			CodecContext->extradata_size = TI->CodecPrivateSize;
+
+			InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);
 
 			if (avcodec_open(CodecContext, Codec[i]) < 0) {
 				av_free(CodecContext);

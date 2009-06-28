@@ -75,8 +75,6 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track,
 	}
 
 	CodecContext = avcodec_alloc_context();
-	CodecContext->extradata = (uint8_t *)TI->CodecPrivate;
-	CodecContext->extradata_size = TI->CodecPrivateSize;
 
 	Codec = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate));
 	if (Codec == NULL) {
@@ -84,6 +82,8 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track,
 		snprintf(ErrorMsg, MsgSize, "Video codec not found");
 		throw ErrorMsg;
 	}
+
+	InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);
 
 	if (avcodec_open(CodecContext, Codec) < 0) {
 		Free(false);

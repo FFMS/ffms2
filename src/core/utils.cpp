@@ -236,7 +236,7 @@ CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate) {
 		return av_codec_get_id(tags, ((BITMAPINFOHEADER *)CodecPrivate)->biCompression);
 
 // FIXME
-/* Audio codecs for "avi in mkv" mode */
+/* Audio codecs for "acm in mkv" mode */
 		//#include "Mmreg.h"
 		//((WAVEFORMATEX *)TI->CodecPrivate)->wFormatTag
 
@@ -246,6 +246,60 @@ CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate) {
 
 	return CODEC_ID_NONE;
 }
+
+void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext) {
+	CodecContext->extradata = static_cast<uint8_t *>(TI->CodecPrivate);
+	CodecContext->extradata_size = TI->CodecPrivateSize;
+
+	if (TI->Type == TT_VIDEO) {
+		CodecContext->coded_width = TI->AV.Video.PixelWidth;
+		CodecContext->coded_height = TI->AV.Video.PixelHeight;
+	} else if (TI->Type == TT_AUDIO) {
+		CodecContext->sample_rate = mkv_TruncFloat(TI->AV.Audio.SamplingFreq);
+		CodecContext->bits_per_coded_sample = TI->AV.Audio.BitDepth;
+		CodecContext->channels = TI->AV.Audio.Channels;
+	}
+}
+
+#ifdef HAALISOURCE
+
+void InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag, AVCodecContext *CodecContext) {
+	if (pBag) {
+		CComVariant pV;
+
+		pV.Clear();
+		if (SUCCEEDED(pBag->Read(L"Type", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4))) {
+
+			if (pV.uintVal == TT_VIDEO) {
+
+				pV.Clear();
+				if (SUCCEEDED(pBag->Read(L"Video.PixelWidth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+					CodecContext->coded_width = pV.uintVal;
+
+				pV.Clear();
+				if (SUCCEEDED(pBag->Read(L"Video.PixelHeight", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+					CodecContext->coded_width = pV.uintVal;
+
+			} else if (pV.uintVal == TT_AUDIO) {
+
+				pV.Clear();
+				if (SUCCEEDED(pBag->Read(L"Audio.SamplingFreq", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+					CodecContext->sample_rate = pV.uintVal;
+
+				pV.Clear();
+				if (SUCCEEDED(pBag->Read(L"Audio.BitDepth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+					CodecContext->bits_per_coded_sample = pV.uintVal;
+
+				pV.Clear();
+				if (SUCCEEDED(pBag->Read(L"Audio.Channels", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+					CodecContext->channels = pV.uintVal;
+
+			}
+		}
+  	}
+}
+
+#endif
 
 FILE *ffms_fopen(const char *filename, const char *mode) {
 #ifdef FFMS_USE_UTF8_PATHS
