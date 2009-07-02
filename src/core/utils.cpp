@@ -278,7 +278,7 @@ void InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag, AVCodecCo
 
 				pV.Clear();
 				if (SUCCEEDED(pBag->Read(L"Video.PixelHeight", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-					CodecContext->coded_width = pV.uintVal;
+					CodecContext->coded_height = pV.uintVal;
 
 			} else if (pV.uintVal == TT_AUDIO) {
 
