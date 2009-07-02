@@ -188,7 +188,9 @@ FFAVFrame *FFLAVFVideo::GetFrame(int n, char *ErrorMsg, unsigned MsgSize) {
 			// 10 frames is used as a margin to prevent excessive seeking since the predicted best keyframe isn't always selected by avformat
 			if (n < CurrentFrame || ClosestKF > CurrentFrame + 10 || (SeekMode == 3 && n > CurrentFrame + 10)) {
 ReSeek:
-				av_seek_frame(FormatContext, VideoTrack, (SeekMode == 3) ? Frames[n].DTS : Frames[ClosestKF + SeekOffset].DTS, AVSEEK_FLAG_BACKWARD);
+				av_seek_frame(FormatContext, VideoTrack,
+					(SeekMode == 3) ? Frames[n].DTS : Frames[ClosestKF + SeekOffset].DTS,
+					AVSEEK_FLAG_BACKWARD);
 				avcodec_flush_buffers(CodecContext);
 				HasSeeked = true;
 			}
@@ -211,12 +213,12 @@ ReSeek:
 				switch (SeekMode) {
 					case 1:
 						// No idea where we are so go back a bit further
-						if (n + SeekOffset == 0) {
+						if (ClosestKF + SeekOffset == 0) {
 							snprintf(ErrorMsg, MsgSize, "Frame accurate seeking is not possible in this file\n");
 							return NULL;
 						}
 
-						SeekOffset -= FFMIN(20, n + SeekOffset);
+						SeekOffset -= FFMIN(10, ClosestKF + SeekOffset);
 						goto ReSeek;
 					case 2:
 					case 3:

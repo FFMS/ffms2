@@ -12,6 +12,7 @@ FFmpegSource2 Changelog
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
 <li>2.00 beta 10<ul>
+<li>Fixed a bug introduced in SeekMode=1 by the changes in beta 6, prevents an access violation from happening in very rare conditions</li>
 <li>Some (but not all) stream properties are now retrieved from the container and passed to libavcodec, this makes a few more formats work like vc1 in mkv/ts</li>
 <li>It is now possible to specify the desired output colorspace and resolution in FFVideoSource, this is mostly useful for file where the resolution changes to avoid excessive up/downscaling</li>
 <li>Added support for files where the video frames have changing size and colorspace</li>
