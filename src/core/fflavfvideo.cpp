@@ -20,6 +20,8 @@
 
 #include "ffvideosource.h"
 
+
+
 void FFLAVFVideo::Free(bool CloseCodec) {
 	if (CloseCodec)
 		avcodec_close(CodecContext);

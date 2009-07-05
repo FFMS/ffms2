@@ -274,7 +274,9 @@ void InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag, AVCodecCo
 		pV.Clear();
 		if (SUCCEEDED(pBag->Read(L"Type", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4))) {
 
-			if (pV.uintVal == TT_VIDEO) {
+			unsigned int TT = pV.uintVal;
+
+			if (TT == TT_VIDEO) {
 
 				pV.Clear();
 				if (SUCCEEDED(pBag->Read(L"Video.PixelWidth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
@@ -284,7 +286,7 @@ void InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag, AVCodecCo
 				if (SUCCEEDED(pBag->Read(L"Video.PixelHeight", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
 					CodecContext->coded_height = pV.uintVal;
 
-			} else if (pV.uintVal == TT_AUDIO) {
+			} else if (TT == TT_AUDIO) {
 
 				pV.Clear();
 				if (SUCCEEDED(pBag->Read(L"Audio.SamplingFreq", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
