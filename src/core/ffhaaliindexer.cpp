@@ -63,7 +63,10 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *Error
 	}
 
 	if (FAILED(pMMC->Open(pMS, 0, NULL, pMA))) {
-		snprintf(ErrorMsg, MsgSize, "Can't parse file");
+		if (SourceMode == 0)
+			snprintf(ErrorMsg, MsgSize, "Can't parse file. Most likely a transport stream not cut at packet boundaries.");
+		else if (SourceMode == 1)
+			snprintf(ErrorMsg, MsgSize, "Can't parse file");
 		throw ErrorMsg;
 	}
 

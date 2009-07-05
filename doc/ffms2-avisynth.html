@@ -16,6 +16,7 @@ Opens files using ffmpeg and nothing else. May be frame accurate on good days. T
 
 <h2>Known issues</h2>
 <ul>
+<li>Haali's splitter requires transport streams to be cut at packet boundaries.</li>
 <li>FFAudioSource() will have to remake any index implicitly created by FFVideoSource() and therefore code like
 <pre>
 AudioDub(FFVideoSource(X), FFAudioSource(X))
