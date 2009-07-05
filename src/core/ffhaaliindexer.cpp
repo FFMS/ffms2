@@ -85,6 +85,7 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *Error
 
 			if (pBag) {
 				CComVariant pV;
+				unsigned int FourCC = 0;
 
 				pV.Clear();
 				if (SUCCEEDED(pBag->Read(L"Type", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
@@ -98,10 +99,14 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *Error
 				}
 
 				pV.Clear();
+				if (SUCCEEDED(pBag->Read(L"FOURCC", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+					FourCC = pV.uintVal;
+
+				pV.Clear();
 				if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
 					char CodecID[2048];
 					wcstombs(CodecID, pV.bstrVal, 2000);
-					Codec[NumTracks] = avcodec_find_decoder(MatroskaToFFCodecID(CodecID, FFMS_GET_VECTOR_PTR(CodecPrivate[NumTracks])));
+					Codec[NumTracks] = avcodec_find_decoder(MatroskaToFFCodecID(CodecID, FFMS_GET_VECTOR_PTR(CodecPrivate[NumTracks]), FourCC));
 				}
 			}
 

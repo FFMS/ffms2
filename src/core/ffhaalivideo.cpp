@@ -89,6 +89,7 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 
 				if (pBag) {
 					CComVariant pV;
+					unsigned int FourCC = 0;
 
 					pV.Clear();
 					if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
@@ -98,10 +99,14 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 					}
 
 					pV.Clear();
+					if (SUCCEEDED(pBag->Read(L"FOURCC", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+						FourCC = pV.uintVal;
+
+					pV.Clear();
 					if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
 						char ACodecID[2048];
 						wcstombs(ACodecID, pV.bstrVal, 2000);
-						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, FFMS_GET_VECTOR_PTR(CodecPrivate)));
+						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, FFMS_GET_VECTOR_PTR(CodecPrivate), FourCC));
 					}
 				}
 			}

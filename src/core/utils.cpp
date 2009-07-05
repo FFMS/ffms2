@@ -221,7 +221,7 @@ typedef struct BITMAPINFOHEADER {
 
 #endif
 
-CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate) {
+CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC) {
 /* Look up native codecs */
 	for(int i = 0; ff_mkv_codec_tags[i].id != CODEC_ID_NONE; i++){
 		if(!strncmp(ff_mkv_codec_tags[i].str, Codec,
@@ -232,8 +232,12 @@ CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate) {
 
 /* Video codecs for "avi in mkv" mode */
 	const AVCodecTag *const tags[] = { ff_codec_bmp_tags, 0 };
+
 	if (!strcmp(Codec, "V_MS/VFW/FOURCC"))
-		return av_codec_get_id(tags, ((BITMAPINFOHEADER *)CodecPrivate)->biCompression);
+		return av_codec_get_id(tags, reinterpret_cast<BITMAPINFOHEADER *>(CodecPrivate)->biCompression);
+
+	if (!strcmp(Codec, "V_FOURCC"))
+		return av_codec_get_id(tags, FourCC);
 
 // FIXME
 /* Audio codecs for "acm in mkv" mode */
