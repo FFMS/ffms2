@@ -233,11 +233,14 @@ CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC
 /* Video codecs for "avi in mkv" mode */
 	const AVCodecTag *const tags[] = { ff_codec_bmp_tags, 0 };
 
-	if (!strcmp(Codec, "V_MS/VFW/FOURCC"))
-		return av_codec_get_id(tags, reinterpret_cast<BITMAPINFOHEADER *>(CodecPrivate)->biCompression);
+	if (!strcmp(Codec, "V_MS/VFW/FOURCC")) {
+		BITMAPINFOHEADER *b = reinterpret_cast<BITMAPINFOHEADER *>(CodecPrivate);
+		return av_codec_get_id(tags, b->biCompression);
+	}
 
-	if (!strcmp(Codec, "V_FOURCC"))
+	if (!strcmp(Codec, "V_FOURCC")) {
 		return av_codec_get_id(tags, FourCC);
+	}
 
 // FIXME
 /* Audio codecs for "acm in mkv" mode */
