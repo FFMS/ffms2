@@ -11,12 +11,13 @@ FFmpegSource2 User Manual
 <div class="maincontent">
 <h1>FFmpegSource2 User Manual</h1>
 <p>
-Opens files using ffmpeg and nothing else. May be frame accurate on good days. The source is MIT licensed and can be obtained from <a href="http://code.google.com/p/ffmpegsource/source/checkout">http://code.google.com/p/ffmpegsource/source/checkout</a>. The precompiled binary is GPL3 licensed. If you are religious you may consider this the second coming.
+Opens files using FFmpeg and nothing else. May be frame accurate on good days. The source is MIT licensed and can be obtained from <a href="http://code.google.com/p/ffmpegsource/source/checkout">http://code.google.com/p/ffmpegsource/source/checkout</a>. The precompiled binary is GPL3 licensed. If you are religious you may consider this the second coming.
 </p>
 
-<h2>Known issues</h2>
+<h2>Limitations</h2>
 <ul>
-<li>Haali's splitter requires transport streams to be cut at packet boundaries.</li>
+<li>Requires <a href='http://haali.cs.msu.ru/mkv/'>Haali's Media Splitter</a> if ogm or mpeg ps/ts is to be opened.</li>
+<li>Haali's splitter requires transport streams to be cut at packet boundaries. Use <a href='http://forum.doom9.org/showthread.php?t=125447'>TsRemux</a> to fix the stream before trying to open it.</li>
 <li>FFAudioSource() will have to remake any index implicitly created by FFVideoSource() and therefore code like
 <pre>
 AudioDub(FFVideoSource(X), FFAudioSource(X))
@@ -33,8 +34,11 @@ FFIndex(X)
 AudioDub(FFVideoSource(X), FFAudioSource(X))
 </pre>
 </li>
+</ul>
+
+<h2>Known issues</h2>
+<ul>
 <li>FFIndex() will silently ignore fatal decoding errors when indexing. This means that indexing a specific track may have failed even if FFIndex() succeeds.</li>
-<li>Requires <a href='http://haali.cs.msu.ru/mkv/'>Haali's Media Splitter</a> if ogm or mpeg ps/ts is to be opened.</li>
 <li>All files with NVOPs (sometimes occurs in xvid and such) will desync when these frames are encountered.</li>
 <li>There are still some issues with FFAudioSource but it should be good enough for actual use in many cases now.</li>
 </ul>
