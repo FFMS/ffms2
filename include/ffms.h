@@ -129,10 +129,10 @@ struct FFAVFrame {
 	int ScaledHeight;
 	int ConvertedPixelFormat;
 	int KeyFrame;
-	int PictType;
 	int RepeatPict;
 	int InterlacedFrame;
 	int TopFieldFirst;
+	char PictType;
 };
 
 struct FFTrackTimeBase {

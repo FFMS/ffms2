@@ -172,7 +172,7 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 	if (Frame == NULL)
 		Env->ThrowError("FFVideoSource: %s", ErrorMsg);
 
-	Env->SetVar("FFPICT_TYPE", Frame->PictType);
+	Env->SetVar("FFPICT_TYPE", static_cast<int>(Frame->PictType));
 	return OutputFrame(Frame, Env);
 }
 

@@ -200,16 +200,17 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <p>
 <b>FFPICT_TYPE:</b>
- The picture type of the most recently requested frame. Use after_frame=true in Avisynth's conditional scripting for proper results. The FFmpeg source definition of the numbers:
+ The picture type of the most recently requested frame as the ascii number of the character listed below. Use Chr() to convert it to an actual letter in avisynth. Use after_frame=true in Avisynth's conditional scripting for proper results. The FFmpeg source definition of the numbers:
 </p>
 <pre>
-FF_I_TYPE  1 ///&lt; Intra
-FF_P_TYPE  2 ///&lt; Predicted
-FF_B_TYPE  3 ///&lt; Bi-dir predicted
-FF_S_TYPE  4 ///&lt; S(GMC)-VOP MPEG4
-FF_SI_TYPE 5 ///&lt; Switching Intra
-FF_SP_TYPE 6 ///&lt; Switching Predicted
-FF_BI_TYPE 7
+I: Intra
+P: Predicted
+B: Bi-dir predicted
+S: S(GMC)-VOP MPEG4
+i: Switching Intra
+p: Switching Predicted
+b: FF_BI_TYPE (no good explanation available)
+?: Unknown
 </pre>
 
 
