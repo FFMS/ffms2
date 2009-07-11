@@ -118,6 +118,7 @@ class FFHaaliVideo : public FFVideo {
 private:
 	CComPtr<IMMContainer> pMMC;
 	std::vector<uint8_t> CodecPrivate;
+	AVBitStreamFilterContext *BitStreamFilter;
 
 	void Free(bool CloseCodec);
 	int DecodeNextFrame(int64_t *AFirstStartTime, char *ErrorMsg, unsigned MsgSize);

@@ -26,6 +26,8 @@ void FFHaaliVideo::Free(bool CloseCodec) {
 	if (CloseCodec)
 		avcodec_close(CodecContext);
 	av_free(CodecContext);
+	if (BitStreamFilter)
+		av_bitstream_filter_close(BitStreamFilter);
 }
 
 FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
@@ -33,6 +35,7 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	int Threads, int SourceMode, char *ErrorMsg, unsigned MsgSize)
 	: FFVideo(SourceFile, Index, ErrorMsg, MsgSize) {
 
+	BitStreamFilter = NULL;
 	AVCodec *Codec = NULL;
 	CodecContext = NULL;
 	VideoTrack = Track;
@@ -133,6 +136,9 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 		throw ErrorMsg;
 	}
 
+	if (Codec->id == CODEC_ID_H264 && SourceMode == 0)
+		BitStreamFilter = av_bitstream_filter_init("h264_mp4toannexb");
+
 	// Always try to decode a frame to make sure all required parameters are known
 	int64_t Dummy;
 	if (DecodeNextFrame(&Dummy, ErrorMsg, MsgSize)) {
@@ -214,6 +220,10 @@ int FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime, char *ErrorMsg, unsi
 				Packet.flags = AV_PKT_FLAG_KEY;
 			else
 				Packet.flags = 0;
+
+			if (BitStreamFilter)
+				av_bitstream_filter_filter(BitStreamFilter, CodecContext, NULL,
+				&Packet.data, &Packet.size, Data, pMMF->GetActualDataLength(), !!Packet.flags);
 
 			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
 

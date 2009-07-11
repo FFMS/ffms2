@@ -12,6 +12,7 @@ FFmpegSource2 Changelog
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
 <li>2.00 beta 10<ul>
+<li>Possibly fixed h264 in transport stream decoding, now a suitable bitstream filter is added (could theoretically break other h264 in ts files so make sure to report if any such files stop working)</li>
 <li>Now returns the frame type as a character to make presentation easier and to remove the ranom numbers from the API</li>
 <li>Fixed the identification of certain codecs (like VC1) in some transport streams</li>
 <li>Fixed a bug introduced in SeekMode=1 by the changes in beta 6, prevents an access violation from happening in very rare conditions</li>
