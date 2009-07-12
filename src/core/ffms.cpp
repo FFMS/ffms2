@@ -30,10 +30,50 @@
 static bool FFmpegInited = false;
 int CPUFeatures = 0;
 
+#ifdef FFMS_WIN_DEBUG
+
+extern "C" int av_log_level;
+
+void av_log_stdout_callback(void* ptr, int level, const char* fmt, va_list vl)
+{
+    static int print_prefix=1;
+    static int count;
+    static char line[1024], prev[1024];
+    AVClass* avc= ptr ? *(AVClass**)ptr : NULL;
+    if(level>av_log_level)
+        return;
+#undef fprintf
+    if(print_prefix && avc) {
+        snprintf(line, sizeof(line), "[%s @ %p]", avc->item_name(ptr), ptr);
+    }else
+        line[0]=0;
+
+    vsnprintf(line + strlen(line), sizeof(line) - strlen(line), fmt, vl);
+
+    print_prefix= line[strlen(line)-1] == '\n';
+    if(print_prefix && !strcmp(line, prev)){
+        count++;
+        return;
+    }
+    if(count>0){
+        fprintf(stdout, "    Last message repeated %d times\n", count);
+        count=0;
+    }
+	OutputDebugStringA(line);
+    strcpy(prev, line);
+}
+
+#endif
+
 FFMS_API(void) FFMS_Init(int CPUFeatures) {
 	if (!FFmpegInited) {
 		av_register_all();
+#ifdef FFMS_WIN_DEBUG
+		av_log_set_callback(av_log_stdout_callback);
+		av_log_set_level(AV_LOG_INFO);
+#else
 		av_log_set_level(AV_LOG_QUIET);
+#endif
 		::CPUFeatures = CPUFeatures;
 		FFmpegInited = true;
 	}
