@@ -105,6 +105,8 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	VP.Height = CodecContext->height;;
 	VP.FPSDenominator = 1;
 	VP.FPSNumerator = 30;
+	VP.RFFDenominator = CodecContext->time_base.num;
+	VP.RFFNumerator = CodecContext->time_base.den;
 	VP.NumFrames = Frames.size();
 	VP.VPixelFormat = CodecContext->pix_fmt;
 	VP.FirstTime = ((Frames.front().DTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;

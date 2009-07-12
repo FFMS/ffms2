@@ -88,6 +88,8 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFIndex *Index,
 	VP.Height = CodecContext->height;
 	VP.FPSDenominator = FormatContext->streams[VideoTrack]->time_base.num;
 	VP.FPSNumerator = FormatContext->streams[VideoTrack]->time_base.den;
+	VP.RFFDenominator = CodecContext->time_base.num;
+	VP.RFFNumerator = CodecContext->time_base.den;
 	VP.NumFrames = Frames.size();
 	VP.VPixelFormat = CodecContext->pix_fmt;
 	VP.FirstTime = ((Frames.front().DTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;

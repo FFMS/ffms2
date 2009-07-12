@@ -151,6 +151,8 @@ struct FFVideoProperties {
 	int Height;
 	int FPSDenominator;
 	int FPSNumerator;
+	int RFFDenominator;
+	int RFFNumerator;
 	int NumFrames;
 	int VPixelFormat;
 	int SARNum;
