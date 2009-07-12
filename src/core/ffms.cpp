@@ -34,7 +34,7 @@ int CPUFeatures = 0;
 
 extern "C" int av_log_level;
 
-void av_log_stdout_callback(void* ptr, int level, const char* fmt, va_list vl)
+void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl)
 {
     static int print_prefix=1;
     static int count;
@@ -56,7 +56,7 @@ void av_log_stdout_callback(void* ptr, int level, const char* fmt, va_list vl)
         return;
     }
     if(count>0){
-        fprintf(stdout, "    Last message repeated %d times\n", count);
+		fprintf(stderr, "    Last message repeated %d times\n", count);
         count=0;
     }
 	OutputDebugStringA(line);
@@ -69,7 +69,7 @@ FFMS_API(void) FFMS_Init(int CPUFeatures) {
 	if (!FFmpegInited) {
 		av_register_all();
 #ifdef FFMS_WIN_DEBUG
-		av_log_set_callback(av_log_stdout_callback);
+		av_log_set_callback(av_log_windebug_callback);
 		av_log_set_level(AV_LOG_INFO);
 #else
 		av_log_set_level(AV_LOG_QUIET);
