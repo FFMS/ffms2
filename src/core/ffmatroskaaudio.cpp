@@ -29,7 +29,7 @@ void FFMatroskaAudio::Free(bool CloseCodec) {
 	}
 	if (CloseCodec)
 		avcodec_close(CodecContext);
-	av_free(CodecContext);
+	av_freep(&CodecContext);
 }
 
 FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track,

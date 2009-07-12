@@ -152,7 +152,7 @@ FFVideo::~FFVideo() {
 
 	avpicture_free(&PPFrame);
 	avpicture_free(&SWSFrame);
-	av_free(DecodeFrame);
+	av_freep(&DecodeFrame);
 }
 
 FFAVFrame *FFVideo::GetFrameByTime(double Time, char *ErrorMsg, unsigned MsgSize) {

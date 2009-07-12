@@ -55,7 +55,7 @@ SharedVideoContext::~SharedVideoContext() {
 	if (CodecContext) {
 		avcodec_close(CodecContext);
 		if (FreeCodecContext)
-			av_free(CodecContext);
+			av_freep(&CodecContext);
 	}
 
 	if (Parser)
@@ -78,7 +78,7 @@ SharedAudioContext::~SharedAudioContext() {
 	if (CodecContext) {
 		avcodec_close(CodecContext);
 		if (FreeCodecContext)
-			av_free(CodecContext);
+			av_freep(&CodecContext);
 	}
 
 	if (CS)

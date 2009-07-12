@@ -29,7 +29,7 @@ void FFMatroskaVideo::Free(bool CloseCodec) {
 	}
 	if (CloseCodec)
 		avcodec_close(CodecContext);
-	av_free(CodecContext);
+	av_freep(&CodecContext);
 }
 
 FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,

@@ -74,7 +74,7 @@ FFIndex *FFMatroskaIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 			InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);
 
 			if (avcodec_open(CodecContext, Codec[i]) < 0) {
-				av_free(CodecContext);
+				av_freep(&CodecContext);
 				snprintf(ErrorMsg, MsgSize, "Could not open video codec");
 				return NULL;
 			}
@@ -100,7 +100,7 @@ FFIndex *FFMatroskaIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 			if (TI->CompEnabled) {
 				AudioContexts[i].CS = cs_Create(MF, i, ErrorMessage, sizeof(ErrorMessage));
 				if (AudioContexts[i].CS == NULL) {
-					av_free(AudioCodecContext);
+					av_freep(&AudioCodecContext);
 					AudioContexts[i].CodecContext = NULL;
 					snprintf(ErrorMsg, MsgSize, "Can't create decompressor: %s", ErrorMessage);
 					return NULL;
@@ -109,14 +109,14 @@ FFIndex *FFMatroskaIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 
 			AVCodec *AudioCodec = Codec[i];
 			if (AudioCodec == NULL) {
-				av_free(AudioCodecContext);
+				av_freep(&AudioCodecContext);
 				AudioContexts[i].CodecContext = NULL;
 				snprintf(ErrorMsg, MsgSize, "Audio codec not found");
 				return NULL;
 			}
 
 			if (avcodec_open(AudioCodecContext, AudioCodec) < 0) {
-				av_free(AudioCodecContext);
+				av_freep(&AudioCodecContext);
 				AudioContexts[i].CodecContext = NULL;
 				snprintf(ErrorMsg, MsgSize, "Could not open audio codec");
 				return NULL;

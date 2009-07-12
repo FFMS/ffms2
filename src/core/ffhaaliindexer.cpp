@@ -137,7 +137,7 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 			InitializeCodecContextFromHaaliInfo(PropertyBags[i], CodecContext);
 
 			if (avcodec_open(CodecContext, Codec[i]) < 0) {
-				av_free(CodecContext);
+				av_freep(&CodecContext);
 				snprintf(ErrorMsg, MsgSize, "Could not open video codec");
 				return NULL;
 			}
@@ -158,7 +158,7 @@ FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 			AudioContexts[i].CodecContext = CodecContext;
 
 			if (avcodec_open(CodecContext, Codec[i]) < 0) {
-				av_free(CodecContext);
+				av_freep(&CodecContext);
 				AudioContexts[i].CodecContext = NULL;
 				snprintf(ErrorMsg, MsgSize, "Could not open audio codec");
 				return NULL;

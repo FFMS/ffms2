@@ -25,7 +25,7 @@
 void FFHaaliVideo::Free(bool CloseCodec) {
 	if (CloseCodec)
 		avcodec_close(CodecContext);
-	av_free(CodecContext);
+	av_freep(&CodecContext);
 	if (BitStreamFilter)
 		av_bitstream_filter_close(BitStreamFilter);
 }

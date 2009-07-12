@@ -25,7 +25,7 @@
 void FFHaaliAudio::Free(bool CloseCodec) {
 	if (CloseCodec)
 		avcodec_close(CodecContext);
-	av_free(CodecContext);
+	av_freep(&CodecContext);
 }
 
 int FFHaaliAudio::DecodeNextAudioBlock(int64_t *AFirstStartTime, int64_t *Count, char *ErrorMsg, unsigned MsgSize) {
