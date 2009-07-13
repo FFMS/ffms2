@@ -25,7 +25,6 @@
 #include <fstream>
 #include <stdio.h>
 #include "ffms.h"
-#include "ffmscompat.h"
 #include "matroskaparser.h"
 
 extern "C" {
@@ -35,6 +34,9 @@ extern "C" {
 #include <libswscale/swscale.h>
 #include <libpostproc/postprocess.h>
 }
+
+// must be included after ffmpeg headers
+#include "ffmscompat.h"
 
 #ifdef HAALISOURCE
 #	define WIN32_LEAN_AND_MEAN

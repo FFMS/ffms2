@@ -21,11 +21,6 @@
 #ifndef FFMSCOMPAT_H
 #define	FFMSCOMPAT_H
 
-extern "C" {
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
-}
-
 #ifdef _WIN32
 #	define snprintf _snprintf
 #	ifdef __MINGW32__
@@ -38,13 +33,16 @@ extern "C" {
 #endif
 
 // Compatibility with older/newer ffmpegs
-#if (LIBAVFORMAT_VERSION_INT) > (AV_VERSION_INT(52,34,0)) 
-#define codec_bmp_tags ff_codec_bmp_tags 
-#define codec_movvideo_tags ff_codec_movvideo_tags
-#define codec_wav_tags ff_codec_wav_tags
+#ifdef LIBAVFORMAT_VERSION_INT
+#	if (LIBAVFORMAT_VERSION_INT) > (AV_VERSION_INT(52,34,0)) 
+#		define codec_bmp_tags ff_codec_bmp_tags 
+#		define codec_movvideo_tags ff_codec_movvideo_tags
+#		define codec_wav_tags ff_codec_wav_tags
+#	endif
 #endif
+
 #ifndef AV_PKT_FLAG_KEY
-#define AV_PKT_FLAG_KEY PKT_FLAG_KEY
+#	define AV_PKT_FLAG_KEY PKT_FLAG_KEY
 #endif
 
 
