@@ -34,10 +34,10 @@
 
 // Compatibility with older/newer ffmpegs
 #ifdef LIBAVFORMAT_VERSION_INT
-#	if (LIBAVFORMAT_VERSION_INT) > (AV_VERSION_INT(52,34,0)) 
-#		define codec_bmp_tags ff_codec_bmp_tags 
-#		define codec_movvideo_tags ff_codec_movvideo_tags
-#		define codec_wav_tags ff_codec_wav_tags
+#	if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(52,34,0)) 
+#		define ff_codec_bmp_tags codec_bmp_tags
+#		define ff_codec_movvideo_tags codec_movvideo_tags
+#		define ff_codec_wav_tags codec_wav_tags
 #	endif
 #endif
 
