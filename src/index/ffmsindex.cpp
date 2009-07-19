@@ -36,7 +36,8 @@ int TrackMask;
 int DumpMask;
 bool Overwrite;
 bool IgnoreErrors;
-bool Verbose;
+bool PrintProgress;
+int Verbose;
 std::string InputFile;
 std::string CacheFile;
 std::string AudioFile;
@@ -52,7 +53,8 @@ static void PrintUsage () {
 		<< "Options:" << endl
 		<< "-f        Force overwriting of existing index file, if any (default: no)" << endl
 		<< "-s        Silently skip indexing of audio tracks that cannot be read (default: no)" << endl
-		<< "-v        Be verbose; i.e. print FFmpeg warnings/diagnostics, if any (default: no)" << endl
+		<< "-v        Set FFmpeg verbosity level. Can be repeated for more verbosity. (default: no messages printed)" << endl
+		<< "-p        Disable progress reporting. (default: progress reporting on)" << endl
 		<< "-t N      Set the audio indexing mask to N (-1 means index all tracks, 0 means index none, default: 0)" << endl
 		<< "-d N      Set the audio decoding mask to N (mask syntax same as -t, default: 0)" << endl
 		<< "-a NAME   Set the audio output base filename to NAME (default: input filename)";
@@ -71,9 +73,10 @@ static void ParseCMDLine (int argc, char *argv[]) {
 	AudioFile = "";
 	TrackMask = 0;
 	DumpMask  = 0;
+	Verbose = 0;
 	Overwrite = false;
 	IgnoreErrors = false;
-	Verbose = false;
+	PrintProgress = true;
 
 	// argv[0] = name of program
 	int i = 1;
@@ -89,7 +92,9 @@ static void ParseCMDLine (int argc, char *argv[]) {
 		} else if (!Option.compare("-s")) {
 			IgnoreErrors = true;
 		} else if (!Option.compare("-v")) {
-			Verbose = true;
+			Verbose++;
+		} else if (!Option.compare("-p")) {
+			PrintProgress = false;
 		} else if (!Option.compare("-t")) {
 			TrackMask = atoi(OptionArg.c_str());
 			i++;
@@ -122,6 +127,9 @@ static void ParseCMDLine (int argc, char *argv[]) {
 
 
 static int FFMS_CC UpdateProgress(int64_t Current, int64_t Total, void *Private) {
+	if (!PrintProgress)
+		return 0;
+
 	using namespace std;
 	int *LastPercentage = (int *)Private;
 	int Percentage = int((double(Current)/double(Total)) * 100);
@@ -158,7 +166,8 @@ static void DoIndexing () {
 
 	Index = FFMS_ReadIndex(CacheFile.c_str(), FFMSErrMsg, MsgSize);
 	if (Overwrite || Index == NULL) {
-		std::cout << "Indexing, please wait... 0% \r" << std::flush;
+		if (PrintProgress)
+			std::cout << "Indexing, please wait... 0% \r" << std::flush;
 		Index = FFMS_MakeIndex(InputFile.c_str(), TrackMask, DumpMask, &GenAudioFilename, NULL, IgnoreErrors, UpdateProgress, &Progress, FFMSErrMsg, MsgSize);
 		if (Index == NULL) {
 			std::string Err = "\nIndexing error: ";
@@ -166,10 +175,11 @@ static void DoIndexing () {
 			throw Err;
 		}
 
-		if (Progress != 100)
+		if (Progress != 100 && PrintProgress)
 			std::cout << "Indexing, please wait... 100% \r" << std::flush;
 
-		std::cout << std::endl << "Writing index... ";
+		if (PrintProgress)
+			std::cout << std::endl << "Writing index... ";
 
 		if (FFMS_WriteIndex(CacheFile.c_str(), Index, FFMSErrMsg, MsgSize)) {
 			std::string Err = "Error writing index: ";
@@ -177,7 +187,9 @@ static void DoIndexing () {
 			throw Err;
 		}
 
-		std::cout << "done." << std::endl << std::flush;
+		if (PrintProgress)
+			std::cout << "done." << std::endl << std::flush;
+
 	} else {
 		throw "Error: index file already exists, use -f if you are sure you want to overwrite it.";
 	}
@@ -207,8 +219,13 @@ int main(int argc, char *argv[]) {
 
 	FFMS_Init(0);
 
-	if (Verbose)
-		FFMS_SetLogLevel(AV_LOG_INFO);
+	switch (Verbose) {
+		case 0: FFMS_SetLogLevel(AV_LOG_QUIET); break;
+		case 1: FFMS_SetLogLevel(AV_LOG_WARNING); break;
+		case 2: FFMS_SetLogLevel(AV_LOG_INFO); break;
+		case 3:	FFMS_SetLogLevel(AV_LOG_VERBOSE); break;
+		default: FFMS_SetLogLevel(AV_LOG_DEBUG); // if user used -v 4 or more times, he deserves the spam
+	}
 
 	try {
 		DoIndexing();
