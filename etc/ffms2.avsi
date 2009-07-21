@@ -3,7 +3,8 @@
 
 function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", \
 	string "cachefile", int "fpsnum", int "fpsden", string "pp", int "threads", \
-	string "timecodes", int "seekmode", bool "overwrite") {
+	string "timecodes", int "seekmode", bool "overwrite", int "width", int "height",
+	string "colorspace") {
 	
 	vtrack 		= default(vtrack,-1)
 	atrack		= default(atrack,-2)
@@ -16,6 +17,10 @@ function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", 
 	timecodes	= default(timecodes,"")
 	seekmode	= default(seekmode,1)
 	overwrite	= default(overwrite,false)
+	width		= default(width,-1)
+	height		= default(height,-1)
+	colorspace	= default(colorspace,"")
+
 	
 	((cache == true) && (atrack <= -2)) ? ffindex(source=source, cachefile=cachefile, \
 		indexmask=0, overwrite=overwrite) : (cache == true) ? ffindex(source=source, \
@@ -23,7 +28,7 @@ function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", 
 	
 	v = ffvideosource(source=source, track=vtrack, cache=cache, cachefile=cachefile, \
 		fpsnum=fpsnum, fpsden=fpsden, pp=pp, threads=threads, timecodes=timecodes, \
-		seekmode=seekmode)
+		seekmode=seekmode, width=width, height=height, colorspace=colorspace)
 	
 	a = (atrack <= -2) ? blankclip(audio_rate=0) : ffaudiosource(source=source, \
 		track=atrack, cache=cache, cachefile=cachefile)
