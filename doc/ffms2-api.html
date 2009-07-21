@@ -72,7 +72,8 @@ int main (...) {
 #endif
 
 	/* Initialize the library itself.
-	You'll probably want to do the CPU caps detection automatically. */
+	You'll probably want to do the CPU caps detection automatically,
+	or pass 0 if you don't care. */
 	FFMS_Init(FFMS_CPU_CAPS_MMX | FFMS_CPU_CAPS_MMX2);
 
 	/* Index the source file. Note that this example does not index any audio tracks. */
@@ -117,8 +118,8 @@ int main (...) {
 	/* See libavutil/pixfmt.h for the list of pixel formats/colorspaces.
 	To get the name of a given pixel format, strip the leading PIX_FMT_
 	and convert to lowercase. For example, PIX_FMT_YUV420P becomes "yuv420p". */
-	int pixfmt = 1 &lt;&lt; FFMS_GetPixFmt("bgra");
-	if (FFMS_SetOutputFormatV(videosource, (int64_t)pixfmt, videoprops-&gt;Width, videoprops-&gt;Height, errmsg, msgsize)) {
+	int64_t pixfmt = (int64_t)1 &lt;&lt; FFMS_GetPixFmt("bgra");
+	if (FFMS_SetOutputFormatV(videosource, pixfmt, videoprops-&gt;Width, videoprops-&gt;Height, FFMS_RESIZER_BICUBIC, errmsg, msgsize)) {
 		/* handle error */
 	}
 
@@ -182,7 +183,7 @@ How many characters you want to allocate to the error message is up to you; if y
 
 <h3>FFMS_Init - initializes the library</h3>
 <pre>void FFMS_Init(int CPUFeatures)</pre>
-<p>Initializes the FFMS2 library. This function must be called once at the start of your program, before doing any other FFMS2 function calls. Its only argument is an integer representing what CPU instruction sets may be used by the parts of FFmpeg that have handwritten assembler (see <tt>FFMS_CPUFeatures</tt> in the Constants and Preprocessor Definitions section; binary OR the constants together if you want more than one). Pass NULL if you don't care; the performance hit won't be that big unless you do a lot of postprocessing or rescaling.</p>
+<p>Initializes the FFMS2 library. This function must be called once at the start of your program, before doing any other FFMS2 function calls. Its only argument is an integer representing what CPU instruction sets may be used by the parts of FFmpeg that have handwritten assembler but no runtime CPU detection, i.e. libswscale and libpostproc (see <tt>FFMS_CPUFeatures</tt> in the Constants and Preprocessor Definitions section; binary OR the constants together if you want more than one). Pass 0 if you don't care; the performance hit won't be that big unless you do a lot of postprocessing or rescaling.</p>
 <p>If you are on Windows, you should also initialize COM before calling this function, since the library might have been built with <tt>HAALISOURCE</tt>. If it was indeed built with <tt>HAALISOURCE</tt> but you do not intialize COM, all MPEG-TS/PS and OGM files will cause an error when you try to open them. All other file types will work normally. Typically, you'd initialize COM something like the following:</p>
 <pre>#include &lt;objbase.h&gt;
 /* later on, in the actual code... */
@@ -221,7 +222,7 @@ The track number of the video track to open, as seen by the relevant demuxer. Se
 <p><b><tt>FFIndex *Index</tt></b><br />
 A pointer to a FFIndex object containing indexing information for the track you want to open.</p>
 <p><b><tt>const char *PP</tt></b><br />
-A string describing the desired postprocessing. See the "PP string format" section below for details. Pass NULL or an empty string to disable postprocessing.</p>
+A string describing the desired postprocessing. See the "PP string format" section below for details. Pass <tt>NULL</tt> or an empty string to disable postprocessing.</p>
 <p><b><tt>int Threads</tt></b><br />
 The number of decoding threads to use. Passing funny values like 0 or -1 may lead to undefined behavior so you better sanity check the input if you let the user set this. Values &gt;1 have no effect if ffmpeg was not compiled with threading support.</p>
 <p><b><tt>int SeekMode</tt></b><br />
@@ -268,7 +269,7 @@ The frame number to get. Frame numbering starts from zero, and hence the first f
 <p><b><tt>char *ErrorMsg, unsigned MsgSize</tt></b><br />
 See above.</p>
 <h4>Return values</h4>
-<p>Returns a pointer to the <tt>AVFrameLite</tt> on success. Returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.</p>
+<p>Returns a pointer to the <tt>FFAVFrame</tt> on success. Returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.</p>
 
 <h3>FFMS_GetFrameByTime - retrieves a video frame at a given timestamp</h3>
 <pre>const FFAVFrame *FFMS_GetFrameByTime(FFVideo *V, double Time, char *ErrorMsg, unsigned MsgSize)</pre>
@@ -293,7 +294,7 @@ See above.</p>
 <p>Returns 0 on success. Returns non-0 and sets <tt>ErrorMsg</tt> on failure.</p>
 
 <h3>FFMS_SetOutputFormatV - sets the output format for video frames</h3>
-<pre>int FFMS_SetOutputFormatV(FFVideo *V, int64_t TargetFormats, int Width, int Height,
+<pre>int FFMS_SetOutputFormatV(FFVideo *V, int64_t TargetFormats, int Width, int Height, int Resizer,
 	char *ErrorMsg, unsigned MsgSize)</pre>
 <p>Sets the colorspace and frame dimensions to be used for output of frames from the given <tt>FFVideo</tt> by all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt>, until next time you call <tt>FFMS_SetOutputFormatV</tt> or <tt>FFMS_ResetOutputFormatV</tt>. You can change the output format at any time without having to reinitialize the <tt>FFVideo</tt> object or anything else. Can be used to convert the video to grayscale or monochrome if you are so inclined. If you provided a list of more than one colorspace/pixelformat, you may want to use <tt>FFMS_GetVideoProperties</tt> afterwards to see which one got selected.
 </p>
@@ -304,6 +305,8 @@ A pointer to the <tt>FFVideo</tt> object that represents the video stream you wa
 The desired output colorspace(s). You may binary OR several colorspaces you are willing to accept together; the function will then choose the colorspace that gives the least lossy conversion from the source colorspace. To get the integer constant representing a given colorspace, see <tt>FFMS_GetPixFmt</tt>. Once you have the integer constant(s), shift 1 left by each constant to get the value suitable for passing as this argument. Example:<br /><tt>int64_t targetformats = (1 &lt;&lt; pixfmt1) | (1 &lt;&lt; pixfmt2) | (1 &lt;&lt; pixfmt3);</tt></p>
 <p><b><tt>int Width, int Height</tt></b><br />
 The desired image dimensions, in pixels. If you do not want to resize just pass the input dimensions. Passing invalid dimensions (like 0 or negative) has undefined behavior.</p>
+<p><b><tt>int Resizer</tt></b><br />
+The desired image resizing algorithm, represented by an integer as enumerated in <tt>FFMS_Resizers</tt> (see the Constants and Preprocessor Definitions section). You must choose one even if you're not actually rescaling the image, because the video may change resolution mid-stream and then you will be using a resizer whether you want it or not (you will only know that the resolution changed after you actually decoded a frame with a new resolution), and it may also get used for rescaling subsampled chroma planes.</p>
 <p><b><tt>char *ErrorMsg, unsigned MsgSize</tt></b><br />
 See above.</p>
 <h4>Return values</h4>
@@ -311,7 +314,8 @@ See above.</p>
 
 <h3>FFMS_ResetOutputFormatV - resets the video output format</h3>
 <pre>void FFMS_ResetOutputFormatV(FFVideo *V)</pre>
-<p>Resets the output format for the given <tt>FFVideo</tt> object so that no conversion takes place. Is a shorthand way of saying <tt>FFMS_SetOutputFormatV(V, FFVideoProperties->VPixelFormat, FFVideoProperties->Width, FFVideoProperties->Height, ErrorMsg, MsgSize)</tt>.
+<p>
+Resets the output format for the given <tt>FFVideo</tt> object so that no conversion takes place. Note that the results of this function may vary wildly, particularly if the video changes resolution mid-stream. If you call it, you'd better call <tt>FFMS_GetVideoProperties()</tt> afterwards and examine the <tt>FFVideoProperties</tt> to see what you actually ended up with.
 </p>
 
 <h3>FFMS_DestroyFFIndex - deallocates an index object</h3>
@@ -321,7 +325,7 @@ See above.</p>
 
 <h3>FFMS_GetFirstTrackOfType - gets the track number of the first track of a given type</h3>
 <pre>int FFMS_GetFirstTrackOfType(FFIndex *Index, int TrackType, char *ErrorMsg, unsigned MsgSize)</pre>
-<p>Finds the first track of the given <tt>FFMS_TrackType</tt> in the given <tt>FFIndex</tt> and returns its track number, suitable for use as an argument to <tt>FFMS_CreateVideoSource</tt> or <tt>FFMS_CreateAudioSource</tt> as well as some other functions.
+<p>Finds the first track of the given <tt>FFMS_TrackType</tt> in the given <tt>FFIndex</tt> and returns its track number, suitable for use as an argument to <tt>FFMS_CreateVideoSource</tt> or <tt>FFMS_CreateAudioSource</tt>, as well as to some other functions.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFIndex *Index</tt></b><br />
@@ -365,7 +369,7 @@ See above.</p>
 
 <h3>FFMS_GetNumFrames - gets the number of frames in a given track</h3>
 <pre>int FFMS_GetNumFrames(FFTrack *T)</pre>
-<p>Returns the number of frames in the track represented by the given <tt>FFTrack</tt>. For a video track this is the number of video frames, which can be useful; for an audio track it's the number of "packets", which is almost never useful. A return value of 0 indicates the track has not been indexed.
+<p>Returns the number of frames in the track represented by the given <tt>FFTrack</tt>. For a video track this is the number of video frames, which can be useful; for an audio track it's the number of packets, which is almost never useful, since nothing in the API exposes those. A return value of 0 indicates the track has not been indexed.
 </p>
 
 <h3>FFMS_GetFrameInfo - gets information about a given frame</h3>
@@ -399,7 +403,7 @@ See above.</p>
 <h3>FFMS_GetTrackFromVideo, FFMS_GetTrackFromAudio - retrieves track info from audio or video source</h3>
 <pre>FFTrack *FFMS_GetTrackFromVideo(FFVideo *V)
 FFTrack *FFMS_GetTrackFromAudio(FFAudio *A)</pre>
-<p>Gets information about the track represented by the given <tt>FFVideo</tt> or <tt>FFAudio</tt> object and returns a pointer to a <tt>FFTrack</tt> object containing said information. It's generally safer to use these functions instead of <tt>FFMS_GetTrackFromIndex</tt>, since unlike that function they cannot cause random access violations, return a <tt>FFTrack</tt> that doesn't actually contain any indexing information, or return an object that ceases to be valid when the index is destroyed. Note that the returned <tt>FFTrack</tt> object is only valid until its parent <tt>FFVideo</tt> or <tt>FFAudio</tt> object is destroyed.
+<p>Gets information about the track represented by the given <tt>FFVideo</tt> or <tt>FFAudio</tt> object and returns a pointer to a <tt>FFTrack</tt> object containing said information. It's generally safer to use these functions instead of <tt>FFMS_GetTrackFromIndex</tt>, since unlike that function they cannot cause access violations if you specified an nonexistent tracknumber, return a <tt>FFTrack</tt> that doesn't actually contain any indexing information, or return an object that ceases to be valid when the index is destroyed. Note that the returned <tt>FFTrack</tt> object is only valid until its parent <tt>FFVideo</tt> or <tt>FFAudio</tt> object is destroyed.
 </p>
 
 <h3>FFMS_GetTimeBase - retrieves the time base for the given track</h3>
@@ -433,10 +437,10 @@ The filename of the media file to index. Can be a relative or absolute path.</p>
 <p><b><tt>int IndexMask, int DumpMask</tt></b><br />
 Binary masks of the track numbers of the audio tracks to index and decode to disk, respectively. Pass 0 to index/decode no audio tracks, or -1 to index/decode all. Decoding a track means it will automatically be indexed regardless of what the <tt>IndexMask</tt> says, but indexing a track does not automatically mean that it will be decoded.</p>
 <p><b><tt>TAudioNameCallback ANC</tt></b><br />
-A function pointer to a callback function that will generate the filename(s) for the dumped audio tracks. To get the default filename(s), pass <tt>&amp;FFMS_DefaultAudioFilename</tt>. See <i>Callbacks</i> below for details if you want to write your own function. If the <tt>DumpMask</tt> is 0, you may pass NULL here.
+A function pointer to a callback function that will generate the filename(s) for the dumped audio tracks. To get the default filename(s), pass <tt>&amp;FFMS_DefaultAudioFilename</tt>. See <i>Callbacks</i> below for details if you want to write your own function. If the <tt>DumpMask</tt> is 0, you may pass <tt>NULL</tt> here.
 </p>
 <p><b><tt>void *ANCPrivate</tt></b><br />
-A pointer of your choice that will be passed as an argument to the audio filename generation callback function. See <i>Callbacks</i> below for details. If <tt>DumpMask</tt> is 0, you may pass NULL here. If you are using <tt>FFMS_DefaultAudioFilename</tt>, you must pass a format string here. See the Audio Filename Format Strings section for details.
+A pointer of your choice that will be passed as an argument to the audio filename generation callback function. See <i>Callbacks</i> below for details. If <tt>DumpMask</tt> is 0, you may pass <tt>NULL</tt> here. If you are using <tt>FFMS_DefaultAudioFilename</tt>, you must pass a format string here. See the Audio Filename Format Strings section for details.
 </p>
 <p><b><tt>bool IgnoreDecodeErrors</tt></b><br />
 If true, audio decoding errors will not cause indexing to fail. Tracks that cannot be decoded will not be indexed, however. Has no effect if the <tt>DumpMask</tt> is non-zero, in which case audio decoding errors will always cause the indexing to fail.</p>
@@ -462,7 +466,7 @@ The other callback is used to generate the filename(s) of the audio file(s) writ
 </p>
 <pre>int FFMS_CC FunctionName(const char *SourceFile, int Track, const FFAudioProperties *AP,
 	char *FileName, int FNSize, void *Private)</pre>
-<p>The callback function is called twice for each audio file generated. The first time <tt>FileName</tt> is NULL, and you should return the number of characters your generated filename will use plus one, and do nothing else. The second time <tt>FileName</tt> is a pointer to a pre-allocated array of char; you should write your generated filename to that and return the number of characters actually written plus one. Generally the easiest way to do this in both cases is to use <tt>snprintf</tt>. See the implementation of <tt>GenAudioFilename</tt> in ffmsindex.cpp for an example on how to do it.<br />
+<p>The callback function is called twice for each audio file generated. The first time <tt>FileName</tt> is <tt>NULL</tt>, and you should return the number of characters your generated filename will use plus one, and do nothing else. The second time <tt>FileName</tt> is a pointer to a pre-allocated array of char; you should write your generated filename to that and return the number of characters actually written plus one. Generally the easiest way to do this in both cases is to use <tt>snprintf</tt>. See the implementation of <tt>GenAudioFilename</tt> in ffmsindex.cpp for an example on how to do it.<br />
 The callback function's arguments are as follows:</p>
 <ul>
 <li><tt><b>const char *SourceFile</b></tt> - The name of the source media file.</li>
@@ -484,7 +488,7 @@ The callback function's arguments are as follows:</p>
 <pre>FFIndexer *FFMS_CreateIndexer(const char *SourceFile, char *ErrorMsg, unsigned MsgSize)</pre>
 <p>Creates a <tt>FFIndexer</tt> object for the given <tt>SourceFile</tt> and returns a pointer to it. See Indexing and You for details on how to use the indexer.</p>
 <h4>Return values</h4>
-<p>Returns a pointer to the <tt>FFIndexer</tt> on success. Returns NULL and sets <tt>ErrorMsg</tt> on failure.</p>
+<p>Returns a pointer to the <tt>FFIndexer</tt> on success. Returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.</p>
 
 <h3>FFMS_DoIndexing - indexes the file represented by an indexer object</h3>
 <pre>FFIndex *FFMS_DoIndexing(FFIndexer *Indexer, int IndexMask, int DumpMask,
@@ -503,7 +507,7 @@ The callback function's arguments are as follows:</p>
 
 <h3>FFMS_IndexBelongsToFile - check if a given index belongs to a given file</h3>
 <pre>int FFMS_IndexBelongsToFile(FFIndex *Index, const char *SourceFile, char *ErrorMsg, unsigned MsgSize)</pre>
-<p>Makes a heuristic (but very reliable) guess about whether the given <tt>FFIndex</tt> is actually an index of the given <tt>SourceFile</tt> or not. Useful to determine if the index object you just read with <tt>FFMS_ReadIndex</tt> is actually relevant to your interests or not, since the only way to pair up index files with source files is by comparing their filenames, which isn't very reliable.
+<p>Makes a heuristic (but very reliable) guess about whether the given <tt>FFIndex</tt> is an index of the given <tt>SourceFile</tt> or not. Useful to determine if the index object you just read with <tt>FFMS_ReadIndex</tt> is actually relevant to your interests, since the only two ways to pair up index files with source files are a) trust the user blindly, or b) comparing the filenames; neither is very reliable.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFIndex *Index</tt></b><br />
@@ -524,7 +528,7 @@ The source file to verify the index against.</p>
 </p>
 <h4>Arguments</h4>
 <p><b><tt>const char *Name</tt></b><br />
-The name of the desired colorspace/pixel format.</p>
+The name of the desired colorspace/pixel format, as a nul-terminated ASCII string.</p>
 <h4>Return values</h4>
 <p>Returns the integer constant representing the given colorspace/pixel format on success. Returns the integer constant representing <tt>PIX_FMT_NONE</tt> (that is, -1) on failure (i.e. if no matching colorspace was found), but note that you can call <tt>FFMS_GetPixFmt("none")</tt> and get the same return value without it being a failed call, strictly speaking.</p>
 
@@ -536,19 +540,33 @@ The following public data structures may be of interest.
 
 <h3>FFAVFrame</h3>
 <pre>struct FFAVFrame {
-    uint8_t *Data[4];
-    int Linesize[4];
-    uint8_t *Base[4];
-    int KeyFrame;
-    int PictType;
+	uint8_t *Data[4];
+	int Linesize[4];
+	int EncodedWidth;
+	int EncodedHeight;
+	int EncodedPixelFormat;
+	int ScaledWidth;
+	int ScaledHeight;
+	int ConvertedPixelFormat;
+	int KeyFrame;
+	int RepeatPict;
+	int InterlacedFrame;
+	int TopFieldFirst;
+	char PictType;
 };</pre>
 <p>A struct representing a video frame. The fields are:</p>
 <ul>
 <li><b><tt>uint8_t *Data[4]</tt></b> - An array of pointers to the picture planes (fields containing actual pixel data). Planar formats use more than one plane, for example YV12 uses one plane each for the Y, U and V data. Packed formats (such as the various RGB32 flavors) use only the first plane. If you want to determine if plane <tt>i</tt> contains data or not, check for <tt>FFAVFrame-&gt;Linesize[i] &gt; 0</tt>.</li>
-<li><b><tt>int Linesize[4]</tt></b> - An array of integers representing the length of each scan line in each of the four picture planes, in bytes. In alternative terminology, this is the "pitch" of the plane. The total size in bytes of picture plane <tt>i</tt> is <tt>FFAVFrame-&gt;Linesize[i] * FFVideoProperties-&gt;Height</tt>.</li>
-<li><b><tt>uint8_t *Base[4]</tt></b> - Heavy machinery, no user serviceable parts inside, keep out.</li>
+<li><b><tt>int Linesize[4]</tt></b> - An array of integers representing the length of each scan line in each of the four picture planes, in bytes. In alternative terminology, this is the "pitch" of the plane. Usually, the total size in bytes of picture plane <tt>i</tt> is <tt>FFAVFrame-&gt;Linesize[i] * FFVideoProperties-&gt;Height</tt>, but do note that some pixel formats (most notably YV12) has vertical chroma subsampling, and then the U/V planes may be of a different height than the primary plane.</li>
+<li><b><tt>int EncodedWidth; int EncodedHeight</tt></b> - The original resolution of the frame (in pixels), as encoded in the compressed file, before any scaling was applied. Note that must not necessarily be the same for all frames in a stream.</li>
+<li><b><tt>int EncodedPixelFormat</tt></b> - The original pixel format of the frame, as encoded in the compressed file.</li>
+<li><b><tt>int ScaledWidth; int ScaledHeight;</tt></b> - The output resolution of the frame (in pixels), i.e. the resolution of what is actually stored in the <tt>Data</tt> field. Same as <tt>FFVideoProperties->Width/Height</tt>, but unlike that struct, this one gets updated automatically when you call <tt>FFMS_GetFrame</tt>, so you don't have to call <tt>FFMS_GetVideoProperties</tt> all the time to see if someone changed the output format while you weren't looking.</li>
+<li><b><tt>int ConvertedPixelFormat</tt></b> - The output pixel format of the frame, i.e. the pixel format of what is actually stored in the <tt>Data</tt> field.</li>
 <li><b><tt>int KeyFrame</tt></b> - Nonzero if the frame is a keyframe, 0 otherwise.</li>
-<li><b><tt>int PictType</tt></b> - The coding type (I/B/P etc) of the compressed frame. See the various <tt>FF_X_TYPE</tt> constant definitions in <tt>libavcodec/avcodec.h</tt> if you want to know what integer represents what type.</li>
+<li><b><tt>int RepeatPict</tt></b> - An integer repesenting the RFF flag for this frame; i.e. the frame shall be displayed for <tt>1+RepeatPict</tt> time units, where the time units are expressed in the special RFF timebase available in <tt>FFVideoProperties->RFFDenominator</tt> and <tt>FFVideoProperties->RFFNumerator</tt>. Note that if you actually end up using this, you need to ignore the usual timestamps (calculated via the <tt>FFTrackTimeBase</tt> and the frame DTS) since they are fundamentally incompatible with RFF flags.</li>
+<li><b><tt>int InterlacedFrame</tt></b> - Nonzero if the frame was coded as interlaced, zero otherwise.</li>
+<li><b><tt>int TopFieldFirst</tt></b> - Nonzero if the frame has the top field first, zero if it has the bottom field first. Only relevant if <tt>InterlacedFrame</tt> is nonzero.</li>
+<li><b><tt>char PictType</tt></b> - A single character denoting coding type (I/B/P etc) of the compressed frame. See the Constants and Preprocessor Definitions section for more information about what the different letters mean.</li>
 </ul>
 
 <h3>FFTrackTimeBase</h3>
@@ -563,11 +581,13 @@ A struct representing the basic time unit of a track, as a rational number where
 <h3>FFFrameInfo</h3>
 <pre>struct FFFrameInfo {
 	int64_t DTS;
+	int RepeatPict;
 	bool KeyFrame;
 };</pre>
 <p>A struct representing basic metadata about a given video frame. The fields are:</p>
 <ul>
 <li><b><tt>int64_t DTS</tt></b> - The decoding timestamp of the frame. To convert this to a timestamp in wallclock milliseconds, use the relation <tt>int64_t timestamp = (int64_t)((FFFrameInfo-&gt;DTS * FFTrackTimeBase-&gt;Num) / (double)FFTrackTimeBase-&gt;Den)</tt>.</li>
+<li><b><tt>int RepeatPict</tt></b> - RFF flag for the frame; same as in <tt>FFAVFrame</tt>, see that structure for an explanation.</li>
 <li><b><tt>bool KeyFrame</tt></b> - True if the frame is a keyframe, false otherwise.</li>
 </ul>
 
@@ -577,6 +597,8 @@ A struct representing the basic time unit of a track, as a rational number where
 	int Height;
 	int FPSDenominator;
 	int FPSNumerator;
+	int RFFDenominator;
+	int RFFNumerator;
 	int NumFrames;
 	int VPixelFormat;
 	int SARNum;
@@ -592,10 +614,11 @@ A struct representing the basic time unit of a track, as a rational number where
 <ul>
 <li><b><tt>int Width; int Height;</tt></b> - The width and height in pixels of the video frames output by calls to <tt>FFMS_GetFrame</tt> and its variants, as set by <tt>FFMS_SetOutputFormatV</tt> and <tt>FFMS_ResetOutputFormatV</tt>.</li>
 <li><b><tt>int FPSDenominator; int FPSNumerator;</tt></b> - The nominal framerate of the track, as a rational number. For Matroska files, this number is based on the average frame duration of all frames, while for everything else it's based on the duration of the first frame. While it might seem tempting to use these values to extrapolate wallclock timestamps for each frame, you really shouldn't do that since it makes your code unable to handle variable framerate properly. The ugly reality is that these values are pretty much only useful for informational purposes; they are only somewhat reliable for antiquated containers like AVI. Normally they should never be used for practical purposes; generate individual frame timestamps from <tt>FFFrameInfo-&gt;DTS</tt> instead.</li>
+<li><b><tt>int RFFDenominator; int RFFNumerator;</tt></b> - The special RFF timebase, as a rational number. See <tt>RepeatPict</tt> in the <tt>FFAVFrame</tt> documentation for more information.</li>
 <li><b><tt>int NumFrames;</tt></b> - The number of frames in the video track.</li>
 <li><b><tt>int VPixelFormat;</tt></b> - An integer constant representing the colorspace/pixel format of the video frames output by <tt>FFMS_GetFrame</tt> and its variants, as set by <tt>FFMS_SetOutputFormatV</tt> and <tt>FFMS_ResetOutputFormatV</tt>. See also <tt>FFMS_GetPixFmt</tt> and <tt>libavutil/pixfmt.h</tt>.</li>
-<li><b><tt>int SARNum; int SARDen;</tt></b> - The sample aspect ratio of the video frames, as a rational number where <tt>SARNum</tt> is the numerator and <tt>SARDen</tt> is the denominator.</li>
-<li><b><tt>int CropTop; int CropBottom; int CropLeft; int CropRight;</tt></b> - The number of pixels the video frame should be cropped in each direction before being displayed.</li>
+<li><b><tt>int SARNum; int SARDen;</tt></b> - The sample aspect ratio of the video frames, as a rational number where <tt>SARNum</tt> is the numerator and <tt>SARDen</tt> is the denominator. Note that this is a metadata setting that you are free to ignore, but if you want the proper display aspect ratio with anamorphic material, you should honor it. On the other hand, there are situations (like when encoding) where you should probably ignore it because the user expects it to be ignored.</li>
+<li><b><tt>int CropTop; int CropBottom; int CropLeft; int CropRight;</tt></b> - The number of pixels in each direction you should crop the frame before displaying it. Note that like the SAR, this is a metadata setting and you are free to ignore it, but if you want things to display 100% correctly you should honor it.</li>
 <li><b><tt>double FirstTime; double LastTime;</tt></b> - The first and last timestamp of the stream respectively, in milliseconds. Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.</li>
 </ul>
 
@@ -614,7 +637,7 @@ A struct representing the basic time unit of a track, as a rational number where
 <ul>
 <li><b><tt>int SampleFormat</tt></b> - An integer that represents the audio sample format. See <tt>FFMS_SampleFormat</tt> in the Constants and Preprocessor Definitions section.</li>
 <li><b><tt>int SampleRate</tt></b> - The audio samplerate, in samples per second.</li>
-<li><b><tt>int BitsPerSample</tt></b> - The number of bits per audio sample. Note that this signifies the number of bits actually used, not the number of bits used to store each sample, and may hence be different from what the <tt>SampleFormat</tt> would imply.</li>
+<li><b><tt>int BitsPerSample</tt></b> - The number of bits per audio sample. Note that this signifies the number of bits actually used to <i>code</i> each sample, not the number of bits used to <i>store</i> each sample, and may hence be different from what the <tt>SampleFormat</tt> would imply. Figuring out which bytes are significant and which aren't is left as an exercise for the reader.</li>
 <li><b><tt>int Channels</tt></b> - The number of audio channels.</li>
 <li><b><tt>int64_t ChannelLayout</tt></b> - The channel layout of the audio stream. Constructed by binary OR'ing the relevant integers from <tt>FFMS_AudioChannel</tt> together, which means that if the audio has the channel <tt>FFMS_CH_EXAMPLE</tt>, the operation <tt>(ChannelOrder &amp; FFMS_CH_EXAMPLE)</tt> will evaluate to true. The samples are interleaved in the order the channels are listed in the <tt>FFMS_AudioChannel</tt> enum; see that part of the Constants and Preprocessor Definitions sections for more details.</li>
 <li><b><tt>int64_t NumSamples</tt></b> - The number of samples in the audio track.</li>
@@ -711,6 +734,24 @@ Used for determining the type of a given track. Note that there are currently no
 Describes various audio channel configurations. The names should be self-explanatory. The audio samples are interleaved in the order these channels are listed in; i.e. in the stereo case the left channel (<tt>FFMS_CH_FRONT_LEFT</tt>) comes first. Note that <tt>FFMS_CH_STEREO_LEFT</tt> and <tt>FFMS_CH_STEREO_RIGHT</tt> are <b>not</b> commonly used (see ffmpeg docs for a description of what exactly they are used for). For normal stereo audio <tt>FFMS_CH_FRONT_LEFT</tt> and <tt>FFMS_CH_FRONT_RIGHT_</tt> are used.
 </p>
 
+<h3>FFMS_Resizers</h3>
+<pre>enum FFMS_Resizers {
+    FFMS_RESIZER_FAST_BILINEAR  = 0x01,
+    FFMS_RESIZER_BILINEAR       = 0x02,
+    FFMS_RESIZER_BICUBIC        = 0x04,
+    FFMS_RESIZER_X              = 0x08,
+    FFMS_RESIZER_POINT          = 0x10,
+    FFMS_RESIZER_AREA           = 0x20,
+    FFMS_RESIZER_BICUBLIN       = 0x40,
+    FFMS_RESIZER_GAUSS          = 0x80,
+    FFMS_RESIZER_SINC           = 0x100,
+    FFMS_RESIZER_LANCZOS        = 0x200,
+    FFMS_RESIZER_SPLINE         = 0x400
+};</pre>
+<p>
+Describes various image resizing algorithms, as used in the arguments to <tt>FFMS_SetOutputFormatV</tt>. The names should be self-explanatory.
+</p>
+
 
 <h3>FFMS_CC</h3>
 <pre>#ifdef _WIN32
@@ -722,6 +763,18 @@ Describes various audio channel configurations. The names should be self-explana
 <p>
 The calling convention used by FFMS2 API functions and callbacks. Defined to <tt>__stdcall</tt> if <tt>_WIN32</tt> is defined. Otherwise defined, but not used.
 </p>
+
+
+<h3>Picture types</h3>
+<p>As stored in <tt>FFAVFrame->PictType</tt>:</p>
+<pre>I: Intra
+P: Predicted
+B: Bi-dir predicted
+S: S(GMC)-VOP MPEG4
+i: Switching Intra
+p: Switching Predicted
+b: FF_BI_TYPE (no good explanation available)
+?: Unknown</pre>
 
 
 <h2>Audio Filename Format Strings</h2>
