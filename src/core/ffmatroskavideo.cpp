@@ -35,7 +35,7 @@ void FFMatroskaVideo::Free(bool CloseCodec) {
 FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	FFIndex *Index, const char *PP,
 	int Threads, char *ErrorMsg, unsigned MsgSize)
-	: FFVideo(SourceFile, Index, ErrorMsg, MsgSize) {
+	: FFMS_VideoSource(SourceFile, Index, ErrorMsg, MsgSize) {
 
 	AVCodec *Codec = NULL;
 	CodecContext = NULL;

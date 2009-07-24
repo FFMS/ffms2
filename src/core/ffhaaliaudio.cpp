@@ -85,7 +85,7 @@ Done:
 
 FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFIndex *Index,
 						   int SourceMode, char *ErrorMsg, unsigned MsgSize)
-						   : FFAudio(SourceFile, Index, ErrorMsg, MsgSize) {
+						   : FFMS_AudioSource(SourceFile, Index, ErrorMsg, MsgSize) {
 	AVCodec *Codec = NULL;
 	CodecContext = NULL;
 	AudioTrack = Track;

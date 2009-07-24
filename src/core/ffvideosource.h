@@ -45,7 +45,7 @@ extern "C" {
 #	include "guids.h"
 #endif
 
-class FFVideo {
+class FFMS_VideoSource {
 private:
 	pp_context_t *PPContext;
 	pp_mode_t *PPMode;
@@ -69,12 +69,12 @@ protected:
 	int	CurrentFrame;
 	AVCodecContext *CodecContext;
 
-	FFVideo(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize);
+	FFMS_VideoSource(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize);
 	int InitPP(const char *PP, char *ErrorMsg, unsigned MsgSize);
 	int ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height, char *ErrorMsg, unsigned MsgSize);
 	FFMS_Frame *OutputFrame(AVFrame *Frame, char *ErrorMsg, unsigned MsgSize);
 public:
-	virtual ~FFVideo();
+	virtual ~FFMS_VideoSource();
 	const FFMS_VideoProperties& GetVideoProperties() { return VP; }
 	FFTrack *GetFFTrack() { return &Frames; }
 	virtual FFMS_Frame *GetFrame(int n, char *ErrorMsg, unsigned MsgSize) = 0;
@@ -84,7 +84,7 @@ public:
 	void ResetOutputFormat();
 };
 
-class FFLAVFVideo : public FFVideo {
+class FFLAVFVideo : public FFMS_VideoSource {
 private:
 	AVFormatContext *FormatContext;
 	int SeekMode;
@@ -97,7 +97,7 @@ public:
 	FFMS_Frame *GetFrame(int n, char *ErrorMsg, unsigned MsgSize);
 };
 
-class FFMatroskaVideo : public FFVideo {
+class FFMatroskaVideo : public FFMS_VideoSource {
 private:
 	MatroskaFile *MF;
 	MatroskaReaderContext MC;
@@ -114,7 +114,7 @@ public:
 
 #ifdef HAALISOURCE
 
-class FFHaaliVideo : public FFVideo {
+class FFHaaliVideo : public FFMS_VideoSource {
 private:
 	CComPtr<IMMContainer> pMMC;
 	std::vector<uint8_t> CodecPrivate;

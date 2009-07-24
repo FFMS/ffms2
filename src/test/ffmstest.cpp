@@ -71,12 +71,12 @@ static void TestFullDump1(const char *SrcFile, bool WithAudio) {
 	int atrack = FFMS_GetFirstTrackOfType(FI, FFMS_TYPE_AUDIO, ErrorMsg, sizeof(ErrorMsg));
 	assert(atrack >= 0);
 
-	FFVideo *V = FFMS_CreateVideoSource(SrcFile, vtrack, FI, "", 2, 1, ErrorMsg, sizeof(ErrorMsg));
+	FFMS_VideoSource *V = FFMS_CreateVideoSource(SrcFile, vtrack, FI, "", 2, 1, ErrorMsg, sizeof(ErrorMsg));
 	assert(V);
 
 	if (WithAudio) {
 		uint8_t *DB = new uint8_t[100000];
-		FFAudio *A = FFMS_CreateAudioSource(SrcFile, atrack, FI, ErrorMsg, sizeof(ErrorMsg));
+		FFMS_AudioSource *A = FFMS_CreateAudioSource(SrcFile, atrack, FI, ErrorMsg, sizeof(ErrorMsg));
 		assert(A);
 
 		const FFMS_AudioProperties *AP = FFMS_GetAudioProperties(A);

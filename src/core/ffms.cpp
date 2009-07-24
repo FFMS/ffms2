@@ -87,7 +87,7 @@ FFMS_API(void) FFMS_SetLogLevel(int Level) {
 	av_log_set_level(Level);
 }
 
-FFMS_API(FFVideo *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFIndex *Index, const char *PP, int Threads, int SeekMode, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFIndex *Index, const char *PP, int Threads, int SeekMode, char *ErrorMsg, unsigned MsgSize) {
 	if (Track < 0 || Track >= static_cast<int>(Index->size())) {
 		snprintf(ErrorMsg, MsgSize, "Out of bounds track index selected");
 		return NULL;
@@ -115,7 +115,7 @@ FFMS_API(FFVideo *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FF
 	}
 }
 
-FFMS_API(FFAudio *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFIndex *Index, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFIndex *Index, char *ErrorMsg, unsigned MsgSize) {
 	if (Track < 0 || Track >= static_cast<int>(Index->size())) {
 		snprintf(ErrorMsg, MsgSize, "Out of bounds track index selected");
 		return NULL;
@@ -143,39 +143,39 @@ FFMS_API(FFAudio *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FF
 	}
 }
 
-FFMS_API(void) FFMS_DestroyVideoSource(FFVideo *V) {
+FFMS_API(void) FFMS_DestroyVideoSource(FFMS_VideoSource *V) {
 	delete V;
 }
 
-FFMS_API(void) FFMS_DestroyAudioSource(FFAudio *A) {
+FFMS_API(void) FFMS_DestroyAudioSource(FFMS_AudioSource *A) {
 	delete A;
 }
 
-FFMS_API(const FFMS_VideoProperties *) FFMS_GetVideoProperties(FFVideo *V) {
+FFMS_API(const FFMS_VideoProperties *) FFMS_GetVideoProperties(FFMS_VideoSource *V) {
 	return &V->GetVideoProperties();
 }
 
-FFMS_API(const FFMS_AudioProperties *) FFMS_GetAudioProperties(FFAudio *A) {
+FFMS_API(const FFMS_AudioProperties *) FFMS_GetAudioProperties(FFMS_AudioSource *A) {
 	return &A->GetAudioProperties();
 }
 
-FFMS_API(const FFMS_Frame *) FFMS_GetFrame(FFVideo *V, int n, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(const FFMS_Frame *) FFMS_GetFrame(FFMS_VideoSource *V, int n, char *ErrorMsg, unsigned MsgSize) {
 	return (FFMS_Frame *)V->GetFrame(n, ErrorMsg, MsgSize);
 }
 
-FFMS_API(const FFMS_Frame *) FFMS_GetFrameByTime(FFVideo *V, double Time, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(const FFMS_Frame *) FFMS_GetFrameByTime(FFMS_VideoSource *V, double Time, char *ErrorMsg, unsigned MsgSize) {
 	return (FFMS_Frame *)V->GetFrameByTime(Time, ErrorMsg, MsgSize);
 }
 
-FFMS_API(int) FFMS_GetAudio(FFAudio *A, void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(int) FFMS_GetAudio(FFMS_AudioSource *A, void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize) {
 	return A->GetAudio(Buf, Start, Count, ErrorMsg, MsgSize);
 }
 
-FFMS_API(int) FFMS_SetOutputFormatV(FFVideo *V, int64_t TargetFormats, int Width, int Height, int Resizer, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(int) FFMS_SetOutputFormatV(FFMS_VideoSource *V, int64_t TargetFormats, int Width, int Height, int Resizer, char *ErrorMsg, unsigned MsgSize) {
 	return V->SetOutputFormat(TargetFormats, Width, Height, Resizer, ErrorMsg, MsgSize);
 }
 
-FFMS_API(void) FFMS_ResetOutputFormatV(FFVideo *V) {
+FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V) {
 	V->ResetOutputFormat();
 }
 
@@ -231,11 +231,11 @@ FFMS_API(FFTrack *) FFMS_GetTrackFromIndex(FFIndex *Index, int Track) {
 	return &(*Index)[Track];
 }
 
-FFMS_API(FFTrack *) FFMS_GetTrackFromVideo(FFVideo *V) {
+FFMS_API(FFTrack *) FFMS_GetTrackFromVideo(FFMS_VideoSource *V) {
 	return V->GetFFTrack();
 }
 
-FFMS_API(FFTrack *) FFMS_GetTrackFromAudio(FFAudio *A) {
+FFMS_API(FFTrack *) FFMS_GetTrackFromAudio(FFMS_AudioSource *A) {
 	return A->GetFFTrack();
 }
 

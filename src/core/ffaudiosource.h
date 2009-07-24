@@ -68,7 +68,7 @@ public:
 	int64_t FillRequest(int64_t Start, int64_t Samples, uint8_t *Dst);
 };
 
-class FFAudio {
+class FFMS_AudioSource {
 protected:
 	TAudioCache AudioCache;
 	int64_t CurrentSample;
@@ -78,14 +78,14 @@ protected:
 	int AudioTrack;
 	FFMS_AudioProperties AP;
 public:
-	FFAudio(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize);
-	virtual ~FFAudio();
+	FFMS_AudioSource(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize);
+	virtual ~FFMS_AudioSource();
 	FFTrack *GetFFTrack() { return &Frames; }
 	const FFMS_AudioProperties& GetAudioProperties() { return AP; }
 	virtual int GetAudio(void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize) = 0;
 };
 
-class FFLAVFAudio : public FFAudio {
+class FFLAVFAudio : public FFMS_AudioSource {
 private:
 	AVFormatContext *FormatContext;
 
@@ -97,7 +97,7 @@ public:
 	int GetAudio(void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize);
 };
 
-class FFMatroskaAudio : public FFAudio {
+class FFMatroskaAudio : public FFMS_AudioSource {
 private:
 	MatroskaFile *MF;
 	MatroskaReaderContext MC;
@@ -114,7 +114,7 @@ public:
 
 #ifdef HAALISOURCE
 
-class FFHaaliAudio : public FFAudio {
+class FFHaaliAudio : public FFMS_AudioSource {
 private:
 	CComPtr<IMMContainer> pMMC;
 	std::vector<uint8_t> CodecPrivate;

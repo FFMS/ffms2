@@ -33,7 +33,7 @@ void FFHaaliVideo::Free(bool CloseCodec) {
 FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	FFIndex *Index, const char *PP,
 	int Threads, int SourceMode, char *ErrorMsg, unsigned MsgSize)
-	: FFVideo(SourceFile, Index, ErrorMsg, MsgSize) {
+	: FFMS_VideoSource(SourceFile, Index, ErrorMsg, MsgSize) {
 
 	BitStreamFilter = NULL;
 	AVCodec *Codec = NULL;

@@ -28,7 +28,7 @@
 class AvisynthVideoSource : public IClip {
 private:
 	VideoInfo VI;
-	FFVideo *V;
+	FFMS_VideoSource *V;
 	int FPSNum;
 	int FPSDen;
 
@@ -51,7 +51,7 @@ public:
 class AvisynthAudioSource : public IClip {
 private:
 	VideoInfo VI;
-	FFAudio *A;
+	FFMS_AudioSource *A;
 public:
 	AvisynthAudioSource(const char *SourceFile, int Track, FFIndex *Index, IScriptEnvironment* Env, char *ErrorMsg, unsigned MsgSize);
 	~AvisynthAudioSource();
