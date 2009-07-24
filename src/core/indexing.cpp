@@ -102,7 +102,7 @@ TFrameInfo TFrameInfo::AudioFrameInfo(int64_t DTS, int64_t SampleStart, bool Key
 	return TFrameInfo(DTS, SampleStart, 0, KeyFrame, FilePos, FrameSize);
 }
 
-int FFTrack::WriteTimecodes(const char *TimecodeFile, char *ErrorMsg, unsigned MsgSize) {
+int FFMS_Track::WriteTimecodes(const char *TimecodeFile, char *ErrorMsg, unsigned MsgSize) {
 	ffms_fstream Timecodes(TimecodeFile, std::ios::out | std::ios::trunc);
 
 	if (!Timecodes.is_open()) {
@@ -118,14 +118,14 @@ int FFTrack::WriteTimecodes(const char *TimecodeFile, char *ErrorMsg, unsigned M
 	return 0;
 }
 
-int FFTrack::FrameFromDTS(int64_t DTS) {
+int FFMS_Track::FrameFromDTS(int64_t DTS) {
 	for (int i = 0; i < static_cast<int>(size()); i++)
 		if (at(i).DTS == DTS)
 			return i;
 	return -1;
 }
 
-int FFTrack::ClosestFrameFromDTS(int64_t DTS) {
+int FFMS_Track::ClosestFrameFromDTS(int64_t DTS) {
 	int Frame = 0;
 	int64_t BestDiff = 0xFFFFFFFFFFFFFFLL; // big number
 	for (int i = 0; i < static_cast<int>(size()); i++) {
@@ -139,7 +139,7 @@ int FFTrack::ClosestFrameFromDTS(int64_t DTS) {
 	return Frame;
 }
 
-int FFTrack::FindClosestVideoKeyFrame(int Frame) {
+int FFMS_Track::FindClosestVideoKeyFrame(int Frame) {
 	Frame = FFMIN(FFMAX(Frame, 0), static_cast<int>(size()) - 1);
 	for (int i = Frame; i > 0; i--)
 		if (at(i).KeyFrame)
@@ -147,7 +147,7 @@ int FFTrack::FindClosestVideoKeyFrame(int Frame) {
 	return 0;
 }
 
-int FFTrack::FindClosestAudioKeyFrame(int64_t Sample) {
+int FFMS_Track::FindClosestAudioKeyFrame(int64_t Sample) {
 	for (size_t i = 0; i < size(); i++) {
 		if (at(i).SampleStart == Sample && at(i).KeyFrame)
 			return i;
@@ -157,19 +157,19 @@ int FFTrack::FindClosestAudioKeyFrame(int64_t Sample) {
 	return size() - 1;
 }
 
-FFTrack::FFTrack() {
+FFMS_Track::FFMS_Track() {
 	this->TT = FFMS_TYPE_UNKNOWN;
 	this->TB.Num = 0;
 	this->TB.Den = 0;
 }
 
-FFTrack::FFTrack(int64_t Num, int64_t Den, FFMS_TrackType TT) {
+FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT) {
 	this->TT = TT;
 	this->TB.Num = Num;
 	this->TB.Den = Den;
 }
 
-int FFIndex::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20], char *ErrorMsg, unsigned MsgSize) {
+int FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20], char *ErrorMsg, unsigned MsgSize) {
 	// use cstdio because Microsoft's implementation of std::fstream doesn't support files >4GB.
 	// please kill me now.
 	FILE *SFile = ffms_fopen(Filename,"rb");
@@ -224,12 +224,12 @@ static bool DTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
 	return FI1.DTS < FI2.DTS;
 }
 
-void FFIndex::Sort() {
-	for (FFIndex::iterator Cur=begin(); Cur!=end(); Cur++)
+void FFMS_Index::Sort() {
+	for (FFMS_Index::iterator Cur=begin(); Cur!=end(); Cur++)
 		std::sort(Cur->begin(), Cur->end(), DTSComparison);
 }
 
-int FFIndex::CompareFileSignature(const char *Filename, char *ErrorMsg, unsigned MsgSize) {
+int FFMS_Index::CompareFileSignature(const char *Filename, char *ErrorMsg, unsigned MsgSize) {
 	int64_t CFilesize;
 	uint8_t CDigest[20];
 	CalculateFileSignature(Filename, &CFilesize, CDigest, ErrorMsg, MsgSize);
@@ -242,7 +242,7 @@ int FFIndex::CompareFileSignature(const char *Filename, char *ErrorMsg, unsigned
 	return 0;
 }
 
-int FFIndex::WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) {
+int FFMS_Index::WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) {
 	ffms_fstream IndexStream(IndexFile, std::ios::out | std::ios::binary | std::ios::trunc);
 
 	if (!IndexStream.is_open()) {
@@ -276,14 +276,14 @@ int FFIndex::WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize)
 		int64_t Frames = at(i).size();
 		IndexStream.write(reinterpret_cast<char *>(&Frames), sizeof(Frames));
 
-		for (FFTrack::iterator Cur=at(i).begin(); Cur!=at(i).end(); Cur++)
+		for (FFMS_Track::iterator Cur=at(i).begin(); Cur!=at(i).end(); Cur++)
 			IndexStream.write(reinterpret_cast<char *>(&*Cur), sizeof(TFrameInfo));
 	}
 
 	return 0;
 }
 
-int FFIndex::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) {
+int FFMS_Index::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) {
 	ffms_fstream Index(IndexFile, std::ios::in | std::ios::binary);
 
 	if (!Index.is_open()) {
@@ -327,7 +327,7 @@ int FFIndex::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) 
 			Index.read(reinterpret_cast<char *>(&Den), sizeof(Den));
 			int64_t Frames;
 			Index.read(reinterpret_cast<char *>(&Frames), sizeof(Frames));
-			push_back(FFTrack(Num, Den, static_cast<FFMS_TrackType>(TT)));
+			push_back(FFMS_Track(Num, Den, static_cast<FFMS_TrackType>(TT)));
 
 			TFrameInfo FI = TFrameInfo::VideoFrameInfo(0, 0, false);
 			for (size_t j = 0; j < Frames; j++) {
@@ -344,11 +344,11 @@ int FFIndex::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) 
 	return 0;
 }
 
-FFIndex::FFIndex() {
+FFMS_Index::FFMS_Index() {
 	// this comment documents nothing
 }
 
-FFIndex::FFIndex(int64_t Filesize, uint8_t Digest[20]) {
+FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20]) {
 	this->Filesize = Filesize;
 	memcpy(this->Digest, Digest, sizeof(this->Digest));
 }
@@ -406,7 +406,7 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, char *ErrorMsg, 
 }
 
 FFMS_Indexer::FFMS_Indexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 5) {
-	if (FFIndex::CalculateFileSignature(Filename, &Filesize, Digest, ErrorMsg, MsgSize))
+	if (FFMS_Index::CalculateFileSignature(Filename, &Filesize, Digest, ErrorMsg, MsgSize))
 		throw ErrorMsg;
 }
 
@@ -414,7 +414,7 @@ FFMS_Indexer::~FFMS_Indexer() {
 
 }
 
-bool FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFIndex *Index, int Track, int DBSize, char *ErrorMsg, unsigned MsgSize) {
+bool FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track, int DBSize, char *ErrorMsg, unsigned MsgSize) {
 	// Delay writer creation until after an audio frame has been decoded. This ensures that all parameters are known when writing the headers.
 	if (DBSize > 0) {
 		if (!AudioContext.W64Writer) {

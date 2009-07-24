@@ -61,7 +61,7 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 	// 1: Index generated
 	// 2: Index forced to be overwritten
 
-	FFIndex *Index = NULL;
+	FFMS_Index *Index = NULL;
 	if (OverWrite || !(Index = FFMS_ReadIndex(CacheFile, ErrorMsg, MsgSize))) {
 		if (!(Index = FFMS_MakeIndex(Source, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, true, NULL, NULL, ErrorMsg, MsgSize)))
 			Env->ThrowError("FFIndex: %s", ErrorMsg);
@@ -123,7 +123,7 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	if (!strcmp(CacheFile, ""))
 		CacheFile = DefaultCache.c_str();
 
-	FFIndex *Index = NULL;
+	FFMS_Index *Index = NULL;
 	if (Cache)
 		Index = FFMS_ReadIndex(CacheFile, ErrorMsg, MsgSize);
 	if (!Index) {
@@ -184,7 +184,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	if (!strcmp(CacheFile, ""))
 		CacheFile = DefaultCache.c_str();
 
-	FFIndex *Index = NULL;
+	FFMS_Index *Index = NULL;
 	if (Cache)
 		Index = FFMS_ReadIndex(CacheFile, ErrorMsg, MsgSize);
 

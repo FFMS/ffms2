@@ -63,7 +63,7 @@ static void TestFullDump1(const char *SrcFile, bool WithAudio) {
 
 	const char *Name =  FFMS_GetCodecNameI(FIdx, 0);
 
-	FFIndex *FI = FFMS_DoIndexing(FIdx, -1, -1, FFMS_DefaultAudioFilename, NULL, false, UpdateProgress, &Private, ErrorMsg, sizeof(ErrorMsg));
+	FFMS_Index *FI = FFMS_DoIndexing(FIdx, -1, -1, FFMS_DefaultAudioFilename, NULL, false, UpdateProgress, &Private, ErrorMsg, sizeof(ErrorMsg));
 	assert(FI);
 
 	int vtrack = FFMS_GetFirstTrackOfType(FI, FFMS_TYPE_VIDEO, ErrorMsg, sizeof(ErrorMsg));

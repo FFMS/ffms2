@@ -73,14 +73,14 @@ protected:
 	TAudioCache AudioCache;
 	int64_t CurrentSample;
 	std::vector<uint8_t> DecodingBuffer;
-	FFTrack Frames;
+	FFMS_Track Frames;
 	AVCodecContext *CodecContext;
 	int AudioTrack;
 	FFMS_AudioProperties AP;
 public:
-	FFMS_AudioSource(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize);
+	FFMS_AudioSource(const char *SourceFile, FFMS_Index *Index, char *ErrorMsg, unsigned MsgSize);
 	virtual ~FFMS_AudioSource();
-	FFTrack *GetFFTrack() { return &Frames; }
+	FFMS_Track *GetFFTrack() { return &Frames; }
 	const FFMS_AudioProperties& GetAudioProperties() { return AP; }
 	virtual int GetAudio(void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize) = 0;
 };
@@ -92,7 +92,7 @@ private:
 	int DecodeNextAudioBlock(int64_t *Count, char *ErrorMsg, unsigned MsgSize);
 	void Free(bool CloseCodec);
 public:
-	FFLAVFAudio(const char *SourceFile, int Track, FFIndex *Index, char *ErrorMsg, unsigned MsgSize);
+	FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index *Index, char *ErrorMsg, unsigned MsgSize);
 	~FFLAVFAudio();
 	int GetAudio(void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize);
 };
@@ -107,7 +107,7 @@ private:
 	int DecodeNextAudioBlock(int64_t *Count, int AudioBlock, char *ErrorMsg, unsigned MsgSize);
 	void Free(bool CloseCodec);
 public:
-	FFMatroskaAudio(const char *SourceFile, int Track, FFIndex *Index, char *ErrorMsg, unsigned MsgSize);
+	FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index *Index, char *ErrorMsg, unsigned MsgSize);
 	~FFMatroskaAudio();
 	int GetAudio(void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize);
 };
@@ -122,7 +122,7 @@ private:
 	void Free(bool CloseCodec);
 	int DecodeNextAudioBlock(int64_t *AFirstStartTime, int64_t *Count, char *ErrorMsg, unsigned MsgSize);
 public:
-	FFHaaliAudio(const char *SourceFile, int Track, FFIndex *Index, int SourceMode, char *ErrorMsg, unsigned MsgSize);
+	FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index *Index, int SourceMode, char *ErrorMsg, unsigned MsgSize);
 	~FFHaaliAudio();
 	int GetAudio(void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize);
 };

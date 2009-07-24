@@ -87,7 +87,7 @@ FFMS_API(void) FFMS_SetLogLevel(int Level) {
 	av_log_set_level(Level);
 }
 
-FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFIndex *Index, const char *PP, int Threads, int SeekMode, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFMS_Index *Index, const char *PP, int Threads, int SeekMode, char *ErrorMsg, unsigned MsgSize) {
 	if (Track < 0 || Track >= static_cast<int>(Index->size())) {
 		snprintf(ErrorMsg, MsgSize, "Out of bounds track index selected");
 		return NULL;
@@ -115,7 +115,7 @@ FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int 
 	}
 }
 
-FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFIndex *Index, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, char *ErrorMsg, unsigned MsgSize) {
 	if (Track < 0 || Track >= static_cast<int>(Index->size())) {
 		snprintf(ErrorMsg, MsgSize, "Out of bounds track index selected");
 		return NULL;
@@ -179,11 +179,11 @@ FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V) {
 	V->ResetOutputFormat();
 }
 
-FFMS_API(void) FFMS_DestroyIndex(FFIndex *Index) {
+FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {
 	delete Index;
 }
 
-FFMS_API(int) FFMS_GetFirstTrackOfType(FFIndex *Index, int TrackType, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(int) FFMS_GetFirstTrackOfType(FFMS_Index *Index, int TrackType, char *ErrorMsg, unsigned MsgSize) {
 	for (int i = 0; i < static_cast<int>(Index->size()); i++)
 		if ((*Index)[i].TT == TrackType)
 			return i;
@@ -191,7 +191,7 @@ FFMS_API(int) FFMS_GetFirstTrackOfType(FFIndex *Index, int TrackType, char *Erro
 	return -1;
 }
 
-FFMS_API(int) FFMS_GetFirstIndexedTrackOfType(FFIndex *Index, int TrackType, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(int) FFMS_GetFirstIndexedTrackOfType(FFMS_Index *Index, int TrackType, char *ErrorMsg, unsigned MsgSize) {
 	for (int i = 0; i < static_cast<int>(Index->size()); i++)
 		if ((*Index)[i].TT == TrackType && (*Index)[i].size() > 0)
 			return i;
@@ -199,7 +199,7 @@ FFMS_API(int) FFMS_GetFirstIndexedTrackOfType(FFIndex *Index, int TrackType, cha
 	return -1;
 }
 
-FFMS_API(int) FFMS_GetNumTracks(FFIndex *Index) {
+FFMS_API(int) FFMS_GetNumTracks(FFMS_Index *Index) {
 	return Index->size();
 }
 
@@ -207,7 +207,7 @@ FFMS_API(int) FFMS_GetNumTracksI(FFMS_Indexer *Indexer) {
 	return Indexer->GetNumberOfTracks();
 }
 
-FFMS_API(int) FFMS_GetTrackType(FFTrack *T) {
+FFMS_API(int) FFMS_GetTrackType(FFMS_Track *T) {
 	return T->TT;
 }
 
@@ -219,35 +219,35 @@ FFMS_API(const char *) FFMS_GetCodecNameI(FFMS_Indexer *Indexer, int Track) {
 	return Indexer->GetTrackCodec(Track);
 }
 
-FFMS_API(int) FFMS_GetNumFrames(FFTrack *T) {
+FFMS_API(int) FFMS_GetNumFrames(FFMS_Track *T) {
 	return T->size();
 }
 
-FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFTrack *T, int Frame) {
+FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFMS_Track *T, int Frame) {
 	return reinterpret_cast<FFMS_FrameInfo *>(&(*T)[Frame]);
 }
 
-FFMS_API(FFTrack *) FFMS_GetTrackFromIndex(FFIndex *Index, int Track) {
+FFMS_API(FFMS_Track *) FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track) {
 	return &(*Index)[Track];
 }
 
-FFMS_API(FFTrack *) FFMS_GetTrackFromVideo(FFMS_VideoSource *V) {
+FFMS_API(FFMS_Track *) FFMS_GetTrackFromVideo(FFMS_VideoSource *V) {
 	return V->GetFFTrack();
 }
 
-FFMS_API(FFTrack *) FFMS_GetTrackFromAudio(FFMS_AudioSource *A) {
+FFMS_API(FFMS_Track *) FFMS_GetTrackFromAudio(FFMS_AudioSource *A) {
 	return A->GetFFTrack();
 }
 
-FFMS_API(const FFMS_TrackTimeBase *) FFMS_GetTimeBase(FFTrack *T) {
+FFMS_API(const FFMS_TrackTimeBase *) FFMS_GetTimeBase(FFMS_Track *T) {
 	return &T->TB;
 }
 
-FFMS_API(int) FFMS_WriteTimecodes(FFTrack *T, const char *TimecodeFile, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(int) FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, char *ErrorMsg, unsigned MsgSize) {
 	return T->WriteTimecodes(TimecodeFile, ErrorMsg, MsgSize);
 }
 
-FFMS_API(FFIndex *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, char *ErrorMsg, unsigned MsgSize) {
 	FFMS_Indexer *Indexer = FFMS_CreateIndexer(SourceFile, ErrorMsg, MsgSize);
 	if (!Indexer)
 		return NULL;
@@ -297,13 +297,13 @@ FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, char *ErrorM
 	}
 }
 
-FFMS_API(FFIndex *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, char *ErrorMsg, unsigned MsgSize) {
 	Indexer->SetIndexMask(IndexMask | DumpMask);
 	Indexer->SetDumpMask(DumpMask);
 	Indexer->SetIgnoreDecodeErrors(IgnoreDecodeErrors);
 	Indexer->SetProgressCallback(IC, ICPrivate);
 	Indexer->SetAudioNameCallback(ANC, ANCPrivate);
-	FFIndex *Index = Indexer->DoIndexing(ErrorMsg, MsgSize);
+	FFMS_Index *Index = Indexer->DoIndexing(ErrorMsg, MsgSize);
 	delete Indexer;
 	return Index;
 }
@@ -312,8 +312,8 @@ FFMS_API(void) FFMS_CancelIndexing(FFMS_Indexer *Indexer) {
 	delete Indexer;
 }
 
-FFMS_API(FFIndex *) FFMS_ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) {
-	FFIndex *Index = new FFIndex();
+FFMS_API(FFMS_Index *) FFMS_ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) {
+	FFMS_Index *Index = new FFMS_Index();
 	if (Index->ReadIndex(IndexFile, ErrorMsg, MsgSize)) {
 		delete Index;
 		return NULL;
@@ -322,11 +322,11 @@ FFMS_API(FFIndex *) FFMS_ReadIndex(const char *IndexFile, char *ErrorMsg, unsign
 	}
 }
 
-FFMS_API(int) FFMS_IndexBelongsToFile(FFIndex *Index, const char *SourceFile, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(int) FFMS_IndexBelongsToFile(FFMS_Index *Index, const char *SourceFile, char *ErrorMsg, unsigned MsgSize) {
 	return Index->CompareFileSignature(SourceFile, ErrorMsg, MsgSize);
 }
 
-FFMS_API(int) FFMS_WriteIndex(const char *IndexFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(int) FFMS_WriteIndex(const char *IndexFile, FFMS_Index *Index, char *ErrorMsg, unsigned MsgSize) {
 	return Index->WriteIndex(IndexFile, ErrorMsg, MsgSize);
 }
 

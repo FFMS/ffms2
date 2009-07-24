@@ -28,7 +28,7 @@ void FFLAVFVideo::Free(bool CloseCodec) {
 	av_close_input_file(FormatContext);
 }
 
-FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFIndex *Index,
+FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
 	const char *PP, int Threads, int SeekMode, char *ErrorMsg, unsigned MsgSize)
 	: FFMS_VideoSource(SourceFile, Index, ErrorMsg, MsgSize) {
 

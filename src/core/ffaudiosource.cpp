@@ -95,7 +95,7 @@ int64_t TAudioCache::FillRequest(int64_t Start, int64_t Samples, uint8_t *Dst) {
 
 /* FFMS_AudioSource base class */
 
-FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10) {
+FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index *Index, char *ErrorMsg, unsigned MsgSize) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10) {
 	if (Index->CompareFileSignature(SourceFile, ErrorMsg, MsgSize))
 		throw ErrorMsg;
 

@@ -26,7 +26,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
-AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFIndex *Index,
+AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 		const char *ConvertToFormatName, IScriptEnvironment* Env, char *ErrorMsg, unsigned MsgSize) {
@@ -176,7 +176,7 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 	return OutputFrame(Frame, Env);
 }
 
-AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFIndex *Index, IScriptEnvironment* Env, char *ErrorMsg, unsigned MsgSize) {
+AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, IScriptEnvironment* Env, char *ErrorMsg, unsigned MsgSize) {
 	memset(&VI, 0, sizeof(VI));
 
 	A = FFMS_CreateAudioSource(SourceFile, Track, Index, ErrorMsg, MsgSize);

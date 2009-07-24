@@ -115,7 +115,7 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame, char *ErrorMsg, unsign
 	return &LocalFrame;
 }
 
-FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize) {
+FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, char *ErrorMsg, unsigned MsgSize) {
 	if (Index->CompareFileSignature(SourceFile, ErrorMsg, MsgSize))
 		throw ErrorMsg;
 

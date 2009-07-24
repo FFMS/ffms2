@@ -42,7 +42,7 @@ std::string InputFile;
 std::string CacheFile;
 std::string AudioFile;
 
-FFIndex *Index;
+FFMS_Index *Index;
 
 
 static void PrintUsage () {

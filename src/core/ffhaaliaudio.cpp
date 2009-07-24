@@ -83,7 +83,7 @@ Done:
 	return Ret;
 }
 
-FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFIndex *Index,
+FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index *Index,
 						   int SourceMode, char *ErrorMsg, unsigned MsgSize)
 						   : FFMS_AudioSource(SourceFile, Index, ErrorMsg, MsgSize) {
 	AVCodec *Codec = NULL;

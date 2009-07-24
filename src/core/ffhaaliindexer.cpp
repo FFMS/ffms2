@@ -116,17 +116,17 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *Error
 	}
 }
 
-FFIndex *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
+FFMS_Index *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 	std::vector<SharedAudioContext> AudioContexts(NumTracks, SharedAudioContext(true));
 	std::vector<SharedVideoContext> VideoContexts(NumTracks, SharedVideoContext(true));
 
-	std::auto_ptr<FFIndex> TrackIndices(new FFIndex(Filesize, Digest));
+	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest));
 	TrackIndices->Decoder = 2;
 	if (SourceMode == 1)
 		TrackIndices->Decoder = 3;
 
 	for (int i = 0; i < NumTracks; i++) {
-		TrackIndices->push_back(FFTrack(1, 1000000, TrackType[i]));
+		TrackIndices->push_back(FFMS_Track(1, 1000000, TrackType[i]));
 
 		if (TrackType[i] == FFMS_TYPE_VIDEO && Codec[i] && (VideoContexts[i].Parser = av_parser_init(Codec[i]->id))) {
 
