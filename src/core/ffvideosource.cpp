@@ -59,14 +59,14 @@ int FFVideo::ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height, char *E
 	return 0;
 }
 
-static void CopyAVPictureFields(AVPicture &Picture, FFAVFrame &Dst) {
+static void CopyAVPictureFields(AVPicture &Picture, FFMS_Frame &Dst) {
 	for (int i = 0; i < 4; i++) {
 		Dst.Data[i] = Picture.data[i];
 		Dst.Linesize[i] = Picture.linesize[i];
 	}
 }
 
-FFAVFrame *FFVideo::OutputFrame(AVFrame *Frame, char *ErrorMsg, unsigned MsgSize) {
+FFMS_Frame *FFVideo::OutputFrame(AVFrame *Frame, char *ErrorMsg, unsigned MsgSize) {
 	if (LastFrameWidth != CodecContext->width || LastFrameHeight != CodecContext->height || LastFramePixelFormat != CodecContext->pix_fmt) {
 		if (ReAdjustPP(CodecContext->pix_fmt, CodecContext->width, CodecContext->height, ErrorMsg, MsgSize))
 			return NULL;
@@ -155,7 +155,7 @@ FFVideo::~FFVideo() {
 	av_freep(&DecodeFrame);
 }
 
-FFAVFrame *FFVideo::GetFrameByTime(double Time, char *ErrorMsg, unsigned MsgSize) {
+FFMS_Frame *FFVideo::GetFrameByTime(double Time, char *ErrorMsg, unsigned MsgSize) {
 	int Frame = Frames.ClosestFrameFromDTS(static_cast<int64_t>((Time * 1000 * Frames.TB.Den) / Frames.TB.Num));
 	return GetFrame(Frame, ErrorMsg, MsgSize);
 }

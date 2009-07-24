@@ -45,7 +45,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFIn
 		throw;
 	}
 
-	const FFVideoProperties *VP = FFMS_GetVideoProperties(V);
+	const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
 
 	if (FPSNum > 0 && FPSDen > 0) {
 		VI.fps_denominator = FPSDen;
@@ -78,7 +78,7 @@ void AvisynthVideoSource::InitOutputFormat(
 	int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 	const char *ConvertToFormatName, IScriptEnvironment *Env) {
 
-	const FFVideoProperties *VP = FFMS_GetVideoProperties(V);
+	const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
 
 	int64_t TargetFormats = (1 << FFMS_GetPixFmt("yuvj420p")) |
 		(1 << FFMS_GetPixFmt("yuv420p")) | (1 << FFMS_GetPixFmt("yuyv422")) |
@@ -141,8 +141,8 @@ void AvisynthVideoSource::InitOutputFormat(
 	}
 }
 
-PVideoFrame AvisynthVideoSource::OutputFrame(const FFAVFrame *Frame, IScriptEnvironment *Env) {
-	FFAVFrame *SrcPicture = const_cast<FFAVFrame *>(Frame);
+PVideoFrame AvisynthVideoSource::OutputFrame(const FFMS_Frame *Frame, IScriptEnvironment *Env) {
+	FFMS_Frame *SrcPicture = const_cast<FFMS_Frame *>(Frame);
 	PVideoFrame Dst = Env->NewVideoFrame(VI);
 
 	if (VI.pixel_type == VideoInfo::CS_I420) {
@@ -161,7 +161,7 @@ PVideoFrame AvisynthVideoSource::OutputFrame(const FFAVFrame *Frame, IScriptEnvi
 PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 	char ErrorMsg[1024];
 	unsigned MsgSize = sizeof(ErrorMsg);
-	const FFAVFrame *Frame;
+	const FFMS_Frame *Frame;
 
 	if (FPSNum > 0 && FPSDen > 0)
 		Frame = FFMS_GetFrameByTime(V, FFMS_GetVideoProperties(V)->FirstTime +
@@ -183,7 +183,7 @@ AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFIn
 	if (!A)
 		Env->ThrowError(ErrorMsg);
 
-	const FFAudioProperties *AP = FFMS_GetAudioProperties(A);
+	const FFMS_AudioProperties *AP = FFMS_GetAudioProperties(A);
 	VI.nchannels = AP->Channels;
 	VI.num_audio_samples = AP->NumSamples;
 	VI.audio_samples_per_second = AP->SampleRate;

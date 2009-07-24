@@ -195,7 +195,7 @@ Done:
 	return 0;
 }
 
-FFAVFrame *FFMatroskaVideo::GetFrame(int n, char *ErrorMsg, unsigned MsgSize) {
+FFMS_Frame *FFMatroskaVideo::GetFrame(int n, char *ErrorMsg, unsigned MsgSize) {
 	// PPFrame always holds frame LastFrameNum even if no PP is applied
 	if (LastFrameNum == n)
 		return OutputFrame(DecodeFrame, ErrorMsg, MsgSize);

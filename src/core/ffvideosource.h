@@ -60,8 +60,8 @@ private:
 	AVPicture PPFrame;
 	AVPicture SWSFrame;
 protected:
-	FFVideoProperties VP;
-	FFAVFrame LocalFrame;
+	FFMS_VideoProperties VP;
+	FFMS_Frame LocalFrame;
 	AVFrame *DecodeFrame;
 	int LastFrameNum;
 	FFTrack Frames;
@@ -72,13 +72,13 @@ protected:
 	FFVideo(const char *SourceFile, FFIndex *Index, char *ErrorMsg, unsigned MsgSize);
 	int InitPP(const char *PP, char *ErrorMsg, unsigned MsgSize);
 	int ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height, char *ErrorMsg, unsigned MsgSize);
-	FFAVFrame *OutputFrame(AVFrame *Frame, char *ErrorMsg, unsigned MsgSize);
+	FFMS_Frame *OutputFrame(AVFrame *Frame, char *ErrorMsg, unsigned MsgSize);
 public:
 	virtual ~FFVideo();
-	const FFVideoProperties& GetFFVideoProperties() { return VP; }
+	const FFMS_VideoProperties& GetVideoProperties() { return VP; }
 	FFTrack *GetFFTrack() { return &Frames; }
-	virtual FFAVFrame *GetFrame(int n, char *ErrorMsg, unsigned MsgSize) = 0;
-	FFAVFrame *GetFrameByTime(double Time, char *ErrorMsg, unsigned MsgSize);
+	virtual FFMS_Frame *GetFrame(int n, char *ErrorMsg, unsigned MsgSize) = 0;
+	FFMS_Frame *GetFrameByTime(double Time, char *ErrorMsg, unsigned MsgSize);
 	int SetOutputFormat(int64_t TargetFormats, int Width, int Height, int Resizer, char *ErrorMsg, unsigned MsgSize);
 	int ReAdjustOutputFormat(int64_t TargetFormats, int Width, int Height, int Resizer, char *ErrorMsg, unsigned MsgSize);
 	void ResetOutputFormat();
@@ -94,7 +94,7 @@ private:
 public:
 	FFLAVFVideo(const char *SourceFile, int Track, FFIndex *Index, const char *PP, int Threads, int SeekMode, char *ErrorMsg, unsigned MsgSize);
 	~FFLAVFVideo();
-	FFAVFrame *GetFrame(int n, char *ErrorMsg, unsigned MsgSize);
+	FFMS_Frame *GetFrame(int n, char *ErrorMsg, unsigned MsgSize);
 };
 
 class FFMatroskaVideo : public FFVideo {
@@ -109,7 +109,7 @@ private:
 public:
 	FFMatroskaVideo(const char *SourceFile, int Track, FFIndex *Index, const char *PP, int Threads, char *ErrorMsg, unsigned MsgSize);
 	~FFMatroskaVideo();
-    FFAVFrame *GetFrame(int n, char *ErrorMsg, unsigned MsgSize);
+    FFMS_Frame *GetFrame(int n, char *ErrorMsg, unsigned MsgSize);
 };
 
 #ifdef HAALISOURCE
@@ -125,7 +125,7 @@ private:
 public:
 	FFHaaliVideo(const char *SourceFile, int Track, FFIndex *Index, const char *PP, int Threads, int SourceMode, char *ErrorMsg, unsigned MsgSize);
 	~FFHaaliVideo();
-    FFAVFrame *GetFrame(int n, char *ErrorMsg, unsigned MsgSize);
+    FFMS_Frame *GetFrame(int n, char *ErrorMsg, unsigned MsgSize);
 };
 
 #endif // HAALISOURCE

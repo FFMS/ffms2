@@ -151,20 +151,20 @@ FFMS_API(void) FFMS_DestroyAudioSource(FFAudio *A) {
 	delete A;
 }
 
-FFMS_API(const FFVideoProperties *) FFMS_GetVideoProperties(FFVideo *V) {
-	return &V->GetFFVideoProperties();
+FFMS_API(const FFMS_VideoProperties *) FFMS_GetVideoProperties(FFVideo *V) {
+	return &V->GetVideoProperties();
 }
 
-FFMS_API(const FFAudioProperties *) FFMS_GetAudioProperties(FFAudio *A) {
-	return &A->GetFFAudioProperties();
+FFMS_API(const FFMS_AudioProperties *) FFMS_GetAudioProperties(FFAudio *A) {
+	return &A->GetAudioProperties();
 }
 
-FFMS_API(const FFAVFrame *) FFMS_GetFrame(FFVideo *V, int n, char *ErrorMsg, unsigned MsgSize) {
-	return (FFAVFrame *)V->GetFrame(n, ErrorMsg, MsgSize);
+FFMS_API(const FFMS_Frame *) FFMS_GetFrame(FFVideo *V, int n, char *ErrorMsg, unsigned MsgSize) {
+	return (FFMS_Frame *)V->GetFrame(n, ErrorMsg, MsgSize);
 }
 
-FFMS_API(const FFAVFrame *) FFMS_GetFrameByTime(FFVideo *V, double Time, char *ErrorMsg, unsigned MsgSize) {
-	return (FFAVFrame *)V->GetFrameByTime(Time, ErrorMsg, MsgSize);
+FFMS_API(const FFMS_Frame *) FFMS_GetFrameByTime(FFVideo *V, double Time, char *ErrorMsg, unsigned MsgSize) {
+	return (FFMS_Frame *)V->GetFrameByTime(Time, ErrorMsg, MsgSize);
 }
 
 FFMS_API(int) FFMS_GetAudio(FFAudio *A, void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize) {
@@ -223,8 +223,8 @@ FFMS_API(int) FFMS_GetNumFrames(FFTrack *T) {
 	return T->size();
 }
 
-FFMS_API(const FFFrameInfo *) FFMS_GetFrameInfo(FFTrack *T, int Frame) {
-	return reinterpret_cast<FFFrameInfo *>(&(*T)[Frame]);
+FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFTrack *T, int Frame) {
+	return reinterpret_cast<FFMS_FrameInfo *>(&(*T)[Frame]);
 }
 
 FFMS_API(FFTrack *) FFMS_GetTrackFromIndex(FFIndex *Index, int Track) {
@@ -239,7 +239,7 @@ FFMS_API(FFTrack *) FFMS_GetTrackFromAudio(FFAudio *A) {
 	return A->GetFFTrack();
 }
 
-FFMS_API(const FFTrackTimeBase *) FFMS_GetTimeBase(FFTrack *T) {
+FFMS_API(const FFMS_TrackTimeBase *) FFMS_GetTimeBase(FFTrack *T) {
 	return &T->TB;
 }
 
@@ -270,7 +270,7 @@ static void ReplaceString(std::string &s, std::string from, std::string to) {
 		s.replace(idx, from.length(), to);
 }
 
-FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFAudioProperties *AP, char *FileName, int FNSize, void *Private) {
+FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int FNSize, void *Private) {
 	std::string s = static_cast<char *>(Private);
 
 	ReplaceString(s, "%sourcefile%", SourceFile);

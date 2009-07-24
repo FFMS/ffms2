@@ -418,7 +418,7 @@ bool FFIndexer::WriteAudio(SharedAudioContext &AudioContext, FFIndex *Index, int
 	// Delay writer creation until after an audio frame has been decoded. This ensures that all parameters are known when writing the headers.
 	if (DBSize > 0) {
 		if (!AudioContext.W64Writer) {
-			FFAudioProperties AP;
+			FFMS_AudioProperties AP;
 			FillAP(AP, AudioContext.CodecContext, (*Index)[Track]);
 			int FNSize = (*ANC)(SourceFile, Track, &AP, NULL, 0, ANCPrivate);
 			std::vector<char> WName(FNSize);

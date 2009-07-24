@@ -34,7 +34,7 @@ private:
 
 	void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 		const char *ResizerName, const char *ConvertToFormatName,IScriptEnvironment *Env);
-	PVideoFrame OutputFrame(const FFAVFrame *SrcPicture, IScriptEnvironment *Env);
+	PVideoFrame OutputFrame(const FFMS_Frame *SrcPicture, IScriptEnvironment *Env);
 public:
 	AvisynthVideoSource(const char *SourceFile, int Track, FFIndex *Index,
 		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode,

@@ -81,7 +81,7 @@ private:
 class FFTrack : public std::vector<TFrameInfo> {
 public:
 	FFMS_TrackType TT;
-	FFTrackTimeBase TB;
+	FFMS_TrackTimeBase TB;
 
 	int FindClosestVideoKeyFrame(int Frame);
 	int FindClosestAudioKeyFrame(int64_t Sample);
