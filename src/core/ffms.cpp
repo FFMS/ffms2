@@ -203,7 +203,7 @@ FFMS_API(int) FFMS_GetNumTracks(FFIndex *Index) {
 	return Index->size();
 }
 
-FFMS_API(int) FFMS_GetNumTracksI(FFIndexer *Indexer) {
+FFMS_API(int) FFMS_GetNumTracksI(FFMS_Indexer *Indexer) {
 	return Indexer->GetNumberOfTracks();
 }
 
@@ -211,11 +211,11 @@ FFMS_API(int) FFMS_GetTrackType(FFTrack *T) {
 	return T->TT;
 }
 
-FFMS_API(int) FFMS_GetTrackTypeI(FFIndexer *Indexer, int Track) {
+FFMS_API(int) FFMS_GetTrackTypeI(FFMS_Indexer *Indexer, int Track) {
 	return Indexer->GetTrackType(Track);
 }
 
-FFMS_API(const char *) FFMS_GetCodecNameI(FFIndexer *Indexer, int Track) {
+FFMS_API(const char *) FFMS_GetCodecNameI(FFMS_Indexer *Indexer, int Track) {
 	return Indexer->GetTrackCodec(Track);
 }
 
@@ -248,7 +248,7 @@ FFMS_API(int) FFMS_WriteTimecodes(FFTrack *T, const char *TimecodeFile, char *Er
 }
 
 FFMS_API(FFIndex *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, char *ErrorMsg, unsigned MsgSize) {
-	FFIndexer *Indexer = FFMS_CreateIndexer(SourceFile, ErrorMsg, MsgSize);
+	FFMS_Indexer *Indexer = FFMS_CreateIndexer(SourceFile, ErrorMsg, MsgSize);
 	if (!Indexer)
 		return NULL;
 	return FFMS_DoIndexing(Indexer, IndexMask, DumpMask, ANC, ANCPrivate, IgnoreDecodeErrors, IC, ICPrivate, ErrorMsg, MsgSize);
@@ -289,15 +289,15 @@ FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const
 	}
 }
 
-FFMS_API(FFIndexer *) FFMS_CreateIndexer(const char *SourceFile, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, char *ErrorMsg, unsigned MsgSize) {
 	try {
-		return FFIndexer::CreateFFIndexer(SourceFile, ErrorMsg, MsgSize);
+		return FFMS_Indexer::CreateIndexer(SourceFile, ErrorMsg, MsgSize);
 	} catch (...) {
 		return NULL;
 	}
 }
 
-FFMS_API(FFIndex *) FFMS_DoIndexing(FFIndexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(FFIndex *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, char *ErrorMsg, unsigned MsgSize) {
 	Indexer->SetIndexMask(IndexMask | DumpMask);
 	Indexer->SetDumpMask(DumpMask);
 	Indexer->SetIgnoreDecodeErrors(IgnoreDecodeErrors);
@@ -308,7 +308,7 @@ FFMS_API(FFIndex *) FFMS_DoIndexing(FFIndexer *Indexer, int IndexMask, int DumpM
 	return Index;
 }
 
-FFMS_API(void) FFMS_CancelIndexing(FFIndexer *Indexer) {
+FFMS_API(void) FFMS_CancelIndexing(FFMS_Indexer *Indexer) {
 	delete Indexer;
 }
 

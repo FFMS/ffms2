@@ -23,7 +23,7 @@
 
 
 
-FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) : FFIndexer(Filename, ErrorMsg, MsgSize) {
+FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) : FFMS_Indexer(Filename, ErrorMsg, MsgSize) {
 	memset(Codec, 0, sizeof(Codec));
 	SourceFile = Filename;
 	char ErrorMessage[256];

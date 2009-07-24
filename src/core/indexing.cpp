@@ -353,29 +353,29 @@ FFIndex::FFIndex(int64_t Filesize, uint8_t Digest[20]) {
 	memcpy(this->Digest, Digest, sizeof(this->Digest));
 }
 
-void FFIndexer::SetIndexMask(int IndexMask) {
+void FFMS_Indexer::SetIndexMask(int IndexMask) {
 	this->IndexMask = IndexMask;
 }
 
-void FFIndexer::SetDumpMask(int DumpMask) {
+void FFMS_Indexer::SetDumpMask(int DumpMask) {
 	this->DumpMask = DumpMask;
 }
 
-void FFIndexer::SetIgnoreDecodeErrors(bool IgnoreDecodeErrors) {
+void FFMS_Indexer::SetIgnoreDecodeErrors(bool IgnoreDecodeErrors) {
 	this->IgnoreDecodeErrors = IgnoreDecodeErrors;
 }
 
-void FFIndexer::SetProgressCallback(TIndexCallback IC, void *ICPrivate) {
+void FFMS_Indexer::SetProgressCallback(TIndexCallback IC, void *ICPrivate) {
 	this->IC = IC;
 	this->ICPrivate = ICPrivate;
 }
 
-void FFIndexer::SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate) {
+void FFMS_Indexer::SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate) {
 	this->ANC = ANC;
 	this->ANCPrivate = ANCPrivate;
 }
 
-FFIndexer *FFIndexer::CreateFFIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) {
+FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) {
 	AVFormatContext *FormatContext = NULL;
 
 	if (av_open_input_file(&FormatContext, Filename, NULL, 0, NULL) != 0) {
@@ -405,16 +405,16 @@ FFIndexer *FFIndexer::CreateFFIndexer(const char *Filename, char *ErrorMsg, unsi
 	return new FFLAVFIndexer(Filename, FormatContext, ErrorMsg, MsgSize);
 }
 
-FFIndexer::FFIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 5) {
+FFMS_Indexer::FFMS_Indexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 5) {
 	if (FFIndex::CalculateFileSignature(Filename, &Filesize, Digest, ErrorMsg, MsgSize))
 		throw ErrorMsg;
 }
 
-FFIndexer::~FFIndexer() {
+FFMS_Indexer::~FFMS_Indexer() {
 
 }
 
-bool FFIndexer::WriteAudio(SharedAudioContext &AudioContext, FFIndex *Index, int Track, int DBSize, char *ErrorMsg, unsigned MsgSize) {
+bool FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFIndex *Index, int Track, int DBSize, char *ErrorMsg, unsigned MsgSize) {
 	// Delay writer creation until after an audio frame has been decoded. This ensures that all parameters are known when writing the headers.
 	if (DBSize > 0) {
 		if (!AudioContext.W64Writer) {

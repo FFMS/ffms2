@@ -110,7 +110,7 @@ public:
 	FFIndex(int64_t Filesize, uint8_t Digest[20]);
 };
 
-class FFIndexer {
+class FFMS_Indexer {
 protected:
 	int IndexMask;
 	int DumpMask;
@@ -127,9 +127,9 @@ protected:
 
 	bool WriteAudio(SharedAudioContext &AudioContext, FFIndex *Index, int Track, int DBSize, char *ErrorMsg, unsigned MsgSize);
 public:
-	static FFIndexer *CreateFFIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize);
-	FFIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize);
-	virtual ~FFIndexer();
+	static FFMS_Indexer *CreateIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize);
+	FFMS_Indexer(const char *Filename, char *ErrorMsg, unsigned MsgSize);
+	virtual ~FFMS_Indexer();
 	void SetIndexMask(int IndexMask);
 	void SetDumpMask(int DumpMask);
 	void SetIgnoreDecodeErrors(bool IgnoreDecodeErrors);
@@ -141,7 +141,7 @@ public:
 	virtual const char *GetTrackCodec(int Track) = 0;
 };
 
-class FFLAVFIndexer : public FFIndexer {
+class FFLAVFIndexer : public FFMS_Indexer {
 private:
 	AVFormatContext *FormatContext;
 public:
@@ -153,7 +153,7 @@ public:
 	const char *GetTrackCodec(int Track);
 };
 
-class FFMatroskaIndexer : public FFIndexer {
+class FFMatroskaIndexer : public FFMS_Indexer {
 private:
 	MatroskaFile *MF;
 	MatroskaReaderContext MC;
@@ -169,7 +169,7 @@ public:
 
 #ifdef HAALISOURCE
 
-class FFHaaliIndexer : public FFIndexer {
+class FFHaaliIndexer : public FFMS_Indexer {
 private:
 	int SourceMode;
 	CComPtr<IMMContainer> pMMC;

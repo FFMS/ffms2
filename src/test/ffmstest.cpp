@@ -55,7 +55,7 @@ static void TestFullDump1(const char *SrcFile, bool WithAudio) {
 	char ErrorMsg[2000];
 	FFMS_Init(0);
 
-	FFIndexer *FIdx = FFMS_CreateIndexer(SrcFile, ErrorMsg, sizeof(ErrorMsg));
+	FFMS_Indexer *FIdx = FFMS_CreateIndexer(SrcFile, ErrorMsg, sizeof(ErrorMsg));
 	assert(FIdx);
 	FFMS_CancelIndexing(FIdx);
 	FIdx = FFMS_CreateIndexer(SrcFile, ErrorMsg, sizeof(ErrorMsg));

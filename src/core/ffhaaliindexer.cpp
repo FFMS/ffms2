@@ -24,7 +24,7 @@
 
 
 
-FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *ErrorMsg, unsigned MsgSize) : FFIndexer(Filename, ErrorMsg, MsgSize) {
+FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *ErrorMsg, unsigned MsgSize) : FFMS_Indexer(Filename, ErrorMsg, MsgSize) {
 	SourceFile = Filename;
 	this->SourceMode = SourceMode;
 	memset(TrackType, FFMS_TYPE_UNKNOWN, sizeof(TrackType));
