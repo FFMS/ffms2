@@ -27,15 +27,16 @@
 
 
 
-static bool FFmpegInited = false;
+static bool FFmpegInited	= false;
+static bool HasHaaliMPEG	= false;
+static bool HasHaaliOGG		= false;
 int CPUFeatures = 0;
 
 #ifdef FFMS_WIN_DEBUG
 
 extern "C" int av_log_level;
 
-void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl)
-{
+void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl) {
     static int print_prefix=1;
     static int count;
     static char line[1024], prev[1024];
@@ -75,6 +76,13 @@ FFMS_API(void) FFMS_Init(int CPUFeatures) {
 		av_log_set_level(AV_LOG_QUIET);
 #endif
 		::CPUFeatures = CPUFeatures;
+#ifdef HAALISOURCE
+		CComPtr<IMMContainer> pMMC;
+		HasHaaliMPEG = !FAILED(pMMC.CoCreateInstance(HAALI_MPEG_PARSER));
+		pMMC = NULL;
+		HasHaaliOGG = !FAILED(pMMC.CoCreateInstance(HAALI_OGG_PARSER));
+		pMMC = NULL;
+#endif
 		FFmpegInited = true;
 	}
 }
@@ -100,11 +108,21 @@ FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int 
 
 	try {
 		switch (Index->Decoder) {
-			case 0: return new FFLAVFVideo(SourceFile, Track, Index, PP, Threads, SeekMode, ErrorMsg, MsgSize);
-			case 1: return new FFMatroskaVideo(SourceFile, Track, Index, PP, Threads, ErrorMsg, MsgSize);
+			case FFMS_SOURCE_LAVF:
+				return new FFLAVFVideo(SourceFile, Track, Index, PP, Threads, SeekMode, ErrorMsg, MsgSize);
+			case FFMS_SOURCE_MATROSKA:
+				return new FFMatroskaVideo(SourceFile, Track, Index, PP, Threads, ErrorMsg, MsgSize);
 #ifdef HAALISOURCE
-			case 2: return new FFHaaliVideo(SourceFile, Track, Index, PP, Threads, 0, ErrorMsg, MsgSize);
-			case 3: return new FFHaaliVideo(SourceFile, Track, Index, PP, Threads, 1, ErrorMsg, MsgSize);
+			case FFMS_SOURCE_HAALIMPEG:
+				if (HasHaaliMPEG)
+					return new FFHaaliVideo(SourceFile, Track, Index, PP, Threads, 0, ErrorMsg, MsgSize);
+				snprintf(ErrorMsg, MsgSize, "Haali MPEG/TS source unavailable");
+				return NULL;
+			case FFMS_SOURCE_HAALIOGG:
+				if (HasHaaliOGG)
+					return new FFHaaliVideo(SourceFile, Track, Index, PP, Threads, 1, ErrorMsg, MsgSize);
+				snprintf(ErrorMsg, MsgSize, "Haali OGG/OGM source unavailable");
+				return NULL;
 #endif
 			default:
 				snprintf(ErrorMsg, MsgSize, "Unsupported format");
@@ -128,11 +146,21 @@ FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int 
 
 	try {
 		switch (Index->Decoder) {
-			case 0: return new FFLAVFAudio(SourceFile, Track, Index, ErrorMsg, MsgSize);
-			case 1: return new FFMatroskaAudio(SourceFile, Track, Index, ErrorMsg, MsgSize);
+			case FFMS_SOURCE_LAVF:
+				return new FFLAVFAudio(SourceFile, Track, Index, ErrorMsg, MsgSize);
+			case FFMS_SOURCE_MATROSKA:
+				return new FFMatroskaAudio(SourceFile, Track, Index, ErrorMsg, MsgSize);
 #ifdef HAALISOURCE
-			case 2: return new FFHaaliAudio(SourceFile, Track, Index, 0, ErrorMsg, MsgSize);
-			case 3: return new FFHaaliAudio(SourceFile, Track, Index, 1, ErrorMsg, MsgSize);
+			case FFMS_SOURCE_HAALIMPEG:
+				if (HasHaaliMPEG)
+					return new FFHaaliAudio(SourceFile, Track, Index, 0, ErrorMsg, MsgSize);
+				snprintf(ErrorMsg, MsgSize, "Haali MPEG/TS source unavailable");
+				return NULL;
+			case FFMS_SOURCE_HAALIOGG:
+				if (HasHaaliOGG)
+					return new FFHaaliAudio(SourceFile, Track, Index, 1, ErrorMsg, MsgSize);
+				snprintf(ErrorMsg, MsgSize, "Haali OGG/OGM source unavailable");
+				return NULL;
 #endif
 			default:
 				snprintf(ErrorMsg, MsgSize, "Unsupported format");
@@ -332,4 +360,23 @@ FFMS_API(int) FFMS_WriteIndex(const char *IndexFile, FFMS_Index *Index, char *Er
 
 FFMS_API(int) FFMS_GetPixFmt(const char *Name) {
 	return avcodec_get_pix_fmt(Name);
+}
+
+FFMS_API(int) FFMS_GetPresentSources() {
+	int Sources = FFMS_SOURCE_LAVF | FFMS_SOURCE_MATROSKA;
+#ifdef HAALISOURCE
+	Sources |= FFMS_SOURCE_HAALIMPEG | FFMS_SOURCE_HAALIOGG;
+#endif
+	return Sources;
+}
+
+FFMS_API(int) FFMS_GetEnabledSources() {
+	if (!FFmpegInited)
+		return 0;
+	int Sources = FFMS_SOURCE_LAVF | FFMS_SOURCE_MATROSKA;
+	if (HasHaaliMPEG)
+		Sources |= FFMS_SOURCE_HAALIMPEG;
+	if (HasHaaliOGG)
+		Sources |= FFMS_SOURCE_HAALIOGG;
+	return Sources;
 }

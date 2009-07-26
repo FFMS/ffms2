@@ -11,6 +11,12 @@ FFmpegSource2 Changelog
 <div class="maincontent">
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
+<li>2.00 beta 11<ul>
+<li>Now reverts to using LAVF if Haali's splitter isn't installed (note that LAVF is VERY bad at seeking in these formats)</li>
+<li>Updated FFmpeg to rev X (now compiled with 32 as the maximum number of streams instead of 20 with LAVF)</li>
+</ul></li>
+
+<ul>
 <li>2.00 beta 10<ul>
 <li>Possibly fixed h264 in transport stream decoding, now a suitable bitstream filter is added (could theoretically break other h264 in ts files so make sure to report if any such files stop working)</li>
 <li>Now returns the frame type as a character to make presentation easier and to remove the random numbers from the API</li>

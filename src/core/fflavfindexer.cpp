@@ -42,7 +42,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 	std::vector<SharedVideoContext> VideoContexts(FormatContext->nb_streams, SharedVideoContext(false));
 
 	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest));
-	TrackIndices->Decoder = 0;
+	TrackIndices->Decoder = FFMS_SOURCE_LAVF;
 
 	for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {
 		TrackIndices->push_back(FFMS_Track((int64_t)FormatContext->streams[i]->time_base.num * 1000,

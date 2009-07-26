@@ -50,10 +50,10 @@ FFMS_CLASS_TYPE FFMS_Index;
 FFMS_CLASS_TYPE FFMS_Track;
 
 enum FFMS_Sources {
-	FFMS_SOURCE_LAVF		= 0,
-	FFMS_SOURCE_MATROSKA	= 1,
-	FFMS_SOURCE_HAALIMPEG	= 2,
-	FFMS_SOURCE_HAALIOGG	= 3
+	FFMS_SOURCE_LAVF		= 0x00,
+	FFMS_SOURCE_MATROSKA	= 0x01,
+	FFMS_SOURCE_HAALIMPEG	= 0x02,
+	FFMS_SOURCE_HAALIOGG	= 0x04
 };
 
 enum FFMS_CPUFeatures {
@@ -239,5 +239,7 @@ FFMS_API(FFMS_Index *) FFMS_ReadIndex(const char *IndexFile, char *ErrorMsg, uns
 FFMS_API(int) FFMS_IndexBelongsToFile(FFMS_Index *Index, const char *SourceFile, char *ErrorMsg, unsigned MsgSize);
 FFMS_API(int) FFMS_WriteIndex(const char *IndexFile, FFMS_Index *Index, char *ErrorMsg, unsigned MsgSize);
 FFMS_API(int) FFMS_GetPixFmt(const char *Name);
+FFMS_API(int) FFMS_GetPresentSources();
+FFMS_API(int) FFMS_GetEnabledSources();
 
 #endif

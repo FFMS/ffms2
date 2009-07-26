@@ -96,9 +96,9 @@ FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index *Index,
 		throw ErrorMsg;
 	}
 
-	CLSID clsid = HAALI_TS_Parser;
+	CLSID clsid = HAALI_MPEG_PARSER;
 	if (SourceMode == 1)
-		clsid = HAALI_OGM_Parser;
+		clsid = HAALI_OGG_PARSER;
 
 	if (FAILED(pMMC.CoCreateInstance(clsid))) {
 		snprintf(ErrorMsg, MsgSize, "Can't create parser");

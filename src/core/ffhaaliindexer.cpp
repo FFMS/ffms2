@@ -33,9 +33,9 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, int SourceMode, char *Error
 	memset(CodecPrivateSize, 0, sizeof(CodecPrivateSize));
 	Duration = 0;
 
-	CLSID clsid = HAALI_TS_Parser;
+	CLSID clsid = HAALI_MPEG_PARSER;
 	if (SourceMode == 1)
-		clsid = HAALI_OGM_Parser;
+		clsid = HAALI_OGG_PARSER;
 
 	if (FAILED(pMMC.CoCreateInstance(clsid))) {
 		snprintf(ErrorMsg, MsgSize, "Can't create parser");
@@ -121,9 +121,9 @@ FFMS_Index *FFHaaliIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 	std::vector<SharedVideoContext> VideoContexts(NumTracks, SharedVideoContext(true));
 
 	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest));
-	TrackIndices->Decoder = 2;
+	TrackIndices->Decoder = FFMS_SOURCE_HAALIMPEG;
 	if (SourceMode == 1)
-		TrackIndices->Decoder = 3;
+		TrackIndices->Decoder = FFMS_SOURCE_HAALIOGG;
 
 	for (int i = 0; i < NumTracks; i++) {
 		TrackIndices->push_back(FFMS_Track(1, 1000000, TrackType[i]));

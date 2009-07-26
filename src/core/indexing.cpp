@@ -179,7 +179,7 @@ int FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, 
 		return 1;
 	}
 
-	const int BlockSize = 2*1024*1024;
+	const int BlockSize = 1024*1024;
 	std::vector<uint8_t> FileBuffer(BlockSize);
 	std::vector<uint8_t> ctxmem(av_sha1_size);
 	AVSHA1 *ctx = (AVSHA1 *)&ctxmem[0];
@@ -311,6 +311,11 @@ int FFMS_Index::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSiz
 		return 4;
 	}
 
+	if (!(IH.Decoder & FFMS_GetEnabledSources())) {
+		snprintf(ErrorMsg, MsgSize, "The source which this index was created with is not available");
+		return 5;
+	}
+
 	Decoder = IH.Decoder;
 	Filesize = IH.FileSize;
 	memcpy(Digest, IH.FileSignature, sizeof(Digest));
@@ -338,7 +343,7 @@ int FFMS_Index::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSiz
 
 	} catch (...) {
 		snprintf(ErrorMsg, MsgSize, "Unknown error while reading index information in '%s'", IndexFile);
-		return 5;
+		return 6;
 	}
 
 	return 0;
@@ -391,12 +396,12 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, char *ErrorMsg, 
 
 #ifdef HAALISOURCE
 	// Do haali ts indexing instead?
-	if (!strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts")) {
+	if (HasHaaliMPEG && !strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts")) {
 		av_close_input_file(FormatContext);
 		return new FFHaaliIndexer(Filename, 0, ErrorMsg, MsgSize);
 	}
 
-	if (!strcmp(FormatContext->iformat->name, "ogg")) {
+	if (HasHaaliOGG && !strcmp(FormatContext->iformat->name, "ogg")) {
 		av_close_input_file(FormatContext);
 		return new FFHaaliIndexer(Filename, 1, ErrorMsg, MsgSize);
 	}
