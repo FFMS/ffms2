@@ -21,6 +21,9 @@
 #ifndef FFMS_H
 #define FFMS_H
 
+// Version format: major - minor - micro
+#define FFMS_VERSION ((2 << 16) | (0 << 8) | 11)
+
 #include <stdint.h>
 
 #ifdef __cplusplus
