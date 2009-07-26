@@ -30,6 +30,9 @@ extern "C" {
 
 
 
+extern bool HasHaaliMPEG;
+extern bool HasHaaliOGG;
+
 struct IndexHeader {
 	uint32_t Id;
 	uint32_t Version;

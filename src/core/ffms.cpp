@@ -28,8 +28,8 @@
 
 
 static bool FFmpegInited	= false;
-static bool HasHaaliMPEG	= false;
-static bool HasHaaliOGG		= false;
+bool HasHaaliMPEG = false;
+bool HasHaaliOGG = false;
 int CPUFeatures = 0;
 
 #ifdef FFMS_WIN_DEBUG
