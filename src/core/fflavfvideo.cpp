@@ -171,9 +171,8 @@ Done:
 }
 
 FFMS_Frame *FFLAVFVideo::GetFrame(int n, char *ErrorMsg, unsigned MsgSize) {
-	// PPFrame always holds frame LastFrameNum even if no PP is applied
 	if (LastFrameNum == n)
-		return OutputFrame(DecodeFrame, ErrorMsg, MsgSize);
+		return &LocalFrame;
 
 	bool HasSeeked = false;
 	int SeekOffset = 0;

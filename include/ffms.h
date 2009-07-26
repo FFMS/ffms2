@@ -189,7 +189,6 @@ typedef FFMS_AudioSource FFAudio;
 typedef FFMS_Indexer FFIndexer;
 typedef FFMS_Index FFIndex;
 typedef FFMS_Track FFTrack;
-
 typedef FFMS_Frame FFAVFrame;
 typedef FFMS_TrackTimeBase FFTrackTimeBase;
 typedef FFMS_FrameInfo FFFrameInfo;
