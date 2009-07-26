@@ -39,7 +39,7 @@ config.h (part of msvc autoconfig only)
 libs.cpp (part of msvc autoconfig only)
 
 Common name:
-Undecided outside libffms2core.so/ffms2core.dll
+libffms2core.so/ffms2core.dll
 
 
 

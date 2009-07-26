@@ -45,7 +45,7 @@ int FFMS_VideoSource::ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height
 		case PIX_FMT_YUV411P: Flags |= PP_FORMAT_411; break;
 		case PIX_FMT_YUV444P: Flags |= PP_FORMAT_444; break;
 		default:
-			snprintf(ErrorMsg, MsgSize, "Input format is not supported for postprocessing");
+			snprintf(ErrorMsg, MsgSize, "The video does not have a colorspace suitable for postprocessing");
 			return 1;
 	}
 
