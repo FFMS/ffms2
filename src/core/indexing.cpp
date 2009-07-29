@@ -22,7 +22,6 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <stdio.h>
 
 extern "C" {
 #include <libavutil/sha1.h>

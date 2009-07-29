@@ -23,7 +23,7 @@
 
 #include <vector>
 #include <fstream>
-#include <stdio.h>
+#include <cstdio>
 #include "ffms.h"
 #include "matroskaparser.h"
 
@@ -50,7 +50,7 @@ extern "C" {
 #	include "guids.h"
 #endif
 
-
+typedef std::exception FFMS_Exception;
 
 #define FFMS_GET_VECTOR_PTR(v) (((v).size() ? &(v)[0] : NULL))
 
