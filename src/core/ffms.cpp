@@ -57,7 +57,9 @@ void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl)
         return;
     }
     if(count>0){
-		fprintf(stderr, "    Last message repeated %d times\n", count);
+		std::stringstream ss;
+		ss << "    Last message repeated " << count << " times\n";
+		OutputDebugStringA(ss.str().c_str());
         count=0;
     }
 	OutputDebugStringA(line);
