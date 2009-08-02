@@ -97,7 +97,7 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Could not open video codec");
 
-	if (Codec->id == CODEC_ID_H264 && SourceMode == 0)
+	if (Codec->id == CODEC_ID_H264 && SourceMode == FFMS_SOURCE_HAALIMPEG)
 		BitStreamFilter = av_bitstream_filter_init("h264_mp4toannexb");
 
 	Res.CloseCodec(true);
