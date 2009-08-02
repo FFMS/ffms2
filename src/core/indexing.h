@@ -37,7 +37,7 @@
 #	include "guids.h"
 #endif
 
-#define INDEXVERSION 29
+#define INDEXVERSION 30
 #define INDEXID 0x53920873
 
 class SharedVideoContext {

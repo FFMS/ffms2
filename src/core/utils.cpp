@@ -421,10 +421,6 @@ CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources So
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			"Can't open file");
 
-	if (FAILED(pMMC->Open(pMS, 0, NULL, pMA)))
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_INVALID_ARGUMENT,
-			"Can't parse file");
-
 	if (FAILED(pMMC->Open(pMS, 0, NULL, pMA))) {
 		if (SourceMode == FFMS_SOURCE_HAALIMPEG)
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_INVALID_ARGUMENT,
@@ -437,7 +433,7 @@ CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources So
 	return pMMC;
 }
 
-void LAVFOpenFile(const char *SourceFile, AVFormatContext *FormatContext) {
+void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
 	if (av_open_input_file(&FormatContext, SourceFile, NULL, 0, NULL) != 0)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			boost::format("Couldn't open '%1'") % SourceFile);

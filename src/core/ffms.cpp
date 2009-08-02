@@ -337,7 +337,7 @@ FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int
 	Indexer->SetAudioNameCallback(ANC, ANCPrivate);
 	FFMS_Index *Index = NULL;
 	try {
-		FFMS_Index *Index = Indexer->DoIndexing();
+		Index = Indexer->DoIndexing();
 	} catch (FFMS_Exception &e) {
 		e.CopyOut(ErrorCode, ErrorMsg, MsgSize);
 	}

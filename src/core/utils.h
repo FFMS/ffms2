@@ -135,8 +135,9 @@ void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *
 CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC = 0);
 FILE *ffms_fopen(const char *filename, const char *mode);
 size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max);
-
+#ifdef HAALISOURCE
 CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources SourceMode);
-void LAVFOpenFile(const char *SourceFile, AVFormatContext *FormatContext);
+#endif
+void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
 
 #endif

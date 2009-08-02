@@ -87,7 +87,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 
 	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest));
 	TrackIndices->Decoder = FFMS_SOURCE_HAALIMPEG;
-	if (SourceMode == 1)
+	if (SourceMode == FFMS_SOURCE_HAALIOGG)
 		TrackIndices->Decoder = FFMS_SOURCE_HAALIOGG;
 
 	for (int i = 0; i < NumTracks; i++) {
