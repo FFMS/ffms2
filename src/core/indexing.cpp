@@ -109,7 +109,7 @@ void FFMS_Track::WriteTimecodes(const char *TimecodeFile) {
 
 	if (!Timecodes.is_open())
 		throw FFMS_Exception(FFMS_ERROR_TRACK, FFMS_ERROR_FILE_WRITE,
-			(boost::format("Failed to open '%1%' for writing") % TimecodeFile).str());
+			boost::format("Failed to open '%1%' for writing") % TimecodeFile);
 
 	Timecodes << "# timecode format v2\n";
 
@@ -173,7 +173,7 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 
 	if (SFile == NULL)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_READ,
-			(boost::format("Failed to open '%1%' for hashing") % Filename).str());
+			boost::format("Failed to open '%1%' for hashing") % Filename);
 
 	const int BlockSize = 1024*1024;
 	std::vector<uint8_t> FileBuffer(BlockSize);
@@ -187,7 +187,7 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 		av_sha1_final(ctx, Digest);
 		fclose(SFile);
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_READ,
-			(boost::format("Failed to read '%1%' for hashing") % Filename).str());
+			boost::format("Failed to read '%1%' for hashing") % Filename);
 	}
 	av_sha1_update(ctx, &FileBuffer[0], BlockSize);
 
@@ -198,7 +198,7 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 		av_sha1_final(ctx, Digest);
 		fclose(SFile);
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_READ,
-			(boost::format("Failed to seek with offset %1% from file end in '%2%' for hashing") % BlockSize % Filename).str());
+			boost::format("Failed to seek with offset %1% from file end in '%2%' for hashing") % BlockSize % Filename);
 	}
 	av_sha1_update(ctx, &FileBuffer[0], BlockSize);
 
@@ -207,7 +207,7 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 		av_sha1_final(ctx, Digest);
 		fclose(SFile);
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_READ,
-			(boost::format("Failed to seek to end of '%1%' for hashing") % Filename).str());
+			boost::format("Failed to seek to end of '%1%' for hashing") % Filename);
 	}
 	*Filesize = ftello(SFile);
 	fclose(SFile);
@@ -236,7 +236,7 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 
 	if (!IndexStream.is_open())
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_WRITE,
-			(boost::format("Failed to open '%1%' for writing") % IndexFile).str());
+			boost::format("Failed to open '%1%' for writing") % IndexFile);
 
 	// Write the index file header
 	IndexHeader IH;
@@ -274,24 +274,24 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 
 	if (!Index.is_open())
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_READ,
-			(boost::format("Failed to open '%1%' for reading") % IndexFile).str());
+			boost::format("Failed to open '%1%' for reading") % IndexFile);
 
 	// Read the index file header
 	IndexHeader IH;
 	Index.read(reinterpret_cast<char *>(&IH), sizeof(IH));
 	if (IH.Id != INDEXID)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
-			(boost::format("'%1%' is not a valid index file") % IndexFile).str());
+			boost::format("'%1%' is not a valid index file") % IndexFile);
 
 	if (IH.Version != INDEXVERSION)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_VERSION,
-			(boost::format("'%1%' is not the expected index version") % IndexFile).str());
+			boost::format("'%1%' is not the expected index version") % IndexFile);
 
 	if (IH.LAVUVersion != avutil_version() || IH.LAVFVersion != avformat_version() ||
 		IH.LAVCVersion != avcodec_version() || IH.LSWSVersion != swscale_version() ||
 		IH.LPPVersion != postproc_version())
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_VERSION,
-			(boost::format("A different FFmpeg build was used to create '%1%'") % IndexFile).str());
+			boost::format("A different FFmpeg build was used to create '%1%'") % IndexFile);
 
 	if (!(IH.Decoder & FFMS_GetEnabledSources()))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_NOT_AVAILABLE,
@@ -324,7 +324,7 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 
 	} catch (...) {
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_UNKNOWN,
-			(boost::format("Unknown error while reading index information in '%1%'") % IndexFile).str());
+			boost::format("Unknown error while reading index information in '%1%'") % IndexFile);
 	}
 }
 
@@ -364,7 +364,7 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename) {
 
 	if (av_open_input_file(&FormatContext, Filename, NULL, 0, NULL) != 0)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			(boost::format("Can't open '%1%'") % Filename).str());
+			boost::format("Can't open '%1%'") % Filename);
 
 	// Do matroska indexing instead?
 	if (!strcmp(FormatContext->iformat->name, "matroska")) {

@@ -32,7 +32,7 @@ FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename) : FFMS_Indexer(Filena
 	MC.ST.fp = ffms_fopen(SourceFile, "rb");
 	if (MC.ST.fp == NULL)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			(boost::format("Can't open '%1%': %2%") % SourceFile % strerror(errno)).str());
+			boost::format("Can't open '%1%': %2%") % SourceFile % strerror(errno));
 
 	setvbuf(MC.ST.fp, NULL, _IOFBF, CACHESIZE);
 
@@ -40,7 +40,7 @@ FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename) : FFMS_Indexer(Filena
 	if (MF == NULL) {
 		fclose(MC.ST.fp);
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			(boost::format("Can't parse Matroska file: %1%") % ErrorMessage).str());
+			boost::format("Can't parse Matroska file: %1%") % ErrorMessage);
 	}
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++) {
@@ -82,7 +82,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 				VideoContexts[i].CS = cs_Create(MF, i, ErrorMessage, sizeof(ErrorMessage));
 				if (VideoContexts[i].CS == NULL)
 					throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
-						(boost::format("Can't create decompressor: %1%") % ErrorMessage).str());
+						boost::format("Can't create decompressor: %1%") % ErrorMessage);
 			}
 
 			VideoContexts[i].CodecContext = CodecContext;
@@ -101,7 +101,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 					av_freep(&AudioCodecContext);
 					AudioContexts[i].CodecContext = NULL;
 					throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
-						(boost::format("Can't create decompressor: %1%") % ErrorMessage).str());
+						boost::format("Can't create decompressor: %1%") % ErrorMessage);
 				}
 			}
 

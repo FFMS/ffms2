@@ -132,7 +132,7 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, 
 			int ReadBytes = cs_ReadData(CS, CSBuffer, sizeof(CSBuffer));
 			if (ReadBytes < 0)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-					(boost::format("Error decompressing data: %1%") % cs_GetLastError(CS)).str());
+					boost::format("Error decompressing data: %1%") % cs_GetLastError(CS));
 
 			if (ReadBytes == 0) {
 				FrameSize = DecompressedFrameSize;
@@ -153,7 +153,7 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, 
 	} else {
 		if (fseeko(Context.ST.fp, FilePos, SEEK_SET))
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_SEEKING,
-				(boost::format("fseek(): %1%") % strerror(errno)).str());
+				boost::format("fseek(): %1%") % strerror(errno));
 
 		if (Context.BufferSize < FrameSize) {
 			Context.BufferSize = FrameSize;
@@ -171,7 +171,7 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, 
 						"Unexpected EOF while reading frame");
 				} else {
 					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_SEEKING,
-						(boost::format("Error reading frame: %1%") % strerror(errno)).str());
+						boost::format("Error reading frame: %1%") % strerror(errno));
 				}
 			} else {
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
@@ -440,7 +440,7 @@ CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources So
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *FormatContext) {
 	if (av_open_input_file(&FormatContext, SourceFile, NULL, 0, NULL) != 0)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			(boost::format("Couldn't open '%1'") % SourceFile).str());
+			boost::format("Couldn't open '%1'") % SourceFile);
 
 	if (av_find_stream_info(FormatContext) < 0) {
 		av_close_input_file(FormatContext);

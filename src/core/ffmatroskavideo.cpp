@@ -48,7 +48,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	MC.ST.fp = ffms_fopen(SourceFile, "rb");
 	if (MC.ST.fp == NULL)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			(boost::format("Can't open '%1%': %2%") % SourceFile % strerror(errno)).str());
+			boost::format("Can't open '%1%': %2%") % SourceFile % strerror(errno));
 
 	setvbuf(MC.ST.fp, NULL, _IOFBF, CACHESIZE);
 
@@ -56,7 +56,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	if (MF == NULL) {
 		fclose(MC.ST.fp);
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			(boost::format("Can't parse Matroska file: %1%") % ErrorMessage).str());
+			boost::format("Can't parse Matroska file: %1%") % ErrorMessage);
 	}
 
 	mkv_SetTrackMask(MF, ~(1 << VideoTrack));
@@ -67,7 +67,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 		if (CS == NULL) {
 			Free(false);
 			throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
-				(boost::format("Can't create decompressor: %1%") % ErrorMessage).str());
+				boost::format("Can't create decompressor: %1%") % ErrorMessage);
 		}
 	}
 
