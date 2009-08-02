@@ -32,35 +32,28 @@ void FFMatroskaAudio::Free(bool CloseCodec) {
 	av_freep(&CodecContext);
 }
 
-FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track,
-								 FFMS_Index *Index, char *ErrorMsg, unsigned MsgSize)
-								 : FFMS_AudioSource(SourceFile, Index, ErrorMsg, MsgSize) {
+FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index *Index)
+								 : Res(FFSourceResources<FFMS_AudioSource>(this)), FFMS_AudioSource(SourceFile, Index, Track) {
 	CodecContext = NULL;
 	AVCodec *Codec = NULL;
 	TrackInfo *TI = NULL;
 	CS = NULL;
 	Frames = (*Index)[Track];
 
-	if (Frames.size() == 0) {
-		Free(false);
-		snprintf(ErrorMsg, MsgSize, "Audio track contains no frames, was it indexed properly?");
-		throw ErrorMsg;
-	}
-
 	MC.ST.fp = ffms_fopen(SourceFile, "rb");
-	if (MC.ST.fp == NULL) {
-		snprintf(ErrorMsg, MsgSize, "Can't open '%s': %s", SourceFile, strerror(errno));
-		throw ErrorMsg;
-	}
+	if (MC.ST.fp == NULL)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			(boost::format("Can't open '%1%': %2%") % SourceFile % strerror(errno)).str());
 
 	setvbuf(MC.ST.fp, NULL, _IOFBF, CACHESIZE);
 
 	MF = mkv_OpenEx(&MC.ST.base, 0, 0, ErrorMessage, sizeof(ErrorMessage));
 	if (MF == NULL) {
 		fclose(MC.ST.fp);
-		snprintf(ErrorMsg, MsgSize, "Can't parse Matroska file: %s", ErrorMessage);
-		throw ErrorMsg;
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			(boost::format("Can't parse Matroska file: %1%") % ErrorMessage).str());
 	}
+
 
 	mkv_SetTrackMask(MF, ~(1 << Track));
 	TI = mkv_GetTrackInfo(MF, Track);
@@ -69,52 +62,42 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track,
 		CS = cs_Create(MF, Track, ErrorMessage, sizeof(ErrorMessage));
 		if (CS == NULL) {
 			Free(false);
-			snprintf(ErrorMsg, MsgSize, "Can't create decompressor: %s", ErrorMessage);
-			throw ErrorMsg;
+			throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
+				(boost::format("Can't create decompressor: %1%") % ErrorMessage).str());
 		}
 	}
 
 	CodecContext = avcodec_alloc_context();
 
 	Codec = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate));
-	if (Codec == NULL) {
-		Free(false);
-		snprintf(ErrorMsg, MsgSize, "Video codec not found");
-		throw ErrorMsg;
-	}
+	if (Codec == NULL)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+			"Audio codec not found");
 
 	InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);
 
-	if (avcodec_open(CodecContext, Codec) < 0) {
-		Free(false);
-		snprintf(ErrorMsg, MsgSize, "Could not open video codec");
-		throw ErrorMsg;
-	}
+	if (avcodec_open(CodecContext, Codec) < 0)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+			"Could not open audio codec");
+
+	Res.CloseCodec(true);
 
 	// Always try to decode a frame to make sure all required parameters are known
 	int64_t Dummy;
-	if (DecodeNextAudioBlock(&Dummy, 0, ErrorMsg, MsgSize) < 0) {
-		Free(true);
-		throw ErrorMsg;
-	}
+	DecodeNextAudioBlock(&Dummy, 0);
+
 	avcodec_flush_buffers(CodecContext);
 
 	FillAP(AP, CodecContext, Frames);
 
-	if (AP.SampleRate <= 0 || AP.BitsPerSample <= 0) {
-		Free(true);
-		snprintf(ErrorMsg, MsgSize, "Codec returned zero size audio");
-		throw ErrorMsg;
-	}
+	if (AP.SampleRate <= 0 || AP.BitsPerSample <= 0)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+			"Codec returned zero size audio");
 
 	AudioCache.Initialize((AP.Channels * AP.BitsPerSample) / 8, 50);
 }
 
-FFMatroskaAudio::~FFMatroskaAudio() {
-	Free(true);
-}
-
-int FFMatroskaAudio::GetAudio(void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize) {
+void FFMatroskaAudio::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 	const int64_t SizeConst = (av_get_bits_per_sample_format(CodecContext->sample_fmt) * CodecContext->channels) / 8;
 	memset(Buf, 0, static_cast<size_t>(SizeConst * Count));
 
@@ -125,7 +108,7 @@ int FFMatroskaAudio::GetAudio(void *Buf, int64_t Start, int64_t Count, char *Err
 	int64_t CacheEnd = AudioCache.FillRequest(Start, Count, DstBuf);
 	// Was everything in the cache?
 	if (CacheEnd == Start + Count)
-		return 0;
+		return;
 
 	int CurrentAudioBlock;
 	// Is seeking required to decode the requested samples?
@@ -141,11 +124,7 @@ int FFMatroskaAudio::GetAudio(void *Buf, int64_t Start, int64_t Count, char *Err
 	int64_t DecodeCount;
 
 	do {
-		int Ret = DecodeNextAudioBlock(&DecodeCount, CurrentAudioBlock, ErrorMsg, MsgSize);
-		if (Ret < 0) {
-			// FIXME
-			//Env->ThrowError("Bleh, bad audio decoding");
-		}
+		DecodeNextAudioBlock(&DecodeCount, CurrentAudioBlock);
 
 		// Cache the block if enough blocks before it have been decoded to avoid garbage
 		if (PreDecBlocks == 0) {
@@ -159,11 +138,9 @@ int FFMatroskaAudio::GetAudio(void *Buf, int64_t Start, int64_t Count, char *Err
 		if (CurrentAudioBlock < static_cast<int>(Frames.size()))
 			CurrentSample = Frames[CurrentAudioBlock].SampleStart;
 	} while (Start + Count - CacheEnd > 0 && CurrentAudioBlock < static_cast<int>(Frames.size()));
-
-	return 0;
 }
 
-int FFMatroskaAudio::DecodeNextAudioBlock(int64_t *Count, int AudioBlock, char *ErrorMsg, unsigned MsgSize) {
+void FFMatroskaAudio::DecodeNextAudioBlock(int64_t *Count, int AudioBlock) {
 	const size_t SizeConst = (av_get_bits_per_sample_format(CodecContext->sample_fmt) * CodecContext->channels) / 8;
 	int Ret = -1;
 	*Count = 0;
@@ -172,8 +149,7 @@ int FFMatroskaAudio::DecodeNextAudioBlock(int64_t *Count, int AudioBlock, char *
 	InitNullPacket(&TempPacket);
 
 	unsigned int FrameSize = Frames[AudioBlock].FrameSize;
-	if (ReadFrame(Frames[AudioBlock].FilePos, FrameSize, CS, MC, ErrorMsg, MsgSize))
-		return 1;
+	ReadFrame(Frames[AudioBlock].FilePos, FrameSize, CS, MC);
 	TempPacket.data = MC.Buffer;
 	TempPacket.size = FrameSize;
 	if (Frames[AudioBlock].KeyFrame)
@@ -197,6 +173,5 @@ int FFMatroskaAudio::DecodeNextAudioBlock(int64_t *Count, int AudioBlock, char *
 		}
 	}
 
-Done:
-	return 0;
+Done:;
 }

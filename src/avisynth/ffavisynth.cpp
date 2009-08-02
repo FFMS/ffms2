@@ -62,8 +62,8 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 	// 2: Index forced to be overwritten
 
 	FFMS_Index *Index = NULL;
-	if (OverWrite || !(Index = FFMS_ReadIndex(CacheFile, ErrorMsg, MsgSize))) {
-		if (!(Index = FFMS_MakeIndex(Source, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, true, NULL, NULL, ErrorMsg, MsgSize)))
+	if (OverWrite || !(Index = FFMS_ReadIndex(CacheFile, NULL, ErrorMsg, MsgSize))) {
+		if (!(Index = FFMS_MakeIndex(Source, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, true, NULL, NULL, NULL, ErrorMsg, MsgSize)))
 			Env->ThrowError("FFIndex: %s", ErrorMsg);
 		if (FFMS_WriteIndex(CacheFile, Index, ErrorMsg, MsgSize)) {
 			FFMS_DestroyIndex(Index);
@@ -125,9 +125,9 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 
 	FFMS_Index *Index = NULL;
 	if (Cache)
-		Index = FFMS_ReadIndex(CacheFile, ErrorMsg, MsgSize);
+		Index = FFMS_ReadIndex(CacheFile, NULL, ErrorMsg, MsgSize);
 	if (!Index) {
-		if (!(Index = FFMS_MakeIndex(Source, 0, 0, NULL, NULL, true, NULL, NULL, ErrorMsg, MsgSize)))
+		if (!(Index = FFMS_MakeIndex(Source, 0, 0, NULL, NULL, true, NULL, NULL, NULL, ErrorMsg, MsgSize)))
 			Env->ThrowError("FFVideoSource: %s", ErrorMsg);
 
 		if (Cache)
@@ -186,7 +186,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 
 	FFMS_Index *Index = NULL;
 	if (Cache)
-		Index = FFMS_ReadIndex(CacheFile, ErrorMsg, MsgSize);
+		Index = FFMS_ReadIndex(CacheFile, NULL, ErrorMsg, MsgSize);
 
 	// Index needs to be remade if it is an unindexed audio track
 	if (Index && Track >= 0 && Track < FFMS_GetNumTracks(Index)
@@ -209,7 +209,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	}
 
 	if (!Index) {
-		if (!(Index = FFMS_MakeIndex(Source, -1, 0, NULL, NULL, true, NULL, NULL, ErrorMsg, MsgSize)))
+		if (!(Index = FFMS_MakeIndex(Source, -1, 0, NULL, NULL, true, NULL, NULL, NULL, ErrorMsg, MsgSize)))
 			Env->ThrowError("FFAudioSource: %s", ErrorMsg);
 
 		if (Cache)

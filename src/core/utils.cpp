@@ -46,6 +46,39 @@ extern const AVCodecTag ff_codec_wav_tags[];
 
 extern int CPUFeatures;
 
+FFMS_Exception::FFMS_Exception(int ErrorType, int ErrorSubType, const char *Message) : _Message(Message) {
+	ErrorCode = (ErrorType << 16) | ErrorSubType;
+}
+
+FFMS_Exception::FFMS_Exception(int ErrorType, int ErrorSubType, const std::string &Message) : _Message(Message) {
+	ErrorCode = (ErrorType << 16) | ErrorSubType;
+}
+
+FFMS_Exception::FFMS_Exception(int ErrorType, int ErrorSubType, const boost::format &Message) {
+	ErrorCode = (ErrorType << 16) | ErrorSubType;
+	_Message = Message.str();
+}
+
+int FFMS_Exception::GetErrorCode() const {
+	return ErrorCode;
+}
+
+const std::string &FFMS_Exception::GetErrorMessage() const {
+	return _Message;
+}
+
+int FFMS_Exception::CopyOut(int *ErrorCode, char *ErrorMsg, int MsgSize) const {
+	if (ErrorCode)
+		*ErrorCode = this->ErrorCode;
+
+	if (MsgSize > 0) {
+		memset(ErrorMsg, 0, MsgSize);
+		this->_Message.copy(ErrorMsg, MsgSize - 1);
+	}
+
+	return this->ErrorCode;
+}
+
 int GetSWSCPUFlags() {
 	int Flags = 0;
 
@@ -87,7 +120,7 @@ FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT) {
 	}
 }
 
-int ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, MatroskaReaderContext &Context, char *ErrorMsg, unsigned MsgSize) {
+void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, MatroskaReaderContext &Context) {
 	if (CS) {
 		char CSBuffer[4096];
 
@@ -97,61 +130,58 @@ int ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, M
 
 		for (;;) {
 			int ReadBytes = cs_ReadData(CS, CSBuffer, sizeof(CSBuffer));
-			if (ReadBytes < 0) {
-				snprintf(ErrorMsg, MsgSize, "Error decompressing data: %s", cs_GetLastError(CS));
-				return 1;
-			}
+			if (ReadBytes < 0)
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+					(boost::format("Error decompressing data: %1%") % cs_GetLastError(CS)).str());
+
 			if (ReadBytes == 0) {
 				FrameSize = DecompressedFrameSize;
-				return 0;
+				return;
 			}
 
 			if (Context.BufferSize < DecompressedFrameSize + ReadBytes) {
 				Context.BufferSize = FrameSize;
 				Context.Buffer = (uint8_t *)realloc(Context.Buffer, Context.BufferSize + 16);
-				if (Context.Buffer == NULL)  {
-					snprintf(ErrorMsg, MsgSize, "Out of memory");
-					return 2;
-				}
+				if (Context.Buffer == NULL)
+					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
+					"Out of memory");
 			}
 
 			memcpy(Context.Buffer + DecompressedFrameSize, CSBuffer, ReadBytes);
 			DecompressedFrameSize += ReadBytes;
 		}
 	} else {
-		if (fseeko(Context.ST.fp, FilePos, SEEK_SET)) {
-			snprintf(ErrorMsg, MsgSize, "fseek(): %s", strerror(errno));
-			return 3;
-		}
+		if (fseeko(Context.ST.fp, FilePos, SEEK_SET))
+			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_SEEKING,
+				(boost::format("fseek(): %1%") % strerror(errno)).str());
 
 		if (Context.BufferSize < FrameSize) {
 			Context.BufferSize = FrameSize;
 			Context.Buffer = (uint8_t *)realloc(Context.Buffer, Context.BufferSize + 16);
-			if (Context.Buffer == NULL) {
-				snprintf(ErrorMsg, MsgSize, "Out of memory");
-				return 4;
-			}
+			if (Context.Buffer == NULL)
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
+					"Out of memory");
 		}
 
 		size_t ReadBytes = fread(Context.Buffer, 1, FrameSize, Context.ST.fp);
 		if (ReadBytes != FrameSize) {
 			if (ReadBytes == 0) {
 				if (feof(Context.ST.fp)) {
-					snprintf(ErrorMsg, MsgSize, "Unexpected EOF while reading frame");
-					return 5;
+					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+						"Unexpected EOF while reading frame");
 				} else {
-					snprintf(ErrorMsg, MsgSize, "Error reading frame: %s", strerror(errno));
-					return 6;
+					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_SEEKING,
+						(boost::format("Error reading frame: %1%") % strerror(errno)).str());
 				}
 			} else {
-				snprintf(ErrorMsg, MsgSize, "Short read while reading frame");
-				return 7;
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+					"Short read while reading frame");
 			}
-			snprintf(ErrorMsg, MsgSize, "Unknown read error");
-			return 8;
+			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+				"Unknown read error");
 		}
 
-		return 0;
+		return;
 	}
 }
 
@@ -361,4 +391,61 @@ void ffms_fstream::open(const char *filename, std::ios_base::openmode mode) {
 
 ffms_fstream::ffms_fstream(const char *filename, std::ios_base::openmode mode) {
 	open(filename, mode);
+}
+
+CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources SourceMode) {
+	CComPtr<IMMContainer> pMMC;
+
+	CLSID clsid = HAALI_MPEG_PARSER;
+	if (SourceMode == FFMS_SOURCE_HAALIOGG)
+		clsid = HAALI_OGG_PARSER;
+
+	if (FAILED(pMMC.CoCreateInstance(clsid)))
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
+			"Can't create parser");
+
+	CComPtr<IMemAlloc> pMA;
+	if (FAILED(pMA.CoCreateInstance(CLSID_MemAlloc)))
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
+			"Can't create memory allocator");
+
+	CComPtr<IMMStream> pMS;
+	if (FAILED(pMS.CoCreateInstance(CLSID_DiskFile)))
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
+			"Can't create disk file reader");
+
+	WCHAR WSourceFile[2048];
+	ffms_mbstowcs(WSourceFile, SourceFile, 2000);
+	CComQIPtr<IMMStreamOpen> pMSO(pMS);
+	if (FAILED(pMSO->Open(WSourceFile)))
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			"Can't open file");
+
+	if (FAILED(pMMC->Open(pMS, 0, NULL, pMA)))
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_INVALID_ARGUMENT,
+			"Can't parse file");
+
+	if (FAILED(pMMC->Open(pMS, 0, NULL, pMA))) {
+		if (SourceMode == FFMS_SOURCE_HAALIMPEG)
+			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_INVALID_ARGUMENT,
+				"Can't parse file, most likely a transport stream not cut at packet boundaries");
+		else
+			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_INVALID_ARGUMENT,
+				"Can't parse file");
+	}
+
+	return pMMC;
+}
+
+void LAVFOpenFile(const char *SourceFile, AVFormatContext *FormatContext) {
+	if (av_open_input_file(&FormatContext, SourceFile, NULL, 0, NULL) != 0)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			(boost::format("Couldn't open '%1'") % SourceFile).str());
+
+	if (av_find_stream_info(FormatContext) < 0) {
+		av_close_input_file(FormatContext);
+		FormatContext = NULL;
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			"Couldn't find stream information");
+	}
 }

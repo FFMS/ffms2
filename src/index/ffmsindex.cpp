@@ -164,11 +164,11 @@ static void DoIndexing () {
 	int MsgSize = sizeof(FFMSErrMsg);
 	int Progress = 0;
 
-	Index = FFMS_ReadIndex(CacheFile.c_str(), FFMSErrMsg, MsgSize);
+	Index = FFMS_ReadIndex(CacheFile.c_str(), NULL, FFMSErrMsg, MsgSize);
 	if (Overwrite || Index == NULL) {
 		if (PrintProgress)
 			std::cout << "Indexing, please wait... 0% \r" << std::flush;
-		Index = FFMS_MakeIndex(InputFile.c_str(), TrackMask, DumpMask, &GenAudioFilename, NULL, IgnoreErrors, UpdateProgress, &Progress, FFMSErrMsg, MsgSize);
+		Index = FFMS_MakeIndex(InputFile.c_str(), TrackMask, DumpMask, &GenAudioFilename, NULL, IgnoreErrors, UpdateProgress, &Progress, NULL, FFMSErrMsg, MsgSize);
 		if (Index == NULL) {
 			std::string Err = "\nIndexing error: ";
 			Err.append(FFMSErrMsg);

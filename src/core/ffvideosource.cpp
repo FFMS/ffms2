@@ -20,22 +20,19 @@
 
 #include "ffvideosource.h"
 
-int FFMS_VideoSource::InitPP(const char *PP, char *ErrorMsg, unsigned MsgSize) {
+void FFMS_VideoSource::InitPP(const char *PP) {
 	if (PP == NULL || !strcmp(PP, ""))
-		return 0;
+		return;
 
 	PPMode = pp_get_mode_by_name_and_quality(PP, PP_QUALITY_MAX);
-	if (!PPMode) {
-		snprintf(ErrorMsg, MsgSize, "Invalid postprocesing settings");
-		return 1;
-	}
-
-	return 0;
+	if (!PPMode)
+		throw FFMS_Exception(FFMS_ERROR_POSTPROCESSING, FFMS_ERROR_INVALID_ARGUMENT,
+			"Invalid postprocesing settings");
 }
 
-int FFMS_VideoSource::ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height, char *ErrorMsg, unsigned MsgSize) {
+void FFMS_VideoSource::ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height) {
 	if (!PPMode)
-		return 0;
+		return;
 
 	int Flags =  GetPPCPUFlags();
 
@@ -45,8 +42,8 @@ int FFMS_VideoSource::ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height
 		case PIX_FMT_YUV411P: Flags |= PP_FORMAT_411; break;
 		case PIX_FMT_YUV444P: Flags |= PP_FORMAT_444; break;
 		default:
-			snprintf(ErrorMsg, MsgSize, "The video does not have a colorspace suitable for postprocessing");
-			return 1;
+			throw FFMS_Exception(FFMS_ERROR_POSTPROCESSING, FFMS_ERROR_UNSUPPORTED,
+				"The video does not have a colorspace suitable for postprocessing");
 	}
 
 	if (PPContext)
@@ -55,8 +52,6 @@ int FFMS_VideoSource::ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height
 
 	avpicture_free(&PPFrame);
 	avpicture_alloc(&PPFrame, VPixelFormat, Width, Height);
-
-	return 0;
 }
 
 static void CopyAVPictureFields(AVPicture &Picture, FFMS_Frame &Dst) {
@@ -66,13 +61,12 @@ static void CopyAVPictureFields(AVPicture &Picture, FFMS_Frame &Dst) {
 	}
 }
 
-FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame, char *ErrorMsg, unsigned MsgSize) {
+FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	if (LastFrameWidth != CodecContext->width || LastFrameHeight != CodecContext->height || LastFramePixelFormat != CodecContext->pix_fmt) {
-		if (ReAdjustPP(CodecContext->pix_fmt, CodecContext->width, CodecContext->height, ErrorMsg, MsgSize))
-			return NULL;
+		ReAdjustPP(CodecContext->pix_fmt, CodecContext->width, CodecContext->height);
+
 		if (TargetHeight > 0 && TargetWidth > 0 && TargetPixelFormats != 0)
-			if (ReAdjustOutputFormat(TargetPixelFormats, TargetWidth, TargetHeight, TargetResizer, ErrorMsg, MsgSize))
-				return NULL;
+			ReAdjustOutputFormat(TargetPixelFormats, TargetWidth, TargetHeight, TargetResizer);
 	}
 
 	if (PPMode) {
@@ -115,9 +109,22 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame, char *ErrorMsg, unsign
 	return &LocalFrame;
 }
 
-FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, char *ErrorMsg, unsigned MsgSize) {
-	if (Index->CompareFileSignature(SourceFile, ErrorMsg, MsgSize))
-		throw ErrorMsg;
+FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, int Track) {
+	if (Track < 0 || Track >= static_cast<int>(Index->size()))
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+			"Out of bounds track index selected");
+
+	if (Index->at(Track).TT != FFMS_TYPE_VIDEO)
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+			"Not a video track");
+
+	if (Index[Track].size() == 0)
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+			"Video track contains no frames");
+
+	if (!Index->CompareFileSignature(SourceFile))
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_MISMATCH,
+			"The index does not match the source file");
 
 	memset(&VP, 0, sizeof(VP));
 	PPContext = NULL;
@@ -155,20 +162,20 @@ FFMS_VideoSource::~FFMS_VideoSource() {
 	av_freep(&DecodeFrame);
 }
 
-FFMS_Frame *FFMS_VideoSource::GetFrameByTime(double Time, char *ErrorMsg, unsigned MsgSize) {
+FFMS_Frame *FFMS_VideoSource::GetFrameByTime(double Time) {
 	int Frame = Frames.ClosestFrameFromDTS(static_cast<int64_t>((Time * 1000 * Frames.TB.Den) / Frames.TB.Num));
-	return GetFrame(Frame, ErrorMsg, MsgSize);
+	return GetFrame(Frame);
 }
 
-int FFMS_VideoSource::SetOutputFormat(int64_t TargetFormats, int Width, int Height, int Resizer, char *ErrorMsg, unsigned MsgSize) {
+void FFMS_VideoSource::SetOutputFormat(int64_t TargetFormats, int Width, int Height, int Resizer) {
 	this->TargetWidth = Width;
 	this->TargetHeight = Height;
 	this->TargetPixelFormats = TargetFormats;
 	this->TargetResizer = Resizer;
-	return ReAdjustOutputFormat(TargetFormats, Width, Height, Resizer, ErrorMsg, MsgSize);
+	ReAdjustOutputFormat(TargetFormats, Width, Height, Resizer);
 }
 
-int FFMS_VideoSource::ReAdjustOutputFormat(int64_t TargetFormats, int Width, int Height, int Resizer, char *ErrorMsg, unsigned MsgSize) {
+void FFMS_VideoSource::ReAdjustOutputFormat(int64_t TargetFormats, int Width, int Height, int Resizer) {
 	if (SWS) {
 		sws_freeContext(SWS);
 		SWS = NULL;
@@ -179,8 +186,8 @@ int FFMS_VideoSource::ReAdjustOutputFormat(int64_t TargetFormats, int Width, int
 		CodecContext->pix_fmt, 1 /* Required to prevent pointless RGB32 => RGB24 conversion */, &Loss);
 	if (OutputFormat == PIX_FMT_NONE) {
 		ResetOutputFormat();
-		snprintf(ErrorMsg, MsgSize, "No suitable output format found");
-		return 1;
+		throw FFMS_Exception(FFMS_ERROR_SCALING, FFMS_ERROR_INVALID_ARGUMENT,
+			"No suitable output format found");
 	}
 
 	if (CodecContext->pix_fmt != OutputFormat || Width != CodecContext->width || Height != CodecContext->height) {
@@ -188,8 +195,8 @@ int FFMS_VideoSource::ReAdjustOutputFormat(int64_t TargetFormats, int Width, int
 			OutputFormat, GetSWSCPUFlags() | Resizer, NULL, NULL, NULL);
 		if (SWS == NULL) {
 			ResetOutputFormat();
-			snprintf(ErrorMsg, MsgSize, "Failed to allocate SWScale context");
-			return 1;
+			throw FFMS_Exception(FFMS_ERROR_SCALING, FFMS_ERROR_INVALID_ARGUMENT,
+				"Failed to allocate SWScale context");
 		}
 	}
 
@@ -199,8 +206,6 @@ int FFMS_VideoSource::ReAdjustOutputFormat(int64_t TargetFormats, int Width, int
 
 	avpicture_free(&SWSFrame);
 	avpicture_alloc(&SWSFrame, OutputFormat, Width, Height);
-
-	return 0;
 }
 
 void FFMS_VideoSource::ResetOutputFormat() {

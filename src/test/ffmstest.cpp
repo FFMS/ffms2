@@ -55,15 +55,15 @@ static void TestFullDump1(const char *SrcFile, bool WithAudio) {
 	char ErrorMsg[2000];
 	FFMS_Init(0);
 
-	FFMS_Indexer *FIdx = FFMS_CreateIndexer(SrcFile, ErrorMsg, sizeof(ErrorMsg));
+	FFMS_Indexer *FIdx = FFMS_CreateIndexer(SrcFile, NULL, ErrorMsg, sizeof(ErrorMsg));
 	assert(FIdx);
 	FFMS_CancelIndexing(FIdx);
-	FIdx = FFMS_CreateIndexer(SrcFile, ErrorMsg, sizeof(ErrorMsg));
+	FIdx = FFMS_CreateIndexer(SrcFile, NULL, ErrorMsg, sizeof(ErrorMsg));
 	assert(FIdx);
 
 	const char *Name =  FFMS_GetCodecNameI(FIdx, 0);
 
-	FFMS_Index *FI = FFMS_DoIndexing(FIdx, -1, -1, FFMS_DefaultAudioFilename, NULL, false, UpdateProgress, &Private, ErrorMsg, sizeof(ErrorMsg));
+	FFMS_Index *FI = FFMS_DoIndexing(FIdx, -1, -1, FFMS_DefaultAudioFilename, NULL, false, UpdateProgress, &Private, NULL, ErrorMsg, sizeof(ErrorMsg));
 	assert(FI);
 
 	int vtrack = FFMS_GetFirstTrackOfType(FI, FFMS_TYPE_VIDEO, ErrorMsg, sizeof(ErrorMsg));
@@ -71,12 +71,12 @@ static void TestFullDump1(const char *SrcFile, bool WithAudio) {
 	int atrack = FFMS_GetFirstTrackOfType(FI, FFMS_TYPE_AUDIO, ErrorMsg, sizeof(ErrorMsg));
 	assert(atrack >= 0);
 
-	FFMS_VideoSource *V = FFMS_CreateVideoSource(SrcFile, vtrack, FI, "", 2, 1, ErrorMsg, sizeof(ErrorMsg));
+	FFMS_VideoSource *V = FFMS_CreateVideoSource(SrcFile, vtrack, FI, "", 2, 1, NULL, ErrorMsg, sizeof(ErrorMsg));
 	assert(V);
 
 	if (WithAudio) {
 		uint8_t *DB = new uint8_t[100000];
-		FFMS_AudioSource *A = FFMS_CreateAudioSource(SrcFile, atrack, FI, ErrorMsg, sizeof(ErrorMsg));
+		FFMS_AudioSource *A = FFMS_CreateAudioSource(SrcFile, atrack, FI, NULL, ErrorMsg, sizeof(ErrorMsg));
 		assert(A);
 
 		const FFMS_AudioProperties *AP = FFMS_GetAudioProperties(A);
@@ -91,7 +91,7 @@ static void TestFullDump1(const char *SrcFile, bool WithAudio) {
 
 	const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
 	for (int i = 0; i < VP->NumFrames; i++) {
-		const FFMS_Frame *AVF =  FFMS_GetFrame(V, i, ErrorMsg, sizeof(ErrorMsg));
+		const FFMS_Frame *AVF =  FFMS_GetFrame(V, i, NULL, ErrorMsg, sizeof(ErrorMsg));
 		assert(AVF);
 	}
 

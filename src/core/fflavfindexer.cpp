@@ -22,14 +22,14 @@
 
 
 
-FFLAVFIndexer::FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContext, char *ErrorMsg, unsigned MsgSize) : FFMS_Indexer(Filename, ErrorMsg, MsgSize) {
+FFLAVFIndexer::FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContext) : FFMS_Indexer(Filename) {
 	SourceFile = Filename;
 	this->FormatContext = FormatContext;
 
 	if (av_find_stream_info(FormatContext) < 0) {
 		av_close_input_file(FormatContext);
-		snprintf(ErrorMsg, MsgSize, "Couldn't find stream information");
-		throw ErrorMsg;
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			"Couldn't find stream information");
 	}
 }
 
@@ -37,7 +37,7 @@ FFLAVFIndexer::~FFLAVFIndexer() {
 	av_close_input_file(FormatContext);
 }
 
-FFMS_Index *FFLAVFIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
+FFMS_Index *FFLAVFIndexer::DoIndexing() {
 	std::vector<SharedAudioContext> AudioContexts(FormatContext->nb_streams, SharedAudioContext(false));
 	std::vector<SharedVideoContext> VideoContexts(FormatContext->nb_streams, SharedVideoContext(false));
 
@@ -53,15 +53,13 @@ FFMS_Index *FFLAVFIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 			(VideoContexts[i].Parser = av_parser_init(FormatContext->streams[i]->codec->codec_id))) {
 
 			AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codec->codec_id);
-			if (VideoCodec == NULL) {
-				snprintf(ErrorMsg, MsgSize, "Vudio codec not found");
-				return NULL;
-			}
+			if (VideoCodec == NULL)
+				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
+					"Video codec not found");
 
-			if (avcodec_open(FormatContext->streams[i]->codec, VideoCodec) < 0) {
-				snprintf(ErrorMsg, MsgSize, "Could not open video codec");
-				return NULL;
-			}
+			if (avcodec_open(FormatContext->streams[i]->codec, VideoCodec) < 0)
+				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
+					"Could not open video codec");
 
 			VideoContexts[i].CodecContext = FormatContext->streams[i]->codec;
 			VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
@@ -71,15 +69,13 @@ FFMS_Index *FFLAVFIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 			AVCodecContext *AudioCodecContext = FormatContext->streams[i]->codec;
 
 			AVCodec *AudioCodec = avcodec_find_decoder(AudioCodecContext->codec_id);
-			if (AudioCodec == NULL) {
-				snprintf(ErrorMsg, MsgSize, "Audio codec not found");
-				return NULL;
-			}
+			if (AudioCodec == NULL)
+				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
+					"Audio codec not found");
 
-			if (avcodec_open(AudioCodecContext, AudioCodec) < 0) {
-				snprintf(ErrorMsg, MsgSize, "Could not open audio codec");
-				return NULL;
-			}
+			if (avcodec_open(AudioCodecContext, AudioCodec) < 0)
+				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
+					"Could not open audio codec");
 
 			AudioContexts[i].CodecContext = AudioCodecContext;
 		} else {
@@ -95,10 +91,9 @@ FFMS_Index *FFLAVFIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
 		// Update progress
 		if (IC) {
-			if ((*IC)(FormatContext->pb->pos, FormatContext->file_size, ICPrivate)) {
-				snprintf(ErrorMsg, MsgSize, "Cancelled by user");
-				return NULL;
-			}
+			if ((*IC)(FormatContext->pb->pos, FormatContext->file_size, ICPrivate))
+				throw FFMS_Exception(FFMS_ERROR_CANCELLED, FFMS_ERROR_USER,
+					"Cancelled by user");
 		}
 
 		// Only create index entries for video for now to save space
@@ -129,8 +124,8 @@ FFMS_Index *FFLAVFIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 						IndexMask &= ~(1 << Packet.stream_index);
 						break;
 					} else {
-						snprintf(ErrorMsg, MsgSize, "Audio decoding error");
-						return NULL;
+						throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
+							"Audio decoding error");
 					}
 				}
 
@@ -143,7 +138,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing(char *ErrorMsg, unsigned MsgSize) {
 					AudioContexts[Packet.stream_index].CurrentSample += (dbsize * 8) / (av_get_bits_per_sample_format(AudioCodecContext->sample_fmt) * AudioCodecContext->channels);
 
 				if (DumpMask & (1 << Packet.stream_index))
-					WriteAudio(AudioContexts[Packet.stream_index], TrackIndices.get(), Packet.stream_index, dbsize, ErrorMsg, MsgSize);
+					WriteAudio(AudioContexts[Packet.stream_index], TrackIndices.get(), Packet.stream_index, dbsize);
 			}
 		}
 

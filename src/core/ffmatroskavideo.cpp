@@ -35,9 +35,8 @@ void FFMatroskaVideo::Free(bool CloseCodec) {
 }
 
 FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
-	FFMS_Index *Index, const char *PP,
-	int Threads, char *ErrorMsg, unsigned MsgSize)
-	: FFMS_VideoSource(SourceFile, Index, ErrorMsg, MsgSize) {
+	FFMS_Index *Index, const char *PP, int Threads)
+	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track) {
 
 	AVCodec *Codec = NULL;
 	CodecContext = NULL;
@@ -46,24 +45,18 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	VideoTrack = Track;
 	Frames = (*Index)[VideoTrack];
 
-	if (Frames.size() == 0) {
-		snprintf(ErrorMsg, MsgSize, "Video track contains no frames");
-		throw ErrorMsg;
-	}
-
 	MC.ST.fp = ffms_fopen(SourceFile, "rb");
-	if (MC.ST.fp == NULL) {
-		snprintf(ErrorMsg, MsgSize, "Can't open '%s': %s", SourceFile, strerror(errno));
-		throw ErrorMsg;
-	}
+	if (MC.ST.fp == NULL)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			(boost::format("Can't open '%1%': %2%") % SourceFile % strerror(errno)).str());
 
 	setvbuf(MC.ST.fp, NULL, _IOFBF, CACHESIZE);
 
 	MF = mkv_OpenEx(&MC.ST.base, 0, 0, ErrorMessage, sizeof(ErrorMessage));
 	if (MF == NULL) {
 		fclose(MC.ST.fp);
-		snprintf(ErrorMsg, MsgSize, "Can't parse Matroska file: %s", ErrorMessage);
-		throw ErrorMsg;
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			(boost::format("Can't parse Matroska file: %1%") % ErrorMessage).str());
 	}
 
 	mkv_SetTrackMask(MF, ~(1 << VideoTrack));
@@ -73,8 +66,8 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 		CS = cs_Create(MF, VideoTrack, ErrorMessage, sizeof(ErrorMessage));
 		if (CS == NULL) {
 			Free(false);
-			snprintf(ErrorMsg, MsgSize, "Can't create decompressor: %s", ErrorMessage);
-			throw ErrorMsg;
+			throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
+				(boost::format("Can't create decompressor: %1%") % ErrorMessage).str());
 		}
 	}
 
@@ -82,26 +75,21 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	CodecContext->thread_count = Threads;
 
 	Codec = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate));
-	if (Codec == NULL) {
-		Free(false);
-		snprintf(ErrorMsg, MsgSize, "Video codec not found");
-		throw ErrorMsg;
-	}
+	if (Codec == NULL)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+			"Video codec not found");
 
 	InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);
 
-	if (avcodec_open(CodecContext, Codec) < 0) {
-		Free(false);
-		snprintf(ErrorMsg, MsgSize, "Could not open video codec");
-		throw ErrorMsg;
-	}
+	if (avcodec_open(CodecContext, Codec) < 0)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+			"Could not open video codec");
+
+	Res.CloseCodec(true);
 
 	// Always try to decode a frame to make sure all required parameters are known
 	int64_t Dummy;
-	if (DecodeNextFrame(&Dummy, ErrorMsg, MsgSize)) {
-		Free(true);
-		throw ErrorMsg;
-	}
+	DecodeNextFrame(&Dummy);
 
 	VP.Width = CodecContext->width;
 	VP.Height = CodecContext->height;;
@@ -114,16 +102,11 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	VP.FirstTime = ((Frames.front().DTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 	VP.LastTime = ((Frames.back().DTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 
-	if (VP.Width <= 0 || VP.Height <= 0) {
-		Free(true);
-		snprintf(ErrorMsg, MsgSize, "Codec returned zero size video");
-		throw ErrorMsg;
-	}
+	if (VP.Width <= 0 || VP.Height <= 0)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+			"Codec returned zero size video");
 
-	if (InitPP(PP, ErrorMsg, MsgSize)) {
-		Free(true);
-		throw ErrorMsg;
-	}
+	InitPP(PP);
 
 	// Calculate the average framerate
 	if (Frames.size() >= 2) {
@@ -133,10 +116,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	}
 
 	// Output the already decoded frame so it isn't wasted
-	if (!OutputFrame(DecodeFrame, ErrorMsg, MsgSize)) {
-		Free(true);
-		throw ErrorMsg;
-	}
+	OutputFrame(DecodeFrame);
 
 	// Set AR variables
 	VP.SARNum = TI->AV.Video.DisplayWidth * TI->AV.Video.PixelHeight;
@@ -149,11 +129,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	VP.CropBottom = TI->AV.Video.CropB;
 }
 
-FFMatroskaVideo::~FFMatroskaVideo() {
-	Free(true);
-}
-
-int FFMatroskaVideo::DecodeNextFrame(int64_t *AFirstStartTime, char *ErrorMsg, unsigned MsgSize) {
+void FFMatroskaVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 	int FrameFinished = 0;
 	*AFirstStartTime = -1;
 	AVPacket Packet;
@@ -166,8 +142,7 @@ int FFMatroskaVideo::DecodeNextFrame(int64_t *AFirstStartTime, char *ErrorMsg, u
 		if (*AFirstStartTime < 0)
 			*AFirstStartTime = StartTime;
 
-		if (ReadFrame(FilePos, FrameSize, CS, MC, ErrorMsg, MsgSize))
-			return 1;
+		ReadFrame(FilePos, FrameSize, CS, MC);
 
 		Packet.data = MC.Buffer;
 		Packet.size = FrameSize;
@@ -193,11 +168,10 @@ int FFMatroskaVideo::DecodeNextFrame(int64_t *AFirstStartTime, char *ErrorMsg, u
 		goto Error;
 
 Error:
-Done:
-	return 0;
+Done:;
 }
 
-FFMS_Frame *FFMatroskaVideo::GetFrame(int n, char *ErrorMsg, unsigned MsgSize) {
+FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
 	if (LastFrameNum == n)
 		return &LocalFrame;
 
@@ -211,21 +185,19 @@ FFMS_Frame *FFMatroskaVideo::GetFrame(int n, char *ErrorMsg, unsigned MsgSize) {
 
 	do {
 		int64_t StartTime;
-		if (DecodeNextFrame(&StartTime, ErrorMsg, MsgSize))
-				return NULL;
+		DecodeNextFrame(&StartTime);
 
 		if (HasSeeked) {
 			HasSeeked = false;
 
-			if (StartTime < 0 || (CurrentFrame = Frames.FrameFromDTS(StartTime)) < 0) {
-				snprintf(ErrorMsg, MsgSize, "Frame accurate seeking is not possible in this file");
-				return NULL;
-			}
+			if (StartTime < 0 || (CurrentFrame = Frames.FrameFromDTS(StartTime)) < 0)
+				throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+					"Frame accurate seeking is not possible in this file");
 		}
 
 		CurrentFrame++;
 	} while (CurrentFrame <= n);
 
 	LastFrameNum = n;
-	return OutputFrame(DecodeFrame, ErrorMsg, MsgSize);
+	return OutputFrame(DecodeFrame);
 }

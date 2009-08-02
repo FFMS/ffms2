@@ -95,11 +95,22 @@ int64_t TAudioCache::FillRequest(int64_t Start, int64_t Samples, uint8_t *Dst) {
 
 /* FFMS_AudioSource base class */
 
-FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index *Index, char *ErrorMsg, unsigned MsgSize) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10) {
-	if (Index->CompareFileSignature(SourceFile, ErrorMsg, MsgSize))
-		throw ErrorMsg;
+FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index *Index, int Track) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10), CurrentSample(0) {
+	if (Track < 0 || Track >= static_cast<int>(Index->size()))
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+			"Out of bounds track index selected");
 
-	CurrentSample = 0;
+	if (Index->at(Track).TT != FFMS_TYPE_AUDIO)
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+			"Not an audio track");
+
+	if (Index[Track].size() == 0)
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+			"Audio track contains no audio frames");
+
+	if (!Index->CompareFileSignature(SourceFile))
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_MISMATCH,
+			"The index does not match the source file");
 }
 
 FFMS_AudioSource::~FFMS_AudioSource() {

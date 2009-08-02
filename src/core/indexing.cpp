@@ -104,20 +104,17 @@ TFrameInfo TFrameInfo::AudioFrameInfo(int64_t DTS, int64_t SampleStart, bool Key
 	return TFrameInfo(DTS, SampleStart, 0, KeyFrame, FilePos, FrameSize);
 }
 
-int FFMS_Track::WriteTimecodes(const char *TimecodeFile, char *ErrorMsg, unsigned MsgSize) {
+void FFMS_Track::WriteTimecodes(const char *TimecodeFile) {
 	ffms_fstream Timecodes(TimecodeFile, std::ios::out | std::ios::trunc);
 
-	if (!Timecodes.is_open()) {
-		snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for writing", TimecodeFile);
-		return 1;
-	}
+	if (!Timecodes.is_open())
+		throw FFMS_Exception(FFMS_ERROR_TRACK, FFMS_ERROR_FILE_WRITE,
+			(boost::format("Failed to open '%1%' for writing") % TimecodeFile).str());
 
 	Timecodes << "# timecode format v2\n";
 
 	for (iterator Cur=begin(); Cur!=end(); Cur++)
 		Timecodes << std::fixed << ((Cur->DTS * TB.Num) / (double)TB.Den) << "\n";
-
-	return 0;
 }
 
 int FFMS_Track::FrameFromDTS(int64_t DTS) {
@@ -171,15 +168,12 @@ FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT) {
 	this->TB.Den = Den;
 }
 
-int FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20], char *ErrorMsg, unsigned MsgSize) {
-	// use cstdio because Microsoft's implementation of std::fstream doesn't support files >4GB.
-	// please kill me now.
+void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]) {
 	FILE *SFile = ffms_fopen(Filename,"rb");
 
-	if (SFile == NULL) {
-		snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for hashing", Filename);
-		return 1;
-	}
+	if (SFile == NULL)
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_READ,
+			(boost::format("Failed to open '%1%' for hashing") % Filename).str());
 
 	const int BlockSize = 1024*1024;
 	std::vector<uint8_t> FileBuffer(BlockSize);
@@ -190,10 +184,10 @@ int FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, 
 	memset(&FileBuffer[0], 0, BlockSize);
 	fread(&FileBuffer[0], 1, BlockSize, SFile);
 	if (ferror(SFile) && !feof(SFile)) {
-		snprintf(ErrorMsg, MsgSize, "Failed to read from '%s' for hashing", Filename);
 		av_sha1_final(ctx, Digest);
 		fclose(SFile);
-		return 1;
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_READ,
+			(boost::format("Failed to read '%1%' for hashing") % Filename).str());
 	}
 	av_sha1_update(ctx, &FileBuffer[0], BlockSize);
 
@@ -201,25 +195,24 @@ int FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, 
 	memset(&FileBuffer[0], 0, BlockSize);
 	fread(&FileBuffer[0], 1, BlockSize, SFile);
 	if (ferror(SFile) && !feof(SFile)) {
-		snprintf(ErrorMsg, MsgSize, "Failed to seek with offset %d from file end in '%s' for hashing", BlockSize, Filename);
 		av_sha1_final(ctx, Digest);
 		fclose(SFile);
-		return 1;
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_READ,
+			(boost::format("Failed to seek with offset %1% from file end in '%2%' for hashing") % BlockSize % Filename).str());
 	}
 	av_sha1_update(ctx, &FileBuffer[0], BlockSize);
 
 	fseeko(SFile, 0, SEEK_END);
 	if (ferror(SFile)) {
-		snprintf(ErrorMsg, MsgSize, "Failed to seek to end of '%s' for hashing", Filename);
 		av_sha1_final(ctx, Digest);
 		fclose(SFile);
-		return 1;
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_READ,
+			(boost::format("Failed to seek to end of '%1%' for hashing") % Filename).str());
 	}
 	*Filesize = ftello(SFile);
 	fclose(SFile);
 
 	av_sha1_final(ctx, Digest);
-	return 0;
 }
 
 static bool DTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
@@ -231,26 +224,19 @@ void FFMS_Index::Sort() {
 		std::sort(Cur->begin(), Cur->end(), DTSComparison);
 }
 
-int FFMS_Index::CompareFileSignature(const char *Filename, char *ErrorMsg, unsigned MsgSize) {
+bool FFMS_Index::CompareFileSignature(const char *Filename) {
 	int64_t CFilesize;
 	uint8_t CDigest[20];
-	CalculateFileSignature(Filename, &CFilesize, CDigest, ErrorMsg, MsgSize);
-
-	if (CFilesize != Filesize || memcmp(CDigest, Digest, sizeof(Digest))) {
-		snprintf(ErrorMsg, MsgSize, "Index and source file signature mismatch");
-		return 1;
-	}
-
-	return 0;
+	CalculateFileSignature(Filename, &CFilesize, CDigest);
+	return (CFilesize == Filesize && !memcmp(CDigest, Digest, sizeof(Digest)));
 }
 
-int FFMS_Index::WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) {
+void FFMS_Index::WriteIndex(const char *IndexFile) {
 	ffms_fstream IndexStream(IndexFile, std::ios::out | std::ios::binary | std::ios::trunc);
 
-	if (!IndexStream.is_open()) {
-		snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for writing", IndexFile);
-		return 1;
-	}
+	if (!IndexStream.is_open())
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_WRITE,
+			(boost::format("Failed to open '%1%' for writing") % IndexFile).str());
 
 	// Write the index file header
 	IndexHeader IH;
@@ -281,42 +267,35 @@ int FFMS_Index::WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSi
 		for (FFMS_Track::iterator Cur=at(i).begin(); Cur!=at(i).end(); Cur++)
 			IndexStream.write(reinterpret_cast<char *>(&*Cur), sizeof(TFrameInfo));
 	}
-
-	return 0;
 }
 
-int FFMS_Index::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) {
+void FFMS_Index::ReadIndex(const char *IndexFile) {
 	ffms_fstream Index(IndexFile, std::ios::in | std::ios::binary);
 
-	if (!Index.is_open()) {
-		snprintf(ErrorMsg, MsgSize, "Failed to open '%s' for reading", IndexFile);
-		return 1;
-	}
+	if (!Index.is_open())
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_READ,
+			(boost::format("Failed to open '%1%' for reading") % IndexFile).str());
 
 	// Read the index file header
 	IndexHeader IH;
 	Index.read(reinterpret_cast<char *>(&IH), sizeof(IH));
-	if (IH.Id != INDEXID) {
-		snprintf(ErrorMsg, MsgSize, "'%s' is not a valid index file", IndexFile);
-		return 2;
-	}
+	if (IH.Id != INDEXID)
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+			(boost::format("'%1%' is not a valid index file") % IndexFile).str());
 
-	if (IH.Version != INDEXVERSION) {
-		snprintf(ErrorMsg, MsgSize, "'%s' is not the expected index version", IndexFile);
-		return 3;
-	}
+	if (IH.Version != INDEXVERSION)
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_VERSION,
+			(boost::format("'%1%' is not the expected index version") % IndexFile).str());
 
 	if (IH.LAVUVersion != avutil_version() || IH.LAVFVersion != avformat_version() ||
 		IH.LAVCVersion != avcodec_version() || IH.LSWSVersion != swscale_version() ||
-		IH.LPPVersion != postproc_version()) {
-		snprintf(ErrorMsg, MsgSize, "A different FFmpeg build was used to create '%s'", IndexFile);
-		return 4;
-	}
+		IH.LPPVersion != postproc_version())
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_VERSION,
+			(boost::format("A different FFmpeg build was used to create '%1%'") % IndexFile).str());
 
-	if (!(IH.Decoder & FFMS_GetEnabledSources())) {
-		snprintf(ErrorMsg, MsgSize, "The source which this index was created with is not available");
-		return 5;
-	}
+	if (!(IH.Decoder & FFMS_GetEnabledSources()))
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_NOT_AVAILABLE,
+			"The source which this index was created with is not available");
 
 	Decoder = IH.Decoder;
 	Filesize = IH.FileSize;
@@ -344,11 +323,9 @@ int FFMS_Index::ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSiz
 		}
 
 	} catch (...) {
-		snprintf(ErrorMsg, MsgSize, "Unknown error while reading index information in '%s'", IndexFile);
-		return 6;
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_UNKNOWN,
+			(boost::format("Unknown error while reading index information in '%1%'") % IndexFile).str());
 	}
-
-	return 0;
 }
 
 FFMS_Index::FFMS_Index() {
@@ -382,46 +359,44 @@ void FFMS_Indexer::SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate
 	this->ANCPrivate = ANCPrivate;
 }
 
-FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) {
+FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename) {
 	AVFormatContext *FormatContext = NULL;
 
-	if (av_open_input_file(&FormatContext, Filename, NULL, 0, NULL) != 0) {
-		snprintf(ErrorMsg, MsgSize, "Can't open '%s'", Filename);
-		return NULL;
-	}
+	if (av_open_input_file(&FormatContext, Filename, NULL, 0, NULL) != 0)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			(boost::format("Can't open '%1%'") % Filename).str());
 
 	// Do matroska indexing instead?
 	if (!strcmp(FormatContext->iformat->name, "matroska")) {
 		av_close_input_file(FormatContext);
-		return new FFMatroskaIndexer(Filename, ErrorMsg, MsgSize);
+		return new FFMatroskaIndexer(Filename);
 	}
 
 #ifdef HAALISOURCE
 	// Do haali ts indexing instead?
 	if (HasHaaliMPEG && !strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts")) {
 		av_close_input_file(FormatContext);
-		return new FFHaaliIndexer(Filename, 0, ErrorMsg, MsgSize);
+		return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
 	}
 
 	if (HasHaaliOGG && !strcmp(FormatContext->iformat->name, "ogg")) {
 		av_close_input_file(FormatContext);
-		return new FFHaaliIndexer(Filename, 1, ErrorMsg, MsgSize);
+		return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
 	}
 #endif
 
-	return new FFLAVFIndexer(Filename, FormatContext, ErrorMsg, MsgSize);
+	return new FFLAVFIndexer(Filename, FormatContext);
 }
 
-FFMS_Indexer::FFMS_Indexer(const char *Filename, char *ErrorMsg, unsigned MsgSize) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 5) {
-	if (FFMS_Index::CalculateFileSignature(Filename, &Filesize, Digest, ErrorMsg, MsgSize))
-		throw ErrorMsg;
+FFMS_Indexer::FFMS_Indexer(const char *Filename) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 5) {
+	FFMS_Index::CalculateFileSignature(Filename, &Filesize, Digest);
 }
 
 FFMS_Indexer::~FFMS_Indexer() {
 
 }
 
-bool FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track, int DBSize, char *ErrorMsg, unsigned MsgSize) {
+void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track, int DBSize) {
 	// Delay writer creation until after an audio frame has been decoded. This ensures that all parameters are known when writing the headers.
 	if (DBSize > 0) {
 		if (!AudioContext.W64Writer) {
@@ -435,13 +410,11 @@ bool FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 				AudioContext.W64Writer = new Wave64Writer(WN.c_str(), av_get_bits_per_sample_format(AudioContext.CodecContext->sample_fmt),
 					AudioContext.CodecContext->channels, AudioContext.CodecContext->sample_rate, (AudioContext.CodecContext->sample_fmt == SAMPLE_FMT_FLT) || (AudioContext.CodecContext->sample_fmt == SAMPLE_FMT_DBL));
 			} catch (...) {
-				snprintf(ErrorMsg, MsgSize, "Failed to write wave data");
-				return false;
+				throw FFMS_Exception(FFMS_ERROR_WAVE_WRITER, FFMS_ERROR_FILE_WRITE,
+					"Failed to write wave data");
 			}
 		}
 
 		AudioContext.W64Writer->WriteData(&DecodingBuffer[0], DBSize);
 	}
-
-	return true;
 }

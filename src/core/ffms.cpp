@@ -97,78 +97,56 @@ FFMS_API(void) FFMS_SetLogLevel(int Level) {
 	av_log_set_level(Level);
 }
 
-FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFMS_Index *Index, const char *PP, int Threads, int SeekMode, char *ErrorMsg, unsigned MsgSize) {
-	if (Track < 0 || Track >= static_cast<int>(Index->size())) {
-		snprintf(ErrorMsg, MsgSize, "Out of bounds track index selected");
-		return NULL;
-	}
-
-	if (Index->at(Track).TT != FFMS_TYPE_VIDEO) {
-		snprintf(ErrorMsg, MsgSize, "Not a video track");
-		return NULL;
-	}
-
+FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFMS_Index *Index, const char *PP, int Threads, int SeekMode, int *ErrorCode, char *ErrorMsg, unsigned MsgSize) {
 	try {
 		switch (Index->Decoder) {
 			case FFMS_SOURCE_LAVF:
-				return new FFLAVFVideo(SourceFile, Track, Index, PP, Threads, SeekMode, ErrorMsg, MsgSize);
+				return new FFLAVFVideo(SourceFile, Track, Index, PP, Threads, SeekMode);
 			case FFMS_SOURCE_MATROSKA:
-				return new FFMatroskaVideo(SourceFile, Track, Index, PP, Threads, ErrorMsg, MsgSize);
+				return new FFMatroskaVideo(SourceFile, Track, Index, PP, Threads);
 #ifdef HAALISOURCE
 			case FFMS_SOURCE_HAALIMPEG:
 				if (HasHaaliMPEG)
-					return new FFHaaliVideo(SourceFile, Track, Index, PP, Threads, 0, ErrorMsg, MsgSize);
-				snprintf(ErrorMsg, MsgSize, "Haali MPEG/TS source unavailable");
-				return NULL;
+					return new FFHaaliVideo(SourceFile, Track, Index, PP, Threads, FFMS_SOURCE_HAALIMPEG);
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali MPEG/TS source unavailable");
 			case FFMS_SOURCE_HAALIOGG:
 				if (HasHaaliOGG)
-					return new FFHaaliVideo(SourceFile, Track, Index, PP, Threads, 1, ErrorMsg, MsgSize);
-				snprintf(ErrorMsg, MsgSize, "Haali OGG/OGM source unavailable");
-				return NULL;
+					return new FFHaaliVideo(SourceFile, Track, Index, PP, Threads, FFMS_SOURCE_HAALIOGG);
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali OGG/OGM source unavailable");
 #endif
 			default:
 				snprintf(ErrorMsg, MsgSize, "Unsupported format");
 				return NULL;
 		}
-	} catch (...) {
+	} catch (FFMS_Exception &e) {
+		e.CopyOut(ErrorCode, ErrorMsg, MsgSize);
 		return NULL;
 	}
 }
 
-FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, char *ErrorMsg, unsigned MsgSize) {
-	if (Track < 0 || Track >= static_cast<int>(Index->size())) {
-		snprintf(ErrorMsg, MsgSize, "Out of bounds track index selected");
-		return NULL;
-	}
-
-	if (Index->at(Track).TT != FFMS_TYPE_AUDIO) {
-		snprintf(ErrorMsg, MsgSize, "Not an audio track");
-		return NULL;
-	}
-
+FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, int *ErrorCode, char *ErrorMsg, unsigned MsgSize) {
 	try {
 		switch (Index->Decoder) {
 			case FFMS_SOURCE_LAVF:
-				return new FFLAVFAudio(SourceFile, Track, Index, ErrorMsg, MsgSize);
+				return new FFLAVFAudio(SourceFile, Track, Index);
 			case FFMS_SOURCE_MATROSKA:
-				return new FFMatroskaAudio(SourceFile, Track, Index, ErrorMsg, MsgSize);
+				return new FFMatroskaAudio(SourceFile, Track, Index);
 #ifdef HAALISOURCE
 			case FFMS_SOURCE_HAALIMPEG:
 				if (HasHaaliMPEG)
-					return new FFHaaliAudio(SourceFile, Track, Index, 0, ErrorMsg, MsgSize);
-				snprintf(ErrorMsg, MsgSize, "Haali MPEG/TS source unavailable");
-				return NULL;
+					return new FFHaaliAudio(SourceFile, Track, Index, FFMS_SOURCE_HAALIMPEG);
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali MPEG/TS source unavailable");
 			case FFMS_SOURCE_HAALIOGG:
 				if (HasHaaliOGG)
-					return new FFHaaliAudio(SourceFile, Track, Index, 1, ErrorMsg, MsgSize);
-				snprintf(ErrorMsg, MsgSize, "Haali OGG/OGM source unavailable");
-				return NULL;
+					return new FFHaaliAudio(SourceFile, Track, Index, FFMS_SOURCE_HAALIOGG);
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali OGG/OGM source unavailable");
 #endif
 			default:
 				snprintf(ErrorMsg, MsgSize, "Unsupported format");
 				return NULL;
 		}
-	} catch (...) {
+	} catch (FFMS_Exception &e) {
+		e.CopyOut(ErrorCode, ErrorMsg, MsgSize);
 		return NULL;
 	}
 }
@@ -189,20 +167,40 @@ FFMS_API(const FFMS_AudioProperties *) FFMS_GetAudioProperties(FFMS_AudioSource 
 	return &A->GetAudioProperties();
 }
 
-FFMS_API(const FFMS_Frame *) FFMS_GetFrame(FFMS_VideoSource *V, int n, char *ErrorMsg, unsigned MsgSize) {
-	return (FFMS_Frame *)V->GetFrame(n, ErrorMsg, MsgSize);
+FFMS_API(const FFMS_Frame *) FFMS_GetFrame(FFMS_VideoSource *V, int n, int *ErrorCode, char *ErrorMsg, unsigned MsgSize) {
+	try {
+		return (FFMS_Frame *)V->GetFrame(n);
+	} catch (FFMS_Exception &e) {
+		e.CopyOut(ErrorCode, ErrorMsg, MsgSize);
+		return NULL;
+	}
 }
 
-FFMS_API(const FFMS_Frame *) FFMS_GetFrameByTime(FFMS_VideoSource *V, double Time, char *ErrorMsg, unsigned MsgSize) {
-	return (FFMS_Frame *)V->GetFrameByTime(Time, ErrorMsg, MsgSize);
+FFMS_API(const FFMS_Frame *) FFMS_GetFrameByTime(FFMS_VideoSource *V, double Time, int *ErrorCode, char *ErrorMsg, unsigned MsgSize) {
+	try {
+		return (FFMS_Frame *)V->GetFrameByTime(Time);
+	} catch (FFMS_Exception &e) {
+		e.CopyOut(ErrorCode, ErrorMsg, MsgSize);
+		return NULL;
+	}
 }
 
 FFMS_API(int) FFMS_GetAudio(FFMS_AudioSource *A, void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize) {
-	return A->GetAudio(Buf, Start, Count, ErrorMsg, MsgSize);
+	try {
+		A->GetAudio(Buf, Start, Count);
+	} catch (FFMS_Exception &e) {
+		return e.CopyOut(NULL, ErrorMsg, MsgSize);
+	}
+	return 0;
 }
 
 FFMS_API(int) FFMS_SetOutputFormatV(FFMS_VideoSource *V, int64_t TargetFormats, int Width, int Height, int Resizer, char *ErrorMsg, unsigned MsgSize) {
-	return V->SetOutputFormat(TargetFormats, Width, Height, Resizer, ErrorMsg, MsgSize);
+	try {
+		V->SetOutputFormat(TargetFormats, Width, Height, Resizer);
+	} catch (FFMS_Exception &e) {
+		return e.CopyOut(NULL, ErrorMsg, MsgSize);
+	}
+	return 0;
 }
 
 FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V) {
@@ -274,14 +272,19 @@ FFMS_API(const FFMS_TrackTimeBase *) FFMS_GetTimeBase(FFMS_Track *T) {
 }
 
 FFMS_API(int) FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, char *ErrorMsg, unsigned MsgSize) {
-	return T->WriteTimecodes(TimecodeFile, ErrorMsg, MsgSize);
+	try {
+		T->WriteTimecodes(TimecodeFile);
+	} catch (FFMS_Exception &e) {
+		return e.CopyOut(NULL, ErrorMsg, MsgSize);
+	}
+	return 0;
 }
 
-FFMS_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, char *ErrorMsg, unsigned MsgSize) {
-	FFMS_Indexer *Indexer = FFMS_CreateIndexer(SourceFile, ErrorMsg, MsgSize);
+FFMS_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, int *ErrorCode, char *ErrorMsg, unsigned MsgSize) {
+	FFMS_Indexer *Indexer = FFMS_CreateIndexer(SourceFile, ErrorCode, ErrorMsg, MsgSize);
 	if (!Indexer)
 		return NULL;
-	return FFMS_DoIndexing(Indexer, IndexMask, DumpMask, ANC, ANCPrivate, IgnoreDecodeErrors, IC, ICPrivate, ErrorMsg, MsgSize);
+	return FFMS_DoIndexing(Indexer, IndexMask, DumpMask, ANC, ANCPrivate, IgnoreDecodeErrors, IC, ICPrivate, ErrorCode, ErrorMsg, MsgSize);
 }
 
 /* Used by FFMS_DefaultAudioFilename */
@@ -311,29 +314,33 @@ FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const
 	ReplaceString(s, "%bps%", IntToStr(AP->BitsPerSample));
 	ReplaceString(s, "%delay%", IntToStr(static_cast<int>(AP->FirstTime)));
 
-	if (FileName == NULL) {
-		return s.length() + 1;
-	} else {
+	if (FileName != NULL)
 		strcpy(FileName, s.c_str());
-		return 0;
-	}
+
+	return s.length() + 1;
 }
 
-FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, int *ErrorCode, char *ErrorMsg, unsigned MsgSize) {
 	try {
-		return FFMS_Indexer::CreateIndexer(SourceFile, ErrorMsg, MsgSize);
-	} catch (...) {
+		return FFMS_Indexer::CreateIndexer(SourceFile);
+	} catch (FFMS_Exception &e) {
+		e.CopyOut(ErrorCode, ErrorMsg, MsgSize);
 		return NULL;
 	}
 }
 
-FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, int *ErrorCode, char *ErrorMsg, unsigned MsgSize) {
 	Indexer->SetIndexMask(IndexMask | DumpMask);
 	Indexer->SetDumpMask(DumpMask);
 	Indexer->SetIgnoreDecodeErrors(IgnoreDecodeErrors);
 	Indexer->SetProgressCallback(IC, ICPrivate);
 	Indexer->SetAudioNameCallback(ANC, ANCPrivate);
-	FFMS_Index *Index = Indexer->DoIndexing(ErrorMsg, MsgSize);
+	FFMS_Index *Index = NULL;
+	try {
+		FFMS_Index *Index = Indexer->DoIndexing();
+	} catch (FFMS_Exception &e) {
+		e.CopyOut(ErrorCode, ErrorMsg, MsgSize);
+	}
 	delete Indexer;
 	return Index;
 }
@@ -342,22 +349,29 @@ FFMS_API(void) FFMS_CancelIndexing(FFMS_Indexer *Indexer) {
 	delete Indexer;
 }
 
-FFMS_API(FFMS_Index *) FFMS_ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize) {
+FFMS_API(FFMS_Index *) FFMS_ReadIndex(const char *IndexFile, int *ErrorCode, char *ErrorMsg, unsigned MsgSize) {
 	FFMS_Index *Index = new FFMS_Index();
-	if (Index->ReadIndex(IndexFile, ErrorMsg, MsgSize)) {
+	try {
+		Index->ReadIndex(IndexFile);
+	} catch (FFMS_Exception &e) {
 		delete Index;
+		e.CopyOut(ErrorCode, ErrorMsg, MsgSize);
 		return NULL;
-	} else {
-		return Index;
 	}
+	return Index;
 }
 
 FFMS_API(int) FFMS_IndexBelongsToFile(FFMS_Index *Index, const char *SourceFile, char *ErrorMsg, unsigned MsgSize) {
-	return Index->CompareFileSignature(SourceFile, ErrorMsg, MsgSize);
+	return Index->CompareFileSignature(SourceFile);
 }
 
 FFMS_API(int) FFMS_WriteIndex(const char *IndexFile, FFMS_Index *Index, char *ErrorMsg, unsigned MsgSize) {
-	return Index->WriteIndex(IndexFile, ErrorMsg, MsgSize);
+	try {
+		Index->WriteIndex(IndexFile);
+	} catch (FFMS_Exception &e) {
+		return e.CopyOut(NULL, ErrorMsg, MsgSize);
+	}
+	return 0;
 }
 
 FFMS_API(int) FFMS_GetPixFmt(const char *Name) {

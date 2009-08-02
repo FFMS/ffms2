@@ -87,7 +87,7 @@ public:
 	int FindClosestAudioKeyFrame(int64_t Sample);
 	int FrameFromDTS(int64_t DTS);
 	int ClosestFrameFromDTS(int64_t DTS);
-	int WriteTimecodes(const char *TimecodeFile, char *ErrorMsg, unsigned MsgSize);
+	void WriteTimecodes(const char *TimecodeFile);
 
 	FFMS_Track();
 	FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT);
@@ -95,16 +95,16 @@ public:
 
 class FFMS_Index : public std::vector<FFMS_Track> {
 public:
-	static int CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20], char *ErrorMsg, unsigned MsgSize);
+	static void CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]);
 
 	int Decoder;
 	int64_t Filesize;
 	uint8_t Digest[20];
 
 	void Sort();
-	int CompareFileSignature(const char *Filename, char *ErrorMsg, unsigned MsgSize);
-	int WriteIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize);
-	int ReadIndex(const char *IndexFile, char *ErrorMsg, unsigned MsgSize);
+	bool CompareFileSignature(const char *Filename);
+	void WriteIndex(const char *IndexFile);
+	void ReadIndex(const char *IndexFile);
 
 	FFMS_Index();
 	FFMS_Index(int64_t Filesize, uint8_t Digest[20]);
@@ -125,17 +125,17 @@ protected:
 	int64_t Filesize;
 	uint8_t Digest[20];
 
-	bool WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track, int DBSize, char *ErrorMsg, unsigned MsgSize);
+	void WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track, int DBSize);
 public:
-	static FFMS_Indexer *CreateIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize);
-	FFMS_Indexer(const char *Filename, char *ErrorMsg, unsigned MsgSize);
+	static FFMS_Indexer *CreateIndexer(const char *Filename);
+	FFMS_Indexer(const char *Filename);
 	virtual ~FFMS_Indexer();
 	void SetIndexMask(int IndexMask);
 	void SetDumpMask(int DumpMask);
 	void SetIgnoreDecodeErrors(bool IgnoreDecodeErrors);
 	void SetProgressCallback(TIndexCallback IC, void *ICPrivate);
 	void SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate);
-	virtual FFMS_Index *DoIndexing(char *ErrorMsg, unsigned MsgSize) = 0;
+	virtual FFMS_Index *DoIndexing() = 0;
 	virtual int GetNumberOfTracks() = 0;
 	virtual FFMS_TrackType GetTrackType(int Track) = 0;
 	virtual const char *GetTrackCodec(int Track) = 0;
@@ -145,9 +145,9 @@ class FFLAVFIndexer : public FFMS_Indexer {
 private:
 	AVFormatContext *FormatContext;
 public:
-	FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContext, char *ErrorMsg, unsigned MsgSize);
+	FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContext);
 	~FFLAVFIndexer();
-	FFMS_Index *DoIndexing(char *ErrorMsg, unsigned MsgSize);
+	FFMS_Index *DoIndexing();
 	int GetNumberOfTracks();
 	FFMS_TrackType GetTrackType(int Track);
 	const char *GetTrackCodec(int Track);
@@ -159,9 +159,9 @@ private:
 	MatroskaReaderContext MC;
 	AVCodec *Codec[32];
 public:
-	FFMatroskaIndexer(const char *Filename, char *ErrorMsg, unsigned MsgSize);
+	FFMatroskaIndexer(const char *Filename);
 	~FFMatroskaIndexer();
-	FFMS_Index *DoIndexing(char *ErrorMsg, unsigned MsgSize);
+	FFMS_Index *DoIndexing();
 	int GetNumberOfTracks();
 	FFMS_TrackType GetTrackType(int Track);
 	const char *GetTrackCodec(int Track);
@@ -181,8 +181,8 @@ private:
 	CComQIPtr<IPropertyBag> PropertyBags[32];
 	int64_t Duration;
 public:
-	FFHaaliIndexer(const char *Filename, int SourceMode, char *ErrorMsg, unsigned MsgSize);
-	FFMS_Index *DoIndexing(char *ErrorMsg, unsigned MsgSize);
+	FFHaaliIndexer(const char *Filename, enum FFMS_Sources SourceMode);
+	FFMS_Index *DoIndexing();
 	int GetNumberOfTracks();
 	FFMS_TrackType GetTrackType(int Track);
 	const char *GetTrackCodec(int Track);

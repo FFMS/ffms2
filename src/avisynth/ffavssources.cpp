@@ -34,7 +34,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 	this->FPSNum = FPSNum;
 	this->FPSDen = FPSDen;
 
-	V = FFMS_CreateVideoSource(SourceFile, Track, Index, PP, Threads, SeekMode, ErrorMsg, MsgSize);
+	V = FFMS_CreateVideoSource(SourceFile, Track, Index, PP, Threads, SeekMode, NULL, ErrorMsg, MsgSize);
 	if (!V)
 		Env->ThrowError(ErrorMsg);
 
@@ -165,9 +165,9 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 
 	if (FPSNum > 0 && FPSDen > 0)
 		Frame = FFMS_GetFrameByTime(V, FFMS_GetVideoProperties(V)->FirstTime +
-		(double)(n * (int64_t)FPSDen) / FPSNum, ErrorMsg, MsgSize);
+		(double)(n * (int64_t)FPSDen) / FPSNum, NULL, ErrorMsg, MsgSize);
 	else
-		Frame = FFMS_GetFrame(V, n, ErrorMsg, MsgSize);
+		Frame = FFMS_GetFrame(V, n, NULL, ErrorMsg, MsgSize);
 
 	if (Frame == NULL)
 		Env->ThrowError("FFVideoSource: %s", ErrorMsg);
@@ -179,7 +179,7 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, IScriptEnvironment* Env, char *ErrorMsg, unsigned MsgSize) {
 	memset(&VI, 0, sizeof(VI));
 
-	A = FFMS_CreateAudioSource(SourceFile, Track, Index, ErrorMsg, MsgSize);
+	A = FFMS_CreateAudioSource(SourceFile, Track, Index, NULL, ErrorMsg, MsgSize);
 	if (!A)
 		Env->ThrowError(ErrorMsg);
 

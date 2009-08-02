@@ -22,13 +22,15 @@
 
 #include "ffaudiosource.h"
 
+
+
 void FFHaaliAudio::Free(bool CloseCodec) {
 	if (CloseCodec)
 		avcodec_close(CodecContext);
 	av_freep(&CodecContext);
 }
 
-int FFHaaliAudio::DecodeNextAudioBlock(int64_t *AFirstStartTime, int64_t *Count, char *ErrorMsg, unsigned MsgSize) {
+void FFHaaliAudio::DecodeNextAudioBlock(int64_t *AFirstStartTime, int64_t *Count) {
 	const size_t SizeConst = (av_get_bits_per_sample_format(CodecContext->sample_fmt) * CodecContext->channels) / 8;
 	int Ret = -1;
 	*AFirstStartTime = -1;
@@ -79,56 +81,17 @@ int FFHaaliAudio::DecodeNextAudioBlock(int64_t *AFirstStartTime, int64_t *Count,
         }
 	}
 
-Done:
-	return Ret;
+Done:;
 }
 
-FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index *Index,
-						   int SourceMode, char *ErrorMsg, unsigned MsgSize)
-						   : FFMS_AudioSource(SourceFile, Index, ErrorMsg, MsgSize) {
+FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index *Index, enum FFMS_Sources SourceMode)
+						   : Res(FFSourceResources<FFMS_AudioSource>(this)), FFMS_AudioSource(SourceFile, Index, Track) {
 	AVCodec *Codec = NULL;
 	CodecContext = NULL;
 	AudioTrack = Track;
 	Frames = (*Index)[AudioTrack];
 
-	if (Frames.size() == 0) {
-		snprintf(ErrorMsg, MsgSize, "Audio track contains no frames, was it indexed properly?");
-		throw ErrorMsg;
-	}
-
-	CLSID clsid = HAALI_MPEG_PARSER;
-	if (SourceMode == 1)
-		clsid = HAALI_OGG_PARSER;
-
-	if (FAILED(pMMC.CoCreateInstance(clsid))) {
-		snprintf(ErrorMsg, MsgSize, "Can't create parser");
-		throw ErrorMsg;
-	}
-
-	CComPtr<IMemAlloc> pMA;
-	if (FAILED(pMA.CoCreateInstance(CLSID_MemAlloc))) {
-		snprintf(ErrorMsg, MsgSize, "Can't create memory allocator");
-		throw ErrorMsg;
-	}
-
-	CComPtr<IMMStream> pMS;
-	if (FAILED(pMS.CoCreateInstance(CLSID_DiskFile))) {
-		snprintf(ErrorMsg, MsgSize, "Can't create disk file reader");
-		throw ErrorMsg;
-	}
-
-	WCHAR WSourceFile[2048];
-	ffms_mbstowcs(WSourceFile, SourceFile, 2000);
-	CComQIPtr<IMMStreamOpen> pMSO(pMS);
-	if (FAILED(pMSO->Open(WSourceFile))) {
-		snprintf(ErrorMsg, MsgSize, "Can't open file");
-		throw ErrorMsg;
-	}
-
-	if (FAILED(pMMC->Open(pMS, 0, NULL, pMA))) {
-		snprintf(ErrorMsg, MsgSize, "Can't parse file");
-		throw ErrorMsg;
-	}
+	pMMC = HaaliOpenFile(SourceFile, SourceMode);
 
 	int CodecPrivateSize = 0;
 	int CurrentTrack = 0;
@@ -166,45 +129,35 @@ FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index *Index,
 	CodecContext->extradata = FFMS_GET_VECTOR_PTR(CodecPrivate);
 	CodecContext->extradata_size = CodecPrivateSize;
 
-	if (Codec == NULL) {
-		Free(false);
-		snprintf(ErrorMsg, MsgSize, "Audio codec not found");
-		throw ErrorMsg;
-	}
+	if (Codec == NULL)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+			"Audio codec not found");
 
 	InitializeCodecContextFromHaaliInfo(pBag, CodecContext);
 
-	if (avcodec_open(CodecContext, Codec) < 0) {
-		Free(false);
-		snprintf(ErrorMsg, MsgSize, "Could not open audio codec");
-		throw ErrorMsg;
-	}
+	if (avcodec_open(CodecContext, Codec) < 0)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+			"Could not open audio codec");
+
+	Res.CloseCodec(true);
 
 	// Always try to decode a frame to make sure all required parameters are known
 	int64_t Dummy1, Dummy2;
-	if (DecodeNextAudioBlock(&Dummy1, &Dummy2, ErrorMsg, MsgSize) < 0) {
-		Free(true);
-		throw ErrorMsg;
-	}
+	DecodeNextAudioBlock(&Dummy1, &Dummy2);
+
 	pMMC->Seek(Frames[0].DTS, MKVF_SEEK_TO_PREV_KEYFRAME_STRICT);
 	avcodec_flush_buffers(CodecContext);
 
 	FillAP(AP, CodecContext, Frames);
 
-	if (AP.SampleRate <= 0 || AP.BitsPerSample <= 0) {
-		Free(true);
-		snprintf(ErrorMsg, MsgSize, "Codec returned zero size audio");
-		throw ErrorMsg;
-	}
+	if (AP.SampleRate <= 0 || AP.BitsPerSample <= 0)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+			"Codec returned zero size audio");
 
 	AudioCache.Initialize((AP.Channels * AP.BitsPerSample) / 8, 50);
 }
 
-FFHaaliAudio::~FFHaaliAudio() {
-	Free(true);
-}
-
-int FFHaaliAudio::GetAudio(void *Buf, int64_t Start, int64_t Count, char *ErrorMsg, unsigned MsgSize) {
+void FFHaaliAudio::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 	const int64_t SizeConst = (av_get_bits_per_sample_format(CodecContext->sample_fmt) * CodecContext->channels) / 8;
 	memset(Buf, 0, static_cast<size_t>(SizeConst * Count));
 	bool HasSeeked = false;
@@ -216,7 +169,7 @@ int FFHaaliAudio::GetAudio(void *Buf, int64_t Start, int64_t Count, char *ErrorM
 	int64_t CacheEnd = AudioCache.FillRequest(Start, Count, DstBuf);
 	// Was everything in the cache?
 	if (CacheEnd == Start + Count)
-		return 0;
+		return;
 
 	int CurrentAudioBlock;
 	// Is seeking required to decode the requested samples?
@@ -234,11 +187,7 @@ int FFHaaliAudio::GetAudio(void *Buf, int64_t Start, int64_t Count, char *ErrorM
 	int64_t FirstTime, DecodeCount;
 
 	do {
-		int Ret = DecodeNextAudioBlock(&FirstTime, &DecodeCount, ErrorMsg, MsgSize);
-		if (Ret < 0) {
-			// FIXME
-			//Env->ThrowError("Bleh, bad audio decoding");
-		}
+		DecodeNextAudioBlock(&FirstTime, &DecodeCount);
 
 		if (HasSeeked) {
 			CurrentAudioBlock = Frames.ClosestFrameFromDTS(FirstTime);
@@ -257,8 +206,6 @@ int FFHaaliAudio::GetAudio(void *Buf, int64_t Start, int64_t Count, char *ErrorM
 		if (CurrentAudioBlock < static_cast<int>(Frames.size()))
 			CurrentSample = Frames[CurrentAudioBlock].SampleStart;
 	} while (Start + Count - CacheEnd > 0 && CurrentAudioBlock < static_cast<int>(Frames.size()));
-
-	return 0;
 }
 
 #endif // HAALISOURCE
