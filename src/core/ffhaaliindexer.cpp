@@ -64,8 +64,30 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, enum FFMS_Sources SourceMod
 				}
 
 				pV.Clear();
-				if (SUCCEEDED(pBag->Read(L"FOURCC", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+				if (SUCCEEDED(pBag->Read(L"FOURCC", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4))) {
 					FourCC = pV.uintVal;
+
+					// Reconstruct the missing codec private part for VC1
+					std::vector<uint8_t> bihvect;
+					bihvect.resize(sizeof(BITMAPINFOHEADER));
+					BITMAPINFOHEADER *bih = reinterpret_cast<BITMAPINFOHEADER *>(FFMS_GET_VECTOR_PTR(bihvect));
+					memset(bih, 0, sizeof(BITMAPINFOHEADER));
+					bih->biSize = sizeof(BITMAPINFOHEADER) + CodecPrivateSize[NumTracks];
+					bih->biCompression = FourCC;
+					bih->biBitCount = 24;
+					bih->biPlanes = 1;
+
+					pV.Clear();
+					if (SUCCEEDED(pBag->Read(L"Video.PixelWidth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+						bih->biWidth = pV.uintVal;
+
+					pV.Clear();
+					if (SUCCEEDED(pBag->Read(L"Video.PixelHeight", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+						bih->biHeight = pV.uintVal;
+
+					CodecPrivate[NumTracks].insert(CodecPrivate[NumTracks].begin(), bihvect.begin(), bihvect.end());
+					CodecPrivateSize[NumTracks] += sizeof(BITMAPINFOHEADER);
+				}
 
 				pV.Clear();
 				if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
