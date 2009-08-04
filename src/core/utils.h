@@ -63,6 +63,7 @@ public:
 	FFMS_Exception(int ErrorType, int ErrorSubType, const char *Message = "");
 	FFMS_Exception(int ErrorType, int ErrorSubType, const std::string &Message);
 	FFMS_Exception(int ErrorType, int ErrorSubType, const boost::format &Message);
+	~FFMS_Exception() throw ();
 	int GetErrorCode() const;
 	const std::string &GetErrorMessage() const;
 	int CopyOut(int *ErrorCode, char *ErrorMsg, int MsgSize) const;

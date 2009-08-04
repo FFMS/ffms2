@@ -59,6 +59,9 @@ FFMS_Exception::FFMS_Exception(int ErrorType, int ErrorSubType, const boost::for
 	_Message = Message.str();
 }
 
+FFMS_Exception::~FFMS_Exception() throw () {
+}
+
 int FFMS_Exception::GetErrorCode() const {
 	return ErrorCode;
 }
