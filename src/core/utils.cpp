@@ -396,6 +396,8 @@ ffms_fstream::ffms_fstream(const char *filename, std::ios_base::openmode mode) {
 	open(filename, mode);
 }
 
+#ifdef HAALISOURCE
+
 CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources SourceMode) {
 	CComPtr<IMMContainer> pMMC;
 
@@ -435,6 +437,8 @@ CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources So
 
 	return pMMC;
 }
+
+#endif
 
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
 	if (av_open_input_file(&FormatContext, SourceFile, NULL, 0, NULL) != 0)
