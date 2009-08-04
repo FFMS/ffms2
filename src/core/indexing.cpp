@@ -374,7 +374,7 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename) {
 
 #ifdef HAALISOURCE
 	// Do haali ts indexing instead?
-	if (HasHaaliMPEG && !strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts")) {
+	if (HasHaaliMPEG && (!strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts"))) {
 		av_close_input_file(FormatContext);
 		return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
 	}
