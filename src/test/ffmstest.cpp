@@ -50,6 +50,7 @@ static int FFMS_CC UpdateProgress(int64_t Current, int64_t Total, void *Private)
 }
 
 static void TestFullDump1(const char *SrcFile, bool WithAudio) {
+/*
 	int Private;
 	int ret;
 	char ErrorMsg[2000];
@@ -97,6 +98,7 @@ static void TestFullDump1(const char *SrcFile, bool WithAudio) {
 
 	FFMS_DestroyIndex(FI);
 	FFMS_DestroyVideoSource(V);
+*/
 }
 
 int main(int argc, char *argv[]) {

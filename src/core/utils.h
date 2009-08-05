@@ -58,15 +58,15 @@ const int64_t ffms_av_nopts_value = static_cast<int64_t>(1) << 63;
 class FFMS_Exception : public std::exception {
 private:
 	std::string _Message;
-	int ErrorCode;
+	int _ErrorType;
+	int _SubType;
 public:
-	FFMS_Exception(int ErrorType, int ErrorSubType, const char *Message = "");
-	FFMS_Exception(int ErrorType, int ErrorSubType, const std::string &Message);
-	FFMS_Exception(int ErrorType, int ErrorSubType, const boost::format &Message);
+	FFMS_Exception(int ErrorType, int SubType, const char *Message = "");
+	FFMS_Exception(int ErrorType, int SubType, const std::string &Message);
+	FFMS_Exception(int ErrorType, int SubType, const boost::format &Message);
 	~FFMS_Exception() throw ();
-	int GetErrorCode() const;
 	const std::string &GetErrorMessage() const;
-	int CopyOut(int *ErrorCode, char *ErrorMsg, int MsgSize) const;
+	int CopyOut(FFMS_ErrorInfo *ErrorInfo) const;
 };
 
 template<class T>
@@ -122,6 +122,7 @@ public:
 
 int GetSWSCPUFlags();
 int GetPPCPUFlags();
+void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
 FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT);
 void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, MatroskaReaderContext &Context);
 bool AudioFMTIsFloat(SampleFormat FMT);

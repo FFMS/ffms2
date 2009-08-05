@@ -35,7 +35,9 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()));
 
 	char ErrorMsg[1024];
-	unsigned MsgSize = sizeof(ErrorMsg);
+	FFMS_ErrorInfo E;
+	E.Buffer = ErrorMsg;
+	E.BufferSize = sizeof(ErrorMsg);
 
 
 	if (!Args[0].Defined())
@@ -62,12 +64,12 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 	// 2: Index forced to be overwritten
 
 	FFMS_Index *Index = NULL;
-	if (OverWrite || !(Index = FFMS_ReadIndex(CacheFile, NULL, ErrorMsg, MsgSize))) {
-		if (!(Index = FFMS_MakeIndex(Source, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, true, NULL, NULL, NULL, ErrorMsg, MsgSize)))
-			Env->ThrowError("FFIndex: %s", ErrorMsg);
-		if (FFMS_WriteIndex(CacheFile, Index, ErrorMsg, MsgSize)) {
+	if (OverWrite || !(Index = FFMS_ReadIndex(CacheFile, &E))) {
+		if (!(Index = FFMS_MakeIndex(Source, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, true, NULL, NULL, &E)))
+			Env->ThrowError("FFIndex: %s", E.Buffer);
+		if (FFMS_WriteIndex(CacheFile, Index, &E)) {
 			FFMS_DestroyIndex(Index);
-			Env->ThrowError("FFIndex: %s", ErrorMsg);
+			Env->ThrowError("FFIndex: %s", E.Buffer);
 		}
 		FFMS_DestroyIndex(Index);
 		if (!OverWrite)
@@ -84,7 +86,9 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()));
 
 	char ErrorMsg[1024];
-	unsigned MsgSize = sizeof(ErrorMsg);
+	FFMS_ErrorInfo E;
+	E.Buffer = ErrorMsg;
+	E.BufferSize = sizeof(ErrorMsg);
 
 	if (!Args[0].Defined())
     	Env->ThrowError("FFVideoSource: No source specified");
@@ -125,34 +129,34 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 
 	FFMS_Index *Index = NULL;
 	if (Cache)
-		Index = FFMS_ReadIndex(CacheFile, NULL, ErrorMsg, MsgSize);
+		Index = FFMS_ReadIndex(CacheFile, &E);
 	if (!Index) {
-		if (!(Index = FFMS_MakeIndex(Source, 0, 0, NULL, NULL, true, NULL, NULL, NULL, ErrorMsg, MsgSize)))
-			Env->ThrowError("FFVideoSource: %s", ErrorMsg);
+		if (!(Index = FFMS_MakeIndex(Source, 0, 0, NULL, NULL, true, NULL, NULL, &E)))
+			Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
 		if (Cache)
-			if (FFMS_WriteIndex(CacheFile, Index, ErrorMsg, MsgSize)) {
+			if (FFMS_WriteIndex(CacheFile, Index, &E)) {
 				FFMS_DestroyIndex(Index);
-				Env->ThrowError("FFVideoSource: %s", ErrorMsg);
+				Env->ThrowError("FFVideoSource: %s", E.Buffer);
 			}
 	}
 
 	if (Track == -1)
-		Track = FFMS_GetFirstIndexedTrackOfType(Index, FFMS_TYPE_VIDEO, ErrorMsg, MsgSize);
+		Track = FFMS_GetFirstIndexedTrackOfType(Index, FFMS_TYPE_VIDEO, &E);
 	if (Track < 0)
 		Env->ThrowError("FFVideoSource: No video track found");
 
 	if (strcmp(Timecodes, "")) {
-		if (FFMS_WriteTimecodes(FFMS_GetTrackFromIndex(Index, Track), Timecodes, ErrorMsg, MsgSize)) {
+		if (FFMS_WriteTimecodes(FFMS_GetTrackFromIndex(Index, Track), Timecodes, &E)) {
 			FFMS_DestroyIndex(Index);
-			Env->ThrowError("FFVideoSource: %s", ErrorMsg);
+			Env->ThrowError("FFVideoSource: %s", E.Buffer);
 		}
 	}
 
 	AvisynthVideoSource *Filter;
 
 	try {
-		Filter = new AvisynthVideoSource(Source, Track, Index, FPSNum, FPSDen, PP, Threads, SeekMode, Width, Height, Resizer, ColorSpace, Env, ErrorMsg, MsgSize);
+		Filter = new AvisynthVideoSource(Source, Track, Index, FPSNum, FPSDen, PP, Threads, SeekMode, Width, Height, Resizer, ColorSpace, Env);
 	} catch (...) {
 		FFMS_DestroyIndex(Index);
 		throw;
@@ -166,7 +170,9 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()));
 
 	char ErrorMsg[1024];
-	unsigned MsgSize = sizeof(ErrorMsg);
+	FFMS_ErrorInfo E;
+	E.Buffer = ErrorMsg;
+	E.BufferSize = sizeof(ErrorMsg);
 
 	if (!Args[0].Defined())
     	Env->ThrowError("FFAudioSource: No source specified");
@@ -186,7 +192,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 
 	FFMS_Index *Index = NULL;
 	if (Cache)
-		Index = FFMS_ReadIndex(CacheFile, NULL, ErrorMsg, MsgSize);
+		Index = FFMS_ReadIndex(CacheFile, &E);
 
 	// Index needs to be remade if it is an unindexed audio track
 	if (Index && Track >= 0 && Track < FFMS_GetNumTracks(Index)
@@ -197,8 +203,8 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	}
 
 	// More complicated for finding a default track, reindex the file if at least one audio track exists
-	if (Index && FFMS_GetFirstTrackOfType(Index, FFMS_TYPE_AUDIO, ErrorMsg, MsgSize) >= 0
-		&& FFMS_GetFirstIndexedTrackOfType(Index, FFMS_TYPE_AUDIO, ErrorMsg, MsgSize) < 0) {
+	if (Index && FFMS_GetFirstTrackOfType(Index, FFMS_TYPE_AUDIO, &E) >= 0
+		&& FFMS_GetFirstIndexedTrackOfType(Index, FFMS_TYPE_AUDIO, &E) < 0) {
 		for (int i = 0; i < FFMS_GetNumTracks(Index); i++) {
 			if (FFMS_GetTrackType(FFMS_GetTrackFromIndex(Index, i)) == FFMS_TYPE_AUDIO) {
 				FFMS_DestroyIndex(Index);
@@ -209,25 +215,25 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	}
 
 	if (!Index) {
-		if (!(Index = FFMS_MakeIndex(Source, -1, 0, NULL, NULL, true, NULL, NULL, NULL, ErrorMsg, MsgSize)))
-			Env->ThrowError("FFAudioSource: %s", ErrorMsg);
+		if (!(Index = FFMS_MakeIndex(Source, -1, 0, NULL, NULL, true, NULL, NULL, &E)))
+			Env->ThrowError("FFAudioSource: %s", E.Buffer);
 
 		if (Cache)
-			if (FFMS_WriteIndex(CacheFile, Index, ErrorMsg, MsgSize)) {
+			if (FFMS_WriteIndex(CacheFile, Index, &E)) {
 				FFMS_DestroyIndex(Index);
-				Env->ThrowError("FFAudioSource: %s", ErrorMsg);
+				Env->ThrowError("FFAudioSource: %s", E.Buffer);
 			}
 	}
 
 	if (Track == -1)
-		Track = FFMS_GetFirstIndexedTrackOfType(Index, FFMS_TYPE_AUDIO, ErrorMsg, MsgSize);
+		Track = FFMS_GetFirstIndexedTrackOfType(Index, FFMS_TYPE_AUDIO, &E);
 	if (Track < 0)
 		Env->ThrowError("FFAudioSource: No audio track found");
 
 	AvisynthAudioSource *Filter;
 
 	try {
-		Filter = new AvisynthAudioSource(Source, Track, Index, Env, ErrorMsg, MsgSize);
+		Filter = new AvisynthAudioSource(Source, Track, Index, Env);
 	} catch (...) {
 		FFMS_DestroyIndex(Index);
 		throw;

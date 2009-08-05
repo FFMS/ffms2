@@ -29,18 +29,23 @@ extern "C" {
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
-		const char *ConvertToFormatName, IScriptEnvironment* Env, char *ErrorMsg, unsigned MsgSize) {
+		const char *ConvertToFormatName, IScriptEnvironment* Env) {
 	memset(&VI, 0, sizeof(VI));
 	this->FPSNum = FPSNum;
 	this->FPSDen = FPSDen;
 
-	V = FFMS_CreateVideoSource(SourceFile, Track, Index, PP, Threads, SeekMode, NULL, ErrorMsg, MsgSize);
+	char ErrorMsg[1024];
+	FFMS_ErrorInfo E;
+	E.Buffer = ErrorMsg;
+	E.BufferSize = sizeof(ErrorMsg);
+
+	V = FFMS_CreateVideoSource(SourceFile, Track, Index, PP, Threads, SeekMode, &E);
 	if (!V)
-		Env->ThrowError(ErrorMsg);
+		Env->ThrowError(E.Buffer);
 
 	try {
 		InitOutputFormat(ResizeToWidth, ResizeToHeight, ResizerName, ConvertToFormatName, Env);
-	} catch (AvisynthError &) {
+	} catch (...) {
 		FFMS_DestroyVideoSource(V);
 		throw;
 	}
@@ -78,6 +83,11 @@ void AvisynthVideoSource::InitOutputFormat(
 	int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 	const char *ConvertToFormatName, IScriptEnvironment *Env) {
 
+	char ErrorMsg[1024];
+	FFMS_ErrorInfo E;
+	E.Buffer = ErrorMsg;
+	E.BufferSize = sizeof(ErrorMsg);
+
 	const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
 
 	int64_t TargetFormats = (1 << FFMS_GetPixFmt("yuvj420p")) |
@@ -103,14 +113,14 @@ void AvisynthVideoSource::InitOutputFormat(
 		Env->ThrowError("FFVideoSource: Invalid resizer name specified");
 
 	if (FFMS_SetOutputFormatV(V, TargetFormats,
-		ResizeToWidth, ResizeToHeight, Resizer, NULL, 0))
+		ResizeToWidth, ResizeToHeight, Resizer, &E))
 		Env->ThrowError("FFVideoSource: No suitable output format found");
 
 	VP = FFMS_GetVideoProperties(V);
 
 	// This trick is required to first get the "best" default format and then set only that format as the output
 	if (FFMS_SetOutputFormatV(V, static_cast<int64_t>(1) << VP->VPixelFormat,
-		ResizeToWidth, ResizeToHeight, Resizer, NULL, 0))
+		ResizeToWidth, ResizeToHeight, Resizer, &E))
 		Env->ThrowError("FFVideoSource: No suitable output format found");
 
 	VP = FFMS_GetVideoProperties(V);
@@ -160,28 +170,36 @@ PVideoFrame AvisynthVideoSource::OutputFrame(const FFMS_Frame *Frame, IScriptEnv
 
 PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 	char ErrorMsg[1024];
-	unsigned MsgSize = sizeof(ErrorMsg);
+	FFMS_ErrorInfo E;
+	E.Buffer = ErrorMsg;
+	E.BufferSize = sizeof(ErrorMsg);
+
 	const FFMS_Frame *Frame;
 
 	if (FPSNum > 0 && FPSDen > 0)
 		Frame = FFMS_GetFrameByTime(V, FFMS_GetVideoProperties(V)->FirstTime +
-		(double)(n * (int64_t)FPSDen) / FPSNum, NULL, ErrorMsg, MsgSize);
+		(double)(n * (int64_t)FPSDen) / FPSNum, &E);
 	else
-		Frame = FFMS_GetFrame(V, n, NULL, ErrorMsg, MsgSize);
+		Frame = FFMS_GetFrame(V, n, &E);
 
 	if (Frame == NULL)
-		Env->ThrowError("FFVideoSource: %s", ErrorMsg);
+		Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
 	Env->SetVar("FFPICT_TYPE", static_cast<int>(Frame->PictType));
 	return OutputFrame(Frame, Env);
 }
 
-AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, IScriptEnvironment* Env, char *ErrorMsg, unsigned MsgSize) {
+AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, IScriptEnvironment* Env) {
 	memset(&VI, 0, sizeof(VI));
 
-	A = FFMS_CreateAudioSource(SourceFile, Track, Index, NULL, ErrorMsg, MsgSize);
+	char ErrorMsg[1024];
+	FFMS_ErrorInfo E;
+	E.Buffer = ErrorMsg;
+	E.BufferSize = sizeof(ErrorMsg);
+
+	A = FFMS_CreateAudioSource(SourceFile, Track, Index, &E);
 	if (!A)
-		Env->ThrowError(ErrorMsg);
+		Env->ThrowError(E.Buffer);
 
 	const FFMS_AudioProperties *AP = FFMS_GetAudioProperties(A);
 	VI.nchannels = AP->Channels;
@@ -203,7 +221,10 @@ AvisynthAudioSource::~AvisynthAudioSource() {
 
 void AvisynthAudioSource::GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env) {
 	char ErrorMsg[1024];
-	unsigned MsgSize = sizeof(ErrorMsg);
-	if (FFMS_GetAudio(A, Buf, Start, Count, ErrorMsg, MsgSize))
-		Env->ThrowError(ErrorMsg);
+	FFMS_ErrorInfo E;
+	E.Buffer = ErrorMsg;
+	E.BufferSize = sizeof(ErrorMsg);
+
+	if (FFMS_GetAudio(A, Buf, Start, Count, &E))
+		Env->ThrowError(E.Buffer);
 }

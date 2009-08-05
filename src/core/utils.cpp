@@ -46,40 +46,36 @@ extern const AVCodecTag ff_codec_wav_tags[];
 
 extern int CPUFeatures;
 
-FFMS_Exception::FFMS_Exception(int ErrorType, int ErrorSubType, const char *Message) : _Message(Message) {
-	ErrorCode = (ErrorType << 16) | ErrorSubType;
+
+
+FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const char *Message) : _ErrorType(ErrorType), _SubType(SubType), _Message(Message) {
 }
 
-FFMS_Exception::FFMS_Exception(int ErrorType, int ErrorSubType, const std::string &Message) : _Message(Message) {
-	ErrorCode = (ErrorType << 16) | ErrorSubType;
+FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const std::string &Message) : _ErrorType(ErrorType), _SubType(SubType), _Message(Message) {
 }
 
-FFMS_Exception::FFMS_Exception(int ErrorType, int ErrorSubType, const boost::format &Message) {
-	ErrorCode = (ErrorType << 16) | ErrorSubType;
-	_Message = Message.str();
+FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const boost::format &Message) : _ErrorType(ErrorType), _SubType(SubType), _Message(Message.str()) {
 }
 
 FFMS_Exception::~FFMS_Exception() throw () {
-}
-
-int FFMS_Exception::GetErrorCode() const {
-	return ErrorCode;
 }
 
 const std::string &FFMS_Exception::GetErrorMessage() const {
 	return _Message;
 }
 
-int FFMS_Exception::CopyOut(int *ErrorCode, char *ErrorMsg, int MsgSize) const {
-	if (ErrorCode)
-		*ErrorCode = this->ErrorCode;
+int FFMS_Exception::CopyOut(FFMS_ErrorInfo *ErrorInfo) const {
+	if (ErrorInfo) {
+		ErrorInfo->ErrorType = _ErrorType;
+		ErrorInfo->SubType = _SubType;
 
-	if (MsgSize > 0) {
-		memset(ErrorMsg, 0, MsgSize);
-		this->_Message.copy(ErrorMsg, MsgSize - 1);
+		if (ErrorInfo->BufferSize > 0) {
+			memset(ErrorInfo->Buffer, 0, ErrorInfo->BufferSize);
+			_Message.copy(ErrorInfo->Buffer, ErrorInfo->BufferSize - 1);
+		}
 	}
 
-	return this->ErrorCode;
+	return (_ErrorType << 16) | _SubType;
 }
 
 int GetSWSCPUFlags() {
@@ -112,6 +108,16 @@ int GetPPCPUFlags() {
 		Flags |= PP_CPU_CAPS_ALTIVEC;
 
 	return Flags;
+}
+
+void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo) {
+	if (ErrorInfo) {
+		ErrorInfo->ErrorType = FFMS_ERROR_SUCCESS;
+		ErrorInfo->SubType = FFMS_ERROR_SUCCESS;
+
+		if (ErrorInfo->BufferSize > 0)
+			ErrorInfo->Buffer[0] = 0;
+	}
 }
 
 FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT) {

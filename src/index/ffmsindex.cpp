@@ -160,18 +160,21 @@ static int FFMS_CC GenAudioFilename(const char *SourceFile, int Track, const FFM
 
 
 static void DoIndexing () {
-	char FFMSErrMsg[1024];
-	int MsgSize = sizeof(FFMSErrMsg);
+	char ErrorMsg[1024];
+	FFMS_ErrorInfo E;
+	E.Buffer = ErrorMsg;
+	E.BufferSize = sizeof(ErrorMsg);
+
 	int Progress = 0;
 
-	Index = FFMS_ReadIndex(CacheFile.c_str(), NULL, FFMSErrMsg, MsgSize);
+	Index = FFMS_ReadIndex(CacheFile.c_str(), &E);
 	if (Overwrite || Index == NULL) {
 		if (PrintProgress)
 			std::cout << "Indexing, please wait... 0% \r" << std::flush;
-		Index = FFMS_MakeIndex(InputFile.c_str(), TrackMask, DumpMask, &GenAudioFilename, NULL, IgnoreErrors, UpdateProgress, &Progress, NULL, FFMSErrMsg, MsgSize);
+		Index = FFMS_MakeIndex(InputFile.c_str(), TrackMask, DumpMask, &GenAudioFilename, NULL, IgnoreErrors, UpdateProgress, &Progress, &E);
 		if (Index == NULL) {
 			std::string Err = "\nIndexing error: ";
-			Err.append(FFMSErrMsg);
+			Err.append(E.Buffer);
 			throw Err;
 		}
 
@@ -181,9 +184,9 @@ static void DoIndexing () {
 		if (PrintProgress)
 			std::cout << std::endl << "Writing index... ";
 
-		if (FFMS_WriteIndex(CacheFile.c_str(), Index, FFMSErrMsg, MsgSize)) {
+		if (FFMS_WriteIndex(CacheFile.c_str(), Index, &E)) {
 			std::string Err = "Error writing index: ";
-			Err.append(FFMSErrMsg);
+			Err.append(E.Buffer);
 			throw Err;
 		}
 
