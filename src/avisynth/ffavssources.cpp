@@ -26,6 +26,8 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
+
+
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,

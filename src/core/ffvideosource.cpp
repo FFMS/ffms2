@@ -172,7 +172,7 @@ void FFMS_VideoSource::SetOutputFormat(int64_t TargetFormats, int Width, int Hei
 	this->TargetHeight = Height;
 	this->TargetPixelFormats = TargetFormats;
 	this->TargetResizer = Resizer;
-	ReAdjustOutputFormat(TargetFormats, Width, Height, Resizer);
+	OutputFrame(DecodeFrame);
 }
 
 void FFMS_VideoSource::ReAdjustOutputFormat(int64_t TargetFormats, int Width, int Height, int Resizer) {
@@ -221,4 +221,6 @@ void FFMS_VideoSource::ResetOutputFormat() {
 	VP.Height = CodecContext->height;
 	VP.Width = CodecContext->width;
 	VP.VPixelFormat = CodecContext->pix_fmt;
+
+	OutputFrame(DecodeFrame);
 }
