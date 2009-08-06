@@ -172,6 +172,7 @@ void FFMS_VideoSource::SetOutputFormat(int64_t TargetFormats, int Width, int Hei
 	this->TargetHeight = Height;
 	this->TargetPixelFormats = TargetFormats;
 	this->TargetResizer = Resizer;
+	ReAdjustOutputFormat(TargetFormats, Width, Height, Resizer);
 	OutputFrame(DecodeFrame);
 }
 
