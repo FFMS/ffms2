@@ -190,8 +190,8 @@ void AvisynthVideoSource::InitOutputFormat(
 	if (RFFMode > 0 && ResizeToHeight != VP->Height)
 		Env->ThrowError("FFVideoSource: Vertical scaling not allowed in RFF mode");
 
-	if (RFFMode > 0 && !VI.IsYV12())
-		Env->ThrowError("FFVideoSource: Only YV12 is currently supported in RFF mode");
+	if (RFFMode > 0 && 	TargetPixelFormat != PIX_FMT_NV12)
+		Env->ThrowError("FFVideoSource: Only the default output can be used in RFF mode");
 
 	if (VP->TopFieldFirst)
 		VI.image_type = VideoInfo::IT_TFF;
@@ -210,6 +210,10 @@ void AvisynthVideoSource::InitOutputFormat(
 	if (VI.pixel_type == VideoInfo::CS_YUY2) {
 		VI.width -= VI.width & 1;
 	}
+
+	if (RFFMode > 0) {
+		VI.height -= VI.height & 1;
+	}
 }
 
 void AvisynthVideoSource::OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env) {
@@ -219,10 +223,10 @@ void AvisynthVideoSource::OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst,
 		Env->BitBlt(Dst->GetWritePtr(PLANAR_Y), Dst->GetPitch(PLANAR_Y), SrcPicture->Data[0], SrcPicture->Linesize[0], Dst->GetRowSize(PLANAR_Y), Dst->GetHeight(PLANAR_Y));
 		Env->BitBlt(Dst->GetWritePtr(PLANAR_U), Dst->GetPitch(PLANAR_U), SrcPicture->Data[1], SrcPicture->Linesize[1], Dst->GetRowSize(PLANAR_U), Dst->GetHeight(PLANAR_U));
 		Env->BitBlt(Dst->GetWritePtr(PLANAR_V), Dst->GetPitch(PLANAR_V), SrcPicture->Data[2], SrcPicture->Linesize[2], Dst->GetRowSize(PLANAR_V), Dst->GetHeight(PLANAR_V));
-	} else if (VI.IsRGB()) {
-		Env->BitBlt(Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1), -Dst->GetPitch(), SrcPicture->Data[0], SrcPicture->Linesize[0], Dst->GetRowSize(), Dst->GetHeight());
-	} else { // YUY2
+	} else if (VI.IsYUY2()) {
 		Env->BitBlt(Dst->GetWritePtr(), Dst->GetPitch(), SrcPicture->Data[0], SrcPicture->Linesize[0], Dst->GetRowSize(), Dst->GetHeight());
+	} else { // RGB
+		Env->BitBlt(Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1), -Dst->GetPitch(), SrcPicture->Data[0], SrcPicture->Linesize[0], Dst->GetRowSize(), Dst->GetHeight());
 	}
 }
 
@@ -239,8 +243,16 @@ void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst,
 			Env->BitBlt(Dst->GetWritePtr(PLANAR_U) + Dst->GetPitch(PLANAR_U), Dst->GetPitch(PLANAR_U) * 2, SrcPicture->Data[1] + SrcPicture->Linesize[1], SrcPicture->Linesize[1] * 2, Dst->GetRowSize(PLANAR_U), Dst->GetHeight(PLANAR_U) / 2);
 			Env->BitBlt(Dst->GetWritePtr(PLANAR_V) + Dst->GetPitch(PLANAR_V), Dst->GetPitch(PLANAR_V) * 2, SrcPicture->Data[2] + SrcPicture->Linesize[2], SrcPicture->Linesize[2] * 2, Dst->GetRowSize(PLANAR_V), Dst->GetHeight(PLANAR_V) / 2);
 		}
-	} else {
-		Env->ThrowError("FFVideoSource: Unsupported colorspace for RFF flags");
+	} else if (VI.IsYUY2()) {
+		if (Field)
+			Env->BitBlt(Dst->GetWritePtr(), Dst->GetPitch() * 2, SrcPicture->Data[0], SrcPicture->Linesize[0] * 2, Dst->GetRowSize(), Dst->GetHeight() / 2);
+		else
+			Env->BitBlt(Dst->GetWritePtr() + Dst->GetPitch(), Dst->GetPitch() * 2, SrcPicture->Data[0] + SrcPicture->Linesize[0], SrcPicture->Linesize[0] * 2, Dst->GetRowSize(), Dst->GetHeight() / 2);
+	} else { // RGB
+		if (Field)
+			Env->BitBlt(Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1), -Dst->GetPitch() * 2, SrcPicture->Data[0], SrcPicture->Linesize[0] * 2, Dst->GetRowSize(), Dst->GetHeight() / 2);
+		else
+			Env->BitBlt(Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 2), -Dst->GetPitch() * 2, SrcPicture->Data[0] + SrcPicture->Linesize[0], SrcPicture->Linesize[0] * 2, Dst->GetRowSize(), Dst->GetHeight() / 2);
 	}
 }
 

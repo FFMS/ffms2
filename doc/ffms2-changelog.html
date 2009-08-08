@@ -12,12 +12,13 @@ FFmpegSource2 Changelog
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
 <li>2.00 beta 11<ul>
-<li>Now requires the boost headers to compile</li>
+<li>Added support for RFF flags, the three possible modes should be equivalent to the ones found in DGDecode</li>
 <li>Added a workaround for mpeg4 files with NVOPs</li>
 <li>Fixed a bug where the first frame would be corrupted if the colorspace/dimensions were set for the output</li>
 <li>Now VC1 in TS decoding works in many cases</li>
 <li>Added the missing install target to CMake and changed the default output library name (Kovensky)</li>
 <li>Now reverts to using LAVF if Haali's splitter isn't installed (note that LAVF is VERY bad at seeking in these formats)</li>
+<li>Now requires the boost headers (but not libraries) to compile because boost::format is so convenient</li>
 <li>More API changes to return proper error codes and more source cleanups</li>
 <li>Updated FFmpeg to rev X (now compiled with 32 as the maximum number of streams instead of 20 with LAVF)</li>
 </ul></li>
