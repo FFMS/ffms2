@@ -86,8 +86,8 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 	//
 
 	AVPacket Packet, TempPacket;
-	InitNullPacket(&Packet);
-	InitNullPacket(&TempPacket);
+	InitNullPacket(Packet);
+	InitNullPacket(TempPacket);
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
 		// Update progress
 		if (IC) {

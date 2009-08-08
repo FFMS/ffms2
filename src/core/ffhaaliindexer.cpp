@@ -156,7 +156,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 //
 
 	AVPacket TempPacket;
-	InitNullPacket(&TempPacket);
+	InitNullPacket(TempPacket);
 
 	for (;;) {
 		CComPtr<IMMFrame> pMMF;

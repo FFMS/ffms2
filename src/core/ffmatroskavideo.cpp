@@ -133,7 +133,7 @@ void FFMatroskaVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 	int FrameFinished = 0;
 	*AFirstStartTime = -1;
 	AVPacket Packet;
-	InitNullPacket(&Packet);
+	InitNullPacket(Packet);
 
 	ulonglong StartTime, EndTime, FilePos;
 	unsigned int Track, FrameFlags, FrameSize;
@@ -151,6 +151,9 @@ void FFMatroskaVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 		else
 			Packet.flags = 0;
 
+		if (CodecContext->codec_id == CODEC_ID_MPEG4 && IsNVOP(Packet))
+			goto Done;
+
 		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
 
 		if (FrameFinished)
@@ -160,7 +163,7 @@ void FFMatroskaVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 	// Flush the last frames
 	if (CodecContext->has_b_frames) {
 		AVPacket NullPacket;
-		InitNullPacket(&NullPacket);
+		InitNullPacket(NullPacket);
 		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
 	}
 

@@ -146,7 +146,7 @@ void FFMatroskaAudio::DecodeNextAudioBlock(int64_t *Count, int AudioBlock) {
 	*Count = 0;
 	uint8_t *Buf = &DecodingBuffer[0];
 	AVPacket TempPacket;
-	InitNullPacket(&TempPacket);
+	InitNullPacket(TempPacket);
 
 	unsigned int FrameSize = Frames[AudioBlock].FrameSize;
 	ReadFrame(Frames[AudioBlock].FilePos, FrameSize, CS, MC);

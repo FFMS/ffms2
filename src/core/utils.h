@@ -126,7 +126,8 @@ void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
 FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT);
 void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, MatroskaReaderContext &Context);
 bool AudioFMTIsFloat(SampleFormat FMT);
-void InitNullPacket(AVPacket *pkt);
+void InitNullPacket(AVPacket &pkt);
+bool IsNVOP(AVPacket &pkt);
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);
 #ifdef HAALISOURCE
 unsigned vtSize(VARIANT &vt);

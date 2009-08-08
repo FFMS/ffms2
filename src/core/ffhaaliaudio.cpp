@@ -37,7 +37,7 @@ void FFHaaliAudio::DecodeNextAudioBlock(int64_t *AFirstStartTime, int64_t *Count
 	*Count = 0;
 	uint8_t *Buf = &DecodingBuffer[0];
 	AVPacket Packet;
-	InitNullPacket(&Packet);
+	InitNullPacket(Packet);
 
 	for (;;) {
 		CComPtr<IMMFrame> pMMF;

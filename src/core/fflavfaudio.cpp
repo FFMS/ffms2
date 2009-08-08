@@ -72,8 +72,8 @@ void FFLAVFAudio::DecodeNextAudioBlock(int64_t *Count) {
 	*Count = 0;
 	uint8_t *Buf = &DecodingBuffer[0];
 	AVPacket Packet, TempPacket;
-	InitNullPacket(&Packet);
-	InitNullPacket(&TempPacket);
+	InitNullPacket(Packet);
+	InitNullPacket(TempPacket);
 
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
         if (Packet.stream_index == AudioTrack) {
@@ -135,7 +135,7 @@ void FFLAVFAudio::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 		avcodec_flush_buffers(CodecContext);
 
 		AVPacket Packet;
-		InitNullPacket(&Packet);
+		InitNullPacket(Packet);
 
 		// Establish where we actually are
 		// Trigger on packet dts difference since groups can otherwise be indistinguishable

@@ -170,7 +170,7 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 	int FrameFinished = 0;
 	*AFirstStartTime = -1;
 	AVPacket Packet;
-	InitNullPacket(&Packet);
+	InitNullPacket(Packet);
 
 	for (;;) {
 		CComPtr<IMMFrame> pMMF;
@@ -197,6 +197,9 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 				av_bitstream_filter_filter(BitStreamFilter, CodecContext, NULL,
 				&Packet.data, &Packet.size, Data, pMMF->GetActualDataLength(), !!Packet.flags);
 
+			if (CodecContext->codec_id == CODEC_ID_MPEG4 && IsNVOP(Packet))
+				goto Done;
+
 			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
 
 			if (FrameFinished)
@@ -207,7 +210,7 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 	// Flush the last frames
 	if (CodecContext->has_b_frames) {
 		AVPacket NullPacket;
-		InitNullPacket(&NullPacket);
+		InitNullPacket(NullPacket);
 		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
 	}
 

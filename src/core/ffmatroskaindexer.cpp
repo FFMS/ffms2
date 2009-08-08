@@ -129,7 +129,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 	ulonglong StartTime, EndTime, FilePos;
 	unsigned int Track, FrameFlags, FrameSize;
 	AVPacket TempPacket;
-	InitNullPacket(&TempPacket);
+	InitNullPacket(TempPacket);
 
 	while (mkv_ReadFrame(MF, 0, &Track, &StartTime, &EndTime, &FilePos, &FrameSize, &FrameFlags) == 0) {
 		// Update progress

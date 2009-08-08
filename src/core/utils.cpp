@@ -194,10 +194,15 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, 
 	}
 }
 
-void InitNullPacket(AVPacket *pkt) {
-	av_init_packet(pkt);
-	pkt->data = NULL;
-	pkt->size = 0;
+void InitNullPacket(AVPacket &pkt) {
+	av_init_packet(&pkt);
+	pkt.data = NULL;
+	pkt.size = 0;
+}
+
+bool IsNVOP(AVPacket &pkt) {
+	const uint8_t MPEG4NVOP[] = { 0x00, 0x00, 0x01, 0xB6 };
+	return pkt.size == 7 && !memcmp(pkt.data, MPEG4NVOP, 4);
 }
 
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {

@@ -103,7 +103,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
 
 void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 	AVPacket Packet;
-	InitNullPacket(&Packet);
+	InitNullPacket(Packet);
 	int FrameFinished = 0;
 	*AStartTime = -1;
 
@@ -111,6 +111,11 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
         if (Packet.stream_index == VideoTrack) {
 			if (*AStartTime < 0)
 				*AStartTime = Packet.dts;
+
+			if (CodecContext->codec_id == CODEC_ID_MPEG4 && IsNVOP(Packet)) {
+				av_free_packet(&Packet);
+				goto Done;
+			}
 
 			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
         }
@@ -124,7 +129,7 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 	// Flush the last frames
 	if (CodecContext->has_b_frames) {
 		AVPacket NullPacket;
-		InitNullPacket(&NullPacket);
+		InitNullPacket(NullPacket);
 		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
 	}
 
