@@ -71,6 +71,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
 	VP.RFFNumerator = CodecContext->time_base.den;
 	VP.NumFrames = Frames.size();
 	VP.VPixelFormat = CodecContext->pix_fmt;
+	VP.TopFieldFirst = DecodeFrame->top_field_first;
 	VP.FirstTime = ((Frames.front().DTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 	VP.LastTime = ((Frames.back().DTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 

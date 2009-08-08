@@ -29,12 +29,13 @@ extern "C" {
 
 
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
-		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode,
+		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode, int RFFMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 		const char *ConvertToFormatName, IScriptEnvironment* Env) {
 	memset(&VI, 0, sizeof(VI));
 	this->FPSNum = FPSNum;
 	this->FPSDen = FPSDen;
+	this->RFFMode = RFFMode;
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
@@ -47,21 +48,69 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 
 	try {
 		InitOutputFormat(ResizeToWidth, ResizeToHeight, ResizerName, ConvertToFormatName, Env);
-	} catch (...) {
+	} catch (AvisynthError &) {
 		FFMS_DestroyVideoSource(V);
 		throw;
 	}
 
 	const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
 
-	if (FPSNum > 0 && FPSDen > 0) {
-		VI.fps_denominator = FPSDen;
-		VI.fps_numerator = FPSNum;
-		VI.num_frames = static_cast<int>(ceil(((VP->LastTime - VP->FirstTime) * FPSNum) / FPSDen));
+	if (RFFMode > 0) {
+		// This part assumes things, and so should you
+
+		FFMS_Track *VTrack = FFMS_GetTrackFromVideo(V);
+
+		if (FFMS_GetFrameInfo(VTrack, 0)->RepeatPict < 0) {
+			FFMS_DestroyVideoSource(V);
+			Env->ThrowError("FFVideoSource: No RFF flags present");
+		}
+
+		int RepeatMin = 999999999;
+		int NumFields = 0;
+
+		for (int i = 0; i < VP->NumFrames; i++) {
+			int RepeatPict = FFMS_GetFrameInfo(VTrack, i)->RepeatPict;
+			NumFields += RepeatPict + 1;
+			RepeatMin = FFMIN(RepeatMin, RepeatPict);
+		}
+
+		for (int i = 0; i < VP->NumFrames; i++) {
+			int RepeatPict = FFMS_GetFrameInfo(VTrack, i)->RepeatPict;
+
+			if (((RepeatPict + 1) * 2) % (RepeatMin + 1)) {
+				FFMS_DestroyVideoSource(V);
+				Env->ThrowError("FFVideoSource: Unsupported RFF flag pattern");
+			}
+		}
+
+		VI.num_frames = (NumFields + RepeatMin) / (RepeatMin + 1);
+		VI.fps_denominator = VP->RFFDenominator;
+		VI.fps_numerator = VP->RFFNumerator;
+
+		int DestField = 0;
+		FieldList.resize(VI.num_frames);
+		for (int i = 0; i < VP->NumFrames; i++) {
+			int RepeatPict = FFMS_GetFrameInfo(VTrack, i)->RepeatPict;
+			int RepeatFields = ((RepeatPict + 1) * 2) / (RepeatMin + 1);
+
+			for (int j = 0; j < RepeatFields; j++) {
+				if ((DestField + (VP->TopFieldFirst ? 0 : 1)) & 1)
+					FieldList[DestField / 2].Top = i;
+				else
+					FieldList[DestField / 2].Bottom = i;
+				DestField++;
+			}
+		}
 	} else {
-		VI.fps_denominator = VP->FPSDenominator;
-		VI.fps_numerator = VP->FPSNumerator;
-		VI.num_frames = VP->NumFrames;
+		if (FPSNum > 0 && FPSDen > 0) {
+			VI.fps_denominator = FPSDen;
+			VI.fps_numerator = FPSNum;
+			VI.num_frames = static_cast<int>(ceil(((VP->LastTime - VP->FirstTime) * FPSNum) / FPSDen));
+		} else {
+			VI.fps_denominator = VP->FPSDenominator;
+			VI.fps_numerator = VP->FPSNumerator;
+			VI.num_frames = VP->NumFrames;
+		}
 	}
 
 	// Set AR variables
@@ -138,7 +187,17 @@ void AvisynthVideoSource::InitOutputFormat(
 	else
 		Env->ThrowError("FFVideoSource: No suitable output format found");
 
-	VI.image_type = VideoInfo::IT_TFF;
+	if (RFFMode > 0 && ResizeToHeight != VP->Height)
+		Env->ThrowError("FFVideoSource: Vertical scaling not allowed in RFF mode");
+
+	if (RFFMode > 0 && !VI.IsYV12())
+		Env->ThrowError("FFVideoSource: Only YV12 is currently supported in RFF mode");
+
+	if (VP->TopFieldFirst)
+		VI.image_type = VideoInfo::IT_TFF;
+	else
+		VI.image_type = VideoInfo::IT_BFF;
+
 	VI.width = VP->Width;
 	VI.height = VP->Height;
 
@@ -153,9 +212,8 @@ void AvisynthVideoSource::InitOutputFormat(
 	}
 }
 
-PVideoFrame AvisynthVideoSource::OutputFrame(const FFMS_Frame *Frame, IScriptEnvironment *Env) {
+void AvisynthVideoSource::OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env) {
 	FFMS_Frame *SrcPicture = const_cast<FFMS_Frame *>(Frame);
-	PVideoFrame Dst = Env->NewVideoFrame(VI);
 
 	if (VI.pixel_type == VideoInfo::CS_I420) {
 		Env->BitBlt(Dst->GetWritePtr(PLANAR_Y), Dst->GetPitch(PLANAR_Y), SrcPicture->Data[0], SrcPicture->Linesize[0], Dst->GetRowSize(PLANAR_Y), Dst->GetHeight(PLANAR_Y));
@@ -166,8 +224,24 @@ PVideoFrame AvisynthVideoSource::OutputFrame(const FFMS_Frame *Frame, IScriptEnv
 	} else { // YUY2
 		Env->BitBlt(Dst->GetWritePtr(), Dst->GetPitch(), SrcPicture->Data[0], SrcPicture->Linesize[0], Dst->GetRowSize(), Dst->GetHeight());
 	}
+}
 
-	return Dst;
+void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst, int Field, IScriptEnvironment *Env) {
+	const FFMS_Frame *SrcPicture = (Frame);
+
+	if (VI.pixel_type == VideoInfo::CS_I420) {
+		if (Field) {
+			Env->BitBlt(Dst->GetWritePtr(PLANAR_Y), Dst->GetPitch(PLANAR_Y) * 2, SrcPicture->Data[0], SrcPicture->Linesize[0] * 2, Dst->GetRowSize(PLANAR_Y), Dst->GetHeight(PLANAR_Y) / 2);
+			Env->BitBlt(Dst->GetWritePtr(PLANAR_U), Dst->GetPitch(PLANAR_U) * 2, SrcPicture->Data[1], SrcPicture->Linesize[1] * 2, Dst->GetRowSize(PLANAR_U), Dst->GetHeight(PLANAR_U) / 2);
+			Env->BitBlt(Dst->GetWritePtr(PLANAR_V), Dst->GetPitch(PLANAR_V) * 2, SrcPicture->Data[2], SrcPicture->Linesize[2] * 2, Dst->GetRowSize(PLANAR_V), Dst->GetHeight(PLANAR_V) / 2);
+		} else {
+			Env->BitBlt(Dst->GetWritePtr(PLANAR_Y) + Dst->GetPitch(PLANAR_Y), Dst->GetPitch(PLANAR_Y) * 2, SrcPicture->Data[0] + SrcPicture->Linesize[0], SrcPicture->Linesize[0] * 2, Dst->GetRowSize(PLANAR_Y), Dst->GetHeight(PLANAR_Y) / 2);
+			Env->BitBlt(Dst->GetWritePtr(PLANAR_U) + Dst->GetPitch(PLANAR_U), Dst->GetPitch(PLANAR_U) * 2, SrcPicture->Data[1] + SrcPicture->Linesize[1], SrcPicture->Linesize[1] * 2, Dst->GetRowSize(PLANAR_U), Dst->GetHeight(PLANAR_U) / 2);
+			Env->BitBlt(Dst->GetWritePtr(PLANAR_V) + Dst->GetPitch(PLANAR_V), Dst->GetPitch(PLANAR_V) * 2, SrcPicture->Data[2] + SrcPicture->Linesize[2], SrcPicture->Linesize[2] * 2, Dst->GetRowSize(PLANAR_V), Dst->GetHeight(PLANAR_V) / 2);
+		}
+	} else {
+		Env->ThrowError("FFVideoSource: Unsupported colorspace for RFF flags");
+	}
 }
 
 PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
@@ -176,19 +250,43 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 	E.Buffer = ErrorMsg;
 	E.BufferSize = sizeof(ErrorMsg);
 
-	const FFMS_Frame *Frame;
+	PVideoFrame Dst = Env->NewVideoFrame(VI);
 
-	if (FPSNum > 0 && FPSDen > 0)
-		Frame = FFMS_GetFrameByTime(V, FFMS_GetVideoProperties(V)->FirstTime +
-		(double)(n * (int64_t)FPSDen) / FPSNum, &E);
-	else
-		Frame = FFMS_GetFrame(V, n, &E);
+	if (RFFMode > 0) {
+		const FFMS_Frame *Frame = FFMS_GetFrame(V, FFMIN(FieldList[n].Top, FieldList[n].Bottom), &E);
+		if (Frame == NULL)
+			Env->ThrowError("FFVideoSource: %s", E.Buffer);
+		if (FieldList[n].Top == FieldList[n].Bottom) {
+			OutputFrame(Frame, Dst, Env);
+		} else {
+			int FirstField = FFMIN(FieldList[n].Top, FieldList[n].Bottom) == FieldList[n].Bottom;
+			OutputField(Frame, Dst, FirstField, Env);
+			Frame = FFMS_GetFrame(V, FFMAX(FieldList[n].Top, FieldList[n].Bottom), &E);
+			if (Frame == NULL)
+				Env->ThrowError("FFVideoSource: %s", E.Buffer);
+			OutputField(Frame, Dst, !FirstField, Env);
+		}
+	} else {
+		const FFMS_Frame *Frame;
 
-	if (Frame == NULL)
-		Env->ThrowError("FFVideoSource: %s", E.Buffer);
+		if (FPSNum > 0 && FPSDen > 0)
+			Frame = FFMS_GetFrameByTime(V, FFMS_GetVideoProperties(V)->FirstTime +
+			(double)(n * (int64_t)FPSDen) / FPSNum, &E);
+		else
+			Frame = FFMS_GetFrame(V, n, &E);
 
-	Env->SetVar("FFPICT_TYPE", static_cast<int>(Frame->PictType));
-	return OutputFrame(Frame, Env);
+		if (Frame == NULL)
+			Env->ThrowError("FFVideoSource: %s", E.Buffer);
+
+		Env->SetVar("FFPICT_TYPE", static_cast<int>(Frame->PictType));
+		OutputFrame(Frame, Dst, Env);
+	}
+
+	return Dst;
+}
+
+bool AvisynthVideoSource::GetParity(int n) {
+	return VI.image_type == VideoInfo::IT_TFF;
 }
 
 AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, IScriptEnvironment* Env) {

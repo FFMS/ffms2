@@ -21,9 +21,17 @@
 #ifndef FFAVSSOURCES_H
 #define FFAVSSOURCES_H
 
+#include <vector>
 #include <windows.h>
 #include "avisynth.h"
 #include "ffms.h"
+
+
+
+struct FrameFields {
+	int Top;
+	int Bottom;
+};
 
 class AvisynthVideoSource : public IClip {
 private:
@@ -31,17 +39,20 @@ private:
 	FFMS_VideoSource *V;
 	int FPSNum;
 	int FPSDen;
+	int RFFMode;
+	std::vector<FrameFields> FieldList;
 
 	void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 		const char *ResizerName, const char *ConvertToFormatName,IScriptEnvironment *Env);
-	PVideoFrame OutputFrame(const FFMS_Frame *SrcPicture, IScriptEnvironment *Env);
+	void OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env);
+	void OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst, int Field, IScriptEnvironment *Env);
 public:
 	AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
-		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode,
+		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode, int RFFMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 		const char *ConvertToFormatName, IScriptEnvironment* Env);
 	~AvisynthVideoSource();
-	bool __stdcall GetParity(int n) { return false; }
+	bool __stdcall GetParity(int n);
 	void __stdcall SetCacheHints(int cachehints, int frame_range) { }
 	const VideoInfo& __stdcall GetVideoInfo() { return VI; }
 	void __stdcall GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env) { }

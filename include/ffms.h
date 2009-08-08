@@ -209,6 +209,7 @@ struct FFMS_VideoProperties {
 	int CropBottom;
 	int CropLeft;
 	int CropRight;
+	int TopFieldFirst;
 	double FirstTime;
 	double LastTime;
 };
