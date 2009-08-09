@@ -32,10 +32,10 @@ int AvisynthToFFCPUFlags(long AvisynthFlags) {
 	int Flags = 0;
 
 	if (AvisynthFlags & CPUF_MMX)
-		Flags |= FFMS_CPU_CAPS_MMX;
+		Flags |= SWS_CPU_CAPS_MMX;
 
 	if (AvisynthFlags & CPUF_INTEGER_SSE)
-		Flags |= FFMS_CPU_CAPS_MMX2;
+		Flags |= SWS_CPU_CAPS_MMX2;
 
 	return Flags;
 }
