@@ -29,7 +29,7 @@ void FFLAVFVideo::Free(bool CloseCodec) {
 }
 
 FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
-	const char *PP, int Threads, int SeekMode)
+	int Threads, int SeekMode)
 	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track) {
 
 	FormatContext = NULL;
@@ -84,8 +84,6 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
 		VP.FPSDenominator = 1;
 		VP.FPSNumerator = 30;
 	}
-
-	InitPP(PP);
 
 	// Adjust framerate to match the duration of the first frame
 	if (Frames.size() >= 2) {

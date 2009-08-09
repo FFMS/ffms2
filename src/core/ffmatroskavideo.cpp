@@ -35,7 +35,7 @@ void FFMatroskaVideo::Free(bool CloseCodec) {
 }
 
 FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
-	FFMS_Index *Index, const char *PP, int Threads)
+	FFMS_Index *Index, int Threads)
 	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track) {
 
 	AVCodec *Codec = NULL;
@@ -106,8 +106,6 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	if (VP.Width <= 0 || VP.Height <= 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Codec returned zero size video");
-
-	InitPP(PP);
 
 	// Calculate the average framerate
 	if (Frames.size() >= 2) {

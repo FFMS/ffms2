@@ -97,21 +97,21 @@ FFMS_API(void) FFMS_SetLogLevel(int Level) {
 	av_log_set_level(Level);
 }
 
-FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFMS_Index *Index, const char *PP, int Threads, int SeekMode, FFMS_ErrorInfo *ErrorInfo) {
+FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, int SeekMode, FFMS_ErrorInfo *ErrorInfo) {
 	try {
 		switch (Index->Decoder) {
 			case FFMS_SOURCE_LAVF:
-				return new FFLAVFVideo(SourceFile, Track, Index, PP, Threads, SeekMode);
+				return new FFLAVFVideo(SourceFile, Track, Index, Threads, SeekMode);
 			case FFMS_SOURCE_MATROSKA:
-				return new FFMatroskaVideo(SourceFile, Track, Index, PP, Threads);
+				return new FFMatroskaVideo(SourceFile, Track, Index, Threads);
 #ifdef HAALISOURCE
 			case FFMS_SOURCE_HAALIMPEG:
 				if (HasHaaliMPEG)
-					return new FFHaaliVideo(SourceFile, Track, Index, PP, Threads, FFMS_SOURCE_HAALIMPEG);
+					return new FFHaaliVideo(SourceFile, Track, Index, Threads, FFMS_SOURCE_HAALIMPEG);
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali MPEG/TS source unavailable");
 			case FFMS_SOURCE_HAALIOGG:
 				if (HasHaaliOGG)
-					return new FFHaaliVideo(SourceFile, Track, Index, PP, Threads, FFMS_SOURCE_HAALIOGG);
+					return new FFHaaliVideo(SourceFile, Track, Index, Threads, FFMS_SOURCE_HAALIOGG);
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali OGG/OGM source unavailable");
 #endif
 			default:
@@ -207,6 +207,20 @@ FFMS_API(int) FFMS_SetOutputFormatV(FFMS_VideoSource *V, int64_t TargetFormats, 
 
 FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V) {
 	V->ResetOutputFormat();
+}
+
+FFMS_API(int) FFMS_SetPP(FFMS_VideoSource *V, const char *PP, FFMS_ErrorInfo *ErrorInfo) {
+	ClearErrorInfo(ErrorInfo);
+	try {
+		V->SetPP(PP);
+	} catch (FFMS_Exception &e) {
+		return e.CopyOut(ErrorInfo);
+	}
+	return FFMS_ERROR_SUCCESS;
+}
+
+FFMS_API(void) FFMS_ResetPP(FFMS_VideoSource *V) {
+	V->ResetPP();
 }
 
 FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {

@@ -193,7 +193,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
     <b>0:</b> Ignore all flags<br />
     <b>1:</b> Honor all pulldown flags<br />
     <b>2:</b> Equivalent to force film<br />
-  Note that setting rffmode &gt; 0 will throw an error if the video stream has no RFF flags at all. When engaged it will also make the output be assumed as CFR, disallow vertical scaling and setting the output colorspace. Other subtle behavior changes may also exist.
+  Note that setting rffmode &gt; 0 will throw an error if the video stream has no RFF flags at all. When engaged it will also make the output be assumed as CFR, disallow vertical scaling and setting the output colorspace. FFPICT_TYPE will also not be set as the output is a combination of several frames. Other subtle behavior changes may also exist.
 </p>
 
 <p>

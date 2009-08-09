@@ -42,9 +42,14 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 	E.Buffer = ErrorMsg;
 	E.BufferSize = sizeof(ErrorMsg);
 
-	V = FFMS_CreateVideoSource(SourceFile, Track, Index, PP, Threads, SeekMode, &E);
+	V = FFMS_CreateVideoSource(SourceFile, Track, Index, Threads, SeekMode, &E);
 	if (!V)
 		Env->ThrowError(E.Buffer);
+
+	if (FFMS_SetPP(V, PP, &E)) {
+		FFMS_DestroyVideoSource(V);
+		Env->ThrowError("FFVideoSource: %s", E.Buffer);
+	}
 
 	try {
 		InitOutputFormat(ResizeToWidth, ResizeToHeight, ResizerName, ConvertToFormatName, Env);
@@ -83,23 +88,28 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 			}
 		}
 
-		VI.num_frames = (NumFields + RepeatMin) / (RepeatMin + 1);
 		VI.fps_denominator = VP->RFFDenominator;
 		VI.fps_numerator = VP->RFFNumerator;
 
-		int DestField = 0;
-		FieldList.resize(VI.num_frames);
-		for (int i = 0; i < VP->NumFrames; i++) {
-			int RepeatPict = FFMS_GetFrameInfo(VTrack, i)->RepeatPict;
-			int RepeatFields = ((RepeatPict + 1) * 2) / (RepeatMin + 1);
+		if (RFFMode == 1) {
+			VI.num_frames = (NumFields + RepeatMin) / (RepeatMin + 1);
 
-			for (int j = 0; j < RepeatFields; j++) {
-				if ((DestField + (VP->TopFieldFirst ? 0 : 1)) & 1)
-					FieldList[DestField / 2].Top = i;
-				else
-					FieldList[DestField / 2].Bottom = i;
-				DestField++;
+			int DestField = 0;
+			FieldList.resize(VI.num_frames);
+			for (int i = 0; i < VP->NumFrames; i++) {
+				int RepeatPict = FFMS_GetFrameInfo(VTrack, i)->RepeatPict;
+				int RepeatFields = ((RepeatPict + 1) * 2) / (RepeatMin + 1);
+
+				for (int j = 0; j < RepeatFields; j++) {
+					if ((DestField + (VP->TopFieldFirst ? 0 : 1)) & 1)
+						FieldList[DestField / 2].Top = i;
+					else
+						FieldList[DestField / 2].Bottom = i;
+					DestField++;
+				}
 			}
+		} else if (RFFMode == 2) {
+			//VI.num_frames =
 		}
 	} else {
 		if (FPSNum > 0 && FPSDen > 0) {

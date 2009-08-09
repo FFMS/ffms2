@@ -20,17 +20,44 @@
 
 #include "ffvideosource.h"
 
-void FFMS_VideoSource::InitPP(const char *PP) {
-	if (PP == NULL || !strcmp(PP, ""))
-		return;
 
-	PPMode = pp_get_mode_by_name_and_quality(PP, PP_QUALITY_MAX);
-	if (!PPMode)
-		throw FFMS_Exception(FFMS_ERROR_POSTPROCESSING, FFMS_ERROR_INVALID_ARGUMENT,
-			"Invalid postprocesing settings");
+
+void FFMS_VideoSource::SetPP(const char *PP) {
+	if (PPMode)
+		pp_free_mode(PPMode);
+	PPMode = NULL;
+
+	if (PP != NULL && strcmp(PP, "")) {
+		PPMode = pp_get_mode_by_name_and_quality(PP, PP_QUALITY_MAX);
+		if (!PPMode) {
+			ResetPP();
+			throw FFMS_Exception(FFMS_ERROR_POSTPROCESSING, FFMS_ERROR_INVALID_ARGUMENT,
+				"Invalid postprocesing settings");
+		}
+
+	}
+
+	ReAdjustPP(CodecContext->pix_fmt, CodecContext->width, CodecContext->height);
+	OutputFrame(DecodeFrame);
+}
+
+void FFMS_VideoSource::ResetPP() {
+	if (PPContext)
+		pp_free_context(PPContext);
+	PPContext = NULL;
+
+	if (PPMode)
+		pp_free_mode(PPMode);
+	PPMode = NULL;
+
+	OutputFrame(DecodeFrame);
 }
 
 void FFMS_VideoSource::ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height) {
+	if (PPContext)
+		pp_free_context(PPContext);
+	PPContext = NULL;
+
 	if (!PPMode)
 		return;
 
@@ -42,12 +69,11 @@ void FFMS_VideoSource::ReAdjustPP(PixelFormat VPixelFormat, int Width, int Heigh
 		case PIX_FMT_YUV411P: Flags |= PP_FORMAT_411; break;
 		case PIX_FMT_YUV444P: Flags |= PP_FORMAT_444; break;
 		default:
+			ResetPP();
 			throw FFMS_Exception(FFMS_ERROR_POSTPROCESSING, FFMS_ERROR_UNSUPPORTED,
 				"The video does not have a colorspace suitable for postprocessing");
 	}
 
-	if (PPContext)
-		pp_free_context(PPContext);
 	PPContext = pp_get_context(Width, Height, Flags);
 
 	avpicture_free(&PPFrame);

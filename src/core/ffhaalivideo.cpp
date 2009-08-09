@@ -33,8 +33,7 @@ void FFHaaliVideo::Free(bool CloseCodec) {
 }
 
 FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
-	FFMS_Index *Index, const char *PP,
-	int Threads, enum FFMS_Sources SourceMode)
+	FFMS_Index *Index, int Threads, enum FFMS_Sources SourceMode)
 	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track) {
 
 	BitStreamFilter = NULL;
@@ -143,8 +142,6 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	if (VP.Width <= 0 || VP.Height <= 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Codec returned zero size video");
-
-	InitPP(PP);
 
 	// Calculate the average framerate
 	if (Frames.size() >= 2) {
