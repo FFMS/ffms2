@@ -32,6 +32,7 @@ Donate if you like this software. Collecting weird clips from the internet and m
 <ul>
 <li>Requires <a href='http://haali.cs.msu.ru/mkv/'>Haali's Media Splitter</a> if ogm or mpeg ps/ts is to be opened.</li>
 <li>Haali's splitter requires transport streams to be cut at packet boundaries. Use <a href='http://forum.doom9.org/showthread.php?t=125447'>TsRemux</a> to fix the stream before trying to open it.</li>
+<li>Because of LAVF's demuxer most raw streams will fail to work properly such as elementary h264 and other mpeg video streams.</li>
 <li>FFAudioSource() will have to remake any index implicitly created by FFVideoSource() and therefore code like
 <pre>
 AudioDub(FFVideoSource(X), FFAudioSource(X))
