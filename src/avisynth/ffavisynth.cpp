@@ -58,11 +58,6 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 	if (!strcmp(AudioFile, ""))
 		Env->ThrowError("FFIndex: Specifying an empty audio filename is not allowed");
 
-	// Return values
-	// 0: Index already present
-	// 1: Index generated
-	// 2: Index forced to be overwritten
-
 	FFMS_Index *Index = NULL;
 	if (OverWrite || !(Index = FFMS_ReadIndex(CacheFile, &E))) {
 		if (!(Index = FFMS_MakeIndex(Source, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, true, NULL, NULL, &E)))
@@ -117,8 +112,9 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 
 	if (Threads <= 0)
 		Threads = GetNumberOfLogicalCPUs();
-	if (Threads < 1)
-		Env->ThrowError("FFVideoSource: Invalid thread count");
+
+	if (RFFMode < 0 || RFFMode > 2)
+		Env->ThrowError("FFVideoSource: Invalid RFF mode selected");
 
 	if (!_stricmp(Source, Timecodes))
 		Env->ThrowError("FFVideoSource: Timecodes will overwrite the source");

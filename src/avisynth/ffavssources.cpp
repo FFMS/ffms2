@@ -70,7 +70,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 			Env->ThrowError("FFVideoSource: No RFF flags present");
 		}
 
-		int RepeatMin = 999999999;
+		int RepeatMin = FFMS_GetFrameInfo(VTrack, 0)->RepeatPict;;
 		int NumFields = 0;
 
 		for (int i = 0; i < VP->NumFrames; i++) {
@@ -93,7 +93,6 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 
 		if (RFFMode == 1) {
 			VI.num_frames = (NumFields + RepeatMin) / (RepeatMin + 1);
-
 			int DestField = 0;
 			FieldList.resize(VI.num_frames);
 			for (int i = 0; i < VP->NumFrames; i++) {
@@ -109,7 +108,23 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 				}
 			}
 		} else if (RFFMode == 2) {
-			//VI.num_frames =
+			VI.num_frames = (NumFields + RepeatMin) / (RepeatMin + 1);
+			VI.num_frames = (VI.num_frames * 4 + 4) / 5 + 5;
+			FieldList.resize(VI.num_frames);
+
+			int NumFields = 0;
+			int OutputFrames = 0;
+
+			for (int i = 0; i < VP->NumFrames; i++) {
+				int RepeatPict = FFMS_GetFrameInfo(VTrack, i)->RepeatPict;
+				NumFields += ((RepeatPict + 1) * 2) / (RepeatMin + 1);
+
+				while ((NumFields/2 - (OutputFrames*4 + 4)/5) < 0) {
+						FieldList[OutputFrames].Top = i;
+						FieldList[OutputFrames].Bottom = i;
+						OutputFrames++;
+				}
+			}
 		}
 	} else {
 		if (FPSNum > 0 && FPSDen > 0) {
