@@ -114,7 +114,7 @@ class FFMS_Indexer {
 protected:
 	int IndexMask;
 	int DumpMask;
-	bool IgnoreDecodeErrors;
+	int ErrorHandling;
 	TIndexCallback IC;
 	void *ICPrivate;
 	TAudioNameCallback ANC;
@@ -132,7 +132,7 @@ public:
 	virtual ~FFMS_Indexer();
 	void SetIndexMask(int IndexMask);
 	void SetDumpMask(int DumpMask);
-	void SetIgnoreDecodeErrors(bool IgnoreDecodeErrors);
+	void SetErrorHandling(int ErrorHandling);
 	void SetProgressCallback(TIndexCallback IC, void *ICPrivate);
 	void SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate);
 	virtual FFMS_Index *DoIndexing() = 0;

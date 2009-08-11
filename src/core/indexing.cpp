@@ -345,8 +345,12 @@ void FFMS_Indexer::SetDumpMask(int DumpMask) {
 	this->DumpMask = DumpMask;
 }
 
-void FFMS_Indexer::SetIgnoreDecodeErrors(bool IgnoreDecodeErrors) {
-	this->IgnoreDecodeErrors = IgnoreDecodeErrors;
+void FFMS_Indexer::SetErrorHandling(int ErrorHandling) {
+	if (ErrorHandling != FFMS_IEH_ABORT && ErrorHandling != FFMS_IEH_CLEAR_TRACK &&
+		ErrorHandling != FFMS_IEH_STOP_TRACK && ErrorHandling != FFMS_IEH_IGNORE)
+		throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_INVALID_ARGUMENT,
+			"Invalid error handling mode specified");
+	this->ErrorHandling = ErrorHandling;
 }
 
 void FFMS_Indexer::SetProgressCallback(TIndexCallback IC, void *ICPrivate) {
@@ -389,6 +393,14 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename) {
 }
 
 FFMS_Indexer::FFMS_Indexer(const char *Filename) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 5) {
+	IndexMask = 0;
+	DumpMask = 0;
+	ErrorHandling = FFMS_IEH_CLEAR_TRACK;
+	IC = NULL;
+	ICPrivate = NULL;
+	ANC = NULL;
+	ANCPrivate = NULL;
+
 	FFMS_Index::CalculateFileSignature(Filename, &Filesize, Digest);
 }
 

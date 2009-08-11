@@ -119,13 +119,18 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 				int dbsize = AVCODEC_MAX_AUDIO_FRAME_SIZE*10;
 				int Ret = avcodec_decode_audio3(AudioCodecContext, &DecodingBuffer[0], &dbsize, &TempPacket);
 				if (Ret < 0) {
-					if (IgnoreDecodeErrors) {
+					if (ErrorHandling == FFMS_IEH_ABORT) {
+						throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
+							"Audio decoding error");
+					} else if (ErrorHandling == FFMS_IEH_CLEAR_TRACK) {
 						(*TrackIndices)[Packet.stream_index].clear();
 						IndexMask &= ~(1 << Packet.stream_index);
 						break;
-					} else {
-						throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
-							"Audio decoding error");
+					} else if (ErrorHandling == FFMS_IEH_STOP_TRACK) {
+						IndexMask &= ~(1 << Packet.stream_index);
+						break;
+					} else if (ErrorHandling == FFMS_IEH_IGNORE) {
+						break;
 					}
 				}
 

@@ -48,7 +48,8 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 	int IndexMask = Args[2].AsInt(-1);
 	int DumpMask = Args[3].AsInt(0);
 	const char *AudioFile = Args[4].AsString("%sourcefile%.%trackzn%.w64");
-	bool OverWrite = Args[5].AsBool(false);
+	int ErrorHandling = Args[5].AsInt(FFMS_IEH_IGNORE);
+	bool OverWrite = Args[6].AsBool(false);
 
 	std::string DefaultCache(Source);
 	DefaultCache.append(".ffindex");
@@ -258,7 +259,7 @@ static AVSValue __cdecl FFSetLogLevel(AVSValue Args, void* UserData, IScriptEnvi
 }
 
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScriptEnvironment* Env) {
-    Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[overwrite]b", CreateFFIndex, 0);
+    Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b", CreateFFIndex, 0);
 	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s", CreateFFVideoSource, 0);
     Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s", CreateFFAudioSource, 0);
 	Env->AddFunction("FFPP", "c[pp]s", CreateFFPP, 0);

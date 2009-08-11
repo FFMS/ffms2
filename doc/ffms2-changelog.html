@@ -12,6 +12,7 @@ FFmpegSource2 Changelog
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
 <li>2.00 beta 11<ul>
+<li>It is now possible to force indexing of broken tracks when FFIndex and from the API, this can in many cases help when the last frame of an avi file is corrupted which would otherwise prevent indexing of all working data</li>
 <li>Fixed a bug that would prevent the SWScale and FFPP filters from working because of randomly added flags</li>
 <li>Added support for RFF flags, the three possible modes should be equivalent to the ones found in DGDecode</li>
 <li>Added a workaround for mpeg4 files with NVOPs</li>

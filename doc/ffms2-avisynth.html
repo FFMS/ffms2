@@ -78,7 +78,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 </p>
 
 <p>
-<b>FFIndex(string source, string cachefile = source + ".ffindex", int indexmask = -1, int dumpmask = 0, string audiofile = "%sourcefile%.%trackzn%.w64", bool overwrite = false)</b><br />
+<b>FFIndex(string source, string cachefile = source + ".ffindex", int indexmask = -1, int dumpmask = 0, string audiofile = "%sourcefile%.%trackzn%.w64", int errorhandling = 3, bool overwrite = false)</b><br />
  Used to invoke indexing separately with a few additional options and to write audio tracks to disk as wave64 files. It can be useful to use to avoid remaking the index twice or if some audio tracks are unsupported/broken and cannot be indexed properly.
 </p>
 
@@ -209,6 +209,15 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 <p>
 <b>colorspace:</b>
   The colorspace to convert to. The names are YV12, YUY2, RGB24, RGB32 and the empty string for same as input.
+</p>
+
+<p>
+<b>errorhandling:</b>
+  Controls what happens when an audio decoding error is encountered<br />
+    <b>0:</b> Abort indexing<br />
+    <b>1:</b> Clear the affected track and continue<br />
+    <b>2:</b> Stop indexing the track but keep all the index entries so far<br />
+    <b>3:</b> Continue anyway<br />
 </p>
 
 <h2>Exported Avisynth variables</h2>

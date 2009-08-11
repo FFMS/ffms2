@@ -308,11 +308,11 @@ FFMS_API(int) FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, FFMS_
 	return FFMS_ERROR_SUCCESS;
 }
 
-FFMS_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
+FFMS_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
 	FFMS_Indexer *Indexer = FFMS_CreateIndexer(SourceFile, ErrorInfo);
 	if (!Indexer)
 		return NULL;
-	return FFMS_DoIndexing(Indexer, IndexMask, DumpMask, ANC, ANCPrivate, IgnoreDecodeErrors, IC, ICPrivate, ErrorInfo);
+	return FFMS_DoIndexing(Indexer, IndexMask, DumpMask, ANC, ANCPrivate, ErrorHandling, IC, ICPrivate, ErrorInfo);
 }
 
 /* Used by FFMS_DefaultAudioFilename */
@@ -358,13 +358,15 @@ FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorIn
 	}
 }
 
-FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
+FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
+
 	Indexer->SetIndexMask(IndexMask | DumpMask);
 	Indexer->SetDumpMask(DumpMask);
-	Indexer->SetIgnoreDecodeErrors(IgnoreDecodeErrors);
+	Indexer->SetErrorHandling(ErrorHandling);
 	Indexer->SetProgressCallback(IC, ICPrivate);
 	Indexer->SetAudioNameCallback(ANC, ANCPrivate);
+
 	FFMS_Index *Index = NULL;
 	try {
 		Index = Indexer->DoIndexing();

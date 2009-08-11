@@ -113,6 +113,13 @@ enum FFMS_SeekMode {
 	FFMS_SEEK_AGGRESSIVE	= 3
 };
 
+enum FFMS_IndexErrorHandling {
+	FFMS_IEH_ABORT = 0,
+	FFMS_IEH_CLEAR_TRACK = 1,
+	FFMS_IEH_STOP_TRACK = 2,
+	FFMS_IEH_IGNORE = 3
+};
+
 enum FFMS_TrackType {
 	FFMS_TYPE_UNKNOWN = -1,
 	FFMS_TYPE_VIDEO,
@@ -261,10 +268,10 @@ FFMS_API(FFMS_Track *) FFMS_GetTrackFromVideo(FFMS_VideoSource *V);
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromAudio(FFMS_AudioSource *A);
 FFMS_API(const FFMS_TrackTimeBase *) FFMS_GetTimeBase(FFMS_Track *T);
 FFMS_API(int) FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, FFMS_ErrorInfo *ErrorInfo);
-FFMS_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo);
+FFMS_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int FNSize, void *Private);
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo);
-FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, bool IgnoreDecodeErrors, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo);
+FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(void) FFMS_CancelIndexing(FFMS_Indexer *Indexer);
 FFMS_API(FFMS_Index *) FFMS_ReadIndex(const char *IndexFile, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_IndexBelongsToFile(FFMS_Index *Index, const char *SourceFile, FFMS_ErrorInfo *ErrorInfo);
