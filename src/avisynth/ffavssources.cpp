@@ -91,7 +91,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 		VI.fps_denominator = VP->RFFDenominator;
 		VI.fps_numerator = VP->RFFNumerator;
 
-		if (RFFMode == 1) {
+		if (RFFMode >= 1) {
 			VI.num_frames = (NumFields + RepeatMin) / (RepeatMin + 1);
 			int DestField = 0;
 			FieldList.resize(VI.num_frames);
@@ -107,24 +107,42 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 					DestField++;
 				}
 			}
-		} else if (RFFMode == 2) {
-			VI.num_frames = (NumFields + RepeatMin) / (RepeatMin + 1);
-			VI.num_frames = (VI.num_frames * 4 + 4) / 5 + 5;
-			FieldList.resize(VI.num_frames);
+		}
 
-			int NumFields = 0;
+		if (RFFMode == 2) {
+			VI.num_frames = (VI.num_frames * 4 + 4) / 5;
+
 			int OutputFrames = 0;
 
-			for (int i = 0; i < VP->NumFrames; i++) {
-				int RepeatPict = FFMS_GetFrameInfo(VTrack, i)->RepeatPict;
-				NumFields += ((RepeatPict + 1) * 2) / (RepeatMin + 1);
+			for (int i = 0; i < VI.num_frames / 4; i++) {
+				bool HasDropped = false;
 
-				while ((NumFields/2 - (OutputFrames*4 + 4)/5) < 0) {
-						FieldList[OutputFrames].Top = i;
-						FieldList[OutputFrames].Bottom = i;
-						OutputFrames++;
+				FieldList[OutputFrames].Top = FieldList[i * 5].Top;
+				FieldList[OutputFrames].Bottom = FieldList[i * 5].Top;
+				OutputFrames++;
+
+				for (int j = 1; j < 5; j++) {
+					if (!HasDropped && FieldList[i * 5 + j - 1].Top == FieldList[i * 5 + j].Top) {
+						HasDropped = true;
+						continue;
+					}
+
+					FieldList[OutputFrames].Top = FieldList[i * 5 + j].Top;
+					FieldList[OutputFrames].Bottom = FieldList[i * 5 + j].Top;
+					OutputFrames++;
 				}
+
+				if (!HasDropped)
+					OutputFrames--;
 			}
+
+			if (OutputFrames > 0)
+				for (int i = OutputFrames - 1; i < FieldList.size(); i++) {
+						FieldList[i].Top = FieldList[OutputFrames - 1].Top;
+						FieldList[i].Bottom = FieldList[OutputFrames - 1].Top;
+				}
+
+			FieldList.resize(VI.num_frames);
 		}
 	} else {
 		if (FPSNum > 0 && FPSDen > 0) {
@@ -282,6 +300,8 @@ void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst,
 }
 
 PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
+	n = FFMIN(FFMAX(n,0), VI.num_frames - 1);
+
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
 	E.Buffer = ErrorMsg;
