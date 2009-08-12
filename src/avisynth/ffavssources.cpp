@@ -88,11 +88,11 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 			}
 		}
 
-		VI.fps_denominator = VP->RFFDenominator;
-		VI.fps_numerator = VP->RFFNumerator;
-
 		if (RFFMode >= 1) {
+			VI.fps_denominator = VP->RFFDenominator * 2;
+			VI.fps_numerator = VP->RFFNumerator;
 			VI.num_frames = (NumFields + RepeatMin) / (RepeatMin + 1);
+
 			int DestField = 0;
 			FieldList.resize(VI.num_frames);
 			for (int i = 0; i < VP->NumFrames; i++) {
@@ -111,6 +111,8 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 
 		if (RFFMode == 2) {
 			VI.num_frames = (VI.num_frames * 4 + 4) / 5;
+			VI.fps_denominator = VP->RFFDenominator * 5;
+			VI.fps_numerator = VP->RFFNumerator * 2;
 
 			int OutputFrames = 0;
 
@@ -137,7 +139,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 			}
 
 			if (OutputFrames > 0)
-				for (int i = OutputFrames - 1; i < FieldList.size(); i++) {
+				for (int i = OutputFrames - 1; i < static_cast<int>(FieldList.size()); i++) {
 						FieldList[i].Top = FieldList[OutputFrames - 1].Top;
 						FieldList[i].Bottom = FieldList[OutputFrames - 1].Top;
 				}
