@@ -3,7 +3,7 @@
 
 function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", \
 	string "cachefile", int "fpsnum", int "fpsden", string "pp", int "threads", \
-	string "timecodes", int "seekmode", bool "overwrite", int "width", int "height",
+	string "timecodes", int "seekmode", bool "overwrite", int "width", int "height", \
 	string "colorspace", int "rffmode") {
 	
 	vtrack 		= default(vtrack,-1)
