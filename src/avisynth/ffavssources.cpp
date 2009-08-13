@@ -89,7 +89,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 		}
 
 		if (RFFMode >= 1) {
-			VI.fps_denominator = VP->RFFDenominator * 2;
+			VI.fps_denominator = VP->RFFDenominator * (RepeatMin + 1);
 			VI.fps_numerator = VP->RFFNumerator;
 			VI.num_frames = (NumFields + RepeatMin) / (RepeatMin + 1);
 
@@ -111,8 +111,8 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 
 		if (RFFMode == 2) {
 			VI.num_frames = (VI.num_frames * 4 + 4) / 5;
-			VI.fps_denominator = VP->RFFDenominator * 5;
-			VI.fps_numerator = VP->RFFNumerator * 2;
+			VI.fps_denominator *= 5;
+			VI.fps_numerator *= 4;
 
 			int OutputFrames = 0;
 
