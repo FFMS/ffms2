@@ -12,6 +12,7 @@ FFmpegSource2 Changelog
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
 <li>2.00 beta 11<ul>
+<li>Now exports the actual frame presentation time in FFVFR_TIME, added the general information function FFInfo() and FFFormatTime() functions to ffms2.avsi in addition to fixing the missing backslash</li>
 <li>The seek/read method has been changed in the matroska video source to only need the information in the index and nothing more, this matches the audio source and should make seeking faster in some cases</li>
 <li>No longer drops the last audio frame</li>
 <li>It is now possible to force indexing of broken tracks when using FFIndex and from the API, this can in many cases help when the last frame of an avi file is corrupted which would otherwise prevent indexing of all working data</li>

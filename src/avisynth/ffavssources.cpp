@@ -328,11 +328,15 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 	} else {
 		const FFMS_Frame *Frame;
 
-		if (FPSNum > 0 && FPSDen > 0)
+		if (FPSNum > 0 && FPSDen > 0) {
 			Frame = FFMS_GetFrameByTime(V, FFMS_GetVideoProperties(V)->FirstTime +
-			(double)(n * (int64_t)FPSDen) / FPSNum, &E);
-		else
+				(double)(n * (int64_t)FPSDen) / FPSNum, &E);
+		} else {
 			Frame = FFMS_GetFrame(V, n, &E);
+			FFMS_Track *T = FFMS_GetTrackFromVideo(V);
+			const FFMS_TrackTimeBase *TB = FFMS_GetTimeBase(T);
+			Env->SetVar("FFVFR_TIME", static_cast<int>(FFMS_GetFrameInfo(T, n)->DTS * static_cast<double>(TB->Num) / TB->Den));
+		}
 
 		if (Frame == NULL)
 			Env->ThrowError("FFVideoSource: %s", E.Buffer);

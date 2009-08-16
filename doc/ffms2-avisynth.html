@@ -233,7 +233,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <p>
 <b>FFPICT_TYPE:</b>
- The picture type of the most recently requested frame as the ascii number of the character listed below. Use Chr() to convert it to an actual letter in avisynth. Use after_frame=true in Avisynth's conditional scripting for proper results. The FFmpeg source definition of the numbers:
+ The picture type of the most recently requested frame as the ascii number of the character listed below. Use Chr() to convert it to an actual letter in avisynth. Use after_frame=true in Avisynth's conditional scripting for proper results. Only set when rffmode=0. The FFmpeg source definition of the characters:
 </p>
 <pre>
 I: Intra
@@ -245,6 +245,11 @@ p: Switching Predicted
 b: FF_BI_TYPE (no good explanation available)
 ?: Unknown
 </pre>
+
+<p>
+<b>FFVFR_TIME:</b>
+ The actual time of the source frame in milliseconds. Only set when no type of CFR conversion is being done (rffmode and fpsnum left at their defaults).
+</p>
 
 
 

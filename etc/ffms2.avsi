@@ -36,3 +36,34 @@ function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", 
 	
 	return audiodubex(v,a)
 }
+
+function FFFormatTime(int ms) {
+
+	s = ms / 1000
+	ms = ms % 1000
+	m = s / 60
+	s = s % 60
+	h = m / 60
+	m = m % 60
+
+	return string(h) + ":" + string(m,"%02.0f") + ":" + string(s,"%02.0f") + "." + string(ms,"%03.0f")
+}
+
+function FFInfo(clip c, bool "framenum", bool "frametype", bool "cfrtime", bool "vfrtime") {
+
+	framenum	= default(framenum,true)
+	frametype	= default(frametype,true)
+	cfrtime		= default(cfrtime,true)
+	vfrtime		= default(vfrtime,true)
+
+	global fftempclip = c
+	fftempclip = frameevaluate(fftempclip, """ fftempstring = "" """)
+
+	fftempclip = framenum ? frameevaluate(fftempclip, """fftempstring = fftempstring + "Frame Number: " + string(current_frame) + "\n" """, after_frame=true) : fftempclip
+	fftempclip = frametype ? frameevaluate(fftempclip, """fftempstring = fftempstring + "Picture Type: " + chr(FFPICT_TYPE) + "\n" """, after_frame=true) : fftempclip
+
+	fftempclip = cfrtime ? frameevaluate(fftempclip, """fftempstring = fftempstring + "CFR Time: " + FFFormatTime(int((current_frame * 1000) / fftempclip.framerate)) + "\n" """, after_frame=true) : fftempclip
+	fftempclip = vfrtime ? frameevaluate(fftempclip, """fftempstring = fftempstring + "VFR Time: " + FFFormatTime(FFVFR_TIME) + "\n" """, after_frame=true) : fftempclip
+
+	return scriptclip(fftempclip, "subtitle(fftempclip, fftempstring, lsp = 1)", after_frame=true)
+}
