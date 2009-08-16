@@ -59,7 +59,7 @@ function FFInfo(clip c, bool "framenum", bool "frametype", bool "cfrtime", bool 
 	global fftempclip = c
 	fftempclip = frameevaluate(fftempclip, """ fftempstring = "" """)
 
-	fftempclip = framenum ? frameevaluate(fftempclip, """fftempstring = fftempstring + "Frame Number: " + string(current_frame) + "\n" """, after_frame=true) : fftempclip
+	fftempclip = framenum ? frameevaluate(fftempclip, """fftempstring = fftempstring + "Frame Number: " + string(current_frame) + " of " + string(fftempclip.framecount) + "\n" """, after_frame=true) : fftempclip
 	fftempclip = frametype ? frameevaluate(fftempclip, """fftempstring = fftempstring + "Picture Type: " + chr(FFPICT_TYPE) + "\n" """, after_frame=true) : fftempclip
 
 	fftempclip = cfrtime ? frameevaluate(fftempclip, """fftempstring = fftempstring + "CFR Time: " + FFFormatTime(int((current_frame * 1000) / fftempclip.framerate)) + "\n" """, after_frame=true) : fftempclip

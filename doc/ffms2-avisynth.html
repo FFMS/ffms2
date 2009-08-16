@@ -78,6 +78,16 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 </p>
 
 <p>
+<b>FFInfo(clip c, bool framenum = true, bool frametype = true, bool cfrtime = true, bool vfrtime = true)</b><br />
+ A helper function to show general information about the current frame. Note that not all values are exported in source modes and will therefore not always be shown. Requires ffms2.avsi to be loaded.
+</p>
+
+<p>
+<b>FFFormatTime(int ms)</b><br />
+ A helper function to format time given in milliseconds into a h:mm:ss.ttt string. Requires ffms2.avsi to be loaded.
+</p>
+
+<p>
 <b>FFIndex(string source, string cachefile = source + ".ffindex", int indexmask = -1, int dumpmask = 0, string audiofile = "%sourcefile%.%trackzn%.w64", int errorhandling = 3, bool overwrite = false)</b><br />
  Used to invoke indexing separately with a few additional options and to write audio tracks to disk as wave64 files. It can be useful to use to avoid remaking the index twice or if some audio tracks are unsupported/broken and cannot be indexed properly.
 </p>
