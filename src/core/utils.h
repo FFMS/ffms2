@@ -55,6 +55,21 @@ extern "C" {
 
 const int64_t ffms_av_nopts_value = static_cast<int64_t>(1) << 63;
 
+// used for matroska<->ffmpeg codec ID mapping to avoid Win32 dependency
+typedef struct FFMS_BITMAPINFOHEADER {
+        uint32_t      biSize;
+        int32_t       biWidth;
+        int32_t       biHeight;
+        uint16_t      biPlanes;
+        uint16_t      biBitCount;
+        uint32_t      biCompression;
+        uint32_t      biSizeImage;
+        int32_t       biXPelsPerMeter;
+        int32_t       biYPelsPerMeter;
+        uint32_t      biClrUsed;
+        uint32_t      biClrImportant;
+} FFMS_BITMAPINFOHEADER;
+
 class FFMS_Exception : public std::exception {
 private:
 	std::string _Message;

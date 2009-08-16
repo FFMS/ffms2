@@ -242,27 +242,6 @@ void vtCopy(VARIANT& vt,void *dest) {
 	}
 }
 
-#else
-
-// used for matroska<->ffmpeg codec ID mapping to avoid Win32 dependency
-typedef struct BITMAPINFOHEADER {
-        uint32_t      biSize;
-        int32_t       biWidth;
-        int32_t       biHeight;
-        uint16_t      biPlanes;
-        uint16_t      biBitCount;
-        uint32_t      biCompression;
-        uint32_t      biSizeImage;
-        int32_t       biXPelsPerMeter;
-        int32_t       biYPelsPerMeter;
-        uint32_t      biClrUsed;
-        uint32_t      biClrImportant;
-} BITMAPINFOHEADER;
-
-#define MAKEFOURCC(ch0, ch1, ch2, ch3)\
-	((uint32_t)(uint8_t)(ch0) | ((uint32_t)(uint8_t)(ch1) << 8) |\
-	((uint32_t)(uint8_t)(ch2) << 16) | ((uint32_t)(uint8_t)(ch3) << 24 ))
-
 #endif
 
 CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC) {
@@ -278,7 +257,7 @@ CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC
 	const AVCodecTag *const tags[] = { ff_codec_bmp_tags, 0 };
 
 	if (!strcmp(Codec, "V_MS/VFW/FOURCC")) {
-		BITMAPINFOHEADER *b = reinterpret_cast<BITMAPINFOHEADER *>(CodecPrivate);
+		FFMS_BITMAPINFOHEADER *b = reinterpret_cast<FFMS_BITMAPINFOHEADER *>(CodecPrivate);
 		return av_codec_get_id(tags, b->biCompression);
 	}
 

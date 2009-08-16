@@ -69,10 +69,10 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, enum FFMS_Sources SourceMod
 
 					// Reconstruct the missing codec private part for VC1
 					std::vector<uint8_t> bihvect;
-					bihvect.resize(sizeof(BITMAPINFOHEADER));
-					BITMAPINFOHEADER *bih = reinterpret_cast<BITMAPINFOHEADER *>(FFMS_GET_VECTOR_PTR(bihvect));
-					memset(bih, 0, sizeof(BITMAPINFOHEADER));
-					bih->biSize = sizeof(BITMAPINFOHEADER) + CodecPrivateSize[NumTracks];
+					bihvect.resize(sizeof(FFMS_BITMAPINFOHEADER));
+					FFMS_BITMAPINFOHEADER *bih = reinterpret_cast<FFMS_BITMAPINFOHEADER *>(FFMS_GET_VECTOR_PTR(bihvect));
+					memset(bih, 0, sizeof(FFMS_BITMAPINFOHEADER));
+					bih->biSize = sizeof(FFMS_BITMAPINFOHEADER) + CodecPrivateSize[NumTracks];
 					bih->biCompression = FourCC;
 					bih->biBitCount = 24;
 					bih->biPlanes = 1;
@@ -86,7 +86,7 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, enum FFMS_Sources SourceMod
 						bih->biHeight = pV.uintVal;
 
 					CodecPrivate[NumTracks].insert(CodecPrivate[NumTracks].begin(), bihvect.begin(), bihvect.end());
-					CodecPrivateSize[NumTracks] += sizeof(BITMAPINFOHEADER);
+					CodecPrivateSize[NumTracks] += sizeof(FFMS_BITMAPINFOHEADER);
 				}
 
 				pV.Clear();

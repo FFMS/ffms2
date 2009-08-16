@@ -71,10 +71,10 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 
 						// Reconstruct the missing codec private part for VC1
 						std::vector<uint8_t> bihvect;
-						bihvect.resize(sizeof(BITMAPINFOHEADER));
-						BITMAPINFOHEADER *bih = reinterpret_cast<BITMAPINFOHEADER *>(FFMS_GET_VECTOR_PTR(bihvect));
-						memset(bih, 0, sizeof(BITMAPINFOHEADER));
-						bih->biSize = sizeof(BITMAPINFOHEADER) + CodecPrivateSize;
+						bihvect.resize(sizeof(FFMS_BITMAPINFOHEADER));
+						FFMS_BITMAPINFOHEADER *bih = reinterpret_cast<FFMS_BITMAPINFOHEADER *>(FFMS_GET_VECTOR_PTR(bihvect));
+						memset(bih, 0, sizeof(FFMS_BITMAPINFOHEADER));
+						bih->biSize = sizeof(FFMS_BITMAPINFOHEADER) + CodecPrivateSize;
 						bih->biCompression = FourCC;
 						bih->biBitCount = 24;
 						bih->biPlanes = 1;
@@ -88,7 +88,7 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 							bih->biHeight = pV.uintVal;
 
 						CodecPrivate.insert(CodecPrivate.begin(), bihvect.begin(), bihvect.end());
-						CodecPrivateSize += sizeof(BITMAPINFOHEADER);
+						CodecPrivateSize += sizeof(FFMS_BITMAPINFOHEADER);
 					}
 
 					pV.Clear();
