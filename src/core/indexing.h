@@ -37,7 +37,7 @@
 #	include "guids.h"
 #endif
 
-#define INDEXVERSION 31
+#define INDEXVERSION 32
 #define INDEXID 0x53920873
 
 class SharedVideoContext {
@@ -69,13 +69,14 @@ struct TFrameInfo {
 public:
 	FFMS_FRAMEINFO_COMMON
 	int64_t SampleStart;
+	unsigned int SampleCount;
 	int64_t FilePos;
 	unsigned int FrameSize;
 
 	static TFrameInfo VideoFrameInfo(int64_t DTS, int RepeatPict, bool KeyFrame, int64_t FilePos = 0, unsigned int FrameSize = 0);
-	static TFrameInfo AudioFrameInfo(int64_t DTS, int64_t SampleStart, bool KeyFrame, int64_t FilePos = 0, unsigned int FrameSize = 0);
+	static TFrameInfo AudioFrameInfo(int64_t DTS, int64_t SampleStart, unsigned int SampleCount, bool KeyFrame, int64_t FilePos = 0, unsigned int FrameSize = 0);
 private:
-	TFrameInfo(int64_t DTS, int64_t SampleStart, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize);
+	TFrameInfo(int64_t DTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize);
 };
 
 class FFMS_Track : public std::vector<TFrameInfo> {

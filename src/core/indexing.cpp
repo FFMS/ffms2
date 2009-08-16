@@ -87,21 +87,22 @@ SharedAudioContext::~SharedAudioContext() {
 		cs_Destroy(CS);
 }
 
-TFrameInfo::TFrameInfo(int64_t DTS, int64_t SampleStart, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
+TFrameInfo::TFrameInfo(int64_t DTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
 	this->DTS = DTS;
 	this->RepeatPict = RepeatPict;
 	this->KeyFrame = KeyFrame;
 	this->SampleStart = SampleStart;
+	this->SampleCount = SampleCount;
 	this->FilePos = FilePos;
 	this->FrameSize = FrameSize;
 }
 
 TFrameInfo TFrameInfo::VideoFrameInfo(int64_t DTS, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
-	return TFrameInfo(DTS, 0, RepeatPict, KeyFrame, FilePos, FrameSize);
+	return TFrameInfo(DTS, 0, 0, RepeatPict, KeyFrame, FilePos, FrameSize);
 }
 
-TFrameInfo TFrameInfo::AudioFrameInfo(int64_t DTS, int64_t SampleStart, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
-	return TFrameInfo(DTS, SampleStart, 0, KeyFrame, FilePos, FrameSize);
+TFrameInfo TFrameInfo::AudioFrameInfo(int64_t DTS, int64_t SampleStart, unsigned int SampleCount, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
+	return TFrameInfo(DTS, SampleStart, SampleCount, 0, KeyFrame, FilePos, FrameSize);
 }
 
 void FFMS_Track::WriteTimecodes(const char *TimecodeFile) {

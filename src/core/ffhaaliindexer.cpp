@@ -197,7 +197,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 
 			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(Ts, RepeatPict, pMMF->IsSyncPoint() == S_OK));
 		} else if (TrackType[Track] == FFMS_TYPE_AUDIO && (IndexMask & (1 << Track))) {
-			(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(Ts, AudioContexts[Track].CurrentSample, pMMF->IsSyncPoint() == S_OK));
+			int64_t StartSample = AudioContexts[Track].CurrentSample;
 			AVCodecContext *AudioCodecContext = AudioContexts[Track].CodecContext;
 
 			if (pMMF->IsSyncPoint() == S_OK)
@@ -235,6 +235,9 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 				if (DumpMask & (1 << Track))
 					WriteAudio(AudioContexts[Track], TrackIndices.get(), Track, dbsize);
 			}
+
+			(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(Ts, StartSample,
+				static_cast<unsigned int>(AudioContexts[Track].CurrentSample - StartSample), pMMF->IsSyncPoint() == S_OK));
 		}
 	}
 

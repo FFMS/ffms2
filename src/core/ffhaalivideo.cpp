@@ -128,7 +128,7 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	DecodeNextFrame(&Dummy);
 
 	VP.Width = CodecContext->width;
-	VP.Height = CodecContext->height;;
+	VP.Height = CodecContext->height;
 	VP.FPSDenominator = 1;
 	VP.FPSNumerator = 30;
 	VP.RFFDenominator = CodecContext->time_base.num;

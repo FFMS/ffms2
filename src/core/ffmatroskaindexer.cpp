@@ -152,9 +152,10 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 
 			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(StartTime, RepeatPict, (FrameFlags & FRAME_KF) != 0, FilePos, FrameSize));
 		} else if (mkv_GetTrackInfo(MF, Track)->Type == TT_AUDIO && (IndexMask & (1 << Track))) {
-			(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(StartTime, AudioContexts[Track].CurrentSample, (FrameFlags & FRAME_KF) != 0, FilePos, FrameSize));
-			ReadFrame(FilePos, FrameSize, AudioContexts[Track].CS, MC);
+			int64_t StartSample = AudioContexts[Track].CurrentSample;
+			unsigned int CompressedFrameSize = FrameSize;
 			AVCodecContext *AudioCodecContext = AudioContexts[Track].CodecContext;
+			ReadFrame(FilePos, FrameSize, AudioContexts[Track].CS, MC);
 			TempPacket.data = MC.Buffer;
 			TempPacket.size = FrameSize;
 			if ((FrameFlags & FRAME_KF) != 0)
@@ -192,6 +193,9 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 				if (DumpMask & (1 << Track))
 					WriteAudio(AudioContexts[Track], TrackIndices.get(), Track, dbsize);
 			}
+
+			(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(StartTime, StartSample,
+				static_cast<unsigned int>(AudioContexts[Track].CurrentSample - StartSample), (FrameFlags & FRAME_KF) != 0, FilePos, CompressedFrameSize));
 		}
 	}
 
