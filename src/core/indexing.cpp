@@ -221,8 +221,22 @@ static bool DTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
 }
 
 void FFMS_Index::Sort() {
-	for (FFMS_Index::iterator Cur=begin(); Cur!=end(); Cur++)
+	for (FFMS_Index::iterator Cur=begin(); Cur!=end(); Cur++) {
+
+		for (size_t i = 0; i < Cur->size(); i++)
+			Cur->at(i).OriginalPos = i;
+
 		std::sort(Cur->begin(), Cur->end(), DTSComparison);
+
+		std::vector<size_t> ReorderTemp;
+		ReorderTemp.resize(Cur->size());
+
+		for (size_t i = 0; i < Cur->size(); i++)
+			ReorderTemp[i] = Cur->at(i).OriginalPos;
+
+		for (size_t i = 0; i < Cur->size(); i++)
+			Cur->at(ReorderTemp[i]).OriginalPos = i;
+	}
 }
 
 bool FFMS_Index::CompareFileSignature(const char *Filename) {

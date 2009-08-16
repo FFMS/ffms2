@@ -108,7 +108,7 @@ private:
     CompressedStream *CS;
 	char ErrorMessage[256];
 	FFSourceResources<FFMS_VideoSource> Res;
-	int PacketNumber;
+	size_t PacketNumber;
 
 	void DecodeNextFrame();
 protected:

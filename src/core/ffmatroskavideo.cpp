@@ -135,13 +135,17 @@ void FFMatroskaVideo::DecodeNextFrame() {
 
 	unsigned int FrameSize;
 
-	while (PacketNumber < static_cast<int>(Frames.size())) {
-		FrameSize = Frames[PacketNumber].FrameSize;
-		ReadFrame(Frames[PacketNumber].FilePos, FrameSize, CS, MC);
+	while (PacketNumber < Frames.size()) {
+		// The additional indirection is because the packets are stored in
+		// presentation order and not decoding order, this is unnoticable
+		// in the other sources where less is done manually
+		const TFrameInfo &FI = Frames[Frames[PacketNumber].OriginalPos];
+		FrameSize = FI.FrameSize;
+		ReadFrame(FI.FilePos, FrameSize, CS, MC);
 
 		Packet.data = MC.Buffer;
 		Packet.size = FrameSize;
-		if (Frames[PacketNumber].KeyFrame)
+		if (FI.KeyFrame)
 			Packet.flags = AV_PKT_FLAG_KEY;
 		else
 			Packet.flags = 0;
