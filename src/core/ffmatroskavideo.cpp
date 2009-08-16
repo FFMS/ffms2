@@ -42,6 +42,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	CodecContext = NULL;
 	TrackInfo *TI = NULL;
 	CS = NULL;
+	PacketNumber = 0;
 	VideoTrack = Track;
 	Frames = (*Index)[VideoTrack];
 
@@ -88,8 +89,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	Res.CloseCodec(true);
 
 	// Always try to decode a frame to make sure all required parameters are known
-	int64_t Dummy;
-	DecodeNextFrame(&Dummy);
+	DecodeNextFrame();
 
 	VP.Width = CodecContext->width;
 	VP.Height = CodecContext->height;
@@ -128,27 +128,25 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	VP.CropBottom = TI->AV.Video.CropB;
 }
 
-void FFMatroskaVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
+void FFMatroskaVideo::DecodeNextFrame() {
 	int FrameFinished = 0;
-	*AFirstStartTime = -1;
 	AVPacket Packet;
 	InitNullPacket(Packet);
 
-	ulonglong StartTime, EndTime, FilePos;
-	unsigned int Track, FrameFlags, FrameSize;
+	unsigned int FrameSize;
 
-	while (mkv_ReadFrame(MF, 0, &Track, &StartTime, &EndTime, &FilePos, &FrameSize, &FrameFlags) == 0) {
-		if (*AFirstStartTime < 0)
-			*AFirstStartTime = StartTime;
-
-		ReadFrame(FilePos, FrameSize, CS, MC);
+	while (PacketNumber < static_cast<int>(Frames.size())) {
+		FrameSize = Frames[PacketNumber].FrameSize;
+		ReadFrame(Frames[PacketNumber].FilePos, FrameSize, CS, MC);
 
 		Packet.data = MC.Buffer;
 		Packet.size = FrameSize;
-		if (FrameFlags & FRAME_KF)
+		if (Frames[PacketNumber].KeyFrame)
 			Packet.flags = AV_PKT_FLAG_KEY;
 		else
 			Packet.flags = 0;
+
+		PacketNumber++;
 
 		if (CodecContext->codec_id == CODEC_ID_MPEG4 && IsNVOP(Packet))
 			goto Done;
@@ -177,26 +175,15 @@ FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
 	if (LastFrameNum == n)
 		return &LocalFrame;
 
-	bool HasSeeked = false;
-
-	if (n < CurrentFrame || Frames.FindClosestVideoKeyFrame(n) > CurrentFrame) {
-		mkv_Seek(MF, Frames[n].DTS, MKVF_SEEK_TO_PREV_KEYFRAME_STRICT);
+	int ClosestKF = Frames.FindClosestVideoKeyFrame(n);
+	if (CurrentFrame > n || ClosestKF > CurrentFrame + 10) {
+		PacketNumber = ClosestKF;
+		CurrentFrame = ClosestKF;
 		avcodec_flush_buffers(CodecContext);
-		HasSeeked = true;
 	}
 
 	do {
-		int64_t StartTime;
-		DecodeNextFrame(&StartTime);
-
-		if (HasSeeked) {
-			HasSeeked = false;
-
-			if (StartTime < 0 || (CurrentFrame = Frames.FrameFromDTS(StartTime)) < 0)
-				throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-					"Frame accurate seeking is not possible in this file");
-		}
-
+		DecodeNextFrame();
 		CurrentFrame++;
 	} while (CurrentFrame <= n);
 
