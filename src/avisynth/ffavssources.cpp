@@ -169,6 +169,10 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 	Env->SetVar("FFCROP_RIGHT", VP->CropRight);
 	Env->SetVar("FFCROP_TOP", VP->CropTop);
 	Env->SetVar("FFCROP_BOTTOM", VP->CropBottom);
+
+	// Set color information
+	Env->SetVar("FFCOLOR_SPACE", VP->ColorSpace);
+	Env->SetVar("FFCOLOR_RANGE", VP->ColorRange);
 }
 
 AvisynthVideoSource::~AvisynthVideoSource() {

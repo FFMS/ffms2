@@ -217,6 +217,8 @@ struct FFMS_VideoProperties {
 	int CropLeft;
 	int CropRight;
 	int TopFieldFirst;
+	int ColorSpace; // same as in the MPEG-2 specs, see AVColorSpace in avcodec.h
+	int ColorRange; // 0=unspecified, 1=16-235, 2=0-255
 	double FirstTime;
 	double LastTime;
 };

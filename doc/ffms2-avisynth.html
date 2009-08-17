@@ -189,7 +189,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <p>
 <b>seekmode:</b>
-  Control how seeking is handled, has no effect on matroska or haali splitter opened files which always use the equivalent of seekmode=1<br />
+  Control how seeking is handled, has no effect on matroska or haali splitter opened files which always use the equivalent of seekmode=1.<br />
     <b>-1:</b> linear access without rewind, will throw an error if each successive requested frame number isn't bigger than the last one, only intended for opening images but might work on well with some obscure video format<br />
     <b>0:</b> linear access, the definition of slow but should make some formats "usable"<br />
     <b>1:</b> safe normal, bases seeking decisions on the reported keyframe positions<br />
@@ -199,7 +199,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <p>
 <b>rffmode:</b>
-  Controls how RFF flags in the video stream is treated<br />
+  Controls how RFF flags in the video stream is treated.<br />
     <b>0:</b> Ignore all flags<br />
     <b>1:</b> Honor all pulldown flags<br />
     <b>2:</b> Equivalent to force film<br />
@@ -223,7 +223,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <p>
 <b>errorhandling:</b>
-  Controls what happens when an audio decoding error is encountered<br />
+  Controls what happens when an audio decoding error is encountered.<br />
     <b>0:</b> Abort indexing<br />
     <b>1:</b> Clear the affected track and continue<br />
     <b>2:</b> Stop indexing the track but keep all the index entries so far<br />
@@ -240,6 +240,20 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 <b>FFCROP_LEFT, FFCROP_RIGHT, FFCROP_TOP, FFCROP_BOTTOM:</b>
  The on playback cropping specified by the container.
 </p>
+
+<p>
+<b>FFCOLOR_SPACE:</b>
+ The output colorimetry. Matches the values used by ColorMatrix() as input.
+</p>
+
+<p>
+<b>FFCOLOR_RANGE:</b>
+ The range used by the output.<br />
+    <b>0:</b> Unknown/unspecified<br />
+    <b>1:</b> Limited-range<br />
+    <b>2:</b> Full-range<br />
+</p>
+
 
 <p>
 <b>FFPICT_TYPE:</b>
