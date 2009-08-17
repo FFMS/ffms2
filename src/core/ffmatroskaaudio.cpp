@@ -38,6 +38,7 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index *
 	AVCodec *Codec = NULL;
 	TrackInfo *TI = NULL;
 	CS = NULL;
+	PacketNumber = 0;
 	Frames = (*Index)[Track];
 
 	MC.ST.fp = ffms_fopen(SourceFile, "rb");
@@ -84,7 +85,7 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index *
 
 	// Always try to decode a frame to make sure all required parameters are known
 	int64_t Dummy;
-	DecodeNextAudioBlock(&Dummy, 0);
+	DecodeNextAudioBlock(&Dummy);
 
 	avcodec_flush_buffers(CodecContext);
 
@@ -110,37 +111,32 @@ void FFMatroskaAudio::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 	if (CacheEnd == Start + Count)
 		return;
 
-	int CurrentAudioBlock;
 	// Is seeking required to decode the requested samples?
 //	if (!(CurrentSample >= Start && CurrentSample <= CacheEnd)) {
 	if (CurrentSample != CacheEnd) {
 		PreDecBlocks = 15;
-		CurrentAudioBlock = FFMAX((int64_t)Frames.FindClosestAudioKeyFrame(CacheEnd) - PreDecBlocks, (int64_t)0);
+		PacketNumber = FFMAX((int64_t)Frames.FindClosestAudioKeyFrame(CacheEnd) - PreDecBlocks, (int64_t)0);;
 		avcodec_flush_buffers(CodecContext);
-	} else {
-		CurrentAudioBlock = Frames.FindClosestAudioKeyFrame(CurrentSample);
 	}
 
 	int64_t DecodeCount;
 
 	do {
-		DecodeNextAudioBlock(&DecodeCount, CurrentAudioBlock);
+		const TFrameInfo &FI = Frames[Frames[PacketNumber].OriginalPos];
+		DecodeNextAudioBlock(&DecodeCount);
 
 		// Cache the block if enough blocks before it have been decoded to avoid garbage
 		if (PreDecBlocks == 0) {
-			AudioCache.CacheBlock(Frames[CurrentAudioBlock].SampleStart, DecodeCount, &DecodingBuffer[0]);
+			AudioCache.CacheBlock(FI.SampleStart, DecodeCount, &DecodingBuffer[0]);
 			CacheEnd = AudioCache.FillRequest(CacheEnd, Start + Count - CacheEnd, DstBuf + (CacheEnd - Start) * SizeConst);
 		} else {
 			PreDecBlocks--;
 		}
 
-		CurrentAudioBlock++;
-		if (CurrentAudioBlock < static_cast<int>(Frames.size()))
-			CurrentSample = Frames[CurrentAudioBlock].SampleStart;
-	} while (Start + Count - CacheEnd > 0 && CurrentAudioBlock < static_cast<int>(Frames.size()));
+	} while (Start + Count - CacheEnd > 0 && PacketNumber < Frames.size());
 }
 
-void FFMatroskaAudio::DecodeNextAudioBlock(int64_t *Count, int AudioBlock) {
+void FFMatroskaAudio::DecodeNextAudioBlock(int64_t *Count) {
 	const size_t SizeConst = (av_get_bits_per_sample_format(CodecContext->sample_fmt) * CodecContext->channels) / 8;
 	int Ret = -1;
 	*Count = 0;
@@ -148,11 +144,15 @@ void FFMatroskaAudio::DecodeNextAudioBlock(int64_t *Count, int AudioBlock) {
 	AVPacket TempPacket;
 	InitNullPacket(TempPacket);
 
-	unsigned int FrameSize = Frames[AudioBlock].FrameSize;
-	ReadFrame(Frames[AudioBlock].FilePos, FrameSize, CS, MC);
+	const TFrameInfo &FI = Frames[Frames[PacketNumber].OriginalPos];
+	unsigned int FrameSize = FI.FrameSize;
+	CurrentSample = FI.SampleStart + FI.SampleCount;
+	PacketNumber++;
+
+	ReadFrame(FI.FilePos, FrameSize, CS, MC);
 	TempPacket.data = MC.Buffer;
 	TempPacket.size = FrameSize;
-	if (Frames[AudioBlock].KeyFrame)
+	if (FI.KeyFrame)
 		TempPacket.flags = AV_PKT_FLAG_KEY;
 	else
 		TempPacket.flags = 0;

@@ -107,8 +107,9 @@ private:
     CompressedStream *CS;
 	char ErrorMessage[256];
 	FFSourceResources<FFMS_AudioSource> Res;
+	size_t PacketNumber;
 
-	void DecodeNextAudioBlock(int64_t *Count, int AudioBlock);
+	void DecodeNextAudioBlock(int64_t *Count);
 	void Free(bool CloseCodec);
 public:
 	FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index *Index);
