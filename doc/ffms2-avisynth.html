@@ -69,24 +69,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 <li>Image files: Most formats can be opened if seekmode=-1 is set, no animation support</li>
 </ul>
 
-<h2>Functions</h2>
-<p>
-<b>FFmpegSource2(string source, int vtrack = -1, int atrack = -2, bool cache = true,
- string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1, string pp, int threads = -1,
-	string timecodes, int seekmode = 1, bool overwrite = false, width = -1, height = -1, resizer = "BICUBIC", colorspace = "", int rffmode = 0)</b><br />
- Approximates the syntax later versions of the 1.x series. Can be convenient to use with atrack=-1 to load both audio and video at the same time. Requires ffms2.avsi to be loaded.
-</p>
-
-<p>
-<b>FFInfo(clip c, bool framenum = true, bool frametype = true, bool cfrtime = true, bool vfrtime = true)</b><br />
- A helper function to show general information about the current frame. Note that not all values are exported in source modes and will therefore not always be shown. Requires ffms2.avsi to be loaded.
-</p>
-
-<p>
-<b>FFFormatTime(int ms)</b><br />
- A helper function to format time given in milliseconds into a h:mm:ss.ttt string. Requires ffms2.avsi to be loaded.
-</p>
-
+<h2>Functions in FFMS2.dll</h2>
 <p>
 <b>FFIndex(string source, string cachefile = source + ".ffindex", int indexmask = -1, int dumpmask = 0, string audiofile = "%sourcefile%.%trackzn%.w64", int errorhandling = 3, bool overwrite = false)</b><br />
  Used to invoke indexing separately with a few additional options and to write audio tracks to disk as wave64 files. It can be useful to use to avoid remaking the index twice or if some audio tracks are unsupported/broken and cannot be indexed properly.
@@ -120,6 +103,29 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 <p>
 <b>FFGetLogLevel()</b><br />
   Returns the current level of logging as an int.
+</p>
+
+<h2>Functions in FFMS2.avsi</h2>
+<p>
+<b>FFmpegSource2(string source, int vtrack = -1, int atrack = -2, bool cache = true,
+ string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1, string pp, int threads = -1,
+	string timecodes, int seekmode = 1, bool overwrite = false, width = -1, height = -1, resizer = "BICUBIC", colorspace = "", int rffmode = 0)</b><br />
+ Approximates the syntax later versions of the 1.x series. Can be convenient to use with atrack=-1 to load both audio and video at the same time. Requires ffms2.avsi to be loaded.
+</p>
+
+<p>
+<b>FFImageSource(string source, width = -1, height = -1, resizer = "BICUBIC", colorspace = "")</b><br />
+ Another alias for FFVideoSource with the options set optimally for using it as an image reader. Disables caching and seeking for maximum compatiblity.
+</p>
+
+<p>
+<b>FFFormatTime(int ms)</b><br />
+ A helper function to format time given in milliseconds into a h:mm:ss.ttt string. Requires ffms2.avsi to be loaded.
+</p>
+
+<p>
+<b>FFInfo(clip c, bool framenum = true, bool frametype = true, bool cfrtime = true, bool vfrtime = true)</b><br />
+ A helper function to show general information about the current frame. Note that not all values are exported in source modes and will therefore not always be shown. Requires ffms2.avsi to be loaded.
 </p>
 
 <h2>Function arguments</h2>

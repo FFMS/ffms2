@@ -13,6 +13,7 @@ FFmpegSource2 Changelog
 <ul>
 <li>2.00 beta 11<ul>
 <li>Now exports the colorimetry info in a format easily usable with ColorMatrix, see FFCOLOR_SPACE and FFCOLOR_RANGE in the manual</li>
+<li>Added an FFImageSource() function to ffms2.avsi which invokes FFVideoSource with the optimal settings for use on images</li>
 <li>Now exports the actual frame presentation time in FFVFR_TIME, added the general information function FFInfo() and FFFormatTime() functions to ffms2.avsi in addition to fixing the missing backslash</li>
 <li>The seek/read method has been changed in the matroska video source to only need the information in the index and nothing more, this matches the audio source and should make seeking faster in some cases</li>
 <li>No longer drops the last audio frame</li>
