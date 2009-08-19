@@ -105,6 +105,9 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	const char *Resizer = Args[13].AsString("BICUBIC");
 	const char *ColorSpace = Args[14].AsString("");
 
+	if (FPSDen < 1)
+		Env->ThrowError("FFVideoSource: FPS denominator needs to be 1 or higher");
+
 	if (Track <= -2)
 		Env->ThrowError("FFVideoSource: No video track selected");
 
@@ -116,6 +119,9 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 
 	if (RFFMode < 0 || RFFMode > 2)
 		Env->ThrowError("FFVideoSource: Invalid RFF mode selected");
+
+	if (RFFMode > 0 && FPSNum > 0)
+		Env->ThrowError("FFVideoSource: RFF modes may not be combined with CFR conversion");
 
 	if (!_stricmp(Source, Timecodes))
 		Env->ThrowError("FFVideoSource: Timecodes will overwrite the source");

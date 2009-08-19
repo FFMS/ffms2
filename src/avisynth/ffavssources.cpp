@@ -88,29 +88,27 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 			}
 		}
 
-		if (RFFMode >= 1) {
-			VI.fps_denominator = VP->RFFDenominator * (RepeatMin + 1);
-			VI.fps_numerator = VP->RFFNumerator;
-			VI.num_frames = (NumFields + RepeatMin) / (RepeatMin + 1);
+		VI.fps_denominator = VP->RFFDenominator * (RepeatMin + 1);
+		VI.fps_numerator = VP->RFFNumerator;
+		VI.num_frames = (NumFields + RepeatMin) / (RepeatMin + 1);
 
-			int DestField = 0;
-			FieldList.resize(VI.num_frames);
-			for (int i = 0; i < VP->NumFrames; i++) {
-				int RepeatPict = FFMS_GetFrameInfo(VTrack, i)->RepeatPict;
-				int RepeatFields = ((RepeatPict + 1) * 2) / (RepeatMin + 1);
+		int DestField = 0;
+		FieldList.resize(VI.num_frames);
+		for (int i = 0; i < VP->NumFrames; i++) {
+			int RepeatPict = FFMS_GetFrameInfo(VTrack, i)->RepeatPict;
+			int RepeatFields = ((RepeatPict + 1) * 2) / (RepeatMin + 1);
 
-				for (int j = 0; j < RepeatFields; j++) {
-					if ((DestField + (VP->TopFieldFirst ? 0 : 1)) & 1)
-						FieldList[DestField / 2].Top = i;
-					else
-						FieldList[DestField / 2].Bottom = i;
-					DestField++;
-				}
+			for (int j = 0; j < RepeatFields; j++) {
+				if ((DestField + (VP->TopFieldFirst ? 0 : 1)) & 1)
+					FieldList[DestField / 2].Top = i;
+				else
+					FieldList[DestField / 2].Bottom = i;
+				DestField++;
 			}
 		}
 
 		if (RFFMode == 2) {
-			VI.num_frames = (VI.num_frames * 4 + 4) / 5;
+			VI.num_frames = (VI.num_frames * 4) / 5;
 			VI.fps_denominator *= 5;
 			VI.fps_numerator *= 4;
 
