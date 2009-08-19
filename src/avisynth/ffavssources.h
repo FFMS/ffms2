@@ -28,13 +28,13 @@
 
 
 
-struct FrameFields {
-	int Top;
-	int Bottom;
-};
-
 class AvisynthVideoSource : public IClip {
 private:
+	struct FrameFields {
+		int Top;
+		int Bottom;
+	};
+
 	VideoInfo VI;
 	FFMS_VideoSource *V;
 	int FPSNum;

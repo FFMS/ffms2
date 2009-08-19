@@ -22,10 +22,6 @@
 #include "avsutils.h"
 #include <cmath>
 
-extern "C" {
-#include <libavcodec/avcodec.h>
-}
-
 
 
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
