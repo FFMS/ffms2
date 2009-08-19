@@ -110,7 +110,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 <b>FFmpegSource2(string source, int vtrack = -1, int atrack = -2, bool cache = true,
  string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1, string pp, int threads = -1,
 	string timecodes, int seekmode = 1, bool overwrite = false, width = -1, height = -1, resizer = "BICUBIC", colorspace = "", int rffmode = 0)</b><br />
- Approximates the syntax later versions of the 1.x series. Can be convenient to use with atrack=-1 to load both audio and video at the same time. Requires ffms2.avsi to be loaded.
+ Approximates the syntax later versions of the 1.x series. Can be convenient to use with atrack=-1 to load both audio and video at the same time.
 </p>
 
 <p>
@@ -120,12 +120,12 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <p>
 <b>FFFormatTime(int ms)</b><br />
- A helper function to format time given in milliseconds into a h:mm:ss.ttt string. Requires ffms2.avsi to be loaded.
+ A helper function to format time given in milliseconds into a h:mm:ss.ttt string.
 </p>
 
 <p>
 <b>FFInfo(clip c, bool framenum = true, bool frametype = true, bool cfrtime = true, bool vfrtime = true)</b><br />
- A helper function to show general information about the current frame. Note that not all values are exported in source modes and will therefore not always be shown. Requires ffms2.avsi to be loaded.
+ A helper function to show general information about the current frame. Note that not all values are exported in all source modes and will therefore not always be shown.
 </p>
 
 <h2>Function arguments</h2>
