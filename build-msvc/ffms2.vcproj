@@ -171,23 +171,23 @@
 			Name="Audio"
 			>
 			<File
-				RelativePath="..\src\core\ffaudiosource.cpp"
+				RelativePath="..\src\core\audiosource.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\core\ffaudiosource.h"
+				RelativePath="..\src\core\audiosource.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\core\ffhaaliaudio.cpp"
+				RelativePath="..\src\core\haaliaudio.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\core\fflavfaudio.cpp"
+				RelativePath="..\src\core\lavfaudio.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\core\ffmatroskaaudio.cpp"
+				RelativePath="..\src\core\matroskaaudio.cpp"
 				>
 			</File>
 		</Filter>
@@ -195,15 +195,7 @@
 			Name="Indexing"
 			>
 			<File
-				RelativePath="..\src\core\ffhaaliindexer.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\src\core\fflavfindexer.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\src\core\ffmatroskaindexer.cpp"
+				RelativePath="..\src\core\haaliindexer.cpp"
 				>
 			</File>
 			<File
@@ -214,28 +206,36 @@
 				RelativePath="..\src\core\indexing.h"
 				>
 			</File>
+			<File
+				RelativePath="..\src\core\lavfindexer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\core\matroskaindexer.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Video"
 			>
 			<File
-				RelativePath="..\src\core\ffhaalivideo.cpp"
+				RelativePath="..\src\core\haalivideo.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\core\fflavfvideo.cpp"
+				RelativePath="..\src\core\lavfvideo.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\core\ffmatroskavideo.cpp"
+				RelativePath="..\src\core\matroskavideo.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\core\ffvideosource.cpp"
+				RelativePath="..\src\core\videosource.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\core\ffvideosource.h"
+				RelativePath="..\src\core\videosource.h"
 				>
 			</File>
 		</Filter>
@@ -319,7 +319,19 @@
 			Name="Avisynth"
 			>
 			<File
+				RelativePath="..\src\avisynth\avisynth.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\src\avisynth\avisynth.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\avisynth\avssources.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\avisynth\avssources.h"
 				>
 			</File>
 			<File
@@ -328,18 +340,6 @@
 			</File>
 			<File
 				RelativePath="..\src\avisynth\avsutils.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\avisynth\ffavisynth.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\src\avisynth\ffavssources.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\src\avisynth\ffavssources.h"
 				>
 			</File>
 			<File

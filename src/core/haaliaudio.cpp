@@ -20,7 +20,7 @@
 
 #ifdef HAALISOURCE
 
-#include "ffaudiosource.h"
+#include "audiosource.h"
 
 
 

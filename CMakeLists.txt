@@ -47,13 +47,13 @@ SET(FFMS2_LIBS ${FFMPEG_LIBRARIES} ${FFMPEG_SWS_LIBRARIES}
             #${Faad_LIBRARIES}
             
 SET(FFMS2_SRCS src/core/matroskaparser.c src/core/stdiostream.c
-               src/core/ffaudiosource.cpp src/core/ffhaaliaudio.cpp
-               src/core/fflavfaudio.cpp src/core/ffmatroskaaudio.cpp
-               src/core/ffvideosource.cpp src/core/ffhaalivideo.cpp
-               src/core/fflavfvideo.cpp src/core/ffmatroskavideo.cpp
+               src/core/audiosource.cpp src/core/haaliaudio.cpp
+               src/core/lavfaudio.cpp src/core/matroskaaudio.cpp
+               src/core/videosource.cpp src/core/haalivideo.cpp
+               src/core/lavfvideo.cpp src/core/matroskavideo.cpp
                src/core/ffms.cpp src/core/wave64writer.cpp src/core/utils.cpp
-               src/core/indexing.cpp src/core/ffhaaliindexer.cpp
-               src/core/fflavfindexer.cpp src/core/ffmatroskaindexer.cpp)
+               src/core/indexing.cpp src/core/haaliindexer.cpp
+               src/core/lavfindexer.cpp src/core/matroskaindexer.cpp)
 
 
 ADD_LIBRARY(FFMS2 SHARED ${FFMS2_SRCS})

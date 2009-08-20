@@ -20,7 +20,7 @@
 
 #include <string>
 #include "ffms.h"
-#include "ffavssources.h"
+#include "avssources.h"
 #include "ffswscale.h"
 #include "ffpp.h"
 #include "avsutils.h"

@@ -20,7 +20,7 @@
 
 #ifdef HAALISOURCE
 
-#include "ffvideosource.h"
+#include "videosource.h"
 
 
 

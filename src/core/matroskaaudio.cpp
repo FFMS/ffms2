@@ -18,7 +18,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#include "ffaudiosource.h"
+#include "audiosource.h"
 
 void FFMatroskaAudio::Free(bool CloseCodec) {
 	if (CS)
