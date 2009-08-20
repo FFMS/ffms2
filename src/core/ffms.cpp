@@ -21,8 +21,8 @@
 #include <sstream>
 #include <iomanip>
 #include "ffms.h"
-#include "ffvideosource.h"
-#include "ffaudiosource.h"
+#include "videosource.h"
+#include "audiosource.h"
 #include "indexing.h"
 
 
