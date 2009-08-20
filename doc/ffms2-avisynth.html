@@ -141,17 +141,15 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <p>
 <b>audiofile:</b>
-  The filename to use for dumped audio tracks. Make sure to include a track number variable to avoid multiple file access errors. The variables are case sensitive. The available variables are:
+  The filename to use for dumped audio tracks. Make sure to include a track number variable to avoid multiple file access errors. The variables are case sensitive. The available variables are:<br />
+<b>%sourcefile%</b> - same as the source argument, the file the audio is decoded from<br />
+<b>%trackn%</b> - the track number<br />
+<b>%trackzn%</b> - the track number zero padded to 2 digits<br />
+<b>%samplerate%</b> - self explanatory<br />
+<b>%channels%</b> - self explanatory<br />
+<b>%bps%</b> - bits per sample<br />
+<b>%delay%</b> - delay, or more exactly the first timestamp encountered in the audio stream
 </p>
-<ul>
-<li>%sourcefile% - same as the source argument, the file the audio is decoded from</li>
-<li>%trackn% - the track number</li>
-<li>%trackzn% - the track number zero padded to 2 digits</li>
-<li>%samplerate% - self explanatory</li>
-<li>%channels% - self explanatory</li>
-<li>%bps% - bits per sample</li>
-<li>%delay% - delay, or more exactly the first timestamp encountered in the audio stream</li>
-</ul>
 
 <p>
 <b>overwrite:</b>

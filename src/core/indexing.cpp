@@ -256,7 +256,7 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 	// Write the index file header
 	IndexHeader IH;
 	IH.Id = INDEXID;
-	IH.Version = INDEXVERSION;
+	IH.Version = FFMS_VERSION;
 	IH.Tracks = size();
 	IH.Decoder = Decoder;
 	IH.LAVUVersion = avutil_version();
@@ -298,7 +298,7 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			boost::format("'%1%' is not a valid index file") % IndexFile);
 
-	if (IH.Version != INDEXVERSION)
+	if (IH.Version != FFMS_VERSION)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_VERSION,
 			boost::format("'%1%' is not the expected index version") % IndexFile);
 
