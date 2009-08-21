@@ -255,7 +255,7 @@ FFMS_TrackType FFHaaliIndexer::GetTrackType(int Track) {
 
 const char *FFHaaliIndexer::GetTrackCodec(int Track) {
 	if (Codec[Track])
-		return Codec[Track]->long_name;
+		return Codec[Track]->name;
 	else
 		return "Unsupported codec/Unknown codec name";
 }
