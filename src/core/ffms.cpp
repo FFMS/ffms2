@@ -287,11 +287,11 @@ FFMS_API(FFMS_Track *) FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track) {
 }
 
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromVideo(FFMS_VideoSource *V) {
-	return V->GetFFTrack();
+	return V->GetTrack();
 }
 
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromAudio(FFMS_AudioSource *A) {
-	return A->GetFFTrack();
+	return A->GetTrack();
 }
 
 FFMS_API(const FFMS_TrackTimeBase *) FFMS_GetTimeBase(FFMS_Track *T) {

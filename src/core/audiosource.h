@@ -83,9 +83,9 @@ protected:
 public:
 	FFMS_AudioSource(const char *SourceFile, FFMS_Index *Index, int Track);
 	virtual ~FFMS_AudioSource();
-	FFMS_Track *GetFFTrack() { return &Frames; }
+	FFMS_Track *GetTrack() { return &Frames; }
 	const FFMS_AudioProperties& GetAudioProperties() { return AP; }
-	virtual void GetAudio(void *Buf, int64_t Start, int64_t Count) = 0;
+	virtual void GetAudio(void *Buf, int64_t Start, int64_t Count);
 };
 
 class FFLAVFAudio : public FFMS_AudioSource {

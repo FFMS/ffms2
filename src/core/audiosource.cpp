@@ -116,3 +116,9 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index *Index, in
 FFMS_AudioSource::~FFMS_AudioSource() {
 
 }
+
+void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
+	if (Start < 0 || Start + Count > AP.NumSamples)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_INVALID_ARGUMENT,
+			"Out of bounds audio samples requested");
+}

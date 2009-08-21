@@ -178,6 +178,8 @@ Done:;
 }
 
 FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
+	FFMS_VideoSource::GetFrame(n);
+
 	if (LastFrameNum == n)
 		return &LocalFrame;
 

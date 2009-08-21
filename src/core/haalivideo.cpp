@@ -222,6 +222,8 @@ Done:;
 }
 
 FFMS_Frame *FFHaaliVideo::GetFrame(int n) {
+	FFMS_VideoSource::GetFrame(n);
+
 	if (LastFrameNum == n)
 		return &LocalFrame;
 
