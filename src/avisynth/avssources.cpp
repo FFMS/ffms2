@@ -28,6 +28,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode, int RFFMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 		const char *ConvertToFormatName, IScriptEnvironment* Env) {
+
 	memset(&VI, 0, sizeof(VI));
 	this->FPSNum = FPSNum;
 	this->FPSDen = FPSDen;
@@ -40,7 +41,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 
 	V = FFMS_CreateVideoSource(SourceFile, Track, Index, Threads, SeekMode, &E);
 	if (!V)
-		Env->ThrowError(E.Buffer);
+		Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
 	if (FFMS_SetPP(V, PP, &E)) {
 		FFMS_DestroyVideoSource(V);
@@ -350,8 +351,10 @@ bool AvisynthVideoSource::GetParity(int n) {
 	return VI.image_type == VideoInfo::IT_TFF;
 }
 
-AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, IScriptEnvironment* Env) {
+AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
+										 int AdjustDelay, IScriptEnvironment* Env) {
 	memset(&VI, 0, sizeof(VI));
+	SampleOffset = 0;
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
@@ -360,10 +363,11 @@ AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS
 
 	A = FFMS_CreateAudioSource(SourceFile, Track, Index, &E);
 	if (!A)
-		Env->ThrowError(E.Buffer);
+		Env->ThrowError("FFAudioSource: %s", E.Buffer);
 
 	const FFMS_AudioProperties *AP = FFMS_GetAudioProperties(A);
 	VI.nchannels = AP->Channels;
+
 	VI.num_audio_samples = AP->NumSamples;
 	VI.audio_samples_per_second = AP->SampleRate;
 
@@ -373,6 +377,23 @@ AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS
 		case FFMS_FMT_S32: VI.sample_type = SAMPLE_INT32; break;
 		case FFMS_FMT_FLT: VI.sample_type = SAMPLE_FLOAT; break;
 		default: Env->ThrowError("FFAudioSource: Bad audio format");
+	}
+
+	if (AdjustDelay >= -2) {
+		double AdjustRelative = 0;
+		if (AdjustDelay >= -1) {
+			int TrackNum = AdjustDelay;
+			if (AdjustDelay == -1)
+				TrackNum = FFMS_GetFirstTrackOfType(Index, FFMS_TYPE_VIDEO, &E);
+
+			if (TrackNum >= 0) {
+				FFMS_Track *VTrack = FFMS_GetTrackFromIndex(Index, TrackNum);
+				AdjustRelative = (FFMS_GetFrameInfo(VTrack, 0)->DTS * FFMS_GetTimeBase(VTrack)->Num) / (double)FFMS_GetTimeBase(VTrack)->Den / 1000;
+			}
+		}
+
+		SampleOffset = static_cast<int64_t>((AdjustRelative - AP->FirstTime) * VI.audio_samples_per_second);
+		VI.num_audio_samples += SampleOffset;
 	}
 }
 
@@ -386,6 +407,14 @@ void AvisynthAudioSource::GetAudio(void* Buf, __int64 Start, __int64 Count, IScr
 	E.Buffer = ErrorMsg;
 	E.BufferSize = sizeof(ErrorMsg);
 
-	if (FFMS_GetAudio(A, Buf, Start, Count, &E))
-		Env->ThrowError(E.Buffer);
+	uint8_t *Buf2 = static_cast<uint8_t *>(Buf);
+	__int64 AdjustedStart = Start + SampleOffset;
+	if (AdjustedStart < 0) {
+		size_t Bytes = static_cast<size_t>(VI.BytesFromAudioSamples(-AdjustedStart));
+		memset(Buf, 0, Bytes);
+		Buf2 += Bytes;
+	}
+
+	if (FFMS_GetAudio(A, Buf2, FFMAX(AdjustedStart, 0), Count + FFMIN(AdjustedStart, 0), &E))
+		Env->ThrowError("FFAudioSource: %s", E.Buffer);
 }

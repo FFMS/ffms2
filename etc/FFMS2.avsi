@@ -4,7 +4,7 @@
 function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", \
 	string "cachefile", int "fpsnum", int "fpsden", string "pp", int "threads", \
 	string "timecodes", int "seekmode", bool "overwrite", int "width", int "height", \
-	int "resizer", string "colorspace", int "rffmode") {
+	int "resizer", string "colorspace", int "rffmode", int "adjustdelay") {
 	
 	vtrack 		= default(vtrack,-1)
 	atrack		= default(atrack,-2)
@@ -22,6 +22,7 @@ function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", 
 	resizer		= default(resizer,"BICUBIC")
 	colorspace	= default(colorspace,"")
 	rffmode		= default(rffmode,0)
+	adjustdelay	= default(adjustdelay,-1)
 
 	
 	((cache == true) && (atrack <= -2)) ? ffindex(source=source, cachefile=cachefile, \
@@ -34,7 +35,7 @@ function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", 
 		colorspace=colorspace)
 	
 	a = (atrack <= -2) ? blankclip(audio_rate=0) : ffaudiosource(source=source, \
-		track=atrack, cache=cache, cachefile=cachefile)
+		track=atrack, cache=cache, cachefile=cachefile, adjustdelay=adjustdelay)
 	
 	return audiodubex(v,a)
 }

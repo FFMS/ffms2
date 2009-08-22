@@ -53,9 +53,8 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <h2>Known issues</h2>
 <ul>
-<li>There may appear decoding artifacts on h264 in transport streams.</li>
+<li>There will appear decoding artifacts on h264 in transport streams.</li>
 <li>FFIndex() will silently ignore fatal decoding errors when indexing. This means that indexing a specific track may have failed even if FFIndex() succeeds.</li>
-<li>There are still some issues with FFAudioSource but it should be good enough for actual use in many cases now.</li>
 </ul>
 
 <h2>Compatibility</h2>
@@ -81,7 +80,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 </p>
 
 <p>
-<b>FFAudioSource(string source, int track, bool cache = true, string cachefile = source + ".ffindex")</b><br />
+<b>FFAudioSource(string source, int track, bool cache = true, string cachefile = source + ".ffindex", adjustdelay = -1)</b><br />
  Opens audio, will invoke indexing of all tracks if no index exists or the requested track is not present in the index.
 </p>
 
@@ -109,8 +108,9 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 <p>
 <b>FFmpegSource2(string source, int vtrack = -1, int atrack = -2, bool cache = true,
  string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1, string pp, int threads = -1,
-	string timecodes, int seekmode = 1, bool overwrite = false, width = -1, height = -1, resizer = "BICUBIC", colorspace = "", int rffmode = 0)</b><br />
- Approximates the syntax later versions of the 1.x series. Can be convenient to use with atrack=-1 to load both audio and video at the same time.
+	string timecodes, int seekmode = 1, bool overwrite = false, width = -1, height = -1, resizer = "BICUBIC", colorspace = "", int rffmode = 0,
+	adjustdelay = -1)</b><br />
+ Approximates the syntax later versions of the 1.x series. Can be convenient to use with atrack=-1 to load both audio and video at the same time. Note that the adjustdelay parameter may need to be specified for the expected behavior if a video track other than the first is selected.
 </p>
 
 <p>
@@ -232,6 +232,15 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
     <b>1:</b> Clear the affected track and continue<br />
     <b>2:</b> Stop indexing the track but keep all the index entries so far<br />
     <b>3:</b> Continue anyway<br />
+</p>
+
+<p>
+<b>adjustdelay:</b>
+  Try to apply a suitable delay to the audio track. -1 is the default mode and should produce correct results in most cases<br />
+    <b>-3:</b> No delay adjustment<br />
+    <b>-2:</b> Adjust relative to time 0<br />
+    <b>-1:</b> Adjust relative to the first video track, adjusts the delay relative to time 0 if no video track is present<br />
+    <b>Any valid track number:</b> Adjust relative to the specified track<br />
 </p>
 
 <h2>Exported Avisynth variables</h2>

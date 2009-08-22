@@ -43,7 +43,7 @@ private:
 	std::vector<FrameFields> FieldList;
 
 	void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
-		const char *ResizerName, const char *ConvertToFormatName,IScriptEnvironment *Env);
+		const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env);
 	void OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env);
 	void OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst, int Field, IScriptEnvironment *Env);
 public:
@@ -63,8 +63,10 @@ class AvisynthAudioSource : public IClip {
 private:
 	VideoInfo VI;
 	FFMS_AudioSource *A;
+	int64_t SampleOffset;
 public:
-	AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, IScriptEnvironment* Env);
+	AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
+		int AdjustDelay, IScriptEnvironment* Env);
 	~AvisynthAudioSource();
 	bool __stdcall GetParity(int n) { return false; }
 	void __stdcall SetCacheHints(int cachehints, int frame_range) { }
