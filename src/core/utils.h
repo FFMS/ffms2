@@ -117,6 +117,7 @@ public:
 	StdIoStream ST;
 	uint8_t *Buffer;
 	unsigned int BufferSize;
+	char CSBuffer[4096];
 
 	MatroskaReaderContext() {
 		InitStdIoStream(&ST);

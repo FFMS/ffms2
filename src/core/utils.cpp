@@ -131,14 +131,12 @@ FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT) {
 
 void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, MatroskaReaderContext &Context) {
 	if (CS) {
-		char CSBuffer[4096];
-
 		unsigned int DecompressedFrameSize = 0;
 
 		cs_NextFrame(CS, FilePos, FrameSize);
 
 		for (;;) {
-			int ReadBytes = cs_ReadData(CS, CSBuffer, sizeof(CSBuffer));
+			int ReadBytes = cs_ReadData(CS, Context.CSBuffer, sizeof(Context.CSBuffer));
 			if (ReadBytes < 0)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 					boost::format("Error decompressing data: %1%") % cs_GetLastError(CS));
@@ -149,14 +147,14 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, 
 			}
 
 			if (Context.BufferSize < DecompressedFrameSize + ReadBytes) {
-				Context.BufferSize = FrameSize;
-				Context.Buffer = (uint8_t *)realloc(Context.Buffer, Context.BufferSize + 16);
+				Context.BufferSize = DecompressedFrameSize + ReadBytes;
+				Context.Buffer = (uint8_t *)realloc(Context.Buffer, Context.BufferSize + FF_INPUT_BUFFER_PADDING_SIZE);
 				if (Context.Buffer == NULL)
 					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
 					"Out of memory");
 			}
 
-			memcpy(Context.Buffer + DecompressedFrameSize, CSBuffer, ReadBytes);
+			memcpy(Context.Buffer + DecompressedFrameSize, Context.CSBuffer, ReadBytes);
 			DecompressedFrameSize += ReadBytes;
 		}
 	} else {
