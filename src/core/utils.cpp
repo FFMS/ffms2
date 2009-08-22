@@ -143,6 +143,8 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, 
 
 			if (ReadBytes == 0) {
 				FrameSize = DecompressedFrameSize;
+				memset(Context.Buffer + DecompressedFrameSize, 0,
+					Context.BufferSize  + FF_INPUT_BUFFER_PADDING_SIZE - DecompressedFrameSize);
 				return;
 			}
 
