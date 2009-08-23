@@ -79,7 +79,8 @@ public:
 	virtual ~FFMS_VideoSource();
 	const FFMS_VideoProperties& GetVideoProperties() { return VP; }
 	FFMS_Track *GetTrack() { return &Frames; }
-	virtual FFMS_Frame *GetFrame(int n);
+	virtual FFMS_Frame *GetFrame(int n) = 0;
+	void GetFrameCheck(int n);
 	FFMS_Frame *GetFrameByTime(double Time);
 	void SetPP(const char *PP);
 	void ResetPP();

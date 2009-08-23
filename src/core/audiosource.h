@@ -85,7 +85,8 @@ public:
 	virtual ~FFMS_AudioSource();
 	FFMS_Track *GetTrack() { return &Frames; }
 	const FFMS_AudioProperties& GetAudioProperties() { return AP; }
-	virtual void GetAudio(void *Buf, int64_t Start, int64_t Count);
+	virtual void GetAudio(void *Buf, int64_t Start, int64_t Count) = 0;
+	void GetAudioCheck(int64_t Start, int64_t Count);
 };
 
 class FFLAVFAudio : public FFMS_AudioSource {

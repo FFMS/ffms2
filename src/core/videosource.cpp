@@ -20,7 +20,7 @@
 
 #include "videosource.h"
 
-FFMS_Frame *FFMS_VideoSource::GetFrame(int n) {
+void FFMS_VideoSource::GetFrameCheck(int n) {
 	if (n < 0 || n >= VP.NumFrames)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_INVALID_ARGUMENT,
 			"Out of bounds frame requested");

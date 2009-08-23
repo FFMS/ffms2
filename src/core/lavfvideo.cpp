@@ -142,7 +142,7 @@ Done:;
 }
 
 FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
-	FFMS_VideoSource::GetFrame(n);
+	GetFrameCheck(n);
 
 	if (LastFrameNum == n)
 		return &LocalFrame;
