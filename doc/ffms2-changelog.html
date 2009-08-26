@@ -13,6 +13,7 @@ FFmpegSource2 Changelog
 <ul>
 <li>2.11<ul>
 <li>Now 100% less beta</li>
+<li>Optimized index reading and writing, file opening should be faster especially for big files</li>
 <li>Fixed a crash bug on zlib compressed streams in matroska</li>
 <li>Added an argument to FFAudioSource that makes it automatically adjust the delay relative to the first video track (default), the specified track (any track type possible) or relative to the zero timestamp, no adjustment is done for files with no video track in the default mode</li>
 <li>Now exports the colorimetry info in a format easily usable with ColorMatrix, see FFCOLOR_SPACE and FFCOLOR_RANGE in the manual, the reported information may be unreliable</li>

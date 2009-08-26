@@ -37,7 +37,7 @@
 #	include "guids.h"
 #endif
 
-#define INDEXID 0x53920873
+
 
 class SharedVideoContext {
 private:
@@ -73,6 +73,7 @@ public:
 	unsigned int FrameSize;
 	size_t OriginalPos;
 
+	TFrameInfo();
 	static TFrameInfo VideoFrameInfo(int64_t DTS, int RepeatPict, bool KeyFrame, int64_t FilePos = 0, unsigned int FrameSize = 0);
 	static TFrameInfo AudioFrameInfo(int64_t DTS, int64_t SampleStart, unsigned int SampleCount, bool KeyFrame, int64_t FilePos = 0, unsigned int FrameSize = 0);
 private:

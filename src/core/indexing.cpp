@@ -27,7 +27,7 @@ extern "C" {
 #include <libavutil/sha1.h>
 }
 
-
+#define INDEXID 0x53920873
 
 extern bool HasHaaliMPEG;
 extern bool HasHaaliOGG;
@@ -44,6 +44,13 @@ struct IndexHeader {
 	uint32_t LPPVersion;
 	int64_t FileSize;
 	uint8_t FileSignature[20];
+};
+
+struct TrackHeader {
+		uint32_t TT;
+		uint32_t Frames;
+		int64_t Num;
+		int64_t Den;
 };
 
 SharedVideoContext::SharedVideoContext(bool FreeCodecContext) {
@@ -87,6 +94,9 @@ SharedAudioContext::~SharedAudioContext() {
 		cs_Destroy(CS);
 }
 
+TFrameInfo::TFrameInfo() {
+}
+
 TFrameInfo::TFrameInfo(int64_t DTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
 	this->DTS = DTS;
 	this->RepeatPict = RepeatPict;
@@ -95,6 +105,7 @@ TFrameInfo::TFrameInfo(int64_t DTS, int64_t SampleStart, unsigned int SampleCoun
 	this->SampleCount = SampleCount;
 	this->FilePos = FilePos;
 	this->FrameSize = FrameSize;
+	this->OriginalPos = 0;
 }
 
 TFrameInfo TFrameInfo::VideoFrameInfo(int64_t DTS, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
@@ -270,17 +281,14 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 	IndexStream.write(reinterpret_cast<char *>(&IH), sizeof(IH));
 
 	for (unsigned int i = 0; i < IH.Tracks; i++) {
-		uint32_t TT = at(i).TT;
-		IndexStream.write(reinterpret_cast<char *>(&TT), sizeof(TT));
-		int64_t Num = at(i).TB.Num;
-		IndexStream.write(reinterpret_cast<char *>(&Num), sizeof(Num));
-		int64_t Den = at(i).TB.Den;
-		IndexStream.write(reinterpret_cast<char *>(&Den), sizeof(Den));
-		int64_t Frames = at(i).size();
-		IndexStream.write(reinterpret_cast<char *>(&Frames), sizeof(Frames));
+		TrackHeader TH;
+		TH.TT = at(i).TT;
+		TH.Frames = at(i).size();
+		TH.Num = at(i).TB.Num;;
+		TH.Den = at(i).TB.Den;
 
-		for (FFMS_Track::iterator Cur=at(i).begin(); Cur!=at(i).end(); Cur++)
-			IndexStream.write(reinterpret_cast<char *>(&*Cur), sizeof(TFrameInfo));
+		IndexStream.write(reinterpret_cast<char *>(&TH), sizeof(TH));
+		IndexStream.write(reinterpret_cast<char *>(FFMS_GET_VECTOR_PTR(at(i))), TH.Frames * sizeof(TFrameInfo));
 	}
 }
 
@@ -317,23 +325,14 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 	memcpy(Digest, IH.FileSignature, sizeof(Digest));
 
 	try {
-
 		for (unsigned int i = 0; i < IH.Tracks; i++) {
-			// Read how many records belong to the current stream
-			uint32_t TT;
-			Index.read(reinterpret_cast<char *>(&TT), sizeof(TT));
-			int64_t Num;
-			Index.read(reinterpret_cast<char *>(&Num), sizeof(Num));
-			int64_t Den;
-			Index.read(reinterpret_cast<char *>(&Den), sizeof(Den));
-			int64_t Frames;
-			Index.read(reinterpret_cast<char *>(&Frames), sizeof(Frames));
-			push_back(FFMS_Track(Num, Den, static_cast<FFMS_TrackType>(TT)));
+			TrackHeader TH;
+			Index.read(reinterpret_cast<char *>(&TH), sizeof(TH));
+			push_back(FFMS_Track(TH.Num, TH.Den, static_cast<FFMS_TrackType>(TH.TT)));
 
-			TFrameInfo FI = TFrameInfo::VideoFrameInfo(0, 0, false);
-			for (size_t j = 0; j < Frames; j++) {
-				Index.read(reinterpret_cast<char *>(&FI), sizeof(TFrameInfo));
-				at(i).push_back(FI);
+			if (TH.Frames) {
+				at(i).resize(TH.Frames);
+				Index.read(reinterpret_cast<char *>(FFMS_GET_VECTOR_PTR(at(i))), TH.Frames * sizeof(TFrameInfo));
 			}
 		}
 

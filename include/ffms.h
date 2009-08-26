@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (11 << 16)| (0 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (11 << 16)| (0 << 8) | 5)
 
 #include <stdint.h>
 
