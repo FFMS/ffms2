@@ -60,7 +60,6 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 			boost::format("Can't parse Matroska file: %1%") % ErrorMessage);
 	}
 
-	mkv_SetTrackMask(MF, ~(1 << VideoTrack));
 	TI = mkv_GetTrackInfo(MF, VideoTrack);
 
 	if (TI->CompEnabled) {

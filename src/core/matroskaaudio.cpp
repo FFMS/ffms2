@@ -56,7 +56,6 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index *
 	}
 
 
-	mkv_SetTrackMask(MF, ~(1 << Track));
 	TI = mkv_GetTrackInfo(MF, Track);
 
 	if (TI->CompEnabled) {
