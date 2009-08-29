@@ -75,12 +75,12 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 </p>
 
 <p>
-<b>FFVideoSource(string source, int track, bool cache = true, string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1, string pp, int threads = -1, string timecodes, int seekmode = 1, int rffmode = 0, width = -1, height = -1, resizer = "BICUBIC", colorspace = "")</b><br />
+<b>FFVideoSource(string source, int track, bool cache = true, string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1, string pp, int threads = -1, string timecodes, int seekmode = 1, int rffmode = 0, int width = -1, int height = -1, string resizer = "BICUBIC", string colorspace = "")</b><br />
  Opens video, will invoke indexing of all video tracks if no usable index is found.
 </p>
 
 <p>
-<b>FFAudioSource(string source, int track, bool cache = true, string cachefile = source + ".ffindex", adjustdelay = -1)</b><br />
+<b>FFAudioSource(string source, int track, bool cache = true, string cachefile = source + ".ffindex", int adjustdelay = -1)</b><br />
  Opens audio, will invoke indexing of all tracks if no index exists or the requested track is not present in the index.
 </p>
 
@@ -90,7 +90,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 </p>
 
 <p>
-<b>SWScale(clip, width = -1, height = -1, resizer = "BICUBIC", colorspace = "")</b><br />
+<b>SWScale(clip, int width = -1, int height = -1, string resizer = "BICUBIC", string colorspace = "")</b><br />
   A resizing/colorspace conversion filter that does nothing special at all. May be useful in some cases just because it does not do things exactly like avisynth.
 </p>
 
@@ -108,13 +108,13 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 <p>
 <b>FFmpegSource2(string source, int vtrack = -1, int atrack = -2, bool cache = true,
  string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1, string pp, int threads = -1,
-	string timecodes, int seekmode = 1, bool overwrite = false, width = -1, height = -1, resizer = "BICUBIC", colorspace = "", int rffmode = 0,
-	adjustdelay = -1)</b><br />
+	string timecodes, int seekmode = 1, bool overwrite = false, int width = -1, int height = -1, string resizer = "BICUBIC", string colorspace = "", int rffmode = 0,
+	int adjustdelay = -1)</b><br />
  Approximates the syntax later versions of the 1.x series. Can be convenient to use with atrack=-1 to load both audio and video at the same time. Note that the adjustdelay parameter may need to be specified for the expected behavior if a video track other than the first is selected.
 </p>
 
 <p>
-<b>FFImageSource(string source, width = -1, height = -1, resizer = "BICUBIC", colorspace = "")</b><br />
+<b>FFImageSource(string source, int width = -1, int height = -1, string resizer = "BICUBIC", string colorspace = "")</b><br />
  Another alias for FFVideoSource with the options set optimally for using it as an image reader. Disables caching and seeking for maximum compatiblity.
 </p>
 
