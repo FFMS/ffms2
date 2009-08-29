@@ -40,7 +40,7 @@ function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", 
 	return audiodubex(v,a)
 }
 
-function FFImageSource(string source, int "width", int "height", int "resizer", string "colorspace") {
+function FFImageSource(string source, int "width", int "height", string "resizer", string "colorspace") {
 
 	width		= default(width,-1)
 	height		= default(height,-1)
