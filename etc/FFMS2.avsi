@@ -56,7 +56,7 @@ function FFCopyrightInfringement(string source) {
 # * With audio
 # * No annoying lawyers
 # * Simple syntax
-# * Do not use on Britney Spear's music videos or sex tapes
+# * Do not use on Britney Spears' music videos or sex tapes
 #
 # And whatever you do:
 #   DO NOT TELL NEURON2 THAT YOU USED THIS FUNCTION
