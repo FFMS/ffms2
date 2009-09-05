@@ -194,7 +194,7 @@ static void DoIndexing () {
 			int NumTracks = FFMS_GetNumTracks(Index);
 			for (int t = 0; t < NumTracks; t++) {
 				FFMS_Track *Track = FFMS_GetTrackFromIndex(Index, t);
-				if (FFMS_GetTrackType(Track) == FFMS_TYPE_VIDEO) {
+				if (FFMS_GetTrackType(Track) == FFMS_TYPE_VIDEO && FFMS_GetNumFrames(Track)) {
 					char tn[3];
 					snprintf(tn, 2, "%02d", t);
 					std::string TCFilename = InputFile;
