@@ -55,7 +55,7 @@ static void PrintUsage () {
 		<< "-f        Force overwriting of existing index file, if any (default: no)" << endl
 		<< "-v        Set FFmpeg verbosity level. Can be repeated for more verbosity. (default: no messages printed)" << endl
 		<< "-p        Disable progress reporting. (default: progress reporting on)" << endl
-		<< "-c        Write timecodes for all video tracks to inputfile_track00.tc.txt (default: no)" << endl
+		<< "-c        Write timecodes for all video tracks to outputfile_track00.tc.txt (default: no)" << endl
 		<< "-t N      Set the audio indexing mask to N (-1 means index all tracks, 0 means index none, default: 0)" << endl
 		<< "-d N      Set the audio decoding mask to N (mask syntax same as -t, default: 0)" << endl
 		<< "-a NAME   Set the audio output base filename to NAME (default: input filename)" << endl
@@ -197,7 +197,7 @@ static void DoIndexing () {
 				if (FFMS_GetTrackType(Track) == FFMS_TYPE_VIDEO && FFMS_GetNumFrames(Track)) {
 					char tn[3];
 					snprintf(tn, 2, "%02d", t);
-					std::string TCFilename = InputFile;
+					std::string TCFilename = CacheFile;
 					TCFilename = TCFilename + "_track" + tn + ".tc.txt";
 					if (FFMS_WriteTimecodes(Track, TCFilename.c_str(), &E))
 						std::cout << std::endl << "Failed to write timecodes file "
