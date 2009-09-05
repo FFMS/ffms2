@@ -50,6 +50,21 @@ function FFImageSource(string source, int "width", int "height", string "resizer
 	return FFVideoSource(source, cache=false, seekmode=-1, width=width, height=height, resizer=resizer, colorspace=colorspace)
 }
 
+function FFCopyrightInfringement(string source) {
+################################################################
+# Violates copyright
+# * With audio
+# * No annoying lawyers
+# * Simple syntax
+# * Do not use on Britney Spear's music videos or sex tapes
+#
+# And whatever you do:
+#   DO NOT TELL NEURON2 THAT YOU USED THIS FUNCTION
+################################################################
+	FFIndex(source=source)
+	return audiodubex(FFVideoSource(source=source), FFAudioSource(source=source))
+}
+
 function FFFormatTime(int ms) {
 
 	s = ms / 1000
