@@ -34,10 +34,11 @@ extern "C" {
 
 int TrackMask;
 int DumpMask;
-bool Overwrite;
-bool IgnoreErrors;
-bool PrintProgress;
 int Verbose;
+int IgnoreErrors;
+bool Overwrite;
+bool PrintProgress;
+bool WriteTC;
 std::string InputFile;
 std::string CacheFile;
 std::string AudioFile;
@@ -52,12 +53,13 @@ static void PrintUsage () {
 		<< "If no output filename is specified, inputfile.ffindex will be used." << endl << endl
 		<< "Options:" << endl
 		<< "-f        Force overwriting of existing index file, if any (default: no)" << endl
-		<< "-s        Silently skip indexing of audio tracks that cannot be read (default: no)" << endl
 		<< "-v        Set FFmpeg verbosity level. Can be repeated for more verbosity. (default: no messages printed)" << endl
 		<< "-p        Disable progress reporting. (default: progress reporting on)" << endl
+		<< "-c        Write timecodes for all video tracks to inputfile_track00.tc.txt (default: no)" << endl
 		<< "-t N      Set the audio indexing mask to N (-1 means index all tracks, 0 means index none, default: 0)" << endl
 		<< "-d N      Set the audio decoding mask to N (mask syntax same as -t, default: 0)" << endl
-		<< "-a NAME   Set the audio output base filename to NAME (default: input filename)";
+		<< "-a NAME   Set the audio output base filename to NAME (default: input filename)" << endl
+		<< "-s N      Set audio decoding error handling. See the documentation for details. (default: 0)";
 }
 
 
@@ -89,12 +91,12 @@ static void ParseCMDLine (int argc, char *argv[]) {
 
 		if (!Option.compare("-f")) {
 			Overwrite = true;
-		} else if (!Option.compare("-s")) {
-			IgnoreErrors = true;
 		} else if (!Option.compare("-v")) {
 			Verbose++;
 		} else if (!Option.compare("-p")) {
 			PrintProgress = false;
+		} else if (!Option.compare("-c")) {
+			WriteTC = true;
 		} else if (!Option.compare("-t")) {
 			TrackMask = atoi(OptionArg.c_str());
 			i++;
@@ -103,6 +105,9 @@ static void ParseCMDLine (int argc, char *argv[]) {
 			i++;
 		} else if (!Option.compare("-a")) {
 			AudioFile = OptionArg;
+			i++;
+		} else if (!Option.compare("-s")) {
+			IgnoreErrors = atoi(OptionArg.c_str());
 			i++;
 		} else if (InputFile.empty()) {
 			InputFile = argv[i];
@@ -115,9 +120,11 @@ static void ParseCMDLine (int argc, char *argv[]) {
 		i++;
 	}
 
-	if (InputFile.empty()) {
+	if (IgnoreErrors < 0 || IgnoreErrors > 3)
+		throw "Error: invalid error handling mode";
+	if (InputFile.empty())
 		throw "Error: no input file specified";
-	}
+
 	if (CacheFile.empty()) {
 		CacheFile = InputFile;
 		CacheFile.append(".ffindex");
@@ -179,10 +186,30 @@ static void DoIndexing () {
 		}
 
 		if (Progress != 100 && PrintProgress)
-			std::cout << "Indexing, please wait... 100% \r" << std::flush;
+			std::cout << "Indexing, please wait... 100%" << std::endl << std::flush;
+
+		if (WriteTC) {
+			if (PrintProgress)
+				std::cout << "Writing timecodes... ";
+			int NumTracks = FFMS_GetNumTracks(Index);
+			for (int t = 0; t < NumTracks; t++) {
+				FFMS_Track *Track = FFMS_GetTrackFromIndex(Index, t);
+				if (FFMS_GetTrackType(Track) == FFMS_TYPE_VIDEO) {
+					char tn[3];
+					snprintf(tn, 2, "%02d", t);
+					std::string TCFilename = InputFile;
+					TCFilename = TCFilename + "_track" + tn + ".tc.txt";
+					if (FFMS_WriteTimecodes(Track, TCFilename.c_str(), &E))
+						std::cout << std::endl << "Failed to write timecodes file "
+							<< TCFilename << ": " << E.Buffer << std::endl << std:: flush;
+				}
+			}
+			if (PrintProgress)
+				std::cout << "done." << std::endl << std::flush;
+		}
 
 		if (PrintProgress)
-			std::cout << std::endl << "Writing index... ";
+			std::cout << "Writing index... ";
 
 		if (FFMS_WriteIndex(CacheFile.c_str(), Index, &E)) {
 			std::string Err = "Error writing index: ";
