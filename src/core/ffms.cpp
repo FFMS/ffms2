@@ -251,7 +251,8 @@ FFMS_API(int) FFMS_GetFirstIndexedTrackOfType(FFMS_Index *Index, int TrackType, 
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_NOT_AVAILABLE,
 			"No suitable, indexed track found");
 	} catch (FFMS_Exception &e) {
-		return e.CopyOut(ErrorInfo);
+		e.CopyOut(ErrorInfo);
+		return -1;
 	}
 }
 
