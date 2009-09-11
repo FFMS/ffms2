@@ -107,11 +107,17 @@ int main (...) {
 	As the lack of the errmsg parameter indicates, this function cannot fail. */
 	const FFVideoProperties *videoprops = FFMS_GetVideoProperties(videosource);
 
-	/* 
-	now you may want to do something with the info; particularly interesting values are:
-	videoprops-&gt;Width; (frame width in pixels)
-	videoprops-&gt;Height; (frame height in pixels)
+	/* Now you may want to do something with the info; particularly interesting values are:
 	videoprops-&gt;NumFrames; (video length in number of frames)
+	*/
+
+	/* Retrieve frame based video properties so we know what we're getting. */
+	const FFAVFrame *propframe = FFMS_GetFrame(videosource, 0, errmsg, msgsize);
+
+	/* Now you may want to do something with the info; particularly interesting values are:
+	propframe-&gt;EncodedWidth; (frame width in pixels)
+	propframe-&gt;EncodedHeight; (frame height in pixels)
+	propframe-&gt;EncodedPixelFormat; (actual frame colorspace)
 	*/
 
 	/* If you want to change the output colorspace or resize the output frame size,
@@ -120,7 +126,7 @@ int main (...) {
 	To get the name of a given pixel format, strip the leading PIX_FMT_
 	and convert to lowercase. For example, PIX_FMT_YUV420P becomes "yuv420p". */
 	int64_t pixfmt = (int64_t)1 &lt;&lt; FFMS_GetPixFmt("bgra");
-	if (FFMS_SetOutputFormatV(videosource, pixfmt, videoprops-&gt;Width, videoprops-&gt;Height, FFMS_RESIZER_BICUBIC, errmsg, msgsize)) {
+	if (FFMS_SetOutputFormatV(videosource, pixfmt, propframe-&gt;EncodedWidth, propframe-&gt;EncodedHeight, FFMS_RESIZER_BICUBIC, errmsg, msgsize)) {
 		/* handle error */
 	}
 
