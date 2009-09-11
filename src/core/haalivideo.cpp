@@ -127,21 +127,18 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	int64_t Dummy;
 	DecodeNextFrame(&Dummy);
 
-	VP.Width = CodecContext->width;
-	VP.Height = CodecContext->height;
 	VP.FPSDenominator = 1;
 	VP.FPSNumerator = 30;
 	VP.RFFDenominator = CodecContext->time_base.num;
 	VP.RFFNumerator = CodecContext->time_base.den;
 	VP.NumFrames = Frames.size();
-	VP.VPixelFormat = CodecContext->pix_fmt;
 	VP.TopFieldFirst = DecodeFrame->top_field_first;
 	VP.ColorSpace = CodecContext->colorspace;
 	VP.ColorRange = CodecContext->color_range;
 	VP.FirstTime = ((Frames.front().DTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 	VP.LastTime = ((Frames.back().DTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 
-	if (VP.Width <= 0 || VP.Height <= 0)
+	if (CodecContext->width <= 0 || CodecContext->height <= 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Codec returned zero size video");
 

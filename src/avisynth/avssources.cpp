@@ -184,6 +184,9 @@ void AvisynthVideoSource::InitOutputFormat(
 	E.BufferSize = sizeof(ErrorMsg);
 
 	const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
+	const FFMS_Frame *F = FFMS_GetFrame(V, 0, &E);
+	if (!F)
+		Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
 	int64_t TargetFormats = (1 << FFMS_GetPixFmt("yuvj420p")) |
 		(1 << FFMS_GetPixFmt("yuv420p")) | (1 << FFMS_GetPixFmt("yuyv422")) |
@@ -198,10 +201,10 @@ void AvisynthVideoSource::InitOutputFormat(
 		TargetFormats = static_cast<int64_t>(1) << TargetPixelFormat;
 
 	if (ResizeToWidth <= 0)
-		ResizeToWidth = VP->Width;
+		ResizeToWidth = F->EncodedWidth;
 
 	if (ResizeToHeight <= 0)
-		ResizeToHeight = VP->Height;
+		ResizeToHeight = F->EncodedHeight;
 
 	int Resizer = ResizerNameToSWSResizer(ResizerName);
 	if (Resizer == 0)
@@ -211,39 +214,39 @@ void AvisynthVideoSource::InitOutputFormat(
 		ResizeToWidth, ResizeToHeight, Resizer, &E))
 		Env->ThrowError("FFVideoSource: No suitable output format found");
 
-	VP = FFMS_GetVideoProperties(V);
+	F = FFMS_GetFrame(V, 0, &E);
 
 	// This trick is required to first get the "best" default format and then set only that format as the output
-	if (FFMS_SetOutputFormatV(V, static_cast<int64_t>(1) << VP->VPixelFormat,
+	if (FFMS_SetOutputFormatV(V, static_cast<int64_t>(1) << F->ConvertedPixelFormat,
 		ResizeToWidth, ResizeToHeight, Resizer, &E))
 		Env->ThrowError("FFVideoSource: No suitable output format found");
 
-	VP = FFMS_GetVideoProperties(V);
+	F = FFMS_GetFrame(V, 0, &E);
 
-	if (VP->VPixelFormat == FFMS_GetPixFmt("yuvj420p") || VP->VPixelFormat == FFMS_GetPixFmt("yuv420p"))
+	if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuvj420p") || F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv420p"))
 		VI.pixel_type = VideoInfo::CS_I420;
-	else if (VP->VPixelFormat == FFMS_GetPixFmt("yuyv422"))
+	else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuyv422"))
 		VI.pixel_type = VideoInfo::CS_YUY2;
-	else if (VP->VPixelFormat == FFMS_GetPixFmt("rgb32"))
+	else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("rgb32"))
 		VI.pixel_type = VideoInfo::CS_BGR32;
-	else if (VP->VPixelFormat == FFMS_GetPixFmt("bgr24"))
+	else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("bgr24"))
 		VI.pixel_type = VideoInfo::CS_BGR24;
 	else
 		Env->ThrowError("FFVideoSource: No suitable output format found");
 
-	if (RFFMode > 0 && ResizeToHeight != VP->Height)
+	if (RFFMode > 0 && ResizeToHeight != F->EncodedHeight)
 		Env->ThrowError("FFVideoSource: Vertical scaling not allowed in RFF mode");
 
 	if (RFFMode > 0 && 	TargetPixelFormat != PIX_FMT_NV12)
-		Env->ThrowError("FFVideoSource: Only the default output can be used in RFF mode");
+		Env->ThrowError("FFVideoSource: Only the default output colorspace can be used in RFF mode");
 
 	if (VP->TopFieldFirst)
 		VI.image_type = VideoInfo::IT_TFF;
 	else
 		VI.image_type = VideoInfo::IT_BFF;
 
-	VI.width = VP->Width;
-	VI.height = VP->Height;
+	VI.width = F->ScaledWidth;
+	VI.height = F->ScaledHeight;
 
 	// Crop to obey avisynth's even width/height requirements
 	if (VI.pixel_type == VideoInfo::CS_I420) {

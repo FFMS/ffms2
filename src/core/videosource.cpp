@@ -123,9 +123,9 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	LocalFrame.EncodedWidth = CodecContext->width;
 	LocalFrame.EncodedHeight = CodecContext->height;
 	LocalFrame.EncodedPixelFormat = CodecContext->pix_fmt;
-	LocalFrame.ScaledWidth = VP.Width;
-	LocalFrame.ScaledHeight = VP.Height;
-	LocalFrame.ConvertedPixelFormat = VP.VPixelFormat;
+	LocalFrame.ScaledWidth = TargetWidth;
+	LocalFrame.ScaledHeight = TargetHeight;
+	LocalFrame.ConvertedPixelFormat = OutputFormat;
 	LocalFrame.KeyFrame = Frame->key_frame;
 	LocalFrame.PictType = av_get_pict_type_char(Frame->pict_type);
 	LocalFrame.RepeatPict = Frame->repeat_pict;
@@ -170,6 +170,7 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, in
 	TargetWidth = -1;
 	TargetPixelFormats = 0;
 	TargetResizer = 0;
+	OutputFormat = PIX_FMT_NONE;
 	DecodeFrame = avcodec_alloc_frame();
 
 	// Dummy allocations so the unallocated case doesn't have to be handled later
@@ -213,7 +214,7 @@ void FFMS_VideoSource::ReAdjustOutputFormat(int64_t TargetFormats, int Width, in
 	}
 
 	int Loss;
-	PixelFormat OutputFormat = avcodec_find_best_pix_fmt(TargetFormats,
+	OutputFormat = avcodec_find_best_pix_fmt(TargetFormats,
 		CodecContext->pix_fmt, 1 /* Required to prevent pointless RGB32 => RGB24 conversion */, &Loss);
 	if (OutputFormat == PIX_FMT_NONE) {
 		ResetOutputFormat();
@@ -231,10 +232,6 @@ void FFMS_VideoSource::ReAdjustOutputFormat(int64_t TargetFormats, int Width, in
 		}
 	}
 
-	VP.VPixelFormat = OutputFormat;
-	VP.Height = Height;
-	VP.Width = Width;
-
 	avpicture_free(&SWSFrame);
 	avpicture_alloc(&SWSFrame, OutputFormat, Width, Height);
 }
@@ -248,10 +245,7 @@ void FFMS_VideoSource::ResetOutputFormat() {
 	TargetWidth = -1;
 	TargetHeight = -1;
 	TargetPixelFormats = 0;
-
-	VP.Height = CodecContext->height;
-	VP.Width = CodecContext->width;
-	VP.VPixelFormat = CodecContext->pix_fmt;
+	OutputFormat = PIX_FMT_NONE;
 
 	OutputFrame(DecodeFrame);
 }

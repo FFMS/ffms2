@@ -58,6 +58,7 @@ private:
 	int TargetWidth;
 	int64_t TargetPixelFormats;
 	int TargetResizer;
+	PixelFormat OutputFormat;
 	AVPicture PPFrame;
 	AVPicture SWSFrame;
 protected:

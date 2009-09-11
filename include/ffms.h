@@ -161,17 +161,17 @@ enum FFMS_AudioChannel {
 };
 
 enum FFMS_Resizers {
-	FFMS_RESIZER_FAST_BILINEAR	= 0x01,
-	FFMS_RESIZER_BILINEAR		= 0x02,
-	FFMS_RESIZER_BICUBIC		= 0x04,
-	FFMS_RESIZER_X				= 0x08,
-	FFMS_RESIZER_POINT			= 0x10,
-	FFMS_RESIZER_AREA			= 0x20,
-	FFMS_RESIZER_BICUBLIN		= 0x40,
-	FFMS_RESIZER_GAUSS			= 0x80,
-	FFMS_RESIZER_SINC			= 0x100,
-	FFMS_RESIZER_LANCZOS		= 0x200,
-	FFMS_RESIZER_SPLINE			= 0x400
+	FFMS_RESIZER_FAST_BILINEAR	= 0x0001,
+	FFMS_RESIZER_BILINEAR		= 0x0002,
+	FFMS_RESIZER_BICUBIC		= 0x0004,
+	FFMS_RESIZER_X				= 0x0008,
+	FFMS_RESIZER_POINT			= 0x0010,
+	FFMS_RESIZER_AREA			= 0x0020,
+	FFMS_RESIZER_BICUBLIN		= 0x0040,
+	FFMS_RESIZER_GAUSS			= 0x0080,
+	FFMS_RESIZER_SINC			= 0x0100,
+	FFMS_RESIZER_LANCZOS		= 0x0200,
+	FFMS_RESIZER_SPLINE			= 0x0400
 };
 
 struct FFMS_Frame {
@@ -202,14 +202,11 @@ struct FFMS_FrameInfo {
 };
 
 struct FFMS_VideoProperties {
-	int Width;
-	int Height;
 	int FPSDenominator;
 	int FPSNumerator;
 	int RFFDenominator;
 	int RFFNumerator;
 	int NumFrames;
-	int VPixelFormat;
 	int SARNum;
 	int SARDen;
 	int CropTop;
