@@ -34,6 +34,7 @@ FFMS2 does not mux or encode anything. FFMS2 does not give you fine control over
 </ul>
 </li>
 <li><b><a href="http://www.zlib.net/">zlib</a></b></li>
+<li><b><a href="http://www.boost.org/">Boost (headers only)</a></b></li>
 </ul>
 <p>
 Compiling the library itself is fairly straightforward. For the basics, just add the <tt>include</tt> folder to your include paths and compile everything in <tt>src/core</tt>; everything else can be skipped. <tt>src/avisynth</tt> contains code for some Avisynth filters (optional and Windows-only); <tt>src/config</tt> is some MSVC-specific configuration; <tt>src/index</tt> is a stand-alone indexing application (built separately and linked against the main FFMS2 library); and <tt>src/test</tt> is an (incomplete) automatic regression test tool (also built separately). Take a look in <tt>doc/compiling.txt</tt> in the source tree for further details.
@@ -249,7 +250,7 @@ Deallocates the given <tt>FFVideo</tt> or <tt>FFAudio</tt> object and frees the 
 <h3>FFMS_GetVideoProperties - retrieves video properties</h3>
 <pre>const FFVideoProperties *FFMS_GetVideoProperties(FFVideo *V)</pre>
 <p>
-Retreives the video properties from the given <tt>FFVideo</tt> object and stores them in a <tt>FFVideoProperties</tt> struct (see the Data Structures section below). Returns a pointer to said struct. Note that some of the properties (i.e. frame width/height and the pixel format) may be changed by calls to <tt>FFMS_SetOutputFormatV</tt> and <tt>FFMS_ResetOutputFormatV</tt>, so if you want to keep the video properties updated you'll need to call this function each time you've changed the output format.
+Retreives the video properties from the given <tt>FFVideo</tt> object and stores them in a <tt>FFVideoProperties</tt> struct (see the Data Structures section below). Returns a pointer to said struct. Note that some of the properties.
 </p>
 
 <h3>FFMS_GetAudioProperties - retrieves audio properties</h3>
@@ -593,14 +594,11 @@ A struct representing the basic time unit of a track, as a rational number where
 
 <h3>FFVideoProperties</h3>
 <pre>struct FFVideoProperties {
-	int Width;
-	int Height;
 	int FPSDenominator;
 	int FPSNumerator;
 	int RFFDenominator;
 	int RFFNumerator;
 	int NumFrames;
-	int VPixelFormat;
 	int SARNum;
 	int SARDen;
 	int CropTop;
@@ -731,7 +729,7 @@ Used for determining the type of a given track. Note that there are currently no
 	FFMS_CH_STEREO_RIGHT            = 0x40000000
 };</pre>
 <p>
-Describes various audio channel configurations. The names should be self-explanatory. The audio samples are interleaved in the order these channels are listed in; i.e. in the stereo case the left channel (<tt>FFMS_CH_FRONT_LEFT</tt>) comes first. Note that <tt>FFMS_CH_STEREO_LEFT</tt> and <tt>FFMS_CH_STEREO_RIGHT</tt> are <b>not</b> commonly used (see ffmpeg docs for a description of what exactly they are used for). For normal stereo audio <tt>FFMS_CH_FRONT_LEFT</tt> and <tt>FFMS_CH_FRONT_RIGHT_</tt> are used.
+Describes various audio channel configurations. The names should be self-explanatory. The actual order if FFmpeg dictated and may vary.
 </p>
 
 <h3>FFMS_Resizers</h3>
