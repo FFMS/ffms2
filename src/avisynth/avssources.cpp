@@ -264,16 +264,14 @@ void AvisynthVideoSource::InitOutputFormat(
 }
 
 void AvisynthVideoSource::OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env) {
-	FFMS_Frame *SrcPicture = const_cast<FFMS_Frame *>(Frame);
-
 	if (VI.pixel_type == VideoInfo::CS_I420) {
-		Env->BitBlt(Dst->GetWritePtr(PLANAR_Y), Dst->GetPitch(PLANAR_Y), SrcPicture->Data[0], SrcPicture->Linesize[0], Dst->GetRowSize(PLANAR_Y), Dst->GetHeight(PLANAR_Y));
-		Env->BitBlt(Dst->GetWritePtr(PLANAR_U), Dst->GetPitch(PLANAR_U), SrcPicture->Data[1], SrcPicture->Linesize[1], Dst->GetRowSize(PLANAR_U), Dst->GetHeight(PLANAR_U));
-		Env->BitBlt(Dst->GetWritePtr(PLANAR_V), Dst->GetPitch(PLANAR_V), SrcPicture->Data[2], SrcPicture->Linesize[2], Dst->GetRowSize(PLANAR_V), Dst->GetHeight(PLANAR_V));
+		Env->BitBlt(Dst->GetWritePtr(PLANAR_Y), Dst->GetPitch(PLANAR_Y), Frame->Data[0], Frame->Linesize[0], Dst->GetRowSize(PLANAR_Y), Dst->GetHeight(PLANAR_Y));
+		Env->BitBlt(Dst->GetWritePtr(PLANAR_U), Dst->GetPitch(PLANAR_U), Frame->Data[1], Frame->Linesize[1], Dst->GetRowSize(PLANAR_U), Dst->GetHeight(PLANAR_U));
+		Env->BitBlt(Dst->GetWritePtr(PLANAR_V), Dst->GetPitch(PLANAR_V), Frame->Data[2], Frame->Linesize[2], Dst->GetRowSize(PLANAR_V), Dst->GetHeight(PLANAR_V));
 	} else if (VI.IsYUY2()) {
-		Env->BitBlt(Dst->GetWritePtr(), Dst->GetPitch(), SrcPicture->Data[0], SrcPicture->Linesize[0], Dst->GetRowSize(), Dst->GetHeight());
+		Env->BitBlt(Dst->GetWritePtr(), Dst->GetPitch(), Frame->Data[0], Frame->Linesize[0], Dst->GetRowSize(), Dst->GetHeight());
 	} else { // RGB
-		Env->BitBlt(Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1), -Dst->GetPitch(), SrcPicture->Data[0], SrcPicture->Linesize[0], Dst->GetRowSize(), Dst->GetHeight());
+		Env->BitBlt(Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1), -Dst->GetPitch(), Frame->Data[0], Frame->Linesize[0], Dst->GetRowSize(), Dst->GetHeight());
 	}
 }
 
