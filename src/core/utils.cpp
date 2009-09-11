@@ -208,7 +208,7 @@ bool IsNVOP(AVPacket &pkt) {
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
 	AP.SampleFormat = static_cast<FFMS_SampleFormat>(CTX->sample_fmt);
 	AP.BitsPerSample = av_get_bits_per_sample_format(CTX->sample_fmt);
-	if (CTX->sample_fmt == SAMPLE_FMT_S32)
+	if (CTX->sample_fmt == SAMPLE_FMT_S32 && CTX->bits_per_raw_sample)
 		AP.BitsPerSample = CTX->bits_per_raw_sample;
 
 	AP.Channels = CTX->channels;;
@@ -244,12 +244,35 @@ void vtCopy(VARIANT& vt,void *dest) {
 
 #endif
 
-CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC) {
+CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC, unsigned int BitsPerSample) {
 /* Look up native codecs */
 	for(int i = 0; ff_mkv_codec_tags[i].id != CODEC_ID_NONE; i++){
 		if(!strncmp(ff_mkv_codec_tags[i].str, Codec,
-			strlen(ff_mkv_codec_tags[i].str))){
-				return ff_mkv_codec_tags[i].id;
+			strlen(ff_mkv_codec_tags[i].str))) {
+
+				// Uncompressed and exotic format fixup
+				// This list is incomplete
+				CodecID CID = ff_mkv_codec_tags[i].id;
+				switch (CID) {
+					case CODEC_ID_PCM_S16LE:
+						switch (BitsPerSample) {
+							case 8: CID = CODEC_ID_PCM_S8; break;
+							case 16: CID = CODEC_ID_PCM_S16LE; break;
+							case 24: CID = CODEC_ID_PCM_S24LE; break;
+							case 32: CID = CODEC_ID_PCM_S32LE; break;
+						}
+						break;
+					case CODEC_ID_PCM_S16BE:
+						switch (BitsPerSample) {
+							case 8: CID = CODEC_ID_PCM_S8; break;
+							case 16: CID = CODEC_ID_PCM_S16BE; break;
+							case 24: CID = CODEC_ID_PCM_S24BE; break;
+							case 32: CID = CODEC_ID_PCM_S32BE; break;
+						}
+						break;
+				}
+
+				return CID;
 			}
 	}
 

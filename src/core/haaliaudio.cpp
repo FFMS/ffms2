@@ -117,7 +117,13 @@ FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index *Index,
 					if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
 						char ACodecID[2048];
 						wcstombs(ACodecID, pV.bstrVal, 2000);
-						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, FFMS_GET_VECTOR_PTR(CodecPrivate)));
+
+						int BitDepth = 0;
+						pV.Clear();
+						if (SUCCEEDED(pBag->Read(L"Audio.BitDepth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+							BitDepth = pV.uintVal;
+
+						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, FFMS_GET_VECTOR_PTR(CodecPrivate), 0, BitDepth));
 					}
 				}
 			}
