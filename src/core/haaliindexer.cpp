@@ -25,13 +25,14 @@
 
 
 FFHaaliIndexer::FFHaaliIndexer(const char *Filename, enum FFMS_Sources SourceMode) : FFMS_Indexer(Filename) {
-	SourceFile = Filename;
 	this->SourceMode = SourceMode;
-	memset(TrackType, FFMS_TYPE_UNKNOWN, sizeof(TrackType));
-	memset(Codec, 0, sizeof(Codec));
-	memset(CodecPrivate, 0, sizeof(CodecPrivate));
-	memset(CodecPrivateSize, 0, sizeof(CodecPrivateSize));
+	SourceFile = Filename;
 	Duration = 0;
+	for (int i = 0; i < 32; i++) {
+		TrackType[i] = FFMS_TYPE_UNKNOWN;
+		Codec[i] = NULL;
+		CodecPrivateSize[i] = 0;
+	}
 
 	pMMC = HaaliOpenFile(SourceFile, SourceMode);
 

@@ -24,9 +24,11 @@
 
 
 FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename) : FFMS_Indexer(Filename) {
-	memset(Codec, 0, sizeof(Codec));
 	SourceFile = Filename;
 	char ErrorMessage[256];
+	for (int i = 0; i < 32; i++) {
+		Codec[i] = NULL;
+	}
 
 	InitStdIoStream(&MC.ST);
 	MC.ST.fp = ffms_fopen(SourceFile, "rb");
