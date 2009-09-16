@@ -136,8 +136,8 @@
 				Name="VCLinkerTool"
 				Version=""
 				SuppressStartupBanner="true"
-				GenerateDebugInformation="true"
-				OptimizeReferences="2"
+				GenerateDebugInformation="false"
+				OptimizeReferences="1"
 				EnableCOMDATFolding="2"
 				TargetMachine="1"
 			/>
