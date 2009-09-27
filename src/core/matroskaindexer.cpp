@@ -47,7 +47,7 @@ FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename) : FFMS_Indexer(Filena
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++) {
 		TrackInfo *TI = mkv_GetTrackInfo(MF, i);
-		Codec[i] = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate));
+		Codec[i] = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate, 0, TI->AV.Audio.BitDepth));
 	}
 }
 
@@ -93,8 +93,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 
 		if (IndexMask & (1 << i) && TI->Type == TT_AUDIO) {
 			AVCodecContext *AudioCodecContext = avcodec_alloc_context();
-			AudioCodecContext->extradata = (uint8_t *)TI->CodecPrivate;
-			AudioCodecContext->extradata_size = TI->CodecPrivateSize;
+			InitializeCodecContextFromMatroskaTrackInfo(TI, AudioCodecContext);
 			AudioContexts[i].CodecContext = AudioCodecContext;
 
 			if (TI->CompEnabled) {
