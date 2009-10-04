@@ -112,11 +112,15 @@ void FFMatroskaAudio::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 	if (CacheEnd == Start + Count)
 		return;
 
-	// Is seeking required to decode the requested samples?
-//	if (!(CurrentSample >= Start && CurrentSample <= CacheEnd)) {
 	if (CurrentSample != CacheEnd) {
 		PreDecBlocks = 15;
-		PacketNumber = FFMAX((int64_t)Frames.FindClosestAudioKeyFrame(CacheEnd) - PreDecBlocks, (int64_t)0);;
+		PacketNumber = FFMAX((int64_t)Frames.FindClosestAudioKeyFrame(CacheEnd) - PreDecBlocks, (int64_t)0);
+
+		if (PacketNumber <= PreDecBlocks) {
+			PacketNumber = 0;
+			PreDecBlocks = 0;
+		}
+
 		avcodec_flush_buffers(CodecContext);
 	}
 

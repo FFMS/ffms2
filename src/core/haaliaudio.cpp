@@ -180,11 +180,16 @@ void FFHaaliAudio::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 		return;
 
 	int CurrentAudioBlock;
-	// Is seeking required to decode the requested samples?
-//	if (!(CurrentSample >= Start && CurrentSample <= CacheEnd)) {
+
 	if (CurrentSample != CacheEnd) {
 		PreDecBlocks = 15;
 		CurrentAudioBlock = FFMAX((int64_t)Frames.FindClosestAudioKeyFrame(CacheEnd) - PreDecBlocks - 20, (int64_t)0);
+
+		if (CurrentAudioBlock <= PreDecBlocks) {
+			CurrentAudioBlock = 0;
+			PreDecBlocks = 0;
+		}
+
 		pMMC->Seek(Frames[CurrentAudioBlock].DTS, MKVF_SEEK_TO_PREV_KEYFRAME_STRICT);
 		avcodec_flush_buffers(CodecContext);
 		HasSeeked = true;
