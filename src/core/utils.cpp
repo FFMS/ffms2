@@ -202,7 +202,7 @@ void InitNullPacket(AVPacket &pkt) {
 
 bool IsNVOP(AVPacket &pkt) {
 	const uint8_t MPEG4NVOP[] = { 0x00, 0x00, 0x01, 0xB6 };
-	return pkt.size == 7 && !memcmp(pkt.data, MPEG4NVOP, 4);
+	return (pkt.size >= 4 && pkt.size <= 8) && !memcmp(pkt.data, MPEG4NVOP, 4);
 }
 
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
