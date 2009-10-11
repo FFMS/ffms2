@@ -4,7 +4,6 @@ Settings:
 Define FFMS_EXPORTS
 Define HAALISOURCE to use haali's splitters for some containers (only works on windows)
 Link to FFmpeg and zlib
-Have the Boost headers installed
 
 Files:
 compat.h
