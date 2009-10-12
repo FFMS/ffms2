@@ -53,11 +53,11 @@ typedef struct {
 	char *Buffer;
 } FFMS_ErrorInfo;
 
-FFMS_CLASS_TYPE FFMS_VideoSource;
-FFMS_CLASS_TYPE FFMS_AudioSource;
-FFMS_CLASS_TYPE FFMS_Indexer;
-FFMS_CLASS_TYPE FFMS_Index;
-FFMS_CLASS_TYPE FFMS_Track;
+typedef FFMS_CLASS_TYPE FFMS_VideoSource FFMS_VideoSource;
+typedef FFMS_CLASS_TYPE FFMS_AudioSource FFMS_AudioSource;
+typedef FFMS_CLASS_TYPE FFMS_Indexer FFMS_Indexer;
+typedef FFMS_CLASS_TYPE FFMS_Index FFMS_Index;
+typedef FFMS_CLASS_TYPE FFMS_Track FFMS_Track;
 
 enum FFMS_Errors {
 	// No error
