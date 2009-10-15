@@ -151,7 +151,7 @@ FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index *Index,
 	int64_t Dummy1, Dummy2;
 	DecodeNextAudioBlock(&Dummy1, &Dummy2);
 
-	pMMC->Seek(Frames[0].DTS, MKVF_SEEK_TO_PREV_KEYFRAME_STRICT);
+	pMMC->Seek(Frames[0].PTS, MKVF_SEEK_TO_PREV_KEYFRAME_STRICT);
 	avcodec_flush_buffers(CodecContext);
 
 	FillAP(AP, CodecContext, Frames);
@@ -190,7 +190,7 @@ void FFHaaliAudio::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 			PreDecBlocks = 0;
 		}
 
-		pMMC->Seek(Frames[CurrentAudioBlock].DTS, MKVF_SEEK_TO_PREV_KEYFRAME_STRICT);
+		pMMC->Seek(Frames[CurrentAudioBlock].PTS, MKVF_SEEK_TO_PREV_KEYFRAME_STRICT);
 		avcodec_flush_buffers(CodecContext);
 		HasSeeked = true;
 	} else {
@@ -203,7 +203,7 @@ void FFHaaliAudio::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 		DecodeNextAudioBlock(&FirstTime, &DecodeCount);
 
 		if (HasSeeked) {
-			CurrentAudioBlock = Frames.ClosestFrameFromDTS(FirstTime);
+			CurrentAudioBlock = Frames.ClosestFrameFromPTS(FirstTime);
 			HasSeeked = false;
 		}
 

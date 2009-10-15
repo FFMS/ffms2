@@ -140,8 +140,8 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	VP.ColorSpace = 0;
 	VP.ColorRange = 0;
 #endif
-	VP.FirstTime = ((Frames.front().DTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
-	VP.LastTime = ((Frames.back().DTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+	VP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+	VP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 
 	if (CodecContext->width <= 0 || CodecContext->height <= 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
@@ -149,8 +149,8 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 
 	// Calculate the average framerate
 	if (Frames.size() >= 2) {
-		double DTSDiff = (double)(Frames.back().DTS - Frames.front().DTS);
-		VP.FPSDenominator = (unsigned int)(DTSDiff  / (double)1000 / (double)(VP.NumFrames - 1) + 0.5);
+		double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
+		VP.FPSDenominator = (unsigned int)(PTSDiff  / (double)1000 / (double)(VP.NumFrames - 1) + 0.5);
 		VP.FPSNumerator = 1000000;
 	}
 
@@ -234,7 +234,7 @@ FFMS_Frame *FFHaaliVideo::GetFrame(int n) {
 
 	if (n < CurrentFrame || Frames.FindClosestVideoKeyFrame(n) > CurrentFrame + 10) {
 ReSeek:
-		pMMC->Seek(Frames[n + SeekOffset].DTS, MMSF_PREV_KF);
+		pMMC->Seek(Frames[n + SeekOffset].PTS, MMSF_PREV_KF);
 		avcodec_flush_buffers(CodecContext);
 		HasSeeked = true;
 	}
@@ -246,7 +246,7 @@ ReSeek:
 		if (HasSeeked) {
 			HasSeeked = false;
 
-			if (StartTime < 0 || (CurrentFrame = Frames.FrameFromDTS(StartTime)) < 0) {
+			if (StartTime < 0 || (CurrentFrame = Frames.FrameFromPTS(StartTime)) < 0) {
 				// No idea where we are so go back a bit further
 				if (n + SeekOffset == 0)
 					throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,

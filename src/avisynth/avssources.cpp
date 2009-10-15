@@ -335,7 +335,7 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 			Frame = FFMS_GetFrame(V, n, &E);
 			FFMS_Track *T = FFMS_GetTrackFromVideo(V);
 			const FFMS_TrackTimeBase *TB = FFMS_GetTimeBase(T);
-			Env->SetVar("FFVFR_TIME", static_cast<int>(FFMS_GetFrameInfo(T, n)->DTS * static_cast<double>(TB->Num) / TB->Den));
+			Env->SetVar("FFVFR_TIME", static_cast<int>(FFMS_GetFrameInfo(T, n)->PTS * static_cast<double>(TB->Num) / TB->Den));
 		}
 
 		if (Frame == NULL)
@@ -389,7 +389,7 @@ AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS
 
 			if (TrackNum >= 0) {
 				FFMS_Track *VTrack = FFMS_GetTrackFromIndex(Index, TrackNum);
-				AdjustRelative = (FFMS_GetFrameInfo(VTrack, 0)->DTS * FFMS_GetTimeBase(VTrack)->Num) / (double)FFMS_GetTimeBase(VTrack)->Den / 1000;
+				AdjustRelative = (FFMS_GetFrameInfo(VTrack, 0)->PTS * FFMS_GetTimeBase(VTrack)->Num) / (double)FFMS_GetTimeBase(VTrack)->Den / 1000;
 			}
 		}
 
