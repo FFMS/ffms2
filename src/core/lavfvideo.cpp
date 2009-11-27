@@ -115,12 +115,18 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 			if (*AStartTime < 0)
 				*AStartTime = Packet.dts;
 
-			if (CodecContext->codec_id == CODEC_ID_MPEG4 && IsNVOP(Packet)) {
-				av_free_packet(&Packet);
-				goto Done;
-			}
-
 			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
+
+			if (CodecContext->codec_id == CODEC_ID_MPEG4) {
+				if (IsPackedFrame(Packet)) {
+					MPEG4Counter++;
+				} else if (IsNVOP(Packet) && MPEG4Counter && FrameFinished) {
+					MPEG4Counter--;
+				} else if (IsNVOP(Packet) && !MPEG4Counter && !FrameFinished) {
+					av_free_packet(&Packet);
+					goto Done;
+				}
+			}
         }
 
         av_free_packet(&Packet);
