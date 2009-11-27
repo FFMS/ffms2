@@ -190,6 +190,7 @@ ReSeek:
 
 		if (HasSeeked) {
 			HasSeeked = false;
+			MPEG4Counter = 0;
 
 			// Is the seek destination time known? Does it belong to a frame?
 			if (StartTime < 0 || (CurrentFrame = Frames.FrameFromPTS(StartTime)) < 0) {

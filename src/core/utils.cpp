@@ -206,7 +206,7 @@ bool IsPackedFrame(AVPacket &pkt) {
 	for (int i = 0; i < pkt.size - 5; i++)
 		if (pkt.data[i] == 0x00 && pkt.data[i + 1] == 0x00 && pkt.data[i + 2] == 0x01 && pkt.data[i + 3] == 0xB6 && (pkt.data[i + 4] & 0x40))
 			for (i = i + 5; i < pkt.size - 5; i++)
-				if (pkt.data[i] == 0x00 && pkt.data[i + 1] == 0x00 && pkt.data[i + 2] == 0x01 && pkt.data[i + 3] == 0xB6 && (pkt.data[i + 4] & 0x40))
+				if (pkt.data[i] == 0x00 && pkt.data[i + 1] == 0x00 && pkt.data[i + 2] == 0x01 && pkt.data[i + 3] == 0xB6 && (pkt.data[i + 4] & 0xC0) == 0x80)
 					return true;
 	return false;
 }
