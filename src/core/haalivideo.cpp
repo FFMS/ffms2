@@ -199,10 +199,15 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 				av_bitstream_filter_filter(BitStreamFilter, CodecContext, NULL,
 				&Packet.data, &Packet.size, Data, pMMF->GetActualDataLength(), !!Packet.flags);
 
-			if (CodecContext->codec_id == CODEC_ID_MPEG4 && IsNVOP(Packet))
-				goto Done;
-
 			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
+
+			if (IsPackedFrame(Packet)) {
+					MPEG4Counter++;
+			} else if (IsNVOP(Packet) && MPEG4Counter && FrameFinished) {
+					MPEG4Counter--;
+			} else if (IsNVOP(Packet) && !MPEG4Counter && !FrameFinished) {
+					goto Done;
+			}
 
 			if (FrameFinished)
 				goto Done;
@@ -245,6 +250,7 @@ ReSeek:
 
 		if (HasSeeked) {
 			HasSeeked = false;
+			MPEG4Counter = 0;
 
 			if (StartTime < 0 || (CurrentFrame = Frames.FrameFromPTS(StartTime)) < 0) {
 				// No idea where we are so go back a bit further
