@@ -98,6 +98,12 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	VP.FPSNumerator = 30;
 	VP.RFFDenominator = CodecContext->time_base.num;
 	VP.RFFNumerator = CodecContext->time_base.den;
+	if (CodecContext->codec_id == CODEC_ID_H264) {
+		if (VP.RFFNumerator & 1)
+			VP.RFFDenominator *= 2;
+		else
+			VP.RFFNumerator /= 2;
+	}
 	VP.NumFrames = Frames.size();
 	VP.TopFieldFirst = DecodeFrame->top_field_first;
 #ifdef FFMS_HAVE_FFMPEG_COLORSPACE_INFO
