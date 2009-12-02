@@ -227,6 +227,10 @@ FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {
 	delete Index;
 }
 
+FFMS_API(int) FFMS_GetSourceType(FFMS_Index *Index) {
+	return Index->Decoder;
+}
+
 FFMS_API(int) FFMS_GetFirstTrackOfType(FFMS_Index *Index, int TrackType, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	for (int i = 0; i < static_cast<int>(Index->size()); i++)
