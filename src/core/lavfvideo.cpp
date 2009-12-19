@@ -119,7 +119,7 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
         if (Packet.stream_index == VideoTrack) {
 			if (*AStartTime < 0)
-				*AStartTime = Packet.dts;
+				*AStartTime = Packet.pts;
 
 			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
 

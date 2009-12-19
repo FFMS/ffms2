@@ -107,7 +107,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 				RepeatPict = VideoContexts[Packet.stream_index].Parser->repeat_pict;
 			}
 
-			(*TrackIndices)[Packet.stream_index].push_back(TFrameInfo::VideoFrameInfo(Packet.dts, RepeatPict, (Packet.flags & AV_PKT_FLAG_KEY) ? 1 : 0));
+			(*TrackIndices)[Packet.stream_index].push_back(TFrameInfo::VideoFrameInfo(Packet.pts, RepeatPict, (Packet.flags & AV_PKT_FLAG_KEY) ? 1 : 0));
 		} else if (FormatContext->streams[Packet.stream_index]->codec->codec_type == CODEC_TYPE_AUDIO && (IndexMask & (1 << Packet.stream_index))) {
 			int64_t StartSample = AudioContexts[Packet.stream_index].CurrentSample;
 			AVCodecContext *AudioCodecContext = FormatContext->streams[Packet.stream_index]->codec;
@@ -146,7 +146,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 					WriteAudio(AudioContexts[Packet.stream_index], TrackIndices.get(), Packet.stream_index, dbsize);
 			}
 
-			(*TrackIndices)[Packet.stream_index].push_back(TFrameInfo::AudioFrameInfo(Packet.dts, StartSample,
+			(*TrackIndices)[Packet.stream_index].push_back(TFrameInfo::AudioFrameInfo(Packet.pts, StartSample,
 				static_cast<unsigned int>(AudioContexts[Packet.stream_index].CurrentSample - StartSample), (Packet.flags & AV_PKT_FLAG_KEY) ? 1 : 0));
 		}
 
