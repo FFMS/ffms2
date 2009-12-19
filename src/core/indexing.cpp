@@ -22,7 +22,6 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <cassert>
 
 extern "C" {
 #include <libavutil/sha1.h>
@@ -158,12 +157,9 @@ int FFMS_Track::FindClosestVideoKeyFrame(int Frame) {
 	Frame = FFMIN(FFMAX(Frame, 0), static_cast<int>(size()) - 1);
 	for (int i = Frame; i > 0; i--)
 		if (at(i).KeyFrame) {
-			//return i;
 			for (int j = i; j >= 0; j--)
-				if (at(at(j).OriginalPos).KeyFrame) {
-					//assert(j == i);
+				if (at(at(j).OriginalPos).KeyFrame)
 					return j;
-				}
 		}
 	return 0;
 }
