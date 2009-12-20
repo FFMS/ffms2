@@ -88,6 +88,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 	AVPacket Packet, TempPacket;
 	InitNullPacket(Packet);
 	InitNullPacket(TempPacket);
+	int64_t LastValidPTS = AV_NOPTS_VALUE;
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
 		// Update progress
 		if (IC) {
@@ -101,13 +102,18 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			uint8_t *OB;
 			int OBSize;
 			int RepeatPict = -1;
+			if (Packet.pts != AV_NOPTS_VALUE)
+				LastValidPTS = Packet.pts;
+			if (LastValidPTS == AV_NOPTS_VALUE)
+				throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
+					"Invalid initial PTS");
 
 			if (VideoContexts[Packet.stream_index].Parser) {
 				av_parser_parse2(VideoContexts[Packet.stream_index].Parser, VideoContexts[Packet.stream_index].CodecContext, &OB, &OBSize, Packet.data, Packet.size, Packet.pts, Packet.dts, Packet.pos);
 				RepeatPict = VideoContexts[Packet.stream_index].Parser->repeat_pict;
 			}
 
-			(*TrackIndices)[Packet.stream_index].push_back(TFrameInfo::VideoFrameInfo(Packet.pts, RepeatPict, (Packet.flags & AV_PKT_FLAG_KEY) ? 1 : 0));
+			(*TrackIndices)[Packet.stream_index].push_back(TFrameInfo::VideoFrameInfo(LastValidPTS, RepeatPict, (Packet.flags & AV_PKT_FLAG_KEY) ? 1 : 0));
 		} else if (FormatContext->streams[Packet.stream_index]->codec->codec_type == CODEC_TYPE_AUDIO && (IndexMask & (1 << Packet.stream_index))) {
 			int64_t StartSample = AudioContexts[Packet.stream_index].CurrentSample;
 			AVCodecContext *AudioCodecContext = FormatContext->streams[Packet.stream_index]->codec;

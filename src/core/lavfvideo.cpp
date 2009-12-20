@@ -96,9 +96,13 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
 	}
 
 	// Adjust framerate to match the duration of the first frame
-	if (Frames.size() >= 2) {
-		unsigned int PTSDiff = (unsigned int)FFMAX(Frames[1].PTS - Frames[0].PTS, 1);
-		VP.FPSDenominator *= PTSDiff;
+	for (size_t i = 1; i < Frames.size(); i++) {
+		if (Frames[i].PTS != Frames[0].PTS) {
+			unsigned int PTSDiff = (unsigned int)(Frames[i].PTS - Frames[0].PTS);
+			VP.FPSDenominator *= PTSDiff;
+			VP.FPSDenominator /= i;
+			break;
+		}
 	}
 
 	// Cannot "output" to PPFrame without doing all other initialization

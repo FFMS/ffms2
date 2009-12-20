@@ -27,6 +27,7 @@
 #		define fseeko fseeko64
 #		define ftello ftello64
 #	else
+#		define INT64_C(val) val##i64
 #		define fseeko _fseeki64
 #		define ftello _ftelli64
 #	endif
