@@ -25,7 +25,9 @@
 #include "audiosource.h"
 #include "indexing.h"
 
-
+#ifdef FFMS_WIN_DEBUG
+#	include <windows.h>
+#endif
 
 static bool FFmpegInited	= false;
 bool HasHaaliMPEG = false;
