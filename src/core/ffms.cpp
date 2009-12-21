@@ -35,6 +35,10 @@ bool HasHaaliOGG = false;
 int CPUFeatures = 0;
 
 #ifdef FFMS_WIN_DEBUG
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif // WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 extern "C" int av_log_level;
 
