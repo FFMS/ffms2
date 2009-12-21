@@ -104,6 +104,8 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			uint8_t *OB;
 			int OBSize;
 			int RepeatPict = -1;
+
+			// Duplicated code
 			if (!(*TrackIndices)[Packet.stream_index].UseDTS && Packet.pts != AV_NOPTS_VALUE)
 				LastValidTS[Packet.stream_index] = Packet.pts;
 			if (LastValidTS[Packet.stream_index] == AV_NOPTS_VALUE)
@@ -113,6 +115,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			if (LastValidTS[Packet.stream_index] == AV_NOPTS_VALUE)
 				throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
 					"Invalid initial pts and dts");
+			//
 
 			if (VideoContexts[Packet.stream_index].Parser) {
 				av_parser_parse2(VideoContexts[Packet.stream_index].Parser, VideoContexts[Packet.stream_index].CodecContext, &OB, &OBSize, Packet.data, Packet.size, Packet.pts, Packet.dts, Packet.pos);
@@ -126,6 +129,18 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			TempPacket.data = Packet.data;
 			TempPacket.size = Packet.size;
 			TempPacket.flags = Packet.flags;
+
+			// Duplicated code
+			if (!(*TrackIndices)[Packet.stream_index].UseDTS && Packet.pts != AV_NOPTS_VALUE)
+				LastValidTS[Packet.stream_index] = Packet.pts;
+			if (LastValidTS[Packet.stream_index] == AV_NOPTS_VALUE)
+				(*TrackIndices)[Packet.stream_index].UseDTS = true;
+			if ((*TrackIndices)[Packet.stream_index].UseDTS && Packet.dts != AV_NOPTS_VALUE)
+				LastValidTS[Packet.stream_index] = Packet.dts;
+			if (LastValidTS[Packet.stream_index] == AV_NOPTS_VALUE)
+				throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
+					"Invalid initial pts and dts");
+			//
 
 			while (TempPacket.size > 0) {
 				int dbsize = AVCODEC_MAX_AUDIO_FRAME_SIZE*10;
@@ -158,7 +173,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 					WriteAudio(AudioContexts[Packet.stream_index], TrackIndices.get(), Packet.stream_index, dbsize);
 			}
 
-			(*TrackIndices)[Packet.stream_index].push_back(TFrameInfo::AudioFrameInfo(Packet.pts, StartSample,
+			(*TrackIndices)[Packet.stream_index].push_back(TFrameInfo::AudioFrameInfo(LastValidTS[Packet.stream_index], StartSample,
 				static_cast<unsigned int>(AudioContexts[Packet.stream_index].CurrentSample - StartSample), (Packet.flags & AV_PKT_FLAG_KEY) ? 1 : 0));
 		}
 
