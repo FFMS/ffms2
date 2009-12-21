@@ -164,13 +164,13 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 
 	AVPacket TempPacket;
 	InitNullPacket(TempPacket);
+	REFERENCE_TIME Ts, Te;
 
 	for (;;) {
 		CComPtr<IMMFrame> pMMF;
 		if (pMMC->ReadFrame(NULL, &pMMF) != S_OK)
 			break;
 
-		REFERENCE_TIME Ts, Te;
 		HRESULT hr = pMMF->GetTime(&Ts, &Te);
 
 		if (IC) {
