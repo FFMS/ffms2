@@ -52,6 +52,7 @@ struct TrackHeader {
 		uint32_t Frames;
 		int64_t Num;
 		int64_t Den;
+		uint32_t UseDTS;
 };
 
 SharedVideoContext::SharedVideoContext(bool FreeCodecContext) {
@@ -178,12 +179,14 @@ FFMS_Track::FFMS_Track() {
 	this->TT = FFMS_TYPE_UNKNOWN;
 	this->TB.Num = 0;
 	this->TB.Den = 0;
+	this->UseDTS = false;
 }
 
-FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT) {
+FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS) {
 	this->TT = TT;
 	this->TB.Num = Num;
 	this->TB.Den = Den;
+	this->UseDTS = UseDTS;
 }
 
 void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]) {
@@ -331,6 +334,7 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 		TH.Frames = ctrack.size();
 		TH.Num = ctrack.TB.Num;;
 		TH.Den = ctrack.TB.Den;
+		TH.UseDTS = ctrack.UseDTS;
 
 		FFMS_Track temptrack;
 		temptrack.resize(TH.Frames);
@@ -440,7 +444,7 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 		for (unsigned int i = 0; i < IH.Tracks; i++) {
 			TrackHeader TH;
 			z_inf(&Index, &stream, &in, CHUNK, &TH, sizeof(TrackHeader));
-			push_back(FFMS_Track(TH.Num, TH.Den, static_cast<FFMS_TrackType>(TH.TT)));
+			push_back(FFMS_Track(TH.Num, TH.Den, static_cast<FFMS_TrackType>(TH.TT), TH.UseDTS));
 			FFMS_Track &ctrack = at(i);
 
 			if (TH.Frames) {
@@ -464,7 +468,7 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 }
 
 FFMS_Index::FFMS_Index() {
-	// this comment documents nothing
+
 }
 
 FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20]) {

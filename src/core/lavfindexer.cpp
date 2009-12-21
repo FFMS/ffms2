@@ -88,8 +88,9 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 	AVPacket Packet, TempPacket;
 	InitNullPacket(Packet);
 	InitNullPacket(TempPacket);
-	int64_t LastValidTS = AV_NOPTS_VALUE;
-	bool UseDTS = false;
+	std::vector<int64_t> LastValidTS;
+	LastValidTS.resize(FormatContext->nb_streams, AV_NOPTS_VALUE);
+
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
 		// Update progress
 		if (IC) {
@@ -103,13 +104,13 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			uint8_t *OB;
 			int OBSize;
 			int RepeatPict = -1;
-			if (!UseDTS && Packet.pts != AV_NOPTS_VALUE)
-				LastValidTS = Packet.pts;
-			if (LastValidTS == AV_NOPTS_VALUE)
-				UseDTS = true;
-			if (UseDTS && Packet.dts != AV_NOPTS_VALUE)
-				LastValidTS = Packet.dts;
-			if (LastValidTS == AV_NOPTS_VALUE)
+			if (!(*TrackIndices)[Packet.stream_index].UseDTS && Packet.pts != AV_NOPTS_VALUE)
+				LastValidTS[Packet.stream_index] = Packet.pts;
+			if (LastValidTS[Packet.stream_index] == AV_NOPTS_VALUE)
+				(*TrackIndices)[Packet.stream_index].UseDTS = true;
+			if ((*TrackIndices)[Packet.stream_index].UseDTS && Packet.dts != AV_NOPTS_VALUE)
+				LastValidTS[Packet.stream_index] = Packet.dts;
+			if (LastValidTS[Packet.stream_index] == AV_NOPTS_VALUE)
 				throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
 					"Invalid initial pts and dts");
 
@@ -118,7 +119,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 				RepeatPict = VideoContexts[Packet.stream_index].Parser->repeat_pict;
 			}
 
-			(*TrackIndices)[Packet.stream_index].push_back(TFrameInfo::VideoFrameInfo(LastValidTS, RepeatPict, (Packet.flags & AV_PKT_FLAG_KEY) ? 1 : 0));
+			(*TrackIndices)[Packet.stream_index].push_back(TFrameInfo::VideoFrameInfo(LastValidTS[Packet.stream_index], RepeatPict, (Packet.flags & AV_PKT_FLAG_KEY) ? 1 : 0));
 		} else if (FormatContext->streams[Packet.stream_index]->codec->codec_type == CODEC_TYPE_AUDIO && (IndexMask & (1 << Packet.stream_index))) {
 			int64_t StartSample = AudioContexts[Packet.stream_index].CurrentSample;
 			AVCodecContext *AudioCodecContext = FormatContext->streams[Packet.stream_index]->codec;
