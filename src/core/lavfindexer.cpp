@@ -89,7 +89,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 	InitNullPacket(Packet);
 	InitNullPacket(TempPacket);
 	std::vector<int64_t> LastValidTS;
-	LastValidTS.resize(FormatContext->nb_streams, AV_NOPTS_VALUE);
+	LastValidTS.resize(FormatContext->nb_streams, ffms_av_nopts_value);
 
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
 		// Update progress
@@ -106,13 +106,13 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			int RepeatPict = -1;
 
 			// Duplicated code
-			if (!(*TrackIndices)[Packet.stream_index].UseDTS && Packet.pts != AV_NOPTS_VALUE)
+			if (!(*TrackIndices)[Packet.stream_index].UseDTS && Packet.pts != ffms_av_nopts_value)
 				LastValidTS[Packet.stream_index] = Packet.pts;
-			if (LastValidTS[Packet.stream_index] == AV_NOPTS_VALUE)
+			if (LastValidTS[Packet.stream_index] == ffms_av_nopts_value)
 				(*TrackIndices)[Packet.stream_index].UseDTS = true;
-			if ((*TrackIndices)[Packet.stream_index].UseDTS && Packet.dts != AV_NOPTS_VALUE)
+			if ((*TrackIndices)[Packet.stream_index].UseDTS && Packet.dts != ffms_av_nopts_value)
 				LastValidTS[Packet.stream_index] = Packet.dts;
-			if (LastValidTS[Packet.stream_index] == AV_NOPTS_VALUE)
+			if (LastValidTS[Packet.stream_index] == ffms_av_nopts_value)
 				throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
 					"Invalid initial pts and dts");
 			//
@@ -131,13 +131,13 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			TempPacket.flags = Packet.flags;
 
 			// Duplicated code
-			if (!(*TrackIndices)[Packet.stream_index].UseDTS && Packet.pts != AV_NOPTS_VALUE)
+			if (!(*TrackIndices)[Packet.stream_index].UseDTS && Packet.pts != ffms_av_nopts_value)
 				LastValidTS[Packet.stream_index] = Packet.pts;
-			if (LastValidTS[Packet.stream_index] == AV_NOPTS_VALUE)
+			if (LastValidTS[Packet.stream_index] == ffms_av_nopts_value)
 				(*TrackIndices)[Packet.stream_index].UseDTS = true;
-			if ((*TrackIndices)[Packet.stream_index].UseDTS && Packet.dts != AV_NOPTS_VALUE)
+			if ((*TrackIndices)[Packet.stream_index].UseDTS && Packet.dts != ffms_av_nopts_value)
 				LastValidTS[Packet.stream_index] = Packet.dts;
-			if (LastValidTS[Packet.stream_index] == AV_NOPTS_VALUE)
+			if (LastValidTS[Packet.stream_index] == ffms_av_nopts_value)
 				throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
 					"Invalid initial pts and dts");
 			//
