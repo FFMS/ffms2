@@ -34,12 +34,16 @@
 #include <setjmp.h>
 
 #ifdef _WIN32
+#ifdef _MSC_VER
 // MS names some functions differently
 #define	alloca	  _alloca
 #define	inline	  __inline
-
+#else /* _MSC_VER */
+// support for building with MinGW on Windows
+#include <malloc.h>
+#endif /* _MSC_VER */
 #include <tchar.h>
-#endif
+#endif /* _WIN32 */
 
 #ifndef EVCBUG
 #define	EVCBUG
