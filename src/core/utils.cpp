@@ -202,20 +202,6 @@ void InitNullPacket(AVPacket &pkt) {
 	pkt.size = 0;
 }
 
-bool IsPackedFrame(AVPacket &pkt) {
-	for (int i = 0; i < pkt.size - 5; i++)
-		if (pkt.data[i] == 0x00 && pkt.data[i + 1] == 0x00 && pkt.data[i + 2] == 0x01 && pkt.data[i + 3] == 0xB6 && (pkt.data[i + 4] & 0x40))
-			for (i = i + 5; i < pkt.size - 5; i++)
-				if (pkt.data[i] == 0x00 && pkt.data[i + 1] == 0x00 && pkt.data[i + 2] == 0x01 && pkt.data[i + 3] == 0xB6 && (pkt.data[i + 4] & 0xC0) == 0x80)
-					return true;
-	return false;
-}
-
-bool IsNVOP(AVPacket &pkt) {
-	static const uint8_t MPEG4NVOP[] = { 0x00, 0x00, 0x01, 0xB6 };
-	return (pkt.size >= 4 && pkt.size <= 8) && !memcmp(pkt.data, MPEG4NVOP, 4);
-}
-
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
 	AP.SampleFormat = static_cast<FFMS_SampleFormat>(CTX->sample_fmt);
 	AP.BitsPerSample = av_get_bits_per_sample_format(CTX->sample_fmt);

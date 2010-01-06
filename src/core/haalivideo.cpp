@@ -180,6 +180,15 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 	AVPacket Packet;
 	InitNullPacket(Packet);
 
+	if (InitialDecode == -1) {
+		if (DelayCounter > CodecContext->has_b_frames) {
+			DelayCounter--;
+			goto Done;
+		} else {
+			InitialDecode = 0;
+		}
+	}
+
 	for (;;) {
 		CComPtr<IMMFrame> pMMF;
 		if (pMMC->ReadFrame(NULL, &pMMF) != S_OK)
@@ -207,13 +216,10 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 
 			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
 
-			if (IsPackedFrame(Packet)) {
-					MPEG4Counter++;
-			} else if (IsNVOP(Packet) && MPEG4Counter && FrameFinished) {
-					MPEG4Counter--;
-			} else if (IsNVOP(Packet) && !MPEG4Counter && !FrameFinished) {
-					goto Done;
-			}
+			if (!FrameFinished)
+				DelayCounter++;
+			if (DelayCounter > CodecContext->has_b_frames && !InitialDecode)
+				goto Done;
 
 			if (FrameFinished)
 				goto Done;
@@ -231,7 +237,8 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 		goto Error;
 
 Error:
-Done:;
+Done:
+	if (InitialDecode == 1) InitialDecode = -1;
 }
 
 FFMS_Frame *FFHaaliVideo::GetFrame(int n) {
@@ -247,16 +254,21 @@ FFMS_Frame *FFHaaliVideo::GetFrame(int n) {
 ReSeek:
 		pMMC->Seek(Frames[n + SeekOffset].PTS, MMSF_PREV_KF);
 		avcodec_flush_buffers(CodecContext);
+		DelayCounter = 0;
+		InitialDecode = 1;
 		HasSeeked = true;
 	}
 
 	do {
 		int64_t StartTime;
+		if (CurrentFrame+CodecContext->has_b_frames >= n)
+			CodecContext->skip_frame = AVDISCARD_DEFAULT;
+		else
+			CodecContext->skip_frame = AVDISCARD_NONREF;
 		DecodeNextFrame(&StartTime);
 
 		if (HasSeeked) {
 			HasSeeked = false;
-			MPEG4Counter = 0;
 
 			if (StartTime < 0 || (CurrentFrame = Frames.FrameFromPTS(StartTime)) < 0) {
 				// No idea where we are so go back a bit further

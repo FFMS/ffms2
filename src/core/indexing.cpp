@@ -444,7 +444,7 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 		for (unsigned int i = 0; i < IH.Tracks; i++) {
 			TrackHeader TH;
 			z_inf(&Index, &stream, &in, CHUNK, &TH, sizeof(TrackHeader));
-			push_back(FFMS_Track(TH.Num, TH.Den, static_cast<FFMS_TrackType>(TH.TT), TH.UseDTS));
+			push_back(FFMS_Track(TH.Num, TH.Den, static_cast<FFMS_TrackType>(TH.TT), TH.UseDTS != 0));
 			FFMS_Track &ctrack = at(i);
 
 			if (TH.Frames) {

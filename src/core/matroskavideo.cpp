@@ -148,6 +148,15 @@ void FFMatroskaVideo::DecodeNextFrame() {
 
 	unsigned int FrameSize;
 
+	if (InitialDecode == -1) {
+		if (DelayCounter > CodecContext->has_b_frames) {
+			DelayCounter--;
+			goto Done;
+		} else {
+			InitialDecode = 0;
+		}
+	}
+
 	while (PacketNumber < Frames.size()) {
 		// The additional indirection is because the packets are stored in
 		// presentation order and not decoding order, this is unnoticable
@@ -167,15 +176,10 @@ void FFMatroskaVideo::DecodeNextFrame() {
 
 		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
 
-		if (CodecContext->codec_id == CODEC_ID_MPEG4) {
-			if (IsPackedFrame(Packet)) {
-				MPEG4Counter++;
-			} else if (IsNVOP(Packet) && MPEG4Counter && FrameFinished) {
-				MPEG4Counter--;
-			} else if (IsNVOP(Packet) && !MPEG4Counter && !FrameFinished) {
-				goto Done;
-			}
-		}
+		if (!FrameFinished)
+			DelayCounter++;
+		if (DelayCounter > CodecContext->has_b_frames && !InitialDecode)
+			goto Done;
 
 		if (FrameFinished)
 			goto Done;
@@ -192,7 +196,8 @@ void FFMatroskaVideo::DecodeNextFrame() {
 		goto Error;
 
 Error:
-Done:;
+Done:
+	if (InitialDecode == 1) InitialDecode = -1;
 }
 
 FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
@@ -203,13 +208,18 @@ FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
 
 	int ClosestKF = Frames.FindClosestVideoKeyFrame(n);
 	if (CurrentFrame > n || ClosestKF > CurrentFrame + 10) {
-		MPEG4Counter = 0;
+		DelayCounter = 0;
+		InitialDecode = 1;
 		PacketNumber = ClosestKF;
 		CurrentFrame = ClosestKF;
 		avcodec_flush_buffers(CodecContext);
 	}
 
 	do {
+		if (CurrentFrame+CodecContext->has_b_frames >= n)
+			CodecContext->skip_frame = AVDISCARD_DEFAULT;
+		else
+			CodecContext->skip_frame = AVDISCARD_NONREF;
 		DecodeNextFrame();
 		CurrentFrame++;
 	} while (CurrentFrame <= n);

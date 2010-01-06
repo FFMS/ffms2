@@ -120,6 +120,15 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 	int FrameFinished = 0;
 	*AStartTime = -1;
 
+	if (InitialDecode == -1) {
+		if (DelayCounter > CodecContext->has_b_frames) {
+			DelayCounter--;
+			goto Done;
+		} else {
+			InitialDecode = 0;
+		}
+	}
+
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
         if (Packet.stream_index == VideoTrack) {
 			if (*AStartTime < 0) {
@@ -131,15 +140,11 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 
 			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
 
-			if (CodecContext->codec_id == CODEC_ID_MPEG4) {
-				if (IsPackedFrame(Packet)) {
-					MPEG4Counter++;
-				} else if (IsNVOP(Packet) && MPEG4Counter && FrameFinished) {
-					MPEG4Counter--;
-				} else if (IsNVOP(Packet) && !MPEG4Counter && !FrameFinished) {
-					av_free_packet(&Packet);
-					goto Done;
-				}
+			if (!FrameFinished)
+				DelayCounter++;
+			if (DelayCounter > CodecContext->has_b_frames && !InitialDecode) {
+				av_free_packet(&Packet);
+				goto Done;
 			}
         }
 
@@ -160,7 +165,8 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 		goto Error;
 
 Error:
-Done:;
+Done:
+	if (InitialDecode == 1) InitialDecode = -1;
 }
 
 FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
@@ -181,6 +187,8 @@ FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
 				av_seek_frame(FormatContext, VideoTrack, Frames[0].PTS, AVSEEK_FLAG_BACKWARD);
 				avcodec_flush_buffers(CodecContext);
 				CurrentFrame = 0;
+				DelayCounter = 0;
+				InitialDecode = 1;
 			}
 		} else {
 			// 10 frames is used as a margin to prevent excessive seeking since the predicted best keyframe isn't always selected by avformat
@@ -191,6 +199,8 @@ ReSeek:
 					AVSEEK_FLAG_BACKWARD);
 				avcodec_flush_buffers(CodecContext);
 				HasSeeked = true;
+				DelayCounter = 0;
+				InitialDecode = 1;
 			}
 		}
 	} else if (n < CurrentFrame) {
@@ -200,11 +210,14 @@ ReSeek:
 
 	do {
 		int64_t StartTime;
+		if (CurrentFrame+CodecContext->has_b_frames >= n)
+			CodecContext->skip_frame = AVDISCARD_DEFAULT;
+		else
+			CodecContext->skip_frame = AVDISCARD_NONREF;
 		DecodeNextFrame(&StartTime);
 
 		if (HasSeeked) {
 			HasSeeked = false;
-			MPEG4Counter = 0;
 
 			// Is the seek destination time known? Does it belong to a frame?
 			if (StartTime < 0 || (CurrentFrame = Frames.FrameFromPTS(StartTime)) < 0) {
