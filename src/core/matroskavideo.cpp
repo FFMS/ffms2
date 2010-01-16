@@ -127,6 +127,23 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 		VP.FPSNumerator = 1000000;
 	}
 
+	// attempt to correct framerate to the proper NTSC fraction, if applicable
+	// code stolen from Perian
+	AVRational TempFPS;
+	TempFPS.den = VP.FPSNumerator; // not a typo
+	TempFPS.num = VP.FPSDenominator; // still not a typo
+	av_reduce(&TempFPS.num, &TempFPS.den, TempFPS.num, TempFPS.den, INT_MAX);
+	if (VP.FPSNumerator != 1) {
+		double FTimebase = av_q2d(TempFPS);
+		double NearestNTSC = floor(FTimebase * 1001.0 + 0.5) / 1001.0;
+		const double SmallInterval = 1.0/120.0;
+
+		if (fabs(FTimebase - NearestNTSC) < SmallInterval) {
+			VP.FPSNumerator = int((1001.0 / FTimebase) + 0.5);
+			VP.FPSDenominator = 1001;
+		}
+	}
+
 	// Output the already decoded frame so it isn't wasted
 	OutputFrame(DecodeFrame);
 
