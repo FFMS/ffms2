@@ -156,5 +156,6 @@ size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max);
 CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources SourceMode);
 #endif
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
+void CorrectNTSCRationalFramerate(int *Num, int *Den);
 
 #endif

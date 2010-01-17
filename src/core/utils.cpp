@@ -464,3 +464,29 @@ void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
 			"Couldn't find stream information");
 	}
 }
+
+
+// attempt to correct framerate to the proper NTSC fraction, if applicable
+// code stolen from Perian
+void CorrectNTSCRationalFramerate(int *Num, int *Den) {
+	AVRational TempFPS;
+	TempFPS.den = *Num; // not a typo
+	TempFPS.num = *Den; // still not a typo
+
+	av_reduce(&TempFPS.num, &TempFPS.den, TempFPS.num, TempFPS.den, INT_MAX);
+
+	if (TempFPS.num == 1) {
+		*Num = TempFPS.den;
+		*Den = TempFPS.num;
+	}
+	else {
+		double FTimebase = av_q2d(TempFPS);
+		double NearestNTSC = floor(FTimebase * 1001.0 + 0.5) / 1001.0;
+		const double SmallInterval = 1.0/120.0;
+
+		if (fabs(FTimebase - NearestNTSC) < SmallInterval) {
+			*Num = int((1001.0 / FTimebase) + 0.5);
+			*Den = 1001;
+		}
+	}
+}
