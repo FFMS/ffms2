@@ -25,6 +25,8 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
+#include "ffmscompat.h"
+
 #include <windows.h>
 #include "avisynth.h"
 

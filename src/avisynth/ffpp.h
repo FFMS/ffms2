@@ -27,6 +27,8 @@ extern "C" {
 #include <libpostproc/postprocess.h>
 }
 
+#include "ffmscompat.h"
+
 #include <windows.h>
 #include "avisynth.h"
 

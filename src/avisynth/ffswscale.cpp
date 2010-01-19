@@ -88,7 +88,7 @@ PVideoFrame SWScale::GetFrame(int n, IScriptEnvironment *Env) {
 	PVideoFrame Src = child->GetFrame(n, Env);
 	PVideoFrame Dst = Env->NewVideoFrame(vi);
 
-	const uint8_t *SrcData[3] = {(uint8_t *)Src->GetReadPtr(PLANAR_Y), (uint8_t *)Src->GetReadPtr(PLANAR_U), (uint8_t *)Src->GetReadPtr(PLANAR_V)};
+	FFMS_SWS_CONST_PARAM uint8_t *SrcData[3] = {(uint8_t *)Src->GetReadPtr(PLANAR_Y), (uint8_t *)Src->GetReadPtr(PLANAR_U), (uint8_t *)Src->GetReadPtr(PLANAR_V)};
 	int SrcStride[3] = {Src->GetPitch(PLANAR_Y), Src->GetPitch(PLANAR_U), Src->GetPitch(PLANAR_V)};
 
 	if (FlipOutput) {
