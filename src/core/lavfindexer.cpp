@@ -93,7 +93,8 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
 		// Update progress
-		if (IC) {
+		// FormatContext->pb can apparently be NULL when opening images.
+		if (IC && FormatContext->pb) {
 			if ((*IC)(FormatContext->pb->pos, FormatContext->file_size, ICPrivate))
 				throw FFMS_Exception(FFMS_ERROR_CANCELLED, FFMS_ERROR_USER,
 					"Cancelled by user");
