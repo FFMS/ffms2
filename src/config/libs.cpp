@@ -18,7 +18,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#include "config.h"
+#include "msvc-config.h"
 
 // someone claimed that the borland c++ compiler defines _MSC_VER too,
 // but nobody cares about borland so let them suffer

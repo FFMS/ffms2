@@ -1,0 +1,79 @@
+AC_PREREQ([2.58])
+AC_INIT([src/core/ffms.cpp])
+AC_CONFIG_MACRO_DIR([m4])
+AM_INIT_AUTOMAKE(ffms2,devel)
+
+AM_CONFIG_HEADER([src/config/config.h])
+LT_INIT([static disable-shared])
+AC_PROG_CXX
+AC_PROG_CC_C_O
+PKG_PROG_PKG_CONFIG([0.22])
+
+PKG_CHECK_MODULES(FFMPEG, [libavformat >= 52.39.0 libavcodec >= 52.38.0 libswscale >= 0.7.0 libpostproc >= 51.2.0 libavutil >= 50.4.0 ])
+AC_SUBST([FFMPEG_CFLAGS])
+AC_SUBST([FFMPEG_LIBS])
+
+pkgconfigdir="\$(libdir)/pkgconfig"
+AC_SUBST(pkgconfigdir)
+
+AC_DEFUN([TEST_FFMPEG], [
+        AC_LINK_IFELSE([
+            #include <libavcodec/avcodec.h>
+            #include <libswscale/swscale.h>
+            #include <libpostproc/postprocess.h>
+            int main() {
+                avcodec_init();
+                swscale_version();
+                postproc_version();
+                return 0;
+            }], [eval $1=yes], [eval $1=no])
+        ])
+
+AC_MSG_CHECKING([whether ffmpeg works])
+_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS $FFMPEG_CFLAGS"
+_LIBS="$LIBS"
+LIBS="$FFMPEG_LIBS $LIBS"
+TEST_FFMPEG([FFMPEG_WORKS])
+AC_MSG_RESULT([$FFMPEG_WORKS])
+if test "$FFMPEG_WORKS" = no; then
+    AC_MSG_FAILURE([cannot link with ffmpeg])
+fi
+
+AC_MSG_CHECKING([whether -Wl,-Bsymbolic is needed])
+if test "$enable_shared" = yes; then
+    _LDFLAGS="$LDFLAGS"
+    LDFLAGS="$LDFLAGS -shared -fPIC"
+    TEST_FFMPEG([no_bsymbolic])
+    if test "$no_bsymbolic" = "no"; then
+        LDFLAGS="$LDFLAGS -Wl,-Bsymbolic"
+        TEST_FFMPEG([bsymbolic])
+        if test "$bsymbolic" = "yes"; then
+            LDFLAGS="$_LDFLAGS -Wl,-Bsymbolic"
+        else
+            AC_MSG_RESULT($bsymbolic)
+            AC_MSG_FAILURE([cannot build ffms2 as a shared library])
+        fi
+    else
+        bsymbolic=no
+        LDFLAGS="$_LDFLAGS"
+    fi
+else
+    bsymbolic=no
+fi
+CFLAGS="$_CFLAGS"
+LIBS="$_LIBS"
+AC_MSG_RESULT($bsymbolic)
+
+SHAVE_INIT([shave], [enable])
+AC_CONFIG_FILES([
+shave/shave
+shave/shave-libtool
+Makefile 
+src/Makefile
+src/core/Makefile
+src/index/Makefile
+ffms2.pc
+])
+AC_OUTPUT
+
