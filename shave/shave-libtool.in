@@ -34,79 +34,76 @@ lt_unmangle ()
    last_result=`echo $1 | $SED -e 's#.libs/##' -e 's#[0-9a-zA-Z_\-\.]*_la-##'`
 }
 
-# the tool to wrap (cc, cxx, ar, ranlib, ..)
-tool="$1"
+# the real libtool to use
+LIBTOOL="$1"
 shift
 
-# the reel tool (to call)
-REEL_TOOL="$1"
-shift
+# if 1, don't print anything, the underlaying wrapper will do it
+pass_though=0
 
-pass_through=0
+# scan the arguments, keep the right ones for libtool, and discover the mode
 preserved_args=
+
+# have we seen the --tag option of libtool in the command line ?
+tag_seen=0
+
 while test "$#" -gt 0; do
     opt="$1"
     shift
 
     case $opt in
-    --shave-mode=*)
+    --mode=*)
         mode=`echo $opt | $SED -e 's/[-_a-zA-Z0-9]*=//'`
+        preserved_args="$preserved_args $opt"
         ;;
     -o)
         lt_output="$1"
         preserved_args="$preserved_args $opt"
-        ;;
-    -out:*|/out:*)
-        lt_output="${opt#-out:}"
+	;;
+    --tag=*)
+        tag_seen=1
         preserved_args="$preserved_args $opt"
-        ;;
+	;;
     *)
         preserved_args="$preserved_args $opt"
         ;;
       esac
 done
 
-# mode=link is handled in the libtool wrapper
-case "$mode,$tool" in
-link,*)
-    pass_through=1
+case "$mode" in
+compile)
+    # shave will be called and print the actual CC/CXX/LINK line
+    preserved_args="$preserved_args --shave-mode=$mode"
+    pass_though=1
     ;;
-*,cxx)
-    Q="  CXX   "
+link)
+    preserved_args="$preserved_args --shave-mode=$mode"
+    Q="  LINK  "
     ;;
-*,ccas)
-    Q="  AS    "
-    ;;
-*,cc)
-    Q="  CC    "
-    ;;
-*,fc)
-    Q="  FC    "
-    ;;
-*,f77)
-    Q="  F77   "
-    ;;
-*,objc)
-    Q="  OBJC   "
-    ;;
-*,mcs)
-    Q="  MCS   "
-    ;;
-*,*)
-    # should not happen
-    Q="  CC    "
+*)
+    # let's u
+    # echo "*** libtool: Unimplemented mode: $mode, fill a bug report"
     ;;
 esac
 
 lt_unmangle "$lt_output"
 output=$last_result
 
+# automake does not add a --tag switch to its libtool invocation when
+# assembling a .s file and rely on libtool to infer the right action based
+# on the compiler name. As shave is using CC to hook a wrapper, libtool gets
+# confused. Let's detect these cases and add a --tag=CC option.
+tag=""
+if test $tag_seen -eq 0 -a x"$mode" = xcompile; then
+    tag="--tag=CC"
+fi
+
 if test -z $V; then
-    if test $pass_through -eq 0; then
+    if test $pass_though -eq 0; then
         echo "$Q$output"
     fi
-    $REEL_TOOL $preserved_args
+    $LIBTOOL --silent $tag $preserved_args
 else
-    echo $REEL_TOOL $preserved_args
-    $REEL_TOOL $preserved_args
+    echo $LIBTOOL $tag $preserved_args
+    $LIBTOOL $tag $preserved_args
 fi
