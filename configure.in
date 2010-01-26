@@ -10,6 +10,17 @@ AC_PROG_CXX
 AC_PROG_CC_C_O
 PKG_PROG_PKG_CONFIG([0.22])
 
+AC_MSG_CHECKING([for CoUninitialize in -lole32])
+_LIBS="$LIBS"
+LIBS="-lole32 $LIBS"
+AC_LINK_IFELSE([
+               #include <objbase.h>
+               int main() {
+                   CoUninitialize();
+                   return 0;
+               }
+               ], [AC_MSG_RESULT([yes])], [LIBS="$_LIBS"; AC_MSG_RESULT([no])])
+
 PKG_CHECK_MODULES(FFMPEG, [libavformat >= 52.39.0 libavcodec >= 52.38.0 libswscale >= 0.7.0 libpostproc >= 51.2.0 libavutil >= 50.4.0 ])
 AC_SUBST([FFMPEG_CFLAGS])
 AC_SUBST([FFMPEG_LIBS])
