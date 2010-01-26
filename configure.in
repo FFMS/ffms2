@@ -4,6 +4,14 @@ AC_CONFIG_SRCDIR([src/core/ffms.cpp])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE
 
+if test -z "$CFLAGS"; then
+    CFLAGS="-O2"
+fi
+
+if test -z "$CXXFLAGS"; then
+    CXXFLAGS="-O2"
+fi
+
 AM_CONFIG_HEADER([src/config/config.h])
 LT_INIT([static disable-shared])
 AC_PROG_CXX
