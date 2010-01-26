@@ -1,7 +1,8 @@
 AC_PREREQ([2.58])
-AC_INIT([src/core/ffms.cpp])
+AC_INIT([ffms2],[svn])
+AC_CONFIG_SRCDIR([src/core/ffms.cpp])
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE(ffms2,devel)
+AM_INIT_AUTOMAKE
 
 AM_CONFIG_HEADER([src/config/config.h])
 LT_INIT([static disable-shared])
