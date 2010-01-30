@@ -347,7 +347,7 @@
 			Name="Config"
 			>
 			<File
-				RelativePath="..\src\config\config.h"
+				RelativePath="..\src\config\msvc-config.h"
 				>
 			</File>
 			<File

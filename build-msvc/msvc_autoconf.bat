@@ -29,4 +29,4 @@ goto :EOF
 
 :error
 echo Library autodetection failed. If you get unresolved externals,
-echo you may have to edit src/config/config.h manually.
+echo you may have to edit src/config/msvc-config.h manually.
