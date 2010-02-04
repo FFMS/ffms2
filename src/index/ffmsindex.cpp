@@ -49,17 +49,17 @@ FFMS_Index *Index;
 static void PrintUsage () {
 	using namespace std;
 	cout << "FFmpegSource2 indexing app" << endl
-		<< "Usage: ffmsindex [options] inputfile [outputfile]" << endl
-		<< "If no output filename is specified, inputfile.ffindex will be used." << endl << endl
-		<< "Options:" << endl
-		<< "-f        Force overwriting of existing index file, if any (default: no)" << endl
-		<< "-v        Set FFmpeg verbosity level. Can be repeated for more verbosity. (default: no messages printed)" << endl
-		<< "-p        Disable progress reporting. (default: progress reporting on)" << endl
-		<< "-c        Write timecodes for all video tracks to outputfile_track00.tc.txt (default: no)" << endl
-		<< "-t N      Set the audio indexing mask to N (-1 means index all tracks, 0 means index none, default: 0)" << endl
-		<< "-d N      Set the audio decoding mask to N (mask syntax same as -t, default: 0)" << endl
-		<< "-a NAME   Set the audio output base filename to NAME (default: input filename)" << endl
-		<< "-s N      Set audio decoding error handling. See the documentation for details. (default: 0)";
+	     << "Usage: ffmsindex [options] inputfile [outputfile]" << endl
+	     << "If no output filename is specified, inputfile.ffindex will be used." << endl << endl
+	     << "Options:" << endl
+	     << "-f        Force overwriting of existing index file, if any (default: no)" << endl
+	     << "-v        Set FFmpeg verbosity level. Can be repeated for more verbosity. (default: no messages printed)" << endl
+	     << "-p        Disable progress reporting. (default: progress reporting on)" << endl
+	     << "-c        Write timecodes for all video tracks to outputfile_track00.tc.txt (default: no)" << endl
+	     << "-t N      Set the audio indexing mask to N (-1 means index all tracks, 0 means index none, default: 0)" << endl
+	     << "-d N      Set the audio decoding mask to N (mask syntax same as -t, default: 0)" << endl
+	     << "-a NAME   Set the audio output base filename to NAME (default: input filename)" << endl
+	     << "-s N      Set audio decoding error handling. See the documentation for details. (default: 0)" << endl;
 }
 
 
