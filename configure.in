@@ -15,7 +15,20 @@ fi
 AM_CONFIG_HEADER([src/config/config.h])
 LT_INIT([static disable-shared])
 AC_PROG_CXX
-AC_PROG_CC_C_O
+
+if echo "$host" | $GREP "cygwin" >/dev/null 2>&1 && test "$enable_shared" = "yes"; then
+    AC_MSG_ERROR([Shared build is broken on cygwin.
+                  Please remove --enable-shared from your configure options or build with another --host.])
+fi
+
+dnl Workaround for a bug in libtool
+dnl The windows libtool uses a file magic checking method that only accepts
+dnl dynamic libraries. Change it for libtool's alternative checking method.
+if test "$lt_cv_file_magic_cmd" = "func_win32_libid" ; then
+    deplibs_check_method='file_magic file format pei*-i386(.*architecture: i386)?'
+    file_magic_cmd='$OBJDUMP -f'
+fi
+
 AC_MSG_CHECKING([for CoUninitialize in -lole32])
 _LIBS="$LIBS"
 LIBS="-lole32 $LIBS"
@@ -62,7 +75,7 @@ fi
 AC_MSG_CHECKING([whether -Wl,-Bsymbolic is needed])
 if test "$enable_shared" = yes; then
     _LDFLAGS="$LDFLAGS"
-    LDFLAGS="$LDFLAGS -shared -fPIC"
+    LDFLAGS="$LDFLAGS -shared $lt_prog_compiler_pic"
     TEST_FFMPEG([no_bsymbolic])
     if test "$no_bsymbolic" = "no"; then
         LDFLAGS="$LDFLAGS -Wl,-Bsymbolic"
@@ -83,6 +96,11 @@ fi
 CFLAGS="$_CFLAGS"
 LIBS="$_LIBS"
 AC_MSG_RESULT($bsymbolic)
+
+if echo "$host" | $GREP "mingw" >/dev/null 2>&1; then
+    LTUNDEF="-no-undefined"
+fi
+AC_SUBST([LTUNDEF])
 
 SHAVE_INIT([shave], [enable])
 AC_CONFIG_FILES([
