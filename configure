@@ -14178,7 +14178,7 @@ if echo "$host" | $GREP "cygwin" >/dev/null 2>&1 && test "$enable_shared" = "yes
 fi
 
 if test "$lt_cv_file_magic_cmd" = "func_win32_libid" ; then
-    deplibs_check_method='file_magic file format pei*-i386(.*architecture: i386)?'
+    deplibs_check_method='file_magic file format pei*-(i386|x86-64)|(.*architecture: i386)?'
     file_magic_cmd='$OBJDUMP -f'
 fi
 
