@@ -9,5 +9,5 @@ Name: ffms2
 Description: The Fabulous FM Library 2
 Requires: libavformat libavcodec libswscale libpostproc libavutil
 Version: @VERSION@
-Libs: -L${libdir} -lffms2
+Libs: -L${libdir} -lffms2 @ZLIB_CPPFLAGS@ -lz
 Cflags: -I${includedir}

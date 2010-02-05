@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS=-I m4
 
-INCLUDES = -I$(top_srcdir)/include @FFMPEG_CFLAGS@
+INCLUDES = -I$(top_srcdir)/include @FFMPEG_CFLAGS@ @ZLIB_CPPFLAGS@
 
 bin_PROGRAMS = ffmsindex
 ffmsindex_SOURCES = ffmsindex.cpp

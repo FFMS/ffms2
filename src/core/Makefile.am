@@ -1,9 +1,9 @@
 ACLOCAL_AMFLAGS=-I m4
 
-INCLUDES = -I. -I$(top_srcdir)/include -I$(top_srcdir)/src/config @FFMPEG_CFLAGS@
+INCLUDES = -I. -I$(top_srcdir)/include -I$(top_srcdir)/src/config @FFMPEG_CFLAGS@ @ZLIB_CPPFLAGS@
 
 lib_LTLIBRARIES = libffms2.la
-libffms2_la_LIBADD = @FFMPEG_LIBS@ @LTUNDEF@
+libffms2_la_LIBADD = @FFMPEG_LIBS@ @ZLIB_LDFLAGS@ -lz @LTUNDEF@
 libffms2_la_SOURCES = \
 	audiosource.h \
 	audiosource.cpp \

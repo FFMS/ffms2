@@ -29,6 +29,8 @@ if test "$lt_cv_file_magic_cmd" = "func_win32_libid" ; then
     file_magic_cmd='$OBJDUMP -f'
 fi
 
+CHECK_ZLIB
+
 AC_MSG_CHECKING([for CoUninitialize in -lole32])
 _LIBS="$LIBS"
 LIBS="-lole32 $LIBS"
