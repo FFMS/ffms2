@@ -637,9 +637,7 @@ NMEDIT
 DSYMUTIL
 RANLIB
 AR
-DLLTOOL
 OBJDUMP
-to_host_path_cmd
 LN_S
 NM
 ac_ct_DUMPBIN
@@ -2839,7 +2837,7 @@ esac
 
 
 macro_version='2.2.7a'
-macro_revision='1.3140'
+macro_revision='1.3148'
 
 
 
@@ -4796,53 +4794,6 @@ esac
 
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking how to convert $build paths to $host format" >&5
-$as_echo_n "checking how to convert $build paths to $host format... " >&6; }
-if test "${lt_cv_to_host_path_cmd+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $host in
-  *mingw* )
-    case $build in
-      *mingw* ) # actually msys
-        lt_cv_to_host_path_cmd=func_msys_to_mingw_path_convert
-        ;;
-      *cygwin* )
-        lt_cv_to_host_path_cmd=func_cygwin_to_mingw_path_convert
-        ;;
-      * ) # otherwise, assume *nix
-        lt_cv_to_host_path_cmd=func_nix_to_mingw_path_convert
-        ;;
-    esac
-    ;;
-  *cygwin* )
-    case $build in
-      *mingw* ) # actually msys
-        lt_cv_to_host_path_cmd=func_msys_to_cygwin_path_convert
-        ;;
-      *cygwin* )
-        lt_cv_to_host_path_cmd=func_noop_path_convert
-        ;;
-      * ) # otherwise, assume *nix
-        lt_cv_to_host_path_cmd=func_nix_to_cygwin_path_convert
-        ;;
-    esac
-    ;;
-  * ) # unhandled hosts (and "normal" native builds)
-    lt_cv_to_host_path_cmd=func_noop_path_convert
-    ;;
-esac
-
-fi
-
-to_host_path_cmd=$lt_cv_to_host_path_cmd
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $lt_cv_to_host_path_cmd" >&5
-$as_echo "$lt_cv_to_host_path_cmd" >&6; }
-
-
-
-
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $LD option to reload object files" >&5
 $as_echo_n "checking for $LD option to reload object files... " >&6; }
 if test "${lt_cv_ld_reload_flag+set}" = set; then :
@@ -5189,147 +5140,6 @@ test -z "$deplibs_check_method" && deplibs_check_method=unknown
 
 
 
-
-
-
-
-
-
-
-if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}dlltool", so it can be a program name with args.
-set dummy ${ac_tool_prefix}dlltool; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_DLLTOOL+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$DLLTOOL"; then
-  ac_cv_prog_DLLTOOL="$DLLTOOL" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_DLLTOOL="${ac_tool_prefix}dlltool"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-DLLTOOL=$ac_cv_prog_DLLTOOL
-if test -n "$DLLTOOL"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DLLTOOL" >&5
-$as_echo "$DLLTOOL" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_prog_DLLTOOL"; then
-  ac_ct_DLLTOOL=$DLLTOOL
-  # Extract the first word of "dlltool", so it can be a program name with args.
-set dummy dlltool; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_ac_ct_DLLTOOL+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_DLLTOOL"; then
-  ac_cv_prog_ac_ct_DLLTOOL="$ac_ct_DLLTOOL" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_ac_ct_DLLTOOL="dlltool"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_DLLTOOL=$ac_cv_prog_ac_ct_DLLTOOL
-if test -n "$ac_ct_DLLTOOL"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_DLLTOOL" >&5
-$as_echo "$ac_ct_DLLTOOL" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_ct_DLLTOOL" = x; then
-    DLLTOOL="false"
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    DLLTOOL=$ac_ct_DLLTOOL
-  fi
-else
-  DLLTOOL="$ac_cv_prog_DLLTOOL"
-fi
-
-test -z "$DLLTOOL" && DLLTOOL=dlltool
-
-
-
-
-
-
-
-
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking how to associate runtime and link libraries" >&5
-$as_echo_n "checking how to associate runtime and link libraries... " >&6; }
-if test "${lt_cv_sharedlib_from_linklib_cmd+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  lt_cv_sharedlib_from_linklib_cmd='unknown'
-
-case $host_os in
-cygwin* | mingw* | pw32* | cegcc*)
-  # two different shell functions defined in ltmain.sh
-  # decide which to use based on capabilities of $DLLTOOL
-  case `$DLLTOOL --help 2>&1` in
-  *--identify-strict*)
-    lt_cv_sharedlib_from_linklib_cmd=func_cygming_dll_for_implib
-    ;;
-  *)
-    lt_cv_sharedlib_from_linklib_cmd=func_cygming_dll_for_implib_fallback
-    ;;
-  esac
-  ;;
-*)
-  # fallback: assume linklib IS sharedlib
-  lt_cv_sharedlib_from_linklib_cmd="$ECHO"
-  ;;
-esac
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $lt_cv_sharedlib_from_linklib_cmd" >&5
-$as_echo "$lt_cv_sharedlib_from_linklib_cmd" >&6; }
-sharedlib_from_linklib_cmd=$lt_cv_sharedlib_from_linklib_cmd
-test -z "$sharedlib_from_linklib_cmd" && sharedlib_from_linklib_cmd=$ECHO
 
 
 
@@ -5776,8 +5586,8 @@ esac
 lt_cv_sys_global_symbol_to_cdecl="sed -n -e 's/^T .* \(.*\)$/extern int \1();/p' -e 's/^$symcode* .* \(.*\)$/extern char \1;/p'"
 
 # Transform an extracted symbol line into symbol name and symbol address
-lt_cv_sys_global_symbol_to_c_name_address="sed -n -e 's/^: \([^ ]*\)[ ]*$/  {\\\"\1\\\", (void *) 0},/p' -e 's/^$symcode* \([^ ]*\) \([^ ]*\)$/  {\"\2\", (void *) \&\2},/p'"
-lt_cv_sys_global_symbol_to_c_name_address_lib_prefix="sed -n -e 's/^: \([^ ]*\)[ ]*$/  {\\\"\1\\\", (void *) 0},/p' -e 's/^$symcode* \([^ ]*\) \(lib[^ ]*\)$/  {\"\2\", (void *) \&\2},/p' -e 's/^$symcode* \([^ ]*\) \([^ ]*\)$/  {\"lib\2\", (void *) \&\2},/p'"
+lt_cv_sys_global_symbol_to_c_name_address="sed -n -e 's/^: \([^ ]*\) $/  {\\\"\1\\\", (void *) 0},/p' -e 's/^$symcode* \([^ ]*\) \([^ ]*\)$/  {\"\2\", (void *) \&\2},/p'"
+lt_cv_sys_global_symbol_to_c_name_address_lib_prefix="sed -n -e 's/^: \([^ ]*\) $/  {\\\"\1\\\", (void *) 0},/p' -e 's/^$symcode* \([^ ]*\) \(lib[^ ]*\)$/  {\"\2\", (void *) \&\2},/p' -e 's/^$symcode* \([^ ]*\) \([^ ]*\)$/  {\"lib\2\", (void *) \&\2},/p'"
 
 # Handle CRLF in mingw tool chain
 opt_cr=
@@ -8268,8 +8078,7 @@ _LT_EOF
       allow_undefined_flag=unsupported
       always_export_symbols=no
       enable_shared_with_static_runtimes=yes
-      export_symbols_cmds='$NM $libobjs $convenience | $global_symbol_pipe | $SED -e '\''/^[BCDGRS][ ]/s/.*[ ]\([^ ]*\)/\1 DATA/;s/^.*[ ]__nm__\([^ ]*\)[ ][^ ]*/\1 DATA/;/^I[ ]/d;/^[AITW][ ]/s/.* //'\'' | sort | uniq > $export_symbols'
-      exclude_expsyms='[_]+GLOBAL_OFFSET_TABLE_|[_]+GLOBAL__[FID]_.*|[_]+head_[A-Za-z0-9_]+_dll|[A-Za-z0-9_]+_dll_iname'
+      export_symbols_cmds='$NM $libobjs $convenience | $global_symbol_pipe | $SED -e '\''/^[BCDGRS][ ]/s/.*[ ]\([^ ]*\)/\1 DATA/'\'' | $SED -e '\''/^[AITW][ ]/s/.*[ ]//'\'' | sort | uniq > $export_symbols'
 
       if $LD --help 2>&1 | $GREP 'auto-import' > /dev/null; then
         archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags -o $output_objdir/$soname ${wl}--enable-auto-image-base -Xlinker --out-implib -Xlinker $lib'
@@ -13387,7 +13196,6 @@ fi
 $as_echo_n "checking whether the $compiler linker ($LD) supports shared libraries... " >&6; }
 
   export_symbols_cmds_CXX='$NM $libobjs $convenience | $global_symbol_pipe | $SED '\''s/.* //'\'' | sort | uniq > $export_symbols'
-  exclude_expsyms_CXX='_GLOBAL_OFFSET_TABLE_|_GLOBAL__F[ID]_.*'
   case $host_os in
   aix[4-9]*)
     # If we're using GNU nm, then we don't want the "-C" option.
@@ -13404,13 +13212,13 @@ $as_echo_n "checking whether the $compiler linker ($LD) supports shared librarie
     export_symbols_cmds_CXX="$ltdll_cmds"
   ;;
   cygwin* | mingw* | cegcc*)
-    export_symbols_cmds_CXX='$NM $libobjs $convenience | $global_symbol_pipe | $SED -e '\''/^[BCDGRS][ ]/s/.*[ ]\([^ ]*\)/\1 DATA/;s/^.*[ ]__nm__\([^ ]*\)[ ][^ ]*/\1 DATA/;/^I[ ]/d;/^[AITW][ ]/s/.* //'\'' | sort | uniq > $export_symbols'
-    exclude_expsyms_CXX='[_]+GLOBAL_OFFSET_TABLE_|[_]+GLOBAL__[FID]_.*|[_]+head_[A-Za-z0-9_]+_dll|[A-Za-z0-9_]+_dll_iname'
+    export_symbols_cmds_CXX='$NM $libobjs $convenience | $global_symbol_pipe | $SED -e '\''/^[BCDGRS][ ]/s/.*[ ]\([^ ]*\)/\1 DATA/;/^.*[ ]__nm__/s/^.*[ ]__nm__\([^ ]*\)[ ][^ ]*/\1 DATA/;/^I[ ]/d;/^[AITW][ ]/s/.* //'\'' | sort | uniq > $export_symbols'
   ;;
   *)
     export_symbols_cmds_CXX='$NM $libobjs $convenience | $global_symbol_pipe | $SED '\''s/.* //'\'' | sort | uniq > $export_symbols'
   ;;
   esac
+  exclude_expsyms_CXX='_GLOBAL_OFFSET_TABLE_|_GLOBAL__F[ID]_.*'
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ld_shlibs_CXX" >&5
 $as_echo "$ld_shlibs_CXX" >&6; }
@@ -15575,14 +15383,11 @@ exeext='`$ECHO "$exeext" | $SED "$delay_single_quote_subst"`'
 lt_unset='`$ECHO "$lt_unset" | $SED "$delay_single_quote_subst"`'
 lt_SP2NL='`$ECHO "$lt_SP2NL" | $SED "$delay_single_quote_subst"`'
 lt_NL2SP='`$ECHO "$lt_NL2SP" | $SED "$delay_single_quote_subst"`'
-lt_cv_to_host_path_cmd='`$ECHO "$lt_cv_to_host_path_cmd" | $SED "$delay_single_quote_subst"`'
 reload_flag='`$ECHO "$reload_flag" | $SED "$delay_single_quote_subst"`'
 reload_cmds='`$ECHO "$reload_cmds" | $SED "$delay_single_quote_subst"`'
 OBJDUMP='`$ECHO "$OBJDUMP" | $SED "$delay_single_quote_subst"`'
 deplibs_check_method='`$ECHO "$deplibs_check_method" | $SED "$delay_single_quote_subst"`'
 file_magic_cmd='`$ECHO "$file_magic_cmd" | $SED "$delay_single_quote_subst"`'
-DLLTOOL='`$ECHO "$DLLTOOL" | $SED "$delay_single_quote_subst"`'
-sharedlib_from_linklib_cmd='`$ECHO "$sharedlib_from_linklib_cmd" | $SED "$delay_single_quote_subst"`'
 AR='`$ECHO "$AR" | $SED "$delay_single_quote_subst"`'
 AR_FLAGS='`$ECHO "$AR_FLAGS" | $SED "$delay_single_quote_subst"`'
 STRIP='`$ECHO "$STRIP" | $SED "$delay_single_quote_subst"`'
@@ -15754,8 +15559,6 @@ reload_flag \
 OBJDUMP \
 deplibs_check_method \
 file_magic_cmd \
-DLLTOOL \
-sharedlib_from_linklib_cmd \
 AR \
 AR_FLAGS \
 STRIP \
@@ -16622,7 +16425,8 @@ $as_echo X"$file" |
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 #
 #   Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2003, 2004, 2005,
-#                 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+#                 2006, 2007, 2008, 2009, 2010 Free Software Foundation,
+#                 Inc.
 #   Written by Gordon Matzigkeit, 1996
 #
 #   This file is part of GNU Libtool.
@@ -16725,9 +16529,6 @@ SP2NL=$lt_lt_SP2NL
 # turn newlines into spaces.
 NL2SP=$lt_lt_NL2SP
 
-# convert \$build paths to \$host format.
-to_host_path_cmd=$lt_cv_to_host_path_cmd
-
 # An object symbol dumper.
 OBJDUMP=$lt_OBJDUMP
 
@@ -16736,12 +16537,6 @@ deplibs_check_method=$lt_deplibs_check_method
 
 # Command to use when deplibs_check_method == "file_magic".
 file_magic_cmd=$lt_file_magic_cmd
-
-# DLL creation program.
-DLLTOOL=$lt_DLLTOOL
-
-# Command to associate shared and link libraries.
-sharedlib_from_linklib_cmd=$lt_sharedlib_from_linklib_cmd
 
 # The archiver.
 AR=$lt_AR
