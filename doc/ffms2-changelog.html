@@ -12,12 +12,17 @@ FFmpegSource2 Changelog
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
 <li>2.13<ul>
+<li>The Avisynth plugin will now attempt to detect and use NTSC fractional framerates for CFR files if applicable, instead of reporting something based on the average framerate (astrange, TheFluff)</li>
+<li>The errorhandling parameter to FFIndex() will now actually do what the documentation claims it does (TheFluff)</li>
+<li>Fixed a progress reporting crash when opening images (TheFluff)</li>
+<li>Replaced the CMake build system with an autotools one that hopefully works better (Kovensky)</li>
+<li>Fixed various compilation issues with MinGW (TheFluff)</li>
 <li>Fixed h264 in mkv which was remuxed from bd sources, there are no longer decoding artifacts after seeking</li>
 <li>Use pts instead of dts for seeking with lavf</li>
 <li>Now compresses the index files with zlib to save space</li>
 <li>Removed the boost dependency</li>
 <li>Fixed the framerate calculation for AVC video in the RFF modes</li>
-<li>Improved/fixed the NVOP detection in MPEG4</li>
+<li>Improved/fixed the NVOP detection in MPEG4 and how timestamps are calculated (lanwcp, Myrsloik)</li>
 <li>Fixed an issue where the first 15 audio frames would never be redecoded if needed again</li>
 <li>Fixed/added support for uncompressed video and audio formats in matroska, fixes Blank.Clip.720p.x264-darkhold.mkv (Emess)</li>
 <li>The indexer and test is now statically linked so no extra runtimes are needed</li>
