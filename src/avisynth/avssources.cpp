@@ -145,8 +145,12 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 		if (FPSNum > 0 && FPSDen > 0) {
 			VI.fps_denominator = FPSDen;
 			VI.fps_numerator = FPSNum;
-			VI.num_frames = static_cast<int>(ceil(((VP->LastTime - VP->FirstTime) * FPSNum) / FPSDen));
-		} else {
+			if (VP->NumFrames > 1) {
+				VI.num_frames = static_cast<int>((VP->LastTime - VP->FirstTime) * (1 + 1. / (VP->NumFrames - 1)) * FPSNum / FPSDen + 0.5);
+				if (VI.num_frames < 1) VI.num_frames = 1;
+			} else {
+				VI.num_frames = 1;
+			}
 			VI.fps_denominator = VP->FPSDenominator;
 			VI.fps_numerator = VP->FPSNumerator;
 			VI.num_frames = VP->NumFrames;
