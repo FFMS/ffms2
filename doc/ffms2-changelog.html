@@ -12,6 +12,7 @@ FFmpegSource2 Changelog
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
 <li>2.13<ul>
+<li>Fixed a bug where the Avisynth plugin would drop the last frame when converting to CFR (lanwcp)</li>
 <li>The Avisynth plugin will now attempt to detect and use NTSC fractional framerates for CFR files if applicable, instead of reporting something based on the average framerate (astrange, TheFluff)</li>
 <li>The errorhandling parameter to FFIndex() will now actually do what the documentation claims it does (TheFluff)</li>
 <li>Fixed a progress reporting crash when opening images (TheFluff)</li>
