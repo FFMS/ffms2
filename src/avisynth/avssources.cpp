@@ -151,6 +151,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 			} else {
 				VI.num_frames = 1;
 			}
+		} else {
 			VI.fps_denominator = VP->FPSDenominator;
 			VI.fps_numerator = VP->FPSNumerator;
 			VI.num_frames = VP->NumFrames;
