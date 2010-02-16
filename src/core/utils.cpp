@@ -267,6 +267,8 @@ CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC
 							case 32: CID = CODEC_ID_PCM_S32BE; break;
 						}
 						break;
+					default:
+						break;
 				}
 
 				return CID;
