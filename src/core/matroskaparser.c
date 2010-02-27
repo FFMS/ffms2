@@ -290,7 +290,8 @@ static void   myvsnprintf_int(char **pdest,char *de,int width,int zero,
 static void   myvsnprintf(char *dest,unsigned dsize,const char *fmt,va_list ap) {
   // s,d,x,u,ll
   char	    *de = dest + dsize - 1;
-  int	    state = 0, width, zero, neg, ll;
+  int	    state, width, zero, neg, ll;
+  state = width = zero = neg = ll = 0;
 
   if (dsize <= 1) {
     if (dsize > 0)
@@ -908,16 +909,6 @@ static void readLangCC(MatroskaFile *mf, ulonglong len, char lcc[4]) {
 #define	STRGETA(f,v,len)  STRGETF(f,v,len,myalloca)
 #define	STRGETM(f,v,len)  STRGETF(f,v,len,f->cache->memalloc)
 
-static int  IsWritingApp(MatroskaFile *mf,const char *str) {
-  const char  *cp = mf->Seg.WritingApp;
-  if (!cp)
-    return 0;
-
-  while (*str && *str++==*cp++) ;
-
-  return !*str;
-}
-
 static void parseEBML(MatroskaFile *mf,ulonglong toplen) {
   ulonglong v;
   char	    buf[32];
@@ -1216,10 +1207,6 @@ static void parseAudioInfo(MatroskaFile *mf,ulonglong toplen,struct TrackInfo *t
       break;
     case 0x6264: // BitDepth
       v = readUInt(mf,(unsigned)len);
-#if 0
-      if ((v<1 || v>255) && !IsWritingApp(mf,"AVI-Mux GUI"))
-	errorjmp(mf,"Invalid BitDepth: %d",(int)v);
-#endif
       ti->AV.Audio.BitDepth = (unsigned char)v;
       break;
   ENDFOR(mf);
@@ -1249,7 +1236,7 @@ static void parseTrackEntry(MatroskaFile *mf,ulonglong toplen) {
   ulonglong	    v;
   char		    *cp = NULL, *cs = NULL;
   size_t	    cplen = 0, cslen = 0, cpadd = 0;
-  unsigned	    CompScope, num_comp = 0;
+  unsigned	    CompScope = 0, num_comp = 0;
 
   if (mf->nTracks >= MAX_TRACKS)
     errorjmp(mf,"Too many tracks.");
