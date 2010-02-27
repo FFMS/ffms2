@@ -2,7 +2,7 @@ AC_PREREQ([2.58])
 AC_INIT([ffms2],[2.13.1])
 AC_CONFIG_SRCDIR([src/core/ffms.cpp])
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 
 if test -z "$CFLAGS"; then
     CFLAGS="-O3"
@@ -109,9 +109,6 @@ AC_CONFIG_FILES([
 shave/shave
 shave/shave-libtool
 Makefile 
-src/Makefile
-src/core/Makefile
-src/index/Makefile
 ffms2.pc
 ])
 AC_OUTPUT

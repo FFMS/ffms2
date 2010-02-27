@@ -14639,7 +14639,7 @@ fi
 
 
 
-ac_config_files="$ac_config_files shave/shave shave/shave-libtool Makefile src/Makefile src/core/Makefile src/index/Makefile ffms2.pc"
+ac_config_files="$ac_config_files shave/shave shave/shave-libtool Makefile ffms2.pc"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -15721,9 +15721,6 @@ do
     "shave/shave") CONFIG_FILES="$CONFIG_FILES shave/shave" ;;
     "shave/shave-libtool") CONFIG_FILES="$CONFIG_FILES shave/shave-libtool" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-    "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
-    "src/core/Makefile") CONFIG_FILES="$CONFIG_FILES src/core/Makefile" ;;
-    "src/index/Makefile") CONFIG_FILES="$CONFIG_FILES src/index/Makefile" ;;
     "ffms2.pc") CONFIG_FILES="$CONFIG_FILES ffms2.pc" ;;
 
   *) as_fn_error "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
