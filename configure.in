@@ -95,7 +95,7 @@ if test "$enable_shared" = yes; then
 else
     bsymbolic=no
 fi
-CFLAGS="$_CFLAGS"
+CFLAGS="$_CFLAGS -std=c99"
 LIBS="$_LIBS"
 AC_MSG_RESULT($bsymbolic)
 
