@@ -13,12 +13,18 @@ if test -z "$CXXFLAGS"; then
 fi
 
 AM_CONFIG_HEADER([src/config/config.h])
-LT_INIT([static disable-shared])
+AC_PROG_CC
 AC_PROG_CXX
+LT_INIT([static disable-shared])
 
 if echo "$host" | $GREP "cygwin" >/dev/null 2>&1 && test "$enable_shared" = "yes"; then
     AC_MSG_ERROR([Shared build is broken on cygwin.
                   Please remove --enable-shared from your configure options or build with another --host.])
+fi
+
+AC_FUNC_ALLOCA
+if ! test "x$ac_cv_working_alloca_h" = "xyes" && ! test "x$ac_cv_func_alloca_works" = "xyes"; then
+    AC_MSG_FAILURE([ffms2 requires alloca to compile])
 fi
 
 dnl Workaround for a bug in libtool

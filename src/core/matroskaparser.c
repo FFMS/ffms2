@@ -27,6 +27,10 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -44,6 +48,10 @@
 #endif /* _MSC_VER */
 #include <tchar.h>
 #endif /* _WIN32 */
+
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
 
 #ifndef EVCBUG
 #define	EVCBUG
