@@ -14730,6 +14730,7 @@ See \`config.log' for more details." "$LINENO" 5; }
         bsymbolic=no
         LDFLAGS="$_LDFLAGS"
     fi
+    LDFLAGS="$LDFLAGS -version-info 2"
 else
     bsymbolic=no
 fi

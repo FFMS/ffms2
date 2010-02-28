@@ -98,6 +98,7 @@ if test "$enable_shared" = yes; then
         bsymbolic=no
         LDFLAGS="$_LDFLAGS"
     fi
+    LDFLAGS="$LDFLAGS -version-info 2"
 else
     bsymbolic=no
 fi
