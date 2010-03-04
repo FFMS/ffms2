@@ -73,6 +73,9 @@ void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl)
 FFMS_API(void) FFMS_Init(int CPUFeatures) {
 	if (!FFmpegInited) {
 		av_register_all();
+#if defined(_WIN32) && defined(FFMS_USE_UTF8_PATHS)
+		ffms_patch_lavf_file_open();
+#endif
 #ifdef FFMS_WIN_DEBUG
 		av_log_set_callback(av_log_windebug_callback);
 		av_log_set_level(AV_LOG_INFO);

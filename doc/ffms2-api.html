@@ -44,7 +44,7 @@ Compiling the library itself is fairly straightforward. For the basics, just add
 If you're compiling the library on Windows, it is suggested that you use the Microsoft Visual Studio 2008 solution file from SVN. Any version of MSVC2008 should work for compiling it, including the free Express Edition (but if you use that you must undefine HAALISOURCE or find a copy of the ATL libraries). The project file in question assumes that you have compiled ffmpeg with MinGW (guides on how to do that are easy to find) and want to link FFMS2 with it statically (linking it dynamically is possible but not recommended since it usually leads to DLL hell). Add your mingw/include and mingw/lib folders to MSVC's respective global directory settings (Tools menu -&gt; Options -&gt; Projects and Solutions -&gt; VC++ Directories) and you should be good to go.
 </p>
 <p>
-If you're using anything else, you're on your own. It's possible to build the library (but not the Avisynth plugin) using MinGW; this is also the only way to build a 64-bit version of it at the moment. If you're rolling your own MSVC solution file, remember that you need to <tt>#define FFMS_EXPORTS</tt> somewhere when compiling the library. You may also <tt>#define HAALISOURCE</tt> if you want to make the library able to open MPEG TS/PS and OGM files using Haali's DirectShow splitter (if you do not define it, those files will be opened with libavformat instead, and that usually doesn't work out all that well). Note that if you do so, opening those files will fail unless the user has the <a href="http://haali.cs.msu.ru/mkv/">Haali Media Splitter</a> DirectShow filter installed. Both those defines are enabled by default in the solution file in SVN.
+If you're using anything else, you're on your own. It's possible to build the library (but not the Avisynth plugin) using MinGW; this is also the only way to build a 64-bit version of FFMS2 at the moment. If you're rolling your own MSVC solution file, remember that you need to <tt>#define FFMS_EXPORTS</tt> somewhere when compiling the library. You may also <tt>#define HAALISOURCE</tt> if you want to make the library able to open MPEG TS/PS and OGM files using Haali's DirectShow splitter (if you do not define it, those files will be opened with libavformat instead, and that usually doesn't work out all that well). Note that if you do so, opening those files will fail unless the user has the <a href="http://haali.cs.msu.ru/mkv/">Haali Media Splitter</a> DirectShow filter installed. Both those defines are enabled by default in the solution file in SVN.
 </p>
 
 
@@ -173,6 +173,18 @@ When you have indexed the file you can write the index object to a disk file usi
 </p>
 <p>
 To create an index object from a saved disk file, use <tt>FFMS_ReadIndex</tt>. Note that the index file written has an internal version number; if you have a version of FFMS2 that isn't the same as the one that created the index, it will most likely not accept the index at all (the read function will fail). If you want to verify that a given index file actually is an index of the source file you think it is, use <tt>FFMS_IndexBelongsToFile</tt>.
+</p>
+
+
+<h2>Handling Unicode filenames on Windows</h2>
+<p>
+If you want support for Unicode filenames on Windows <tt>#define FFMS_USE_UTF8_PATHS</tt> somewhere. This will make FFMS2 assume that all strings passed to its API functions are UTF8; if they aren't either that or 7-bit ASCII, opening things will most likely fail. You can convert <tt>wchar_t</tt> strings to UTF8 using the Win32 API function <tt>WideCharToMultiByte</tt>.
+</p>
+<p>
+Do <strong>NOT</strong> use FFMS_USE_UTF8_PATHS if you're building the FFMS2 Avisynth plugin; it'll break opening all filenames that aren't 7-bit ASCII compatible. Unfortunately you can't have both ANSI and UTF8 support in the same DLL, at least not yet. Also note that if you use this define and build FFMS2 with MinGW, some things will probably break since MinGW's iostream library doesn't support widechar filenames.
+</p>
+<p>
+On Unix this define does nothing. You won't need to do anything special to support Unicode filenames anyway, just set your locale to something UTF8-based.
 </p>
 
 

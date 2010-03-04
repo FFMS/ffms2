@@ -20,13 +20,20 @@
 
 #include <string.h>
 #include <errno.h>
+#include <io.h>
+#include <fcntl.h>
 
 #include "utils.h"
 #include "indexing.h"
 
-#ifdef FFMS_USE_UTF8_PATHS
+#ifdef _WIN32
 #	define WIN32_LEAN_AND_MEAN
 #	include <windows.h>
+#ifdef FFMS_USE_UTF8_PATHS
+extern "C" {
+#	include "libavutil/avstring.h"
+}
+#endif
 #endif
 
 
@@ -355,24 +362,52 @@ void InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag, AVCodecCo
 
 #endif
 
+
+// All this filename chikanery that follows is supposed to make sure both local
+// codepage (used by avisynth etc) and UTF8 (potentially used by API users) strings
+// work correctly on Win32.
+// It's a really ugly hack, and I blame Microsoft for it.
+#ifdef _WIN32
+static wchar_t *dup_char_to_wchar(const char *s, unsigned int cp) {
+	wchar_t *w;
+	int l;
+	if (!(l = MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1, NULL, 0)))
+		return NULL;
+	if (!(w = (wchar_t *)malloc(l * sizeof(wchar_t))))
+		return NULL;
+	if (MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1 , w, l) <= 0) {
+		free(w);
+		w = NULL;
+	}
+	return w;
+}
+#endif
+
 FILE *ffms_fopen(const char *filename, const char *mode) {
+#ifdef _WIN32
+	int codepage = CP_ACP;
 #ifdef FFMS_USE_UTF8_PATHS
-	// Hack: support utf8-in-char* filenames on windows
-	wchar_t filename_wide[MAX_PATH*2];
-	// 64 characters of mode string ought to be more than enough for everyone
-	wchar_t mode_wide[64];
-	if ((MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, filename, -1, filename_wide, MAX_PATH) > 0)
-			&& (MultiByteToWideChar(CP_ACP, NULL, mode, -1, mode_wide, 60) > 0))
-		return _wfopen(filename_wide, mode_wide);
+	codepage = CP_UTF8;
+#endif
+	FILE *ret;
+	wchar_t *filename_wide	= dup_char_to_wchar(filename, codepage);
+	wchar_t *mode_wide		= dup_char_to_wchar(mode, codepage);
+	if (filename_wide && mode_wide)
+		ret = _wfopen(filename_wide, mode_wide);
 	else
-		return fopen(filename, mode);
+		ret = fopen(filename, mode);
+
+	free(filename_wide);
+	free(mode_wide);
+
+	return ret;
 #else
 	return fopen(filename, mode);
-#endif
+#endif /* _WIN32 */
 }
 
 size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max) {
-#ifdef FFMS_USE_UTF8_PATHS
+#if defined(_WIN32) && defined(FFMS_USE_UTF8_PATHS)
 	// try utf8 first
 	int len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, mbstr, -1, NULL, 0);
 	if (len > 0) {
@@ -392,21 +427,84 @@ size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max) {
 
 // ffms_fstream stuff
 void ffms_fstream::open(const char *filename, std::ios_base::openmode mode) {
-#ifdef FFMS_USE_UTF8_PATHS
-	// Hack: support utf8-in-char* filenames on windows
-	wchar_t filename_wide[MAX_PATH*2];
-	if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, filename, -1, filename_wide, MAX_PATH) > 0)
+	// Unlike MSVC, mingw's iostream library doesn't have an fstream overload
+	// that takes a wchar_t* filename, which means you can't open unicode
+	// filenames with it on Windows. gg.
+#if defined(_WIN32) && !defined(__MINGW32__)
+	unsigned int codepage = CP_ACP;
+#if defined(FFMS_USE_UTF8_PATHS)
+	codepage = CP_UTF8;
+#endif /* defined(FFMS_USE_UTF8_PATHS) */
+	wchar_t *filename_wide = dup_char_to_wchar(filename, codepage);
+	if (filename_wide)
 		std::fstream::open(filename_wide, mode);
 	else
 		std::fstream::open(filename, mode);
-#else
+
+	free(filename_wide);
+#else /* defined(_WIN32) && !defined(__MINGW32__) */
 	std::fstream::open(filename, mode);
-#endif
+#endif /* defined(_WIN32) && !defined(__MINGW32__) */
 }
 
 ffms_fstream::ffms_fstream(const char *filename, std::ios_base::openmode mode) {
 	open(filename, mode);
 }
+
+
+#if defined(_WIN32) && defined(FFMS_USE_UTF8_PATHS)
+int ffms_wchar_open(const char *fname, int oflags, int pmode) {
+    wchar_t *wfname = dup_char_to_wchar(fname, CP_UTF8);
+    if (wfname) {
+        int ret = _wopen(wfname, oflags, pmode);
+        av_free(wfname);
+        return ret;
+    }
+    return -1;
+}
+
+static int ffms_lavf_file_open(URLContext *h, const char *filename, int flags) {
+    int access;
+    int fd;
+
+    av_strstart(filename, "file:", &filename);
+
+    if (flags & URL_RDWR) {
+        access = _O_CREAT | _O_TRUNC | _O_RDWR;
+    } else if (flags & URL_WRONLY) {
+        access = _O_CREAT | _O_TRUNC | _O_WRONLY;
+    } else {
+        access = _O_RDONLY;
+    }
+#ifdef _O_BINARY
+    access |= _O_BINARY;
+#endif
+    fd = ffms_wchar_open(filename, access, 0666);
+    if (fd == -1)
+        return AVERROR(ENOENT);
+    h->priv_data = (void *) (intptr_t) fd;
+    return 0;
+}
+
+// Hijack lavf's file protocol handler's open function and use our own instead.
+// Hack by nielsm.
+void ffms_patch_lavf_file_open() {
+	extern URLProtocol *first_protocol;
+	URLProtocol *proto = first_protocol;
+	while (proto != NULL) {
+		if (strcmp("file", proto->name) == 0) {
+			break;
+		}
+		proto = proto->next;
+	}
+	if (proto != NULL) {
+		proto->url_open = &ffms_lavf_file_open;
+	}
+}
+#endif /* defined(_WIN32) && defined(FFMS_USE_UTF8_PATHS) */
+
+// End of filename hackery.
+
 
 #ifdef HAALISOURCE
 
