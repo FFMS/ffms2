@@ -181,7 +181,7 @@ To create an index object from a saved disk file, use <tt>FFMS_ReadIndex</tt>. N
 If you want support for Unicode filenames on Windows <tt>#define FFMS_USE_UTF8_PATHS</tt> somewhere. This will make FFMS2 assume that all strings passed to its API functions are UTF8; if they aren't either that or 7-bit ASCII, opening things will most likely fail. You can convert <tt>wchar_t</tt> strings to UTF8 using the Win32 API function <tt>WideCharToMultiByte</tt>.
 </p>
 <p>
-Do <strong>NOT</strong> use FFMS_USE_UTF8_PATHS if you're building the FFMS2 Avisynth plugin; it'll break opening all filenames that aren't 7-bit ASCII compatible. Unfortunately you can't have both ANSI and UTF8 support in the same DLL, at least not yet. Also note that if you use this define and build FFMS2 with MinGW, some things will probably break since MinGW's iostream library doesn't support widechar filenames.
+Do <strong>NOT</strong> use <tt>FFMS_USE_UTF8_PATHS</tt> if you're building the FFMS2 Avisynth plugin; it'll break opening all filenames that aren't 7-bit ASCII compatible. Unfortunately you can't have both ANSI and UTF8 support in the same DLL, at least not yet. Also note that if you use this define and build FFMS2 with MinGW, some things will probably break since MinGW's iostream library doesn't support widechar filenames.
 </p>
 <p>
 On Unix this define does nothing. You won't need to do anything special to support Unicode filenames anyway, just set your locale to something UTF8-based.
