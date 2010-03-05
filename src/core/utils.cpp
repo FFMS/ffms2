@@ -20,8 +20,10 @@
 
 #include <string.h>
 #include <errno.h>
+#ifdef _WIN32
 #include <io.h>
 #include <fcntl.h>
+#endif
 
 #include "utils.h"
 #include "indexing.h"
