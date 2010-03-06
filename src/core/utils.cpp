@@ -20,11 +20,6 @@
 
 #include <string.h>
 #include <errno.h>
-#ifdef _WIN32
-#include <io.h>
-#include <fcntl.h>
-#endif
-
 #include "utils.h"
 #include "indexing.h"
 
@@ -32,6 +27,8 @@
 #	define WIN32_LEAN_AND_MEAN
 #	include <windows.h>
 #ifdef FFMS_USE_UTF8_PATHS
+#	include <io.h>
+#	include <fcntl.h>
 extern "C" {
 #	include "libavutil/avstring.h"
 }
