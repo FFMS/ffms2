@@ -38,6 +38,17 @@ src_core_libffms2_la_SOURCES = \
 	src/core/wave64writer.h \
 	src/core/wave64writer.cpp
 
+if AVISYNTH
+src_core_libffms2_la_SOURCES += \
+	src/avisynth_c/avisynth.c \
+	src/avisynth_c/avs_lib.c \
+	src/avisynth_c/avs_utils.c \
+	src/avisynth_c/ff_audsource.c \
+	src/avisynth_c/ff_pp.c \
+	src/avisynth_c/ff_swscale.c \
+	src/avisynth_c/ff_vidsource.c
+endif
+
 include_HEADERS = $(top_srcdir)/include/ffms.h $(top_srcdir)/include/ffmscompat.h
 
 bin_PROGRAMS = src/index/ffmsindex

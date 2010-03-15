@@ -22,6 +22,22 @@ if echo "$host" | $GREP "cygwin" >/dev/null 2>&1 && test "$enable_shared" = "yes
                   Please remove --enable-shared from your configure options or build with another --host.])
 fi
 
+AC_ARG_ENABLE([avs], [AS_HELP_STRING([--enable-avs],[Enable the AviSynth interface (windows, shared only).])])
+
+AVS_ENABLED=no
+if test x"$enable_avs" = xyes; then
+   if test x"$enable_shared" = xno; then
+      AC_MSG_FAILURE([The AviSynth interface only works on shared builds.])
+   fi
+   if ! echo $host | grep 'mingw' 1>/dev/null 2>&1; then
+      AC_MSG_FAILURE([The AviSynth interface only works on mingw hosts.])
+   fi
+   LDFLAGS="$LDFLAGS -Wl,--export-all-symbols"
+   AVS_ENABLED=yes
+fi
+AC_SUBST([AVS_ENABLED])
+AM_CONDITIONAL([AVISYNTH], [test x"$AVS_ENABLED" = xyes])
+
 AC_FUNC_ALLOCA
 if ! test "x$ac_cv_working_alloca_h" = "xyes" && ! test "x$ac_cv_func_alloca_works" = "xyes"; then
     AC_MSG_FAILURE([ffms2 requires alloca to compile])
@@ -102,7 +118,7 @@ if test "$enable_shared" = yes; then
 else
     bsymbolic=no
 fi
-CFLAGS="$_CFLAGS -std=c99 -D_FILE_OFFSET_BITS=64"
+CFLAGS="$_CFLAGS -std=gnu99 -D_FILE_OFFSET_BITS=64"
 LIBS="$_LIBS"
 AC_MSG_RESULT($bsymbolic)
 
