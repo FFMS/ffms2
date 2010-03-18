@@ -175,7 +175,7 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
     frame = FFMS_GetFrame( filter->vid, 0, &ei );
 
     // This trick is required to first get the "best" default format and then set only that format as the output
-    if( FFMS_SetOutputFormatV( filter->vid, target_pix_fmts, dst_width, dst_height, resizer, &ei ) )
+    if( FFMS_SetOutputFormatV( filter->vid, one<<frame->ConvertedPixelFormat, dst_width, dst_height, resizer, &ei ) )
         return avs_new_value_error( "FFVideoSource: No suitable output format found" );
 
     frame = FFMS_GetFrame( filter->vid, 0, &ei );
