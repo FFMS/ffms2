@@ -589,3 +589,13 @@ void CorrectNTSCRationalFramerate(int *Num, int *Den) {
 		}
 	}
 }
+
+// correct the timebase if it is invalid
+void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase) {
+	double Timebase = (double)TTimebase->Num / TTimebase->Den;
+	double FPS = (double)VP->FPSNumerator / VP->FPSDenominator;
+	if ((1000/Timebase) / FPS < 1) {
+		TTimebase->Den = VP->FPSNumerator;
+		TTimebase->Num = (int64_t)VP->FPSDenominator * 1000;
+	}
+}

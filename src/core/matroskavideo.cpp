@@ -129,6 +129,8 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 
 	// attempt to correct framerate to the proper NTSC fraction, if applicable
 	CorrectNTSCRationalFramerate(&VP.FPSNumerator, &VP.FPSDenominator);
+	// correct the timebase, if necessary
+	CorrectTimebase(&VP, &Frames.TB);
 
 	// Output the already decoded frame so it isn't wasted
 	OutputFrame(DecodeFrame);

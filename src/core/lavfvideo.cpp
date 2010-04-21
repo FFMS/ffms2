@@ -107,6 +107,8 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
 
 	// attempt to correct framerate to the proper NTSC fraction, if applicable
 	CorrectNTSCRationalFramerate(&VP.FPSNumerator, &VP.FPSDenominator);
+	// correct the timebase, if necessary
+	CorrectTimebase(&VP, &Frames.TB);
 
 	// Cannot "output" to PPFrame without doing all other initialization
 	// This is the additional mess required for seekmode=-1 to work in a reasonable way
