@@ -50,6 +50,7 @@ AC_LINK_IFELSE([
 
 PKG_PROG_PKG_CONFIG([0.22])
 PKG_CHECK_MODULES(FFMPEG, [libavformat >= 52.39.0 libavcodec >= 52.38.0 libswscale >= 0.7.0 libpostproc >= 51.2.0 libavutil >= 50.4.0 ])
+CPPFLAGS="$CPPFLAGS -D__STDC_CONSTANT_MACROS"
 AC_SUBST([FFMPEG_CFLAGS])
 AC_SUBST([FFMPEG_LIBS])
 
@@ -102,7 +103,8 @@ if test "$enable_shared" = yes; then
 else
     bsymbolic=no
 fi
-CFLAGS="$_CFLAGS -std=c99 -D_FILE_OFFSET_BITS=64"
+CFLAGS="$_CFLAGS -std=c99"
+CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64"
 LIBS="$_LIBS"
 AC_MSG_RESULT($bsymbolic)
 
