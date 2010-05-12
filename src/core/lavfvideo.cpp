@@ -45,7 +45,8 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
 			"Video track is unseekable");
 
 	CodecContext = FormatContext->streams[VideoTrack]->codec;
-	CodecContext->thread_count = Threads;
+	if (avcodec_thread_init(CodecContext, Threads))
+		CodecContext->thread_count = 1;
 
 	Codec = avcodec_find_decoder(CodecContext->codec_id);
 	if (Codec == NULL)

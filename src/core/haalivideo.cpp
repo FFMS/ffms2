@@ -106,7 +106,8 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	CodecContext = avcodec_alloc_context();
 	CodecContext->extradata = FFMS_GET_VECTOR_PTR(CodecPrivate);
 	CodecContext->extradata_size = CodecPrivateSize;
-	CodecContext->thread_count = Threads;
+	if (avcodec_thread_init(CodecContext, Threads))
+		CodecContext->thread_count = 1;
 
 	if (Codec == NULL)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
