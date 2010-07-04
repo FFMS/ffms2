@@ -30,6 +30,7 @@
 
 extern "C" {
 #include "stdiostream.h"
+#include <libavutil/mem.h>
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
@@ -135,6 +136,25 @@ public:
 	ffms_fstream(const char *filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out);
 };
 
+template <typename T>
+class AlignedBuffer {
+	T *buf;
+
+public:
+	AlignedBuffer(size_t n = 1) {
+		buf = (T*) av_malloc(sizeof(*buf) * n);
+		if (!buf) throw std::bad_alloc();
+	}
+
+	~AlignedBuffer() {
+		av_free(buf);
+		buf = 0;
+	}
+
+	const T &operator[] (size_t i) const { return buf[i]; }
+	T &operator[] (size_t i) { return buf[i]; }
+};
+
 int GetSWSCPUFlags();
 int GetPPCPUFlags();
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
@@ -160,5 +180,6 @@ CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources So
 #endif
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
 void CorrectNTSCRationalFramerate(int *Num, int *Den);
+void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase);
 
 #endif

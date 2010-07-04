@@ -404,8 +404,8 @@ See above.</p>
 </p>
 
 <h3>FFMS_GetTrackType - gets the track type of a given track</h3>
-<pre>int FFMS_GetTrackType(FFTrack *T)</pre>
-<p>Returns an integer representing the <tt>FFMS_TrackType</tt> (see the Constants and Preprocessor Definitions section) of the track represented by the given <tt>FFTrack</tt> object.
+<pre>int FFMS_GetTrackType(FFMS_Track *T)</pre>
+<p>Returns an integer representing the <tt>FFMS_TrackType</tt> (see the Constants and Preprocessor Definitions section) of the track represented by the given <tt>FFMS_Track</tt> object.
 </p>
 
 <h3>FFMS_GetTrackTypeI - gets the track type of a given track</h3>
@@ -419,17 +419,17 @@ See above.</p>
 </p>
 
 <h3>FFMS_GetNumFrames - gets the number of frames in a given track</h3>
-<pre>int FFMS_GetNumFrames(FFTrack *T)</pre>
-<p>Returns the number of frames in the track represented by the given <tt>FFTrack</tt>. For a video track this is the number of video frames, which can be useful; for an audio track it's the number of packets, which is almost never useful, since nothing in the API exposes those. A return value of 0 indicates the track has not been indexed.
+<pre>int FFMS_GetNumFrames(FFMS_Track *T)</pre>
+<p>Returns the number of frames in the track represented by the given <tt>FFMS_Track</tt>. For a video track this is the number of video frames, which can be useful; for an audio track it's the number of packets, which is almost never useful, since nothing in the API exposes those. A return value of 0 indicates the track has not been indexed.
 </p>
 
 <h3>FFMS_GetFrameInfo - gets information about a given frame</h3>
-<pre>const FFMS_FrameInfo *FFMS_GetFrameInfo(FFTrack *T, int Frame)</pre>
-<p>Gets information about the given frame (identified by its frame number) from the indexing information in the given <tt>FFTrack</tt> and stores it in a <tt>FFMS_FrameInfo</tt> struct. See the Data Structures section below for more information. Using this function on a <tt>FFTrack</tt> representing a non-video track has undefined behavior.
+<pre>const FFMS_FrameInfo *FFMS_GetFrameInfo(FFMS_Track *T, int Frame)</pre>
+<p>Gets information about the given frame (identified by its frame number) from the indexing information in the given <tt>FFMS_Track</tt> and stores it in a <tt>FFMS_FrameInfo</tt> struct. See the Data Structures section below for more information. Using this function on a <tt>FFMS_Track</tt> representing a non-video track has undefined behavior.
 </p>
 <h4>Arguments</h4>
-<p><b><tt>FFTrack *T</tt></b><br />
-A pointer to the <tt>FFTrack</tt> object that represents the video track containing the frame you want to get information about.</p>
+<p><b><tt>FFMS_Track *T</tt></b><br />
+A pointer to the <tt>FFMS_Track</tt> object that represents the video track containing the frame you want to get information about.</p>
 <p><b><tt>int Frame</tt></b><br />
 The frame number to get information about. See <tt>FFMS_GetFrame</tt> for information about frame numbers. Requesting information about a frame before the start or after the end of the video track may result in undefined behavior, so don't do that.</p>
 <p><b><tt>FFMS_ErrorInfo *ErrorInfo</tt></b><br />
@@ -438,8 +438,8 @@ See above.</p>
 <p>Returns a pointer to the <tt>FFMS_FrameInfo</tt> struct on success. Returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.</p>
 
 <h3>FFMS_GetTrackFromIndex - retrieves track info from an index</h3>
-<pre>FFTrack *FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track)</pre>
-<p>Gets track data for the given track number from the given <tt>FFMS_Index</tt> object, stores it in a <tt>FFTrack</tt> object and returns a pointer to it. Use this function if you don't want to (or cannot) open the track with <tt>FFMS_CreateVideoSource</tt> or <tt>FFMS_CreateAudioSource</tt> first. If you already have a <tt>FFMS_VideoSource</tt> or <tt>FFMS_AudioSource</tt> object it's safer to use <tt>FFMS_GetTrackFromVideo</tt> or <tt>FFMS_GetTrackFromAudio</tt> (see below) instead. Note that specifying a nonexistent or invalid track number leads to undefined behavior (usually an access violation). Also note that the returned <tt>FFTrack</tt> object is only valid until its parent <tt>FFMS_Index</tt> object is destroyed.
+<pre>FFMS_Track *FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track)</pre>
+<p>Gets track data for the given track number from the given <tt>FFMS_Index</tt> object, stores it in a <tt>FFMS_Track</tt> object and returns a pointer to it. Use this function if you don't want to (or cannot) open the track with <tt>FFMS_CreateVideoSource</tt> or <tt>FFMS_CreateAudioSource</tt> first. If you already have a <tt>FFMS_VideoSource</tt> or <tt>FFMS_AudioSource</tt> object it's safer to use <tt>FFMS_GetTrackFromVideo</tt> or <tt>FFMS_GetTrackFromAudio</tt> (see below) instead. Note that specifying a nonexistent or invalid track number leads to undefined behavior (usually an access violation). Also note that the returned <tt>FFMS_Track</tt> object is only valid until its parent <tt>FFMS_Index</tt> object is destroyed.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFMS_Index *Index</tt></b><br />
@@ -449,26 +449,26 @@ The track number, as seen by the relevant demuxer (see <tt>FFMS_GetNumTracks</tt
 <p><b><tt>FFMS_ErrorInfo *ErrorInfo</tt></b><br />
 See above.</p>
 <h4>Return values</h4>
-<p>Returns the <tt>FFTrack</tt> on success. Note that requesting indexing information for a track that has not been indexed will not cause an error, it will just return an empty <tt>FFTrack</tt> (check for >0 frames using <tt>FFMS_GetNumFrames</tt> to see if the returned object actually contains indexing information).</p>
+<p>Returns the <tt>FFMS_Track</tt> on success. Note that requesting indexing information for a track that has not been indexed will not cause an error, it will just return an empty <tt>FFMS_Track</tt> (check for >0 frames using <tt>FFMS_GetNumFrames</tt> to see if the returned object actually contains indexing information).</p>
 
 <h3>FFMS_GetTrackFromVideo, FFMS_GetTrackFromAudio - retrieves track info from audio or video source</h3>
-<pre>FFTrack *FFMS_GetTrackFromVideo(FFMS_VideoSource *V)
-FFTrack *FFMS_GetTrackFromAudio(FFMS_AudioSource *A)</pre>
-<p>Gets information about the track represented by the given <tt>FFMS_VideoSource</tt> or <tt>FFMS_AudioSource</tt> object and returns a pointer to a <tt>FFTrack</tt> object containing said information. It's generally safer to use these functions instead of <tt>FFMS_GetTrackFromIndex</tt>, since unlike that function they cannot cause access violations if you specified an nonexistent tracknumber, return a <tt>FFTrack</tt> that doesn't actually contain any indexing information, or return an object that ceases to be valid when the index is destroyed. Note that the returned <tt>FFTrack</tt> object is only valid until its parent <tt>FFMS_VideoSource</tt> or <tt>FFMS_AudioSource</tt> object is destroyed.
+<pre>FFMS_Track *FFMS_GetTrackFromVideo(FFMS_VideoSource *V)
+FFMS_Track *FFMS_GetTrackFromAudio(FFMS_AudioSource *A)</pre>
+<p>Gets information about the track represented by the given <tt>FFMS_VideoSource</tt> or <tt>FFMS_AudioSource</tt> object and returns a pointer to a <tt>FFMS_Track</tt> object containing said information. It's generally safer to use these functions instead of <tt>FFMS_GetTrackFromIndex</tt>, since unlike that function they cannot cause access violations if you specified an nonexistent tracknumber, return a <tt>FFMS_Track</tt> that doesn't actually contain any indexing information, or return an object that ceases to be valid when the index is destroyed. Note that the returned <tt>FFMS_Track</tt> object is only valid until its parent <tt>FFMS_VideoSource</tt> or <tt>FFMS_AudioSource</tt> object is destroyed.
 </p>
 
 <h3>FFMS_GetTimeBase - retrieves the time base for the given track</h3>
-<pre>const FFMS_TrackTimeBase *FFMS_GetTimeBase(FFTrack *T)</pre>
-<p>Finds the basic time unit for the track represented by the given <tt>FFTrack</tt>, stores it in a <tt>FFMS_TrackTimeBase</tt> struct and returns a pointer to said struct. See the Data Structures section for information about the time base; note that it is only meaningful for video tracks.
+<pre>const FFMS_TrackTimeBase *FFMS_GetTimeBase(FFMS_Track *T)</pre>
+<p>Finds the basic time unit for the track represented by the given <tt>FFMS_Track</tt>, stores it in a <tt>FFMS_TrackTimeBase</tt> struct and returns a pointer to said struct. See the Data Structures section for information about the time base; note that it is only meaningful for video tracks.
 </p>
 
 <h3>FFMS_WriteTimecodes - writes timecodes for the given track to disk</h3>
-<pre>int FFMS_WriteTimecodes(FFTrack *T, const char *TimecodeFile, FFMS_ErrorInfo *ErrorInfo)</pre>
-<p>Writes Matroska v2 timecodes for the track represented by the given <tt>FFTrack</tt> to the given file. Only meaningful for video tracks.
+<pre>int FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, FFMS_ErrorInfo *ErrorInfo)</pre>
+<p>Writes Matroska v2 timecodes for the track represented by the given <tt>FFMS_Track</tt> to the given file. Only meaningful for video tracks.
 </p>
 <h4>Arguments</h4>
-<p><b><tt>FFTrack *T</tt></b><br />
-A pointer to the <tt>FFTrack</tt> object that represents the video track you want to write timecodes for.</p>
+<p><b><tt>FFMS_Track *T</tt></b><br />
+A pointer to the <tt>FFMS_Track</tt> object that represents the video track you want to write timecodes for.</p>
 <p><b><tt>const char *TimecodeFile</tt></b><br />
 The filename to write to. Can be a relative or absolute path. The file will be truncated and overwritten if it already exists.</p>
 <p><b><tt>FFMS_ErrorInfo *ErrorInfo</tt></b><br />

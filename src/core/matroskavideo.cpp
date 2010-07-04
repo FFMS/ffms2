@@ -76,7 +76,8 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	}
 
 	CodecContext = avcodec_alloc_context();
-	CodecContext->thread_count = Threads;
+	if (avcodec_thread_init(CodecContext, Threads))
+		CodecContext->thread_count = 1;
 
 	Codec = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate));
 	if (Codec == NULL)
@@ -129,6 +130,8 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 
 	// attempt to correct framerate to the proper NTSC fraction, if applicable
 	CorrectNTSCRationalFramerate(&VP.FPSNumerator, &VP.FPSDenominator);
+	// correct the timebase, if necessary
+	CorrectTimebase(&VP, &Frames.TB);
 
 	// Output the already decoded frame so it isn't wasted
 	OutputFrame(DecodeFrame);
