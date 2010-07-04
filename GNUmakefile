@@ -27,14 +27,14 @@ SO_O = $(SO_C:%.c=%.o)
 
 default: $(DEP) ffmsindex$(EXE)
 
-libffms$(API).a: .depend $(CORE_O)
-	$(AR) rc libffms$(API).a $(CORE_O)
-	$(RANLIB) libffms$(API).a
+libffms.a: .depend $(CORE_O)
+	$(AR) rc libffms.a $(CORE_O)
+	$(RANLIB) libffms.a
 
 $(SONAME): .depend $(CORE_O) $(SO_O)
 	$(CXX) -shared -o $@ $(CORE_O) $(SO_O) $(SOFLAGS) $(SOFLAGS_USER) $(LDFLAGS)
 
-ffmsindex$(EXE): $(CORE_O) $(IDX_O) libffms$(API).a
+ffmsindex$(EXE): $(CORE_O) $(IDX_O) libffms.a
 	$(CXX) -o $@ $+ $(LDFLAGS)
 
 .depend: config.mak
@@ -50,7 +50,31 @@ ifneq ($(wildcard .depend),)
 include .depend
 endif
 
+install: ffmsindex$(EXE) $(SONAME)
+	install -d $(DESTDIR)$(bindir)
+	install -d $(DESTDIR)$(includedir)
+	install -d $(DESTDIR)$(libdir)
+	install -d $(DESTDIR)$(libdir)/pkgconfig
+	install -m 644 include/ffms.h $(DESTDIR)$(includedir)
+	install -m 644 libffms.a $(DESTDIR)$(libdir)
+	install -m 644 ffms.pc $(DESTDIR)$(libdir)/pkgconfig
+	install ffmsindex$(EXE) $(DESTDIR)$(bindir)
+	$(RANLIB) $(DESTDIR)$(libdir)/libffms.a
+ifeq ($(SYS),MINGW)
+	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(bindir))
+else
+	$(if $(SONAME), ln -f -s $(SONAME) $(DESTDIR)$(libdir)/libffms.$(SOSUFFIX))
+	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(libdir))
+endif
+	$(if $(IMPLIBNAME), install -m 644 $(IMPLIBNAME) $(DESTDIR)$(libdir))
+
+uninstall:
+	rm -f $(DESTDIR)$(includedir)/ffms.h $(DESTDIR)$(libdir)/libffms.a
+	rm -f $(DESTDIR)$(bindir)/ffmsindex$(EXE) $(DESTDIR)$(libdir)/pkgconfig/ffms.pc
+	$(if $(SONAME), rm -f $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(libdir)/libffms.$(SOSUFFIX) $(DESTDIR)$(bindir)/$(SONAME))
+	$(if $(IMPLIBNAME), rm -f $(DESTDIR)$(libdir)/$(IMPLIBNAME))
+
 clean:
 	rm -f $(CORE_O) $(SO_O) $(IDX_O) $(SONAME) *.a ffmsindex ffmsindex$(EXE) .depend TAGS
 distclean: clean
-	rm -f config.mak config.h config.log ffms$(API).pc
+	rm -f config.mak config.h config.log ffms.pc

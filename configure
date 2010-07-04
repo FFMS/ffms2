@@ -402,6 +402,7 @@ EXE=$EXE
 DEVNULL=$DEVNULL
 AVISYNTH=$avs
 SOFLAGS_USER=$SOFLAGS
+SYS=$SYS
 EOF
 
 if [ "$shared" = "yes" ]; then
@@ -431,16 +432,16 @@ if [ "$shared" = "yes" ]; then
     echo 'default: $(SONAME)' >> config.mak
 fi
 
-cat > ffms${API}.pc << EOF
+cat > ffms.pc << EOF
 prefix=$prefix
 exec_prefix=$exec_prefix
 libdir=$libdir
 includedir=$includedir
 
-Description: The Fabulous FM Library $API
+Description: The Fabulous FM Library
 Requires: libavformat libavcodec libswscale libpostproc libavutil
 Version: $version
-Libs: -L$libdir -lffms2 -lz
+Libs: -L$libdir -lffms -lz
 Cflags: -I$includedir
 EOF
 
