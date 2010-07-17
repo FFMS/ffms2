@@ -106,6 +106,7 @@ protected:
 	void Free(bool CloseCodec);
 public:
 	FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, int SeekMode);
+	virtual ~FFLAVFVideo();
 	FFMS_Frame *GetFrame(int n);
 };
 
@@ -123,6 +124,7 @@ protected:
 	void Free(bool CloseCodec);
 public:
 	FFMatroskaVideo(const char *SourceFile, int Track, FFMS_Index *Index, int Threads);
+	virtual ~FFMatroskaVideo();
     FFMS_Frame *GetFrame(int n);
 };
 
@@ -140,6 +142,7 @@ protected:
 	void Free(bool CloseCodec);
 public:
 	FFHaaliVideo(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, enum FFMS_Sources SourceMode);
+	virtual ~FFHaaliVideo();
     FFMS_Frame *GetFrame(int n);
 };
 
