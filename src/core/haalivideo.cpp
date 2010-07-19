@@ -32,10 +32,6 @@ void FFHaaliVideo::Free(bool CloseCodec) {
 		av_bitstream_filter_close(BitStreamFilter);
 }
 
-FFHaaliVideo::~FFHaaliVideo() {
-	Free(true);
-}
-
 FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	FFMS_Index *Index, int Threads, enum FFMS_Sources SourceMode)
 	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track) {

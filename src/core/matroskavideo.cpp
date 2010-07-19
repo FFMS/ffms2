@@ -34,10 +34,6 @@ void FFMatroskaVideo::Free(bool CloseCodec) {
 	av_freep(&CodecContext);
 }
 
-FFMatroskaVideo::~FFMatroskaVideo() {
-	Free(true);
-}
-
 FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	FFMS_Index *Index, int Threads)
 	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track) {
