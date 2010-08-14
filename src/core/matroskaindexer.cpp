@@ -84,11 +84,23 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 			}
 
 			if (TI->CompEnabled) {
-				VideoContexts[i].CS = cs_Create(MF, i, ErrorMessage, sizeof(ErrorMessage));
-				if (VideoContexts[i].CS == NULL) {
-					std::ostringstream buf;
-					buf << "Can't create decompressor: " << ErrorMessage;
-					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
+				VideoContexts[i].TCC = new TrackCompressionContext(TI->CompMethod);
+				// CompressedStream only supports zlib
+				if (TI->CompMethod == COMP_ZLIB) {
+					VideoContexts[i].TCC->CS = cs_Create(MF, i, ErrorMessage, sizeof(ErrorMessage));
+					if (VideoContexts[i].TCC->CS == NULL) {
+						std::ostringstream buf;
+						buf << "Can't create MKV track decompressor: " << ErrorMessage;
+						throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
+					}
+				}
+				else if (TI->CompMethod == COMP_PREPEND) {
+					VideoContexts[i].TCC->CompressedPrivateData		= TI->CompMethodPrivate;
+					VideoContexts[i].TCC->CompressedPrivateDataSize	= TI->CompMethodPrivateSize;
+				}
+				else {
+					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+						"Can't create MKV track decompressor: unknown or unsupported compression method");
 				}
 			}
 
@@ -102,13 +114,26 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 			AudioContexts[i].CodecContext = AudioCodecContext;
 
 			if (TI->CompEnabled) {
-				AudioContexts[i].CS = cs_Create(MF, i, ErrorMessage, sizeof(ErrorMessage));
-				if (AudioContexts[i].CS == NULL) {
+				AudioContexts[i].TCC = new TrackCompressionContext(TI->CompMethod);
+				if (TI->CompMethod == COMP_ZLIB) {
+					AudioContexts[i].TCC->CS = cs_Create(MF, i, ErrorMessage, sizeof(ErrorMessage));
+					if (AudioContexts[i].TCC->CS == NULL) {
+						av_freep(&AudioCodecContext);
+						AudioContexts[i].CodecContext = NULL;
+						std::ostringstream buf;
+						buf << "Can't create decompressor: " << ErrorMessage;
+						throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
+					}
+				}
+				else if (TI->CompMethod == COMP_PREPEND) {
+					AudioContexts[i].TCC->CompressedPrivateData = TI->CompMethodPrivate;
+					AudioContexts[i].TCC->CompressedPrivateDataSize = TI->CompMethodPrivateSize;
+				}
+				else {
 					av_freep(&AudioCodecContext);
 					AudioContexts[i].CodecContext = NULL;
-					std::ostringstream buf;
-					buf << "Can't create decompressor: " << ErrorMessage;
-					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
+					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+						"Can't create MKV track decompressor: unknown or unsupported compression method");
 				}
 			}
 
@@ -159,12 +184,13 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 
 			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(StartTime, RepeatPict, (FrameFlags & FRAME_KF) != 0, FilePos, FrameSize));
 		} else if (mkv_GetTrackInfo(MF, Track)->Type == TT_AUDIO && (IndexMask & (1 << Track))) {
+			TrackCompressionContext *TCC = AudioContexts[Track].TCC;
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
 			unsigned int CompressedFrameSize = FrameSize;
 			AVCodecContext *AudioCodecContext = AudioContexts[Track].CodecContext;
-			ReadFrame(FilePos, FrameSize, AudioContexts[Track].CS, MC);
+			ReadFrame(FilePos, FrameSize, TCC, MC);
 			TempPacket.data = MC.Buffer;
-			TempPacket.size = FrameSize;
+			TempPacket.size = (TCC && TCC->CompressionMethod == COMP_PREPEND) ? FrameSize + TCC->CompressedPrivateDataSize : FrameSize;
 			if ((FrameFlags & FRAME_KF) != 0)
 				TempPacket.flags = AV_PKT_FLAG_KEY;
 			else

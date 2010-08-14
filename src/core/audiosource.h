@@ -106,7 +106,7 @@ class FFMatroskaAudio : public FFMS_AudioSource {
 private:
 	MatroskaFile *MF;
 	MatroskaReaderContext MC;
-    CompressedStream *CS;
+    TrackCompressionContext *TCC;
 	char ErrorMessage[256];
 	FFSourceResources<FFMS_AudioSource> Res;
 	size_t PacketNumber;

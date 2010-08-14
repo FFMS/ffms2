@@ -155,11 +155,24 @@ public:
 	T &operator[] (size_t i) { return buf[i]; }
 };
 
+
+class TrackCompressionContext {
+public:
+	CompressedStream *CS;
+	unsigned CompressionMethod;
+	void *CompressedPrivateData;
+	unsigned CompressedPrivateDataSize;
+
+	TrackCompressionContext(unsigned CompressionMethod);
+	~TrackCompressionContext();
+};
+
+
 int GetSWSCPUFlags();
 int GetPPCPUFlags();
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
 FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT);
-void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, MatroskaReaderContext &Context);
+void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContext *TCC, MatroskaReaderContext &Context);
 bool AudioFMTIsFloat(SampleFormat FMT);
 void InitNullPacket(AVPacket &pkt);
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);

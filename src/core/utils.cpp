@@ -81,6 +81,18 @@ int FFMS_Exception::CopyOut(FFMS_ErrorInfo *ErrorInfo) const {
 	return (_ErrorType << 16) | _SubType;
 }
 
+TrackCompressionContext::TrackCompressionContext(unsigned CompMethod) {
+	CompressionMethod = CompMethod;
+	CS = NULL;
+	CompressedPrivateData = NULL;
+	CompressedPrivateDataSize = 0;
+}
+
+TrackCompressionContext::~TrackCompressionContext() {
+	if (CS)
+		cs_Destroy(CS);
+}
+
 int GetSWSCPUFlags() {
 	int Flags = 0;
 
@@ -132,8 +144,9 @@ FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT) {
 	}
 }
 
-void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, MatroskaReaderContext &Context) {
-	if (CS) {
+void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContext *TCC, MatroskaReaderContext &Context) {
+	if (TCC && TCC->CS) {
+		CompressedStream *CS = TCC->CS;
 		unsigned int DecompressedFrameSize = 0;
 
 		cs_NextFrame(CS, FilePos, FrameSize);
@@ -171,7 +184,23 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, 
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_SEEKING, buf.str());
 		}
 
-		if (Context.BufferSize < FrameSize) {
+		if (TCC && TCC->CompressionMethod == COMP_PREPEND) {
+			unsigned ReqBufsize = FrameSize + TCC->CompressedPrivateDataSize + 16;
+			if (Context.BufferSize < ReqBufsize) {
+				Context.BufferSize = FrameSize + TCC->CompressedPrivateDataSize;
+				Context.Buffer = (uint8_t *)realloc(Context.Buffer, ReqBufsize);
+				if (Context.Buffer == NULL)
+					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED, "Out of memory");
+			}
+
+			/* // maybe faster? maybe not?
+			for (int i=0; i < TCC->CompressedPrivateDataSize; i++)
+				*(Context.Buffer)++ = ((uint8_t *)TCC->CompressedPrivateData)[i];
+			*/
+			// screw it, memcpy and fuck the losers who use header compression
+			memcpy(Context.Buffer, TCC->CompressedPrivateData, TCC->CompressedPrivateDataSize);
+		}
+		else if (Context.BufferSize < FrameSize) {
 			Context.BufferSize = FrameSize;
 			Context.Buffer = (uint8_t *)realloc(Context.Buffer, Context.BufferSize + 16);
 			if (Context.Buffer == NULL)
@@ -179,8 +208,13 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, CompressedStream *CS, 
 					"Out of memory");
 		}
 
-		size_t ReadBytes = fread(Context.Buffer, 1, FrameSize, Context.ST.fp);
+		uint8_t *TargetPtr = Context.Buffer;
+		if (TCC && TCC->CompressionMethod == COMP_PREPEND)
+			TargetPtr += TCC->CompressedPrivateDataSize;
+
+		size_t ReadBytes = fread(TargetPtr, 1, FrameSize, Context.ST.fp);
 		if (ReadBytes != FrameSize) {
+			return;
 			if (ReadBytes == 0) {
 				if (feof(Context.ST.fp)) {
 					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,

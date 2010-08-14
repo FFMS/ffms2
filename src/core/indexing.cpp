@@ -55,11 +55,12 @@ struct TrackHeader {
 		uint32_t UseDTS;
 };
 
+
 SharedVideoContext::SharedVideoContext(bool FreeCodecContext) {
 	CodecContext = NULL;
 	Parser = NULL;
-	CS = NULL;
 	this->FreeCodecContext = FreeCodecContext;
+	TCC = NULL;
 }
 
 SharedVideoContext::~SharedVideoContext() {
@@ -72,15 +73,15 @@ SharedVideoContext::~SharedVideoContext() {
 	if (Parser)
 		av_parser_close(Parser);
 
-	if (CS)
-		cs_Destroy(CS);
+	if (TCC)
+		delete TCC;
 }
 
 SharedAudioContext::SharedAudioContext(bool FreeCodecContext) {
 	W64Writer = NULL;
 	CodecContext = NULL;
 	CurrentSample = 0;
-	CS = NULL;
+	TCC = NULL;
 	this->FreeCodecContext = FreeCodecContext;
 }
 
@@ -92,8 +93,8 @@ SharedAudioContext::~SharedAudioContext() {
 			av_freep(&CodecContext);
 	}
 
-	if (CS)
-		cs_Destroy(CS);
+	if (TCC)
+		delete TCC;
 }
 
 TFrameInfo::TFrameInfo() {
