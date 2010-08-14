@@ -196,7 +196,7 @@ static void DoIndexing () {
 				FFMS_Track *Track = FFMS_GetTrackFromIndex(Index, t);
 				if (FFMS_GetTrackType(Track) == FFMS_TYPE_VIDEO && FFMS_GetNumFrames(Track)) {
 					char tn[3];
-					snprintf(tn, 2, "%02d", t);
+					snprintf(tn, 3, "%02d", t);
 					std::string TCFilename = CacheFile;
 					TCFilename = TCFilename + "_track" + tn + ".tc.txt";
 					if (FFMS_WriteTimecodes(Track, TCFilename.c_str(), &E))
