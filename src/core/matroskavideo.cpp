@@ -65,25 +65,8 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 
 	TI = mkv_GetTrackInfo(MF, VideoTrack);
 
-	if (TI->CompEnabled) {
-		TCC = new TrackCompressionContext(TI->CompMethod);
-		if (TI->CompMethod == COMP_ZLIB) {
-			TCC->CS = cs_Create(MF, VideoTrack, ErrorMessage, sizeof(ErrorMessage));
-			if (TCC->CS == NULL) {
-				std::ostringstream buf;
-				buf << "Can't create MKV track decompressor: " << ErrorMessage;
-				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-			}
-		}
-		else if (TI->CompMethod == COMP_PREPEND) {
-			TCC->CompressedPrivateData		= TI->CompMethodPrivate;
-			TCC->CompressedPrivateDataSize	= TI->CompMethodPrivateSize;
-		}
-		else {
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-				"Can't create MKV track decompressor: unknown or unsupported compression method");
-		}
-	}
+	if (TI->CompEnabled)
+		TCC = new TrackCompressionContext(MF, TI, VideoTrack);
 
 	CodecContext = avcodec_alloc_context();
 	if (avcodec_thread_init(CodecContext, Threads))

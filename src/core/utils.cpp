@@ -81,11 +81,27 @@ int FFMS_Exception::CopyOut(FFMS_ErrorInfo *ErrorInfo) const {
 	return (_ErrorType << 16) | _SubType;
 }
 
-TrackCompressionContext::TrackCompressionContext(unsigned CompMethod) {
-	CompressionMethod = CompMethod;
+TrackCompressionContext::TrackCompressionContext(MatroskaFile *MF, TrackInfo *TI, unsigned int Track) {
 	CS = NULL;
 	CompressedPrivateData = NULL;
 	CompressedPrivateDataSize = 0;
+	CompressionMethod = TI->CompMethod;
+
+	if (CompressionMethod == COMP_ZLIB) {
+		char ErrorMessage[512];
+		CS = cs_Create(MF, Track, ErrorMessage, sizeof(ErrorMessage));
+		if (CS == NULL) {
+			std::ostringstream buf;
+			buf << "Can't create MKV track decompressor: " << ErrorMessage;
+			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
+		}
+	} else if (CompressionMethod == COMP_PREPEND) {
+		CompressedPrivateData		= TI->CompMethodPrivate;
+		CompressedPrivateDataSize	= TI->CompMethodPrivateSize;
+	} else {
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			"Can't create MKV track decompressor: unknown or unsupported compression method");
+	}
 }
 
 TrackCompressionContext::~TrackCompressionContext() {

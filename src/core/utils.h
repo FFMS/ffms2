@@ -163,7 +163,7 @@ public:
 	void *CompressedPrivateData;
 	unsigned CompressedPrivateDataSize;
 
-	TrackCompressionContext(unsigned CompressionMethod);
+	TrackCompressionContext(MatroskaFile *MF, TrackInfo *TI, unsigned int Track);
 	~TrackCompressionContext();
 };
 
