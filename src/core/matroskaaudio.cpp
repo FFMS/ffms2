@@ -66,7 +66,6 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index *
 		if (TI->CompMethod == COMP_ZLIB) {
 			TCC->CS = cs_Create(MF, Track, ErrorMessage, sizeof(ErrorMessage));
 			if (TCC->CS == NULL) {
-				Free(false);
 				std::ostringstream buf;
 				buf << "Can't create MKV track decompressor: " << ErrorMessage;
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
@@ -77,7 +76,6 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index *
 			TCC->CompressedPrivateDataSize	= TI->CompMethodPrivateSize;
 		}
 		else {
-			Free(false);
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 				"Can't create MKV track decompressor: unknown or unsupported compression method");
 		}
