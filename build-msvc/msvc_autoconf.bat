@@ -19,7 +19,6 @@ rem	Please kill me now.
 for %%F in ("libavformat.a") do set mingwlibpath=%%~dp$LIB:F
 
 if not exist "%mingwlibpath%libavformat.a" goto error
-if exist "%mingwlibpath%libfaad.a" echo #define WITH_LIBFAAD >> %configfile%
 if exist "%mingwlibpath%libopencore-amrnb.a" echo #define WITH_OPENCORE_AMR_NB >> %configfile%
 if exist "%mingwlibpath%libopencore-amrwb.a" echo #define WITH_OPENCORE_AMR_WB >> %configfile%
 if exist "%mingwlibpath%libpthreadGC2.a" echo #define WITH_PTHREAD_GC2 >> %configfile%

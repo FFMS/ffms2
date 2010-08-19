@@ -30,10 +30,6 @@ If you want to force compilation WITH a given library, uncomment the correspondi
 If you want to force compilation WITHOUT a given library, uncomment the corresponding #undef.
 */
 
-// FAAD2 (libfaad.a)
-//#define	WITH_LIBFAAD
-//#undef	WITH_LIBFAAD
-
 // OpenCore AMR narrowband (libopencore-amrnb.a)
 //#define	WITH_OPENCORE_AMR_NB
 //#undef	WITH_OPENCORE_AMR_NB
