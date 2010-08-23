@@ -513,7 +513,7 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename) {
 	}
 
 	// Do matroska indexing instead?
-	if (!strcmp(FormatContext->iformat->name, "matroska")) {
+	if (!strncmp(FormatContext->iformat->name, "matroska", 8)) {
 		av_close_input_file(FormatContext);
 		return new FFMatroskaIndexer(Filename);
 	}
