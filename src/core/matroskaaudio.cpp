@@ -21,8 +21,8 @@
 #include "audiosource.h"
 
 void FFMatroskaAudio::Free(bool CloseCodec) {
-	if (CS)
-		cs_Destroy(CS);
+	if (TCC)
+		delete TCC;
 	if (MC.ST.fp) {
 		mkv_Close(MF);
 		fclose(MC.ST.fp);
@@ -37,7 +37,7 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index *
 	CodecContext = NULL;
 	AVCodec *Codec = NULL;
 	TrackInfo *TI = NULL;
-	CS = NULL;
+	TCC = NULL;
 	PacketNumber = 0;
 	Frames = (*Index)[Track];
 
@@ -61,15 +61,8 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index *
 
 	TI = mkv_GetTrackInfo(MF, Track);
 
-	if (TI->CompEnabled) {
-		CS = cs_Create(MF, Track, ErrorMessage, sizeof(ErrorMessage));
-		if (CS == NULL) {
-			Free(false);
-			std::ostringstream buf;
-			buf << "Can't create decompressor: " << ErrorMessage;
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-		}
-	}
+	if (TI->CompEnabled)
+		TCC = new TrackCompressionContext(MF, TI, Track);
 
 	CodecContext = avcodec_alloc_context();
 
@@ -158,9 +151,9 @@ void FFMatroskaAudio::DecodeNextAudioBlock(int64_t *Count) {
 	CurrentSample = FI.SampleStart + FI.SampleCount;
 	PacketNumber++;
 
-	ReadFrame(FI.FilePos, FrameSize, CS, MC);
+	ReadFrame(FI.FilePos, FrameSize, TCC, MC);
 	TempPacket.data = MC.Buffer;
-	TempPacket.size = FrameSize;
+	TempPacket.size = (TCC && TCC->CompressionMethod == COMP_PREPEND) ? FrameSize + TCC->CompressedPrivateDataSize : FrameSize;
 	if (FI.KeyFrame)
 		TempPacket.flags = AV_PKT_FLAG_KEY;
 	else

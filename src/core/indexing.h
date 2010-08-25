@@ -38,14 +38,13 @@
 #endif
 
 
-
 class SharedVideoContext {
 private:
 	bool FreeCodecContext;
 public:
 	AVCodecContext *CodecContext;
 	AVCodecParserContext *Parser;
-	CompressedStream *CS;
+	TrackCompressionContext *TCC;
 
 	SharedVideoContext(bool FreeCodecContext);
 	~SharedVideoContext();
@@ -58,7 +57,7 @@ public:
 	AVCodecContext *CodecContext;
 	Wave64Writer *W64Writer;
 	int64_t CurrentSample;
-	CompressedStream *CS;
+	TrackCompressionContext *TCC;
 
 	SharedAudioContext(bool FreeCodecContext);
 	~SharedAudioContext();

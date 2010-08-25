@@ -137,7 +137,7 @@
 				Version=""
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="false"
-				OptimizeReferences="1"
+				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				TargetMachine="1"
 			/>

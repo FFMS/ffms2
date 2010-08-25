@@ -30,6 +30,7 @@
 #pragma comment(lib, "libmoldname.a")
 #pragma comment(lib, "libmingwex.a")
 #pragma comment(lib, "libz.a")
+#pragma comment(lib, "libavcore.a")
 #pragma comment(lib, "libavutil.a")
 #pragma comment(lib, "libavcodec.a")
 #pragma comment(lib, "libavformat.a")
@@ -37,10 +38,6 @@
 #pragma comment(lib, "libpostproc.a")
 #pragma comment(lib, "libwsock32.a")
 
-
-#ifdef WITH_LIBFAAD
-#pragma comment(lib, "libfaad.a")
-#endif // WITH_LIBFAAD
 
 #ifdef WITH_OPENCORE_AMR_NB
 #pragma comment(lib, "libopencore-amrnb.a")
