@@ -60,7 +60,7 @@ FFMatroskaIndexer::~FFMatroskaIndexer() {
 }
 
 FFMS_Index *FFMatroskaIndexer::DoIndexing() {
-	char ErrorMessage[256];
+	// char ErrorMessage[256];
 	std::vector<SharedAudioContext> AudioContexts(mkv_GetNumTracks(MF), SharedAudioContext(true));
 	std::vector<SharedVideoContext> VideoContexts(mkv_GetNumTracks(MF), SharedVideoContext(true));
 
