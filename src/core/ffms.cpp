@@ -219,12 +219,7 @@ FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V) {
 FFMS_API(int) FFMS_SetPP(FFMS_VideoSource *V, const char *PP, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
-#ifdef WITH_LIBPOSTPROC
 		V->SetPP(PP);
-#else // WITH_LIBPOSTPROC
-		throw FFMS_Exception(FFMS_ERROR_POSTPROCESSING, FFMS_ERROR_UNSUPPORTED,
-				"FFMS2 was not compiled with postprocessing support");
-#endif // WITH_LIBPOSTPROC
 	} catch (FFMS_Exception &e) {
 		return e.CopyOut(ErrorInfo);
 	}

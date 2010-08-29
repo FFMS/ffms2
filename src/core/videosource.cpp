@@ -27,6 +27,7 @@ void FFMS_VideoSource::GetFrameCheck(int n) {
 }
 
 void FFMS_VideoSource::SetPP(const char *PP) {
+
 #ifdef WITH_LIBPOSTPROC
 	if (PPMode)
 		pp_free_mode(PPMode);
@@ -43,9 +44,11 @@ void FFMS_VideoSource::SetPP(const char *PP) {
 	}
 
 	ReAdjustPP(CodecContext->pix_fmt, CodecContext->width, CodecContext->height);
-
-#endif /* WITH_LIBPOSTPROC */
 	OutputFrame(DecodeFrame);
+#else
+	throw FFMS_Exception(FFMS_ERROR_POSTPROCESSING, FFMS_ERROR_UNSUPPORTED,
+		"FFMS2 was not compiled with postprocessing support");
+#endif /* WITH_LIBPOSTPROC */
 }
 
 void FFMS_VideoSource::ResetPP() {
