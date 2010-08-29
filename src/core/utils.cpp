@@ -129,6 +129,8 @@ int GetSWSCPUFlags() {
 int GetPPCPUFlags() {
 	int Flags = 0;
 
+#ifdef WITH_LIBPOSTPROC
+// not exactly a pretty solution but it'll never get called anyway
 	if (CPUFeatures & FFMS_CPU_CAPS_MMX)
 		Flags |= PP_CPU_CAPS_MMX;
 	if (CPUFeatures & FFMS_CPU_CAPS_MMX2)
@@ -137,6 +139,7 @@ int GetPPCPUFlags() {
 		Flags |= PP_CPU_CAPS_3DNOW;
 	if (CPUFeatures & FFMS_CPU_CAPS_ALTIVEC)
 		Flags |= PP_CPU_CAPS_ALTIVEC;
+#endif // WITH_LIBPOSTPROC
 
 	return Flags;
 }

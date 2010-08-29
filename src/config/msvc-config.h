@@ -30,6 +30,10 @@ If you want to force compilation WITH a given library, uncomment the correspondi
 If you want to force compilation WITHOUT a given library, uncomment the corresponding #undef.
 */
 
+// libpostproc (libpostproc.a)
+//#define	WITH_LIBPOSTPROC
+//#undef	WITH_LIBPOSTPROC
+
 // OpenCore AMR narrowband (libopencore-amrnb.a)
 //#define	WITH_OPENCORE_AMR_NB
 //#undef	WITH_OPENCORE_AMR_NB

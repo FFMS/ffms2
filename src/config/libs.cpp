@@ -35,9 +35,12 @@
 #pragma comment(lib, "libavcodec.a")
 #pragma comment(lib, "libavformat.a")
 #pragma comment(lib, "libswscale.a")
-#pragma comment(lib, "libpostproc.a")
 #pragma comment(lib, "libwsock32.a")
 
+
+#ifdef WITH_LIBPOSTPROC
+#pragma comment(lib, "libpostproc.a")
+#endif // WITH_LIBPOSTPROC
 
 #ifdef WITH_OPENCORE_AMR_NB
 #pragma comment(lib, "libopencore-amrnb.a")

@@ -43,7 +43,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 	if (!V)
 		Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
-	if (FFMS_SetPP(V, PP, &E)) {
+	if (PP && FFMS_SetPP(V, PP, &E)) {
 		FFMS_DestroyVideoSource(V);
 		Env->ThrowError("FFVideoSource: %s", E.Buffer);
 	}

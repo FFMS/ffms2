@@ -33,6 +33,10 @@ extern "C" {
 extern bool HasHaaliMPEG;
 extern bool HasHaaliOGG;
 
+#ifndef WITH_LIBPOSTPROC
+unsigned postproc_version(void) { return 0; } // ugly workaround to avoid lots of ifdeffing
+#endif // WITH_LIBPOSTPROC
+
 struct IndexHeader {
 	uint32_t Id;
 	uint32_t Version;
@@ -323,6 +327,7 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 	IH.LAVCVersion = avcodec_version();
 	IH.LSWSVersion = swscale_version();
 	IH.LPPVersion = postproc_version();
+	IH.LPPVersion = 0;
 	IH.FileSize = Filesize;
 	memcpy(IH.FileSignature, Digest, sizeof(Digest));
 

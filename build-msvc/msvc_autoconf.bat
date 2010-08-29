@@ -14,7 +14,7 @@ rem	%%~dp$LIB:F means "Search the directories listed in the LIB environment vari
 rem	filename stored in %%F; then expand to the full path name of the directory where the first
 rem	such file was found."
 rem	For some reason Microsoft in their infinite wisdom chose to make this useful functionality
-rem	a variable name expansion instead of(god forbid) a general file finder program or something.
+rem	a variable name expansion instead of (god forbid) a general file finder program or something.
 rem	Please kill me now.
 for %%F in ("libavformat.a") do set mingwlibpath=%%~dp$LIB:F
 
@@ -22,6 +22,7 @@ if not exist "%mingwlibpath%libavformat.a" goto error
 if exist "%mingwlibpath%libopencore-amrnb.a" echo #define WITH_OPENCORE_AMR_NB >> %configfile%
 if exist "%mingwlibpath%libopencore-amrwb.a" echo #define WITH_OPENCORE_AMR_WB >> %configfile%
 if exist "%mingwlibpath%libpthreadGC2.a" echo #define WITH_PTHREAD_GC2 >> %configfile%
+if exist "%mingwlibpath%libpostproc.a" echo #define WITH_LIBPOSTPROC >> %configfile%
 
 goto :EOF
 
