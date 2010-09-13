@@ -196,5 +196,6 @@ CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources So
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
 void CorrectNTSCRationalFramerate(int *Num, int *Den);
 void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase);
+const char *GetLAVCSampleFormatName(SampleFormat s);
 
 #endif

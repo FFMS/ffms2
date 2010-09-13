@@ -163,6 +163,17 @@ FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT) {
 	}
 }
 
+const char *GetLAVCSampleFormatName(SampleFormat s) {
+	switch (s) {
+		case SAMPLE_FMT_U8:		return "8-bit unsigned integer";
+		case SAMPLE_FMT_S16:	return "16-bit signed integer";
+		case SAMPLE_FMT_S32:	return "32-bit signed integer";
+		case SAMPLE_FMT_FLT:	return "Single-precision floating point";
+		case SAMPLE_FMT_DBL:	return "Double-precision floating point";
+		default:				return "Unknown";
+	}
+}
+
 void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContext *TCC, MatroskaReaderContext &Context) {
 	if (TCC && TCC->CS) {
 		CompressedStream *CS = TCC->CS;
