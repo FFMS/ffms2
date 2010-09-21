@@ -22,6 +22,8 @@ FFmpegSource2 Changelog
 <li>Added support for MKV files using header stripping compression. (TheFluff)</li>
 <li>It is now possible to compile FFMS2 using a ffmpeg without libpostproc compiled in (this will obviously cause postprocessing-related functions to fail). Hence it is now possible to build a GPL-free FFMS2, since the rest of ffmpeg can be compiled as LGPL. (TheFluff)</li>
 <li>Audio streams that change channel layout, sample rate or bitdepth mid-stream will no longer cause crashes; an error will be raised during indexing instead. (TheFluff)</li>
+<li>Fix a potential crash when ffmpeg thought it couldn't decode a certain format, but was wrong. Fixes issues with some FLV's. (Plorkyeran)</li>
+<li>Fix heap corruption when opening H.264 in MPEG-TS with Haali's splitter. (Plorkyeran)</li>
 </ul></li>
 
 <li>2.13<ul>
