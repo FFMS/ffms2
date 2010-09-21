@@ -135,7 +135,6 @@ public:
 class FFHaaliVideo : public FFMS_VideoSource {
 private:
 	CComPtr<IMMContainer> pMMC;
-	std::vector<uint8_t> CodecPrivate;
 	AVBitStreamFilterContext *BitStreamFilter;
 	FFSourceResources<FFMS_VideoSource> Res;
 
