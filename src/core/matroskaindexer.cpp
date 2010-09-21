@@ -164,9 +164,10 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 			else
 				TempPacket.flags = 0;
 
-			int LastNumChannels				= AudioCodecContext->channels;
-			int LastSampleRate				= AudioCodecContext->sample_rate;
-			SampleFormat LastSampleFormat	= AudioCodecContext->sample_fmt;
+			bool first = true;
+			int LastNumChannels;
+			int LastSampleRate;
+			SampleFormat LastSampleFormat;
 			while (TempPacket.size > 0) {
 				int dbsize = AVCODEC_MAX_AUDIO_FRAME_SIZE*10;
 				int Ret = avcodec_decode_audio3(AudioCodecContext, &DecodingBuffer[0], &dbsize, &TempPacket);
@@ -184,6 +185,13 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 					} else if (ErrorHandling == FFMS_IEH_IGNORE) {
 						break;
 					}
+				}
+
+				if (first) {
+					LastNumChannels		= AudioCodecContext->channels;
+					LastSampleRate		= AudioCodecContext->sample_rate;
+					LastSampleFormat	= AudioCodecContext->sample_fmt;
+					first = false;
 				}
 
 				if (LastNumChannels != AudioCodecContext->channels || LastSampleRate != AudioCodecContext->sample_rate
