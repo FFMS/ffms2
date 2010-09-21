@@ -209,5 +209,6 @@ FFMS_TrackType FFLAVFIndexer::GetTrackType(int Track) {
 }
 
 const char *FFLAVFIndexer::GetTrackCodec(int Track) {
-	return (avcodec_find_decoder(FormatContext->streams[Track]->codec->codec_id))->name;
+	AVCodec *codec = avcodec_find_decoder(FormatContext->streams[Track]->codec->codec_id);
+	return codec ? codec->name : NULL;
 }
