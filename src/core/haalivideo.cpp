@@ -224,6 +224,10 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 
 			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
 
+			/* if the packet is pointing to data not attained originally by Haali, then it was allocated by ffmpeg and needs to be av_free'd */
+			if (Packet.data != Data)
+				av_free(Packet.data);
+
 			if (!FrameFinished)
 				DelayCounter++;
 			if (DelayCounter > CodecContext->has_b_frames && !InitialDecode)
