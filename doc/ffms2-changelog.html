@@ -24,6 +24,7 @@ FFmpegSource2 Changelog
 <li>Audio streams that change channel layout, sample rate or bitdepth mid-stream will no longer cause crashes; an error will be raised during indexing instead. (TheFluff)</li>
 <li>Fix a potential crash when ffmpeg thought it couldn't decode a certain format, but was wrong. Fixes issues with some FLV's. (Plorkyeran)</li>
 <li>Fix heap corruption when opening H.264 in MPEG-TS with Haali's splitter. (Plorkyeran)</li>
+<li>Fix a memleak when decoding H.264 in MPEG-TS using Haali's splitter. (kemuri-_9)</li>
 </ul></li>
 
 <li>2.13<ul>
