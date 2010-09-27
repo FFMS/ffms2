@@ -157,6 +157,9 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 		}
 	}
 
+	if (!strcmp(PP, ""))
+		PP = NULL;
+
 	AvisynthVideoSource *Filter;
 
 	try {
@@ -253,9 +256,11 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	return Filter;
 }
 
+#ifdef WITH_LIBPOSTPROC
 static AVSValue __cdecl CreateFFPP(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	return new FFPP(Args[0].AsClip(), Args[1].AsString(""), Env);
 }
+#endif // WITH_LIBPOSTPROC
 
 static AVSValue __cdecl CreateSWScale(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	return new SWScale(Args[0].AsClip(), Args[1].AsInt(0), Args[2].AsInt(0), Args[3].AsString("BICUBIC"), Args[4].AsString(""), Env);
@@ -274,7 +279,9 @@ extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScri
     Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b", CreateFFIndex, 0);
 	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s", CreateFFVideoSource, 0);
     Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i", CreateFFAudioSource, 0);
+#ifdef WITH_LIBPOSTPROC
 	Env->AddFunction("FFPP", "c[pp]s", CreateFFPP, 0);
+#endif // WITH_LIBPOSTPROC
 	Env->AddFunction("SWScale", "c[width]i[height]i[resizer]s[colorspace]s", CreateSWScale, 0);
 	Env->AddFunction("FFGetLogLevel", "", FFGetLogLevel, 0);
 	Env->AddFunction("FFSetLogLevel", "i", FFSetLogLevel, 0);

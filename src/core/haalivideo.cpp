@@ -44,7 +44,8 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 
 	pMMC = HaaliOpenFile(SourceFile, SourceMode);
 
-	int CodecPrivateSize = 0;
+	CodecContext = avcodec_alloc_context();
+
 	int CurrentTrack = 0;
 	CComPtr<IEnumUnknown> pEU;
 	CComQIPtr<IPropertyBag> pBag;
@@ -57,24 +58,17 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 				if (pBag) {
 					CComVariant pV;
 					unsigned int FourCC = 0;
-
-					pV.Clear();
-					if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
-						CodecPrivateSize = vtSize(pV);
-						CodecPrivate.resize(CodecPrivateSize);
-						vtCopy(pV, FFMS_GET_VECTOR_PTR(CodecPrivate));
-					}
+					FFMS_BITMAPINFOHEADER *bih = NULL;
 
 					pV.Clear();
 					if (SUCCEEDED(pBag->Read(L"FOURCC", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4))) {
 						FourCC = pV.uintVal;
 
 						// Reconstruct the missing codec private part for VC1
-						std::vector<uint8_t> bihvect;
-						bihvect.resize(sizeof(FFMS_BITMAPINFOHEADER));
-						FFMS_BITMAPINFOHEADER *bih = reinterpret_cast<FFMS_BITMAPINFOHEADER *>(FFMS_GET_VECTOR_PTR(bihvect));
-						memset(bih, 0, sizeof(FFMS_BITMAPINFOHEADER));
-						bih->biSize = sizeof(FFMS_BITMAPINFOHEADER) + CodecPrivateSize;
+						CodecContext->extradata_size = sizeof(FFMS_BITMAPINFOHEADER);
+						CodecContext->extradata = reinterpret_cast<uint8_t*>(av_malloc(CodecContext->extradata_size));
+						bih = reinterpret_cast<FFMS_BITMAPINFOHEADER *>(CodecContext->extradata);
+						bih->biSize = sizeof(FFMS_BITMAPINFOHEADER);
 						bih->biCompression = FourCC;
 						bih->biBitCount = 24;
 						bih->biPlanes = 1;
@@ -86,16 +80,24 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 						pV.Clear();
 						if (SUCCEEDED(pBag->Read(L"Video.PixelHeight", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
 							bih->biHeight = pV.uintVal;
+					}
 
-						CodecPrivate.insert(CodecPrivate.begin(), bihvect.begin(), bihvect.end());
-						CodecPrivateSize += sizeof(FFMS_BITMAPINFOHEADER);
+					pV.Clear();
+					if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
+						CodecContext->extradata_size += vtSize(pV);
+						CodecContext->extradata = reinterpret_cast<uint8_t*>(av_realloc(CodecContext->extradata, CodecContext->extradata_size));
+						vtCopy(pV, CodecContext->extradata + (bih ? bih->biSize : 0));
+
+						if (bih) {
+							bih->biSize = CodecContext->extradata_size;
+						}
 					}
 
 					pV.Clear();
 					if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
 						char ACodecID[2048];
 						wcstombs(ACodecID, pV.bstrVal, 2000);
-						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, FFMS_GET_VECTOR_PTR(CodecPrivate), FourCC));
+						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, CodecContext->extradata, FourCC));
 					}
 				}
 			}
@@ -103,9 +105,6 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 		}
 	}
 
-	CodecContext = avcodec_alloc_context();
-	CodecContext->extradata = FFMS_GET_VECTOR_PTR(CodecPrivate);
-	CodecContext->extradata_size = CodecPrivateSize;
 	if (avcodec_thread_init(CodecContext, Threads))
 		CodecContext->thread_count = 1;
 
@@ -216,11 +215,18 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 			else
 				Packet.flags = 0;
 
-			if (BitStreamFilter)
-				av_bitstream_filter_filter(BitStreamFilter, CodecContext, NULL,
-				&Packet.data, &Packet.size, Data, pMMF->GetActualDataLength(), !!Packet.flags);
+			AVBitStreamFilterContext *bsf = BitStreamFilter;
+			while (bsf) {
+				av_bitstream_filter_filter(bsf, CodecContext, NULL, &Packet.data,
+					&Packet.size, Data, pMMF->GetActualDataLength(), !!Packet.flags);
+				bsf = bsf->next;
+			}
 
 			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
+
+			/* if the packet is pointing to data not attained originally by Haali, then it was allocated by ffmpeg and needs to be av_free'd */
+			if (Packet.data != Data)
+				av_free(Packet.data);
 
 			if (!FrameFinished)
 				DelayCounter++;

@@ -34,7 +34,9 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
+#ifdef WITH_LIBPOSTPROC
 #include <libpostproc/postprocess.h>
+#endif // WITH_LIBPOSTPROC
 }
 
 // must be included after ffmpeg headers
@@ -194,5 +196,6 @@ CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources So
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
 void CorrectNTSCRationalFramerate(int *Num, int *Den);
 void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase);
+const char *GetLAVCSampleFormatName(SampleFormat s);
 
 #endif

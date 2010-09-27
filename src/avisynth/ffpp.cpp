@@ -21,6 +21,8 @@
 #include "ffpp.h"
 #include "avsutils.h"
 
+#ifdef WITH_LIBPOSTPROC
+
 FFPP::FFPP(PClip AChild, const char *PP, IScriptEnvironment *Env) : GenericVideoFilter(AChild) {
 	if (!strcmp(PP, ""))
 		Env->ThrowError("FFPP: PP argument is empty");
@@ -94,3 +96,5 @@ PVideoFrame FFPP::GetFrame(int n, IScriptEnvironment* Env) {
 
 	return Dst;
 }
+
+#endif // WITH_LIBPOSTPROC

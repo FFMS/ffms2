@@ -21,6 +21,8 @@
 #ifndef FFPP_H
 #define FFPP_H
 
+#ifdef WITH_LIBPOSTPROC
+
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
@@ -46,4 +48,6 @@ public:
 	PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* Env);
 };
 
-#endif
+#endif // WITH_LIBPOSTPROC
+
+#endif // FFPP_H

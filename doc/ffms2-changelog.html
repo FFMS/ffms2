@@ -13,6 +13,18 @@ FFmpegSource2 Changelog
 <ul>
 <li>2.14<ul>
 <li>Reworked filename handling a bit. Index files should no longer get a garbled name when using the Avisynth plugin and an input filename in the local codepage (issue 9), and FFMS_USE_UTF8_PATHS does no longer require patching ffmpeg. (TheFluff, nielsm)</li>
+<li>Fixed a bunch of compiler warnings and added versioning for the shared library when building under Unix. (Kovensky)</li>
+<li>Fixed an invalid memory access bug that could cause random crashes or other errors when opening files. (TheFluff)</li>
+<li>The timebase for video tracks is now corrected if it's invalid. (kemuri_-9)</li>
+<li>Fixed a number of multithreaded decoding issues. (kemuri_-9)</li>
+<li>Use aligned memory for audio decoding buffers; fixes some crashes during audio decoding. (greg)</li>
+<li>Fixed a bug that caused ffmsindex -c to fail. (chdheu)</li>
+<li>Added support for MKV files using header stripping compression. (TheFluff)</li>
+<li>It is now possible to compile FFMS2 using a ffmpeg without libpostproc compiled in (this will obviously cause postprocessing-related functions to fail). Hence it is now possible to build a GPL-free FFMS2, since the rest of ffmpeg can be compiled as LGPL. (TheFluff)</li>
+<li>Audio streams that change channel layout, sample rate or bitdepth mid-stream will no longer cause crashes; an error will be raised during indexing instead. (TheFluff)</li>
+<li>Fix a potential crash when ffmpeg thought it couldn't decode a certain format, but was wrong. Fixes issues with some FLV's. (Plorkyeran)</li>
+<li>Fix heap corruption when opening H.264 in MPEG-TS with Haali's splitter. (Plorkyeran)</li>
+<li>Fix a memleak when decoding H.264 in MPEG-TS using Haali's splitter. (kemuri-_9)</li>
 </ul></li>
 
 <li>2.13<ul>

@@ -129,6 +129,8 @@ int GetSWSCPUFlags() {
 int GetPPCPUFlags() {
 	int Flags = 0;
 
+#ifdef WITH_LIBPOSTPROC
+// not exactly a pretty solution but it'll never get called anyway
 	if (CPUFeatures & FFMS_CPU_CAPS_MMX)
 		Flags |= PP_CPU_CAPS_MMX;
 	if (CPUFeatures & FFMS_CPU_CAPS_MMX2)
@@ -137,6 +139,7 @@ int GetPPCPUFlags() {
 		Flags |= PP_CPU_CAPS_3DNOW;
 	if (CPUFeatures & FFMS_CPU_CAPS_ALTIVEC)
 		Flags |= PP_CPU_CAPS_ALTIVEC;
+#endif // WITH_LIBPOSTPROC
 
 	return Flags;
 }
@@ -157,6 +160,17 @@ FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT) {
 		case TT_AUDIO: return FFMS_TYPE_AUDIO; break;
 		case TT_SUB: return FFMS_TYPE_SUBTITLE; break;
 		default: return FFMS_TYPE_UNKNOWN;
+	}
+}
+
+const char *GetLAVCSampleFormatName(SampleFormat s) {
+	switch (s) {
+		case SAMPLE_FMT_U8:		return "8-bit unsigned integer";
+		case SAMPLE_FMT_S16:	return "16-bit signed integer";
+		case SAMPLE_FMT_S32:	return "32-bit signed integer";
+		case SAMPLE_FMT_FLT:	return "Single-precision floating point";
+		case SAMPLE_FMT_DBL:	return "Double-precision floating point";
+		default:				return "Unknown";
 	}
 }
 

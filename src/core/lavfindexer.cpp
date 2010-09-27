@@ -143,6 +143,10 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 					"Invalid initial pts and dts");
 			//
 
+			bool first = true;
+			int LastNumChannels;
+			int LastSampleRate;
+			SampleFormat LastSampleFormat;
 			while (TempPacket.size > 0) {
 				int dbsize = AVCODEC_MAX_AUDIO_FRAME_SIZE*10;
 				int Ret = avcodec_decode_audio3(AudioCodecContext, &DecodingBuffer[0], &dbsize, &TempPacket);
@@ -160,6 +164,25 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 					} else if (ErrorHandling == FFMS_IEH_IGNORE) {
 						break;
 					}
+				}
+
+				if (first) {
+					LastNumChannels		= AudioCodecContext->channels;
+					LastSampleRate		= AudioCodecContext->sample_rate;
+					LastSampleFormat	= AudioCodecContext->sample_fmt;
+					first = false;
+				}
+
+				if (LastNumChannels != AudioCodecContext->channels || LastSampleRate != AudioCodecContext->sample_rate
+					|| LastSampleFormat != AudioCodecContext->sample_fmt) {
+					std::ostringstream buf;
+					buf <<
+						"Audio format change detected. This is currently unsupported."
+						<< " Channels: " << LastNumChannels << " -> " << AudioCodecContext->channels << ";"
+						<< " Sample rate: " << LastSampleRate << " -> " << AudioCodecContext->sample_rate << ";"
+						<< " Sample format: " << GetLAVCSampleFormatName(LastSampleFormat) << " -> "
+						<< GetLAVCSampleFormatName(AudioCodecContext->sample_fmt);
+					throw FFMS_Exception(FFMS_ERROR_UNSUPPORTED, FFMS_ERROR_DECODING, buf.str());
 				}
 
 				if (Ret > 0) {
@@ -194,5 +217,6 @@ FFMS_TrackType FFLAVFIndexer::GetTrackType(int Track) {
 }
 
 const char *FFLAVFIndexer::GetTrackCodec(int Track) {
-	return (avcodec_find_decoder(FormatContext->streams[Track]->codec->codec_id))->name;
+	AVCodec *codec = avcodec_find_decoder(FormatContext->streams[Track]->codec->codec_id);
+	return codec ? codec->name : NULL;
 }
