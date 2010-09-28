@@ -11,6 +11,7 @@ echo "  --enable-debug           adds -g, doesn't strip"
 echo "  --enable-gprof           adds -pg, doesn't strip"
 echo "  --enable-pic             build position-independent code"
 echo "  --enable-shared          build libffms2.so"
+echo "  --enable-postproc        build with postproc support (requires libpostproc)"
 echo "  --extra-cppflags=EFLAGS  add EFLAGS to CPPFLAGS"
 echo "  --extra-cflags=ECFLAGS   add ECFLAGS to CFLAGS"
 echo "  --extra-cxxflags=EFLAGS  add EFLAGS to CXXFLAGS"
@@ -146,6 +147,7 @@ debug="no"
 gprof="no"
 pic="no"
 shared="no"
+postproc="no"
 
 CPPFLAGS="$CPPFLAGS -I. -Iinclude -D_FILE_OFFSET_BITS=64"
 CFLAGS="$CFLAGS -Wall"
@@ -179,6 +181,9 @@ for opt do
             ;;
         --enable-avs)
             avs="yes"
+            ;;
+        --enable-postproc)
+            postproc="yes"
             ;;
         --extra-cppflags=*)
             CPPFLAGS="$CPPFLAGS ${opt#--extra-cppflags=}"
@@ -314,18 +319,39 @@ fi
 cc_check "objbase.h" "-lole32" "CoUninitialize();" && LDFLAGS="$LDFLAGS -lole32"
 
 #find ffmpeg
-if ${cross_prefix}pkg-config --exists libavformat libavcodec libswscale libpostproc libavutil 2>$DEVNULL; then
-    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavformat libavcodec libswscale libpostproc libavutil)"
-    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libavformat libavcodec libswscale libpostproc libavutil)"
+if ${cross_prefix}pkg-config --exists libavformat libavcodec libswscale libavutil 2>$DEVNULL; then
+    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavformat libavcodec libswscale libavutil)"
+    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libavformat libavcodec libswscale libavutil)"
 fi
+# optional libpostproc
+if [ "$postproc" = "yes" ] && ${cross_prefix}pkg-config --exist libpostproc 2>$DEVNULL; then
+    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libpostproc)"
+    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libpostproc)"
+fi
+# libavcore - for when ffmpeg decided to make this library out of nowhere and have a number of things depend on it
+if  ${cross_prefix}pkg-config --exist libavcore 2>$DEVNULL; then
+    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavcore)"
+    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libavcore)"
+fi
+
 if [ -z "$FFMPEG_LIBS" -a -z "$FFMPEG_CFLAGS" ]; then
-    FFMPEG_LIBS="-lavformat -lpostproc -lavcodec -lswscale -lavutil"
-    for lib in -lm -lz -lbz2 -lpthread -lavifil32; do
+    FFMPEG_LIBS="-lavformat -lavcodec -lswscale"
+    [ "$postproc" = "yes" ] && FFMPEG_LIBS="$FFMPEG_LIBS -lpostproc"
+    for lib in -lavutil -lavcore -lm -lz -lbz2 -lpthread -lavifil32; do
         cc_check "" $lib && FFMPEG_LIBS="$FFMPEG_LIBS $lib"
     done
 fi
 if ! cc_check libavformat/avformat.h "$FFMPEG_CFLAGS $FFMPEG_LIBS" "avcodec_decode_video2( 0, 0, 0, 0 );" ; then
     die "unable to link against ffmpeg"
+fi
+
+# check for optional libpostproc
+if [ "$postproc" = "yes" ]; then
+    if ! cc_check libpostproc/postprocess.h "$FFMPEG_CFLAGS $FFMPEG_LIBS" "pp_free_mode( 0 );" ; then
+        die "unable to link against libpostproc"
+    else
+        CPPFLAGS="$CPPFLAGS -DWITH_LIBPOSTPROC"
+    fi
 fi
 
 #find libz
@@ -403,6 +429,7 @@ DEVNULL=$DEVNULL
 AVISYNTH=$avs
 SOFLAGS_USER=$SOFLAGS
 SYS=$SYS
+WITH_LIBPOSTPROC=$postproc
 EOF
 
 if [ "$shared" = "yes" ]; then
@@ -450,6 +477,7 @@ avs:        $avs
 debug:      $debug
 gprof:      $gprof
 PIC:        $pic
+postproc:   $postproc
 shared:     $shared
 EOF
 
