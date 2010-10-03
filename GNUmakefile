@@ -29,6 +29,14 @@ CORE_O = $(CORE_C:%.c=%.o) $(CORE_CXX:%.cpp=%.o)
 IDX_O = $(IDX_CXX:%.cpp=%.o)
 SO_O = $(SO_C:%.c=%.o)
 
+INDEX_LINK=libffms.a
+ifneq ($(SONAME),)
+INDEX_LINK=$(SONAME)
+endif
+ifneq ($(IMPLIBNAME),)
+INDEX_LINK=$(IMPLIBNAME)
+endif
+
 default: $(DEP) ffmsindex$(EXE)
 
 libffms.a: .depend $(CORE_O)
@@ -38,8 +46,8 @@ libffms.a: .depend $(CORE_O)
 $(SONAME): .depend $(CORE_O) $(SO_O)
 	$(CXX) -shared -o $@ $(CORE_O) $(SO_O) $(SOFLAGS) $(SOFLAGS_USER) $(LDFLAGS)
 
-ffmsindex$(EXE): $(CORE_O) $(IDX_O) libffms.a
-	$(CXX) -o $@ $+ $(LDFLAGS)
+ffmsindex$(EXE): $(IDX_O) libffms.a $(SONAME)
+	$(CXX) -o $@ $(IDX_O) $(INDEX_LINK) $(LDFLAGS)
 
 .depend: config.mak
 	@rm -f .depend
