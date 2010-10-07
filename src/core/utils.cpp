@@ -520,7 +520,7 @@ int ffms_wchar_open(const char *fname, int oflags, int pmode) {
     wchar_t *wfname = dup_char_to_wchar(fname, CP_UTF8);
     if (wfname) {
         int ret = _wopen(wfname, oflags, pmode);
-        av_free(wfname);
+        free(wfname);
         return ret;
     }
     return -1;
