@@ -64,5 +64,12 @@
 #	endif
 #endif
 
+#ifdef LIBAVCODEC_VERSION_INT
+#	if (LIBAVCODEC_VERSION_INT) >= AV_VERSION_INT(52,94,1)
+#		undef SampleFormat
+#	else
+#		define AVSampleFormat SampleFormat
+#	endif
+#endif
 
 #endif // FFMSCOMPAT_H

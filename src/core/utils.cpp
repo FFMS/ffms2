@@ -36,7 +36,6 @@ extern "C" {
 #endif
 
 
-
 // Export the array but not its data type... fun...
 typedef struct CodecTags{
     char str[20];
@@ -163,13 +162,13 @@ FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT) {
 	}
 }
 
-const char *GetLAVCSampleFormatName(SampleFormat s) {
+const char *GetLAVCSampleFormatName(AVSampleFormat s) {
 	switch (s) {
-		case SAMPLE_FMT_U8:		return "8-bit unsigned integer";
-		case SAMPLE_FMT_S16:	return "16-bit signed integer";
-		case SAMPLE_FMT_S32:	return "32-bit signed integer";
-		case SAMPLE_FMT_FLT:	return "Single-precision floating point";
-		case SAMPLE_FMT_DBL:	return "Double-precision floating point";
+		case AV_SAMPLE_FMT_U8:	return "8-bit unsigned integer";
+		case AV_SAMPLE_FMT_S16:	return "16-bit signed integer";
+		case AV_SAMPLE_FMT_S32:	return "32-bit signed integer";
+		case AV_SAMPLE_FMT_FLT:	return "Single-precision floating point";
+		case AV_SAMPLE_FMT_DBL:	return "Double-precision floating point";
 		default:				return "Unknown";
 	}
 }
@@ -274,8 +273,8 @@ void InitNullPacket(AVPacket &pkt) {
 
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
 	AP.SampleFormat = static_cast<FFMS_SampleFormat>(CTX->sample_fmt);
-	AP.BitsPerSample = av_get_bits_per_sample_format(CTX->sample_fmt);
-	if (CTX->sample_fmt == SAMPLE_FMT_S32 && CTX->bits_per_raw_sample)
+	AP.BitsPerSample = av_get_bits_per_sample_fmt(CTX->sample_fmt);
+	if (CTX->sample_fmt == AV_SAMPLE_FMT_S32 && CTX->bits_per_raw_sample)
 		AP.BitsPerSample = CTX->bits_per_raw_sample;
 
 	AP.Channels = CTX->channels;;

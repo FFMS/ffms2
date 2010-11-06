@@ -146,7 +146,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			bool first = true;
 			int LastNumChannels;
 			int LastSampleRate;
-			SampleFormat LastSampleFormat;
+			AVSampleFormat LastSampleFormat;
 			while (TempPacket.size > 0) {
 				int dbsize = AVCODEC_MAX_AUDIO_FRAME_SIZE*10;
 				int Ret = avcodec_decode_audio3(AudioCodecContext, &DecodingBuffer[0], &dbsize, &TempPacket);
@@ -191,7 +191,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 				}
 
 				if (dbsize > 0)
-					AudioContexts[Packet.stream_index].CurrentSample += (dbsize * 8) / (av_get_bits_per_sample_format(AudioCodecContext->sample_fmt) * AudioCodecContext->channels);
+					AudioContexts[Packet.stream_index].CurrentSample += (dbsize * 8) / (av_get_bits_per_sample_fmt(AudioCodecContext->sample_fmt) * AudioCodecContext->channels);
 
 				if (DumpMask & (1 << Packet.stream_index))
 					WriteAudio(AudioContexts[Packet.stream_index], TrackIndices.get(), Packet.stream_index, dbsize);

@@ -566,8 +566,8 @@ void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 			(*ANC)(SourceFile, Track, &AP, &WName[0], FNSize, ANCPrivate);
 			std::string WN(&WName[0]);
 			try {
-				AudioContext.W64Writer = new Wave64Writer(WN.c_str(), av_get_bits_per_sample_format(AudioContext.CodecContext->sample_fmt),
-					AudioContext.CodecContext->channels, AudioContext.CodecContext->sample_rate, (AudioContext.CodecContext->sample_fmt == SAMPLE_FMT_FLT) || (AudioContext.CodecContext->sample_fmt == SAMPLE_FMT_DBL));
+				AudioContext.W64Writer = new Wave64Writer(WN.c_str(), av_get_bits_per_sample_fmt(AudioContext.CodecContext->sample_fmt),
+					AudioContext.CodecContext->channels, AudioContext.CodecContext->sample_rate, (AudioContext.CodecContext->sample_fmt == AV_SAMPLE_FMT_FLT) || (AudioContext.CodecContext->sample_fmt == AV_SAMPLE_FMT_DBL));
 			} catch (...) {
 				throw FFMS_Exception(FFMS_ERROR_WAVE_WRITER, FFMS_ERROR_FILE_WRITE,
 					"Failed to write wave data");
