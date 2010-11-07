@@ -65,10 +65,11 @@
 #endif
 
 #ifdef LIBAVCODEC_VERSION_INT
-#	if (LIBAVCODEC_VERSION_INT) >= AV_VERSION_INT(52,94,1)
+#	if (LIBAVCODEC_VERSION_INT) >= AV_VERSION_INT(52,94,3) // there are ~3 revisions where this will break but fixing that is :effort:
 #		undef SampleFormat
 #	else
 #		define AVSampleFormat SampleFormat
+#		define av_get_bits_per_sample_fmt av_get_bits_per_sample_format
 #	endif
 #endif
 
