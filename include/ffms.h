@@ -240,7 +240,7 @@ typedef int (FFMS_CC *TAudioNameCallback)(const char *SourceFile, int Track, con
 
 // Most functions return 0 on success
 // Functions without error message output can be assumed to never fail in a graceful way
-FFMS_API(void) FFMS_Init(int CPUFeatures, int UseUTF8Paths=0);
+FFMS_API(void) FFMS_Init(int CPUFeatures, int UseUTF8Paths);
 FFMS_API(int) FFMS_GetLogLevel();
 FFMS_API(void) FFMS_SetLogLevel(int Level);
 FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, int SeekMode, FFMS_ErrorInfo *ErrorInfo);
