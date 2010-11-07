@@ -97,7 +97,7 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index *
 void FFMatroskaAudio::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 	GetAudioCheck(Start, Count);
 
-	const int64_t SizeConst = (av_get_bits_per_sample_format(CodecContext->sample_fmt) * CodecContext->channels) / 8;
+	const int64_t SizeConst = (av_get_bits_per_sample_fmt(CodecContext->sample_fmt) * CodecContext->channels) / 8;
 	memset(Buf, 0, static_cast<size_t>(SizeConst * Count));
 
 	unsigned int PreDecBlocks = 0;
@@ -139,7 +139,7 @@ void FFMatroskaAudio::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 }
 
 void FFMatroskaAudio::DecodeNextAudioBlock(int64_t *Count) {
-	const size_t SizeConst = (av_get_bits_per_sample_format(CodecContext->sample_fmt) * CodecContext->channels) / 8;
+	const size_t SizeConst = (av_get_bits_per_sample_fmt(CodecContext->sample_fmt) * CodecContext->channels) / 8;
 	int Ret = -1;
 	*Count = 0;
 	uint8_t *Buf = &DecodingBuffer[0];

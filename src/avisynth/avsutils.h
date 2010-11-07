@@ -25,6 +25,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
+#include "ffmscompat.h"
 
 
 int AvisynthToFFCPUFlags(long AvisynthFlags);

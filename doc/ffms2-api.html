@@ -29,9 +29,9 @@ FFMS2 does not mux or encode anything. FFMS2 does not give you fine control over
 <li><b><a href="http://www.ffmpeg.org">ffmpeg</a></b> (no, really)
 <ul><li>Revision <del>18378 (2009-04-08) or later</del> something very fucking recent (usually you should just use the latest SVN revision you can get to compile) is required. 0.5 is too old.</li>
 <li><a href="http://gitorious.org/ffmpeg/ffmpeg-mt">ffmpeg-mt</a> with pthreads may be used instead of vanilla ffmpeg.</li>
-<li>Needs to have libpostproc compiled in (pass <tt>--enable-gpl --enable-postproc</tt> to ffmpeg's ./configure).</li>
 <li>If you're on Win32 you need to pass <tt>--enable-memalign-hack</tt> to ffmpeg's ./configure as well.</li>
 <li>Further recommended configuration options: <tt>--disable-debug --disable-muxers --disable-encoders --disable-filters --disable-hwaccels --disable-network --disable-devices --enable-runtime-cpudetect</tt> (runtime cpudetect in particular is a good idea if you are planning on distributing the library; not disabling debug results in a gigantic dll).</li>
+<li>If you want to use the postprocessing filter functionality (i.e. <tt>FFMS_SetPP()</li>) you need to compile ffmpeg with libpostproc (pass <tt>--enable-gpl --enable-postproc</tt> to its configure). Note that this will make the FFMS2 binary GPL licensed.</li>
 </ul>
 </li>
 <li><b><a href="http://www.zlib.net/">zlib</a></b></li>

@@ -31,7 +31,7 @@ void FFHaaliAudio::Free(bool CloseCodec) {
 }
 
 void FFHaaliAudio::DecodeNextAudioBlock(int64_t *AFirstStartTime, int64_t *Count) {
-	const size_t SizeConst = (av_get_bits_per_sample_format(CodecContext->sample_fmt) * CodecContext->channels) / 8;
+	const size_t SizeConst = (av_get_bits_per_sample_fmt(CodecContext->sample_fmt) * CodecContext->channels) / 8;
 	int Ret = -1;
 	*AFirstStartTime = -1;
 	*Count = 0;
@@ -166,7 +166,7 @@ FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index *Index,
 void FFHaaliAudio::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 	GetAudioCheck(Start, Count);
 
-	const int64_t SizeConst = (av_get_bits_per_sample_format(CodecContext->sample_fmt) * CodecContext->channels) / 8;
+	const int64_t SizeConst = (av_get_bits_per_sample_fmt(CodecContext->sample_fmt) * CodecContext->channels) / 8;
 	memset(Buf, 0, static_cast<size_t>(SizeConst * Count));
 	bool HasSeeked = false;
 
