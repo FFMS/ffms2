@@ -31,7 +31,7 @@ FFMS2 does not mux or encode anything. FFMS2 does not give you fine control over
 <li><a href="http://gitorious.org/ffmpeg/ffmpeg-mt">ffmpeg-mt</a> with pthreads may be used instead of vanilla ffmpeg.</li>
 <li>If you're on Win32 you need to pass <tt>--enable-memalign-hack</tt> to ffmpeg's ./configure as well.</li>
 <li>Further recommended configuration options: <tt>--disable-debug --disable-muxers --disable-encoders --disable-filters --disable-hwaccels --disable-network --disable-devices --enable-runtime-cpudetect</tt> (runtime cpudetect in particular is a good idea if you are planning on distributing the library; not disabling debug results in a gigantic dll).</li>
-<li>If you want to use the postprocessing filter functionality (i.e. <tt>FFMS_SetPP()</li>) you need to compile ffmpeg with libpostproc (pass <tt>--enable-gpl --enable-postproc</tt> to its configure). Note that this will make the FFMS2 binary GPL licensed.</li>
+<li>If you want to use the postprocessing filter functionality (i.e. <tt>FFMS_SetPP()</tt>) you need to compile ffmpeg with libpostproc (pass <tt>--enable-gpl --enable-postproc</tt> to its configure). Note that this will make the FFMS2 binary GPL licensed.</li>
 </ul>
 </li>
 <li><b><a href="http://www.zlib.net/">zlib</a></b></li>
@@ -176,17 +176,6 @@ To create an index object from a saved disk file, use <tt>FFMS_ReadIndex</tt>. N
 </p>
 
 
-<h2>Handling Unicode filenames on Windows</h2>
-<p>
-If you want support for Unicode filenames on Windows <tt>#define FFMS_USE_UTF8_PATHS</tt> somewhere. This will make FFMS2 assume that all strings passed to its API functions are UTF8; if they aren't either that or 7-bit ASCII, opening things will most likely fail. You can convert <tt>wchar_t</tt> strings to UTF8 using the Win32 API function <tt>WideCharToMultiByte</tt>.
-</p>
-<p>
-Do <strong>NOT</strong> use <tt>FFMS_USE_UTF8_PATHS</tt> if you're building the FFMS2 Avisynth plugin; it'll break opening all filenames that aren't 7-bit ASCII compatible. Unfortunately you can't have both ANSI and UTF8 support in the same DLL, at least not yet. Also note that if you use this define and build FFMS2 with MinGW, some things will probably break since MinGW's iostream library doesn't support widechar filenames.
-</p>
-<p>
-On Unix this define does nothing. You won't need to do anything special to support Unicode filenames anyway, just set your locale to something UTF8-based.
-</p>
-
 
 <h2>Function Reference</h2>
 <p>Most functions that can fail in one way or another (as well as some that should be able to but currently don't) support error reporting using the <tt>ErrorMsg</tt> and <tt>MsgSize</tt> parameters. Example:</p>
@@ -208,8 +197,8 @@ How many characters you want to allocate to the error message is up to you; if y
 </p>
 
 <h3>FFMS_Init - initializes the library</h3>
-<pre>void FFMS_Init(int CPUFeatures)</pre>
-<p>Initializes the FFMS2 library. This function must be called once at the start of your program, before doing any other FFMS2 function calls. Its only argument is an integer representing what CPU instruction sets may be used by the parts of FFmpeg that have handwritten assembler but no runtime CPU detection, i.e. libswscale and libpostproc (see <tt>FFMS_CPUFeatures</tt> in the Constants and Preprocessor Definitions section; binary OR the constants together if you want more than one). Pass 0 if you don't care; the performance hit won't be that big unless you do a lot of postprocessing or rescaling.</p>
+<pre>void FFMS_Init(int CPUFeatures, int UseUTF8Paths=0)</pre>
+<p>Initializes the FFMS2 library. This function must be called once at the start of your program, before doing any other FFMS2 function calls.</p>
 <p>If you are on Windows, you should also initialize COM before calling this function, since the library might have been built with <tt>HAALISOURCE</tt>. If it was indeed built with <tt>HAALISOURCE</tt> but you do not intialize COM, all MPEG-TS/PS and OGM files will cause an error when you try to open them. All other file types will work normally. Typically, you'd initialize COM something like the following:</p>
 <pre>#include &lt;objbase.h&gt;
 /* later on, in the actual code... */
@@ -225,6 +214,14 @@ else if (res != RPC_E_CHANGED_MODE) {
 if (com_inited)
 	CoUninitialize();
 </pre>
+<h4>Arguments</h4>
+<p><b><tt>int CPUFeatures</tt></b><br />
+An integer representing what CPU instruction sets may be used by the parts of FFmpeg that have handwritten assembler but no runtime CPU detection, i.e. libswscale and libpostproc (see <tt>FFMS_CPUFeatures</tt> in the Constants and Preprocessor Definitions section; binary OR the constants together if you want more than one). Pass 0 if you don't care; the performance hit won't be that big unless you do a lot of postprocessing or rescaling.</p>
+<p><b><tt>int UseUTF8Paths=0</tt></b><br />
+Controls filename handling on Windows; on all other operating systems this parameter does nothing and should be ignored.<br />
+On Windows, setting this parameter to a true value will make FFMS assume that all filename strings passed to it are UTF-8 encoded; setting it to false will make it assume filenames are in the system default codepage for non-Unicode programs. Setting this to true is one of two known ways to make FFMS2 open files with filenames containing characters that are not expressible in said codepage; the other is using the short (DOS 8.3 notation) filename. You can use the Win32 API function <tt>WideCharToMultiByte()</tt> to convert your <tt>wchar_t*</tt> Unicode strings to UTF-8 in <tt>char*</tt>, if necessary.<br />
+<b>NOTE:</b> setting this parameter to true will break most file open operations if you compiled FFMS in MinGW, because MinGW's <tt>std::fstream</tt> implementation doesn't support Unicode filenames.<br />
+Prior to API version 2.14.0.0 this functionality was a compile-time option and was controlled via <tt>FFMS_USE_UTF8_PATHS</tt>.</p>
 
 <h3>FFMS_GetLogLevel - gets ffmpeg message level</h3>
 <pre>int FFMS_GetLogLevel()</pre>

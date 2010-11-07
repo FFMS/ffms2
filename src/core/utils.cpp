@@ -26,14 +26,12 @@
 #ifdef _WIN32
 #	define WIN32_LEAN_AND_MEAN
 #	include <windows.h>
-#ifdef FFMS_USE_UTF8_PATHS
 #	include <io.h>
 #	include <fcntl.h>
 extern "C" {
 #	include "libavutil/avstring.h"
 }
-#endif
-#endif
+#endif // _WIN32
 
 
 // Export the array but not its data type... fun...
@@ -50,6 +48,7 @@ extern const AVCodecTag ff_codec_wav_tags[];
 }
 
 extern int CPUFeatures;
+extern bool GlobalUseUTF8Paths;
 
 
 
@@ -447,10 +446,12 @@ static wchar_t *dup_char_to_wchar(const char *s, unsigned int cp) {
 
 FILE *ffms_fopen(const char *filename, const char *mode) {
 #ifdef _WIN32
-	int codepage = CP_ACP;
-#ifdef FFMS_USE_UTF8_PATHS
-	codepage = CP_UTF8;
-#endif
+	unsigned int codepage;
+	if (GlobalUseUTF8Paths)
+		codepage = CP_UTF8;
+	else
+		codepage = CP_ACP;
+
 	FILE *ret;
 	wchar_t *filename_wide	= dup_char_to_wchar(filename, codepage);
 	wchar_t *mode_wide		= dup_char_to_wchar(mode, codepage);
@@ -469,18 +470,9 @@ FILE *ffms_fopen(const char *filename, const char *mode) {
 }
 
 size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max) {
-#if defined(_WIN32) && defined(FFMS_USE_UTF8_PATHS)
-	// try utf8 first
-	int len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, mbstr, -1, NULL, 0);
-	if (len > 0) {
-		MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, mbstr, -1, wcstr, max);
-		return static_cast<size_t>(len);
-	}
-	// failed, use local ANSI codepage
-	else {
-		len = MultiByteToWideChar(CP_ACP, NULL, mbstr, -1, wcstr, max);
-		return static_cast<size_t>(len);
-	}
+#ifdef _WIN32
+	// this is only called by HaaliOpenFile anyway, so I think this is safe
+	return static_cast<size_t>(MultiByteToWideChar((GlobalUseUTF8Paths ? CP_UTF8 : CP_ACP), MB_ERR_INVALID_CHARS, mbstr, -1, wcstr, max));
 #else
 	return mbstowcs(wcstr, mbstr, max);
 #endif
@@ -493,10 +485,8 @@ void ffms_fstream::open(const char *filename, std::ios_base::openmode mode) {
 	// that takes a wchar_t* filename, which means you can't open unicode
 	// filenames with it on Windows. gg.
 #if defined(_WIN32) && !defined(__MINGW32__)
-	unsigned int codepage = CP_ACP;
-#if defined(FFMS_USE_UTF8_PATHS)
-	codepage = CP_UTF8;
-#endif /* defined(FFMS_USE_UTF8_PATHS) */
+	unsigned int codepage = GlobalUseUTF8Paths ? CP_UTF8 : CP_ACP;
+
 	wchar_t *filename_wide = dup_char_to_wchar(filename, codepage);
 	if (filename_wide)
 		std::fstream::open(filename_wide, mode);
@@ -504,9 +494,9 @@ void ffms_fstream::open(const char *filename, std::ios_base::openmode mode) {
 		std::fstream::open(filename, mode);
 
 	free(filename_wide);
-#else /* defined(_WIN32) && !defined(__MINGW32__) */
+#else // defined(_WIN32) && !defined(__MINGW32__)
 	std::fstream::open(filename, mode);
-#endif /* defined(_WIN32) && !defined(__MINGW32__) */
+#endif // defined(_WIN32) && !defined(__MINGW32__)
 }
 
 ffms_fstream::ffms_fstream(const char *filename, std::ios_base::openmode mode) {
@@ -514,7 +504,7 @@ ffms_fstream::ffms_fstream(const char *filename, std::ios_base::openmode mode) {
 }
 
 
-#if defined(_WIN32) && defined(FFMS_USE_UTF8_PATHS)
+#ifdef _WIN32
 int ffms_wchar_open(const char *fname, int oflags, int pmode) {
     wchar_t *wfname = dup_char_to_wchar(fname, CP_UTF8);
     if (wfname) {
@@ -563,7 +553,7 @@ void ffms_patch_lavf_file_open() {
 		proto->url_open = &ffms_lavf_file_open;
 	}
 }
-#endif /* defined(_WIN32) && defined(FFMS_USE_UTF8_PATHS) */
+#endif // _WIN32
 
 // End of filename hackery.
 
