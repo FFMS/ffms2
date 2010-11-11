@@ -187,12 +187,12 @@ void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *
 CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC = 0, unsigned int BitsPerSample = 0);
 FILE *ffms_fopen(const char *filename, const char *mode);
 size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max);
-#if defined(_WIN32) && defined(FFMS_USE_UTF8_PATHS)
+#ifdef _WIN32
 void ffms_patch_lavf_file_open();
-#endif
+#endif // _WIN32
 #ifdef HAALISOURCE
 CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources SourceMode);
-#endif
+#endif // HAALISOURCE
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
 void CorrectNTSCRationalFramerate(int *Num, int *Den);
 void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase);

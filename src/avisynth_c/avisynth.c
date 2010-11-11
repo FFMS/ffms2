@@ -52,7 +52,8 @@ static int get_num_logical_cpus()
 
 static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value args, void *user_data )
 {
-    FFMS_Init( avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ) ) );
+    int use_utf8 = as_bool( as_elt( args, 7 ), 0 );
+    FFMS_Init( avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ) ), use_utf8 );
     init_ErrorInfo( ei );
 
     AVS_Value elt0 = as_elt( args, 0 );
@@ -92,7 +93,8 @@ static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value a
 
 static AVS_Value AVSC_CC create_FFVideoSource( AVS_ScriptEnvironment *env, AVS_Value args, void *user_data )
 {
-    FFMS_Init( avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ) ) );
+    int use_utf8 = as_bool( as_elt( args, 15 ), 0 );
+    FFMS_Init( avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ) ), use_utf8 );
     init_ErrorInfo( ei );
 
     AVS_Value elt0 = as_elt( args, 0 );
@@ -170,7 +172,8 @@ static AVS_Value AVSC_CC create_FFVideoSource( AVS_ScriptEnvironment *env, AVS_V
 
 static AVS_Value AVSC_CC create_FFAudioSource( AVS_ScriptEnvironment *env, AVS_Value args, void *user_data )
 {
-    FFMS_Init( avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ) ) );
+    int use_utf8 = as_bool( as_elt( args, 5 ), 0 );
+    FFMS_Init( avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ) ), use_utf8 );
     init_ErrorInfo( ei );
 
     if( !avs_is_string( as_elt( args, 0 ) ) )
@@ -279,9 +282,9 @@ const char *AVSC_CC avisynth_c_plugin_init( AVS_ScriptEnvironment* env )
     /* load the avs library */
     if( ffms_load_avs_lib( env ) )
         return "Failure";
-    ffms_avs_lib->avs_add_function( env, "FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b", create_FFIndex, 0 );
-    ffms_avs_lib->avs_add_function( env, "FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s", create_FFVideoSource, 0 );
-    ffms_avs_lib->avs_add_function( env, "FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i", create_FFAudioSource, 0 );
+    ffms_avs_lib->avs_add_function( env, "FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[i_certify_that_my_script_is_utf8]b", create_FFIndex, 0 );
+    ffms_avs_lib->avs_add_function( env, "FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace][i_certify_that_my_script_is_utf8]b", create_FFVideoSource, 0 );
+    ffms_avs_lib->avs_add_function( env, "FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[i_certify_that_my_script_is_utf8]b", create_FFAudioSource, 0 );
     ffms_avs_lib->avs_add_function( env, "SWScale", "c[width]i[height]i[resizer]s[colorspace]s", create_SWScale, 0 );
 #ifdef WITH_LIBPOSTPROC
     ffms_avs_lib->avs_add_function( env, "FFPP", "c[pp]s", create_FFPP, 0 );

@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
 	}
 #endif /* _WIN32 */
 
-	FFMS_Init(0);
+	FFMS_Init(0, 0);
 
 	switch (Verbose) {
 		case 0: FFMS_SetLogLevel(AV_LOG_QUIET); break;

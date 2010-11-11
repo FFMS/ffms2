@@ -54,6 +54,17 @@
 #	if (LIBAVCODEC_VERSION_INT) < (AV_VERSION_INT(52,30,2))
 #		define AV_PKT_FLAG_KEY PKT_FLAG_KEY
 #	endif
+#	if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(52,94,3)) // there are ~3 revisions where this will break but fixing that is :effort:
+#		undef SampleFormat
+#	else
+#		define AVSampleFormat SampleFormat
+#		define av_get_bits_per_sample_fmt av_get_bits_per_sample_format
+#		define AV_SAMPLE_FMT_U8		SAMPLE_FMT_U8
+#		define AV_SAMPLE_FMT_S16	SAMPLE_FMT_S16
+#		define AV_SAMPLE_FMT_S32	SAMPLE_FMT_S32
+#		define AV_SAMPLE_FMT_FLT	SAMPLE_FMT_FLT
+#		define AV_SAMPLE_FMT_DBL	SAMPLE_FMT_DBL
+#	endif
 #endif
 
 #ifdef LIBSWSCALE_VERSION_INT
@@ -61,14 +72,6 @@
 #		define FFMS_SWS_CONST_PARAM
 #	else
 #		define FFMS_SWS_CONST_PARAM const
-#	endif
-#endif
-
-#ifdef LIBAVCODEC_VERSION_INT
-#	if (LIBAVCODEC_VERSION_INT) >= AV_VERSION_INT(52,94,1)
-#		undef SampleFormat
-#	else
-#		define AVSampleFormat SampleFormat
 #	endif
 #endif
 

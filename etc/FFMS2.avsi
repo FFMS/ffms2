@@ -84,14 +84,13 @@ function FFInfo(clip c, bool "framenum", bool "frametype", bool "cfrtime", bool 
 	cfrtime		= default(cfrtime,true)
 	vfrtime		= default(vfrtime,true)
 
-	global fftempclip = c
-	fftempclip = frameevaluate(fftempclip, """ fftempstring = "" """)
+	c.frameevaluate(""" fftempstring = "" """)
 
-	fftempclip = framenum ? frameevaluate(fftempclip, """fftempstring = fftempstring + "Frame Number: " + string(current_frame) + " of " + string(fftempclip.framecount) + "\n" """, after_frame=true) : fftempclip
-	fftempclip = frametype ? frameevaluate(fftempclip, """fftempstring = fftempstring + "Picture Type: " + chr(FFPICT_TYPE) + "\n" """, after_frame=true) : fftempclip
+	framenum ? frameevaluate("""fftempstring = fftempstring + "Frame Number: " + string(current_frame) + " of " + string(framecount()) + "\n" """, after_frame=true) : nop()
+	frametype ? frameevaluate("""fftempstring = fftempstring + "Picture Type: " + chr(FFPICT_TYPE) + "\n" """, after_frame=true) : nop()
 
-	fftempclip = cfrtime ? frameevaluate(fftempclip, """fftempstring = fftempstring + "CFR Time: " + FFFormatTime(int((current_frame * 1000) / fftempclip.framerate)) + "\n" """, after_frame=true) : fftempclip
-	fftempclip = vfrtime ? frameevaluate(fftempclip, """fftempstring = fftempstring + "VFR Time: " + FFFormatTime(FFVFR_TIME) + "\n" """, after_frame=true) : fftempclip
+	cfrtime ? frameevaluate("""fftempstring = fftempstring + "CFR Time: " + FFFormatTime(round((current_frame * 1000) / framerate())) + "\n" """, after_frame=true) : nop()
+	vfrtime ? frameevaluate("""fftempstring = fftempstring + "VFR Time: " + FFFormatTime(FFVFR_TIME) + "\n" """, after_frame=true) : nop()
 
-	return scriptclip(fftempclip, "subtitle(fftempclip, fftempstring, lsp = 1)", after_frame=true)
+	return scriptclip("subtitle(fftempstring, lsp = 1)", after_frame=true)
 }
