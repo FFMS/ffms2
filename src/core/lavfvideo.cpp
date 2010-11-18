@@ -105,14 +105,11 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
 		VP.FPSNumerator = 30;
 	}
 
-	// Adjust framerate to match the duration of the first frame
-	for (size_t i = 1; i < Frames.size(); i++) {
-		if (Frames[i].PTS != Frames[0].PTS) {
-			unsigned int PTSDiff = (unsigned int)(Frames[i].PTS - Frames[0].PTS);
-			VP.FPSDenominator *= PTSDiff;
-			VP.FPSDenominator /= i;
-			break;
-		}
+	// Calculate the average framerate
+	if (Frames.size() >= 2) {
+		double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
+		VP.FPSDenominator = (unsigned int)(PTSDiff  / (double)1000 / (double)(VP.NumFrames - 1) + 0.5);
+		VP.FPSNumerator = 1000000;
 	}
 
 	// attempt to correct framerate to the proper NTSC fraction, if applicable
