@@ -32,8 +32,7 @@ static int GetNumberOfLogicalCPUs() {
 }
 
 static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	bool UseUTF8 = Args[7].AsBool(false);
-	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()), UseUTF8);
+	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()),  Args[7].AsBool(false));
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
@@ -80,8 +79,7 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 }
 
 static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	bool UseUTF8 = Args[15].AsBool(false);
-	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()), UseUTF8);
+	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()), Args[15].AsBool(false));
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
@@ -176,8 +174,7 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 }
 
 static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	bool UseUTF8 = Args[5].AsBool(false);
-	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()), UseUTF8);
+	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()), Args[5].AsBool(false));
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
@@ -279,9 +276,9 @@ static AVSValue __cdecl FFSetLogLevel(AVSValue Args, void* UserData, IScriptEnvi
 }
 
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScriptEnvironment* Env) {
-    Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[i_certify_that_my_script_is_utf8]b", CreateFFIndex, 0);
-	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[i_certify_that_my_script_is_utf8]b", CreateFFVideoSource, 0);
-    Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[i_certify_that_my_script_is_utf8]b", CreateFFAudioSource, 0);
+    Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b", CreateFFIndex, 0);
+	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b", CreateFFVideoSource, 0);
+    Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b", CreateFFAudioSource, 0);
 #ifdef WITH_LIBPOSTPROC
 	Env->AddFunction("FFPP", "c[pp]s", CreateFFPP, 0);
 #endif // WITH_LIBPOSTPROC
