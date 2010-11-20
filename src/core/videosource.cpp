@@ -77,10 +77,17 @@ void FFMS_VideoSource::ReAdjustPP(PixelFormat VPixelFormat, int Width, int Heigh
 	int Flags =  GetPPCPUFlags();
 
 	switch (VPixelFormat) {
-		case PIX_FMT_YUV420P: Flags |= PP_FORMAT_420; break;
-		case PIX_FMT_YUV422P: Flags |= PP_FORMAT_422; break;
-		case PIX_FMT_YUV411P: Flags |= PP_FORMAT_411; break;
-		case PIX_FMT_YUV444P: Flags |= PP_FORMAT_444; break;
+		case PIX_FMT_YUV420P:
+		case PIX_FMT_YUVJ420P:
+			Flags |= PP_FORMAT_420; break;
+		case PIX_FMT_YUV422P:
+		case PIX_FMT_YUVJ422P:
+			Flags |= PP_FORMAT_422; break;
+		case PIX_FMT_YUV411P:
+			Flags |= PP_FORMAT_411; break;
+		case PIX_FMT_YUV444P:
+		case PIX_FMT_YUVJ444P:
+			Flags |= PP_FORMAT_444; break;
 		default:
 			ResetPP();
 			throw FFMS_Exception(FFMS_ERROR_POSTPROCESSING, FFMS_ERROR_UNSUPPORTED,
