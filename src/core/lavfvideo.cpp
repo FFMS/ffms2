@@ -108,7 +108,9 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
 	// Calculate the average framerate
 	if (Frames.size() >= 2) {
 		double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
-		VP.FPSDenominator = (unsigned int)(PTSDiff  / (double)1000 / (double)(VP.NumFrames - 1) + 0.5);
+		double TD = (double)(Frames.TB.Den);
+		double TN = (double)(Frames.TB.Num);
+		VP.FPSDenominator = (unsigned int)(((double)1000000) / (double)((VP.NumFrames - 1) / ((PTSDiff * TN/TD) / (double)1000)));
 		VP.FPSNumerator = 1000000;
 	}
 
