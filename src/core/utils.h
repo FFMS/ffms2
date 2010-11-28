@@ -34,9 +34,9 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
-#ifdef WITH_LIBPOSTPROC
+#ifdef FFMS_USE_POSTPROC
 #include <libpostproc/postprocess.h>
-#endif // WITH_LIBPOSTPROC
+#endif // FFMS_USE_POSTPROC
 }
 
 // must be included after ffmpeg headers

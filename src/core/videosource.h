@@ -25,9 +25,9 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
-#ifdef WITH_LIBPOSTPROC
+#ifdef FFMS_USE_POSTPROC
 #include <libpostproc/postprocess.h>
-#endif // WITH_LIBPOSTPROC
+#endif // FFMS_USE_POSTPROC
 }
 
 // must be included after ffmpeg headers
@@ -54,10 +54,10 @@ extern "C" {
 class FFMS_VideoSource {
 friend class FFSourceResources<FFMS_VideoSource>;
 private:
-#ifdef WITH_LIBPOSTPROC
+#ifdef FFMS_USE_POSTPROC
 	pp_context_t *PPContext;
 	pp_mode_t *PPMode;
-#endif // WITH_LIBPOSTPROC
+#endif // FFMS_USE_POSTPROC
 	SwsContext *SWS;
 	int LastFrameHeight;
 	int LastFrameWidth;
