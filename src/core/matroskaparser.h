@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2009 Mike Matsnev.  All Rights Reserved.
+ * Copyright (c) 2004-2008 Mike Matsnev.  All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,6 +24,8 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * $Id: MatroskaParser.h,v 1.22 2008/04/29 21:03:09 mike Exp $
  *
  */
 
