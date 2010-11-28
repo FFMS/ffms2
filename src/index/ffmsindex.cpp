@@ -226,7 +226,32 @@ static void DoIndexing () {
 }
 
 
+#ifdef _WIN32
+int wmain(int argc, wchar_t *_argv[]) {
+	char **argv = (char**)malloc(argc*sizeof(char));
+	for (int i=0; i<argc; i++) {
+		int len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, NULL, 0, NULL, NULL);
+		if (!len) {
+			const char* reason;
+			switch (GetLastError()) {
+				case ERROR_INSUFFICIENT_BUFFER: reason = "Buffer overrun"; break;
+				case ERROR_INVALID_FLAGS: reason = "Invalid flags"; break;
+				case ERROR_INVALID_PARAMETER: reason = "Invalid params"; break;
+				case ERROR_NO_UNICODE_TRANSLATION: reason = "No unicode translation available"; break;
+				default: reason = "dongs";
+			}
+			std::cout << reason << std::endl;
+			return 1;
+		}
+		char *temp = (char*)malloc(len*sizeof(char));
+		len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, temp, len, NULL, NULL);
+		if (!len)
+			return 1;
+		argv[i] = temp;
+	}
+#else
 int main(int argc, char *argv[]) {
+#endif
 	try {
 		ParseCMDLine(argc, argv);
 	} catch (const char *Error) {
@@ -247,7 +272,7 @@ int main(int argc, char *argv[]) {
 	}
 #endif /* _WIN32 */
 
-	FFMS_Init(0, 0);
+	FFMS_Init(0, 1);
 
 	switch (Verbose) {
 		case 0: FFMS_SetLogLevel(AV_LOG_QUIET); break;
