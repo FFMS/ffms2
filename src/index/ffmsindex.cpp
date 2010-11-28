@@ -228,7 +228,7 @@ static void DoIndexing () {
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 int wmain(int argc, wchar_t *_argv[]) {
-	char **argv = (char**)malloc(argc*sizeof(char));
+	char **argv = (char**)malloc(argc*sizeof(char*));
 	for (int i=0; i<argc; i++) {
 		int len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, NULL, 0, NULL, NULL);
 		if (!len) {
