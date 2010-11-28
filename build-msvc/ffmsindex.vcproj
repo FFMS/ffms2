@@ -21,7 +21,7 @@
 			IntermediateDirectory=".\ffmsindex\$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets=".\ffms2_include_dirs.vsprops"
-			CharacterSet="2"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -91,7 +91,7 @@
 			IntermediateDirectory="$(SolutionDir)$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets=".\ffms2_include_dirs.vsprops"
-			CharacterSet="2"
+			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
 			<Tool
