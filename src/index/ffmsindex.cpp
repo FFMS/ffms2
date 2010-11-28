@@ -226,7 +226,7 @@ static void DoIndexing () {
 }
 
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(MINGW32)
 int wmain(int argc, wchar_t *_argv[]) {
 	char **argv = (char**)malloc(argc*sizeof(char));
 	for (int i=0; i<argc; i++) {
@@ -249,9 +249,9 @@ int wmain(int argc, wchar_t *_argv[]) {
 			return 1;
 		argv[i] = temp;
 	}
-#else
+#else /* defined(_WIN32) && !defined(MINGW32) */
 int main(int argc, char *argv[]) {
-#endif
+#endif /* defined(_WIN32) && !defined(MINGW32) */
 	try {
 		ParseCMDLine(argc, argv);
 	} catch (const char *Error) {
@@ -272,7 +272,11 @@ int main(int argc, char *argv[]) {
 	}
 #endif /* _WIN32 */
 
+#if defined(_WIN32) && !defined(MINGW32)
 	FFMS_Init(0, 1);
+#else
+	FFMS_Init(0, 0);
+#endif
 
 	switch (Verbose) {
 		case 0: FFMS_SetLogLevel(AV_LOG_QUIET); break;
