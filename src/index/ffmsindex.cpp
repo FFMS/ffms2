@@ -232,21 +232,15 @@ int wmain(int argc, wchar_t *_argv[]) {
 	for (int i=0; i<argc; i++) {
 		int len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, NULL, 0, NULL, NULL);
 		if (!len) {
-			const char* reason;
-			switch (GetLastError()) {
-				case ERROR_INSUFFICIENT_BUFFER: reason = "Buffer overrun"; break;
-				case ERROR_INVALID_FLAGS: reason = "Invalid flags"; break;
-				case ERROR_INVALID_PARAMETER: reason = "Invalid params"; break;
-				case ERROR_NO_UNICODE_TRANSLATION: reason = "No unicode translation available"; break;
-				default: reason = "dongs";
-			}
-			std::cout << reason << std::endl;
+			std::cout << "Failed to translate commandline to Unicode" << std::endl;
 			return 1;
 		}
 		char *temp = (char*)malloc(len*sizeof(char));
 		len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, temp, len, NULL, NULL);
-		if (!len)
+		if (!len) {
+			std::cout << "Failed to translate commandline to Unicode" << std::endl;
 			return 1;
+		}
 		argv[i] = temp;
 	}
 #else /* defined(_WIN32) && !defined(MINGW32) */
