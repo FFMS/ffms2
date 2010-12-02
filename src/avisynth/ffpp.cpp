@@ -21,7 +21,7 @@
 #include "ffpp.h"
 #include "avsutils.h"
 
-#ifdef WITH_LIBPOSTPROC
+#ifdef FFMS_USE_POSTPROC
 
 FFPP::FFPP(PClip AChild, const char *PP, IScriptEnvironment *Env) : GenericVideoFilter(AChild) {
 	if (!strcmp(PP, ""))
@@ -97,4 +97,4 @@ PVideoFrame FFPP::GetFrame(int n, IScriptEnvironment* Env) {
 	return Dst;
 }
 
-#endif // WITH_LIBPOSTPROC
+#endif // FFMS_USE_POSTPROC

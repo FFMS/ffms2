@@ -107,6 +107,14 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	VP.ColorSpace = 0;
 	VP.ColorRange = 0;
 #endif
+	// these pixfmt's are deprecated but still used
+	if (
+		CodecContext->pix_fmt == PIX_FMT_YUVJ420P
+		|| CodecContext->pix_fmt == PIX_FMT_YUVJ422P
+		|| CodecContext->pix_fmt == PIX_FMT_YUVJ444P
+	)
+		VP.ColorRange = AVCOL_RANGE_JPEG;
+
 	VP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 	VP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 

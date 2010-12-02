@@ -45,6 +45,7 @@
 #	if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(52,29,0))
 #		define FFMS_HAVE_FFMPEG_COLORSPACE_INFO
 #	else
+#		define AVCOL_RANGE_JPEG 2
 #		ifdef _MSC_VER
 #			pragma message("WARNING: Your FFmpeg is too old to support reporting colorspace and luma range information. The corresponding fields of FFMS_VideoProperties will be set to 0. Please update FFmpeg to get rid of this warning.")
 #		else

@@ -350,7 +350,7 @@ if [ "$postproc" = "yes" ]; then
     if ! cc_check libpostproc/postprocess.h "$FFMPEG_CFLAGS $FFMPEG_LIBS" "pp_free_mode( 0 );" ; then
         die "unable to link against libpostproc"
     else
-        CPPFLAGS="$CPPFLAGS -DWITH_LIBPOSTPROC"
+        CPPFLAGS="$CPPFLAGS -DFFMS_USE_POSTPROC"
     fi
 fi
 
@@ -429,7 +429,7 @@ DEVNULL=$DEVNULL
 AVISYNTH=$avs
 SOFLAGS_USER=$SOFLAGS
 SYS=$SYS
-WITH_LIBPOSTPROC=$postproc
+FFMS_USE_POSTPROC=$postproc
 EOF
 
 if [ "$shared" = "yes" ]; then

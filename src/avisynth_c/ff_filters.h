@@ -31,7 +31,7 @@ AVS_Value FFVideoSource_create( AVS_ScriptEnvironment *env, const char *src, int
 AVS_Value FFAudioSource_create( AVS_ScriptEnvironment *env, const char *src, int track,
     FFMS_Index *index, int adjust_delay );
 
-#ifdef WITH_LIBPOSTPROC
+#ifdef FFMS_USE_POSTPROC
 AVS_Value FFPP_create( AVS_ScriptEnvironment *env, AVS_Value child, const char *pp );
 #endif
 

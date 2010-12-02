@@ -33,9 +33,9 @@ extern "C" {
 extern bool HasHaaliMPEG;
 extern bool HasHaaliOGG;
 
-#ifndef WITH_LIBPOSTPROC
+#ifndef FFMS_USE_POSTPROC
 unsigned postproc_version(void) { return 0; } // ugly workaround to avoid lots of ifdeffing
-#endif // WITH_LIBPOSTPROC
+#endif // FFMS_USE_POSTPROC
 
 struct IndexHeader {
 	uint32_t Id;
