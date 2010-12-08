@@ -326,8 +326,11 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 	IH.LAVFVersion = avformat_version();
 	IH.LAVCVersion = avcodec_version();
 	IH.LSWSVersion = swscale_version();
+#ifdef FFMS_USE_POSTPROC
 	IH.LPPVersion = postproc_version();
+#else
 	IH.LPPVersion = 0;
+#endif
 	IH.FileSize = Filesize;
 	memcpy(IH.FileSignature, Digest, sizeof(Digest));
 
