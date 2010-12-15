@@ -23,7 +23,11 @@
 
 #include <vector>
 #include <windows.h>
+#ifdef _WIN64
+#include "avisynth64.h"
+#else
 #include "avisynth.h"
+#endif
 #include "ffms.h"
 
 

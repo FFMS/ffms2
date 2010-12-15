@@ -32,7 +32,11 @@ extern "C" {
 #include "ffmscompat.h"
 
 #include <windows.h>
+#ifdef _WIN64
+#include "avisynth64.h"
+#else
 #include "avisynth.h"
+#endif
 
 class FFPP : public GenericVideoFilter {
 private:
