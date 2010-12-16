@@ -48,15 +48,13 @@ enum { AVISYNTH_INTERFACE_VERSION = 3 };
 // Win32 API macros, notably the types BYTE, DWORD, ULONG, etc.
 #include <windef.h>
 
-#ifdef _WIN64
-#if (_MSC_VER >= 1400)
+#if (defined(_WIN64) && (_MSC_VER >= 1400))
 extern "C" LONG __cdecl _InterlockedIncrement(LONG volatile * pn);
 extern "C" LONG __cdecl _InterlockedDecrement(LONG volatile * pn);
 #pragma intrinsic(_InterlockedIncrement)
 #pragma intrinsic(_InterlockedDecrement)
 #define InterlockedIncrement _InterlockedIncrement
 #define InterlockedDecrement _InterlockedDecrement
-#endif
 #endif
 
 // COM interface macros
