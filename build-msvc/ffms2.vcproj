@@ -469,10 +469,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\avisynth\avisynth64.h"
-				>
-			</File>
-			<File
 				RelativePath="..\src\avisynth\avssources.cpp"
 				>
 			</File>
