@@ -257,11 +257,11 @@ See above.</p>
 <pre>FFMS_AudioSource *FFMS_CreateAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, int DelayMode,
 	FFMS_ErrorInfo *ErrorInfo)</pre>
 <p>
-Does exactly the same thing as <tt>FFMS_CreateVideoSource</tt>, but for audio tracks. Arguments and return values are identical. Do note that audio support is somewhat experimental and not guaranteed to be sample-accurate.
+Does exactly the same thing as <tt>FFMS_CreateVideoSource</tt>, but for audio tracks. Except for DelayMode, arguments and return values are identical.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>int DelayMode</tt></b></p>
-<p>Controls how audio with a non-zero first PTS is handled<p>
+<p>Controls how audio with a non-zero first PTS is handled</p>
 <ul>
     <li><b>-3:</b> Sample 0 = first sample in the file; no adjustment is made</li>
     <li><b>-2:</b> Sample 0 = Audio at time zero</li>
