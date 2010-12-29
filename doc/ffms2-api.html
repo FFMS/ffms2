@@ -263,9 +263,9 @@ Does exactly the same thing as <tt>FFMS_CreateVideoSource</tt>, but for audio tr
 <p><b><tt>int DelayMode</tt></b></p>
 <p>Controls how audio with a non-zero first PTS is handled</p>
 <ul>
-    <li><b>-3:</b> Sample 0 = first sample in the file; no adjustment is made</li>
-    <li><b>-2:</b> Sample 0 = Audio at time zero</li>
-    <li><b>-1:</b> Sample 0 = Audio at frame 0 of the first video track</li>
+    <li><b>FFMS_DELAY_NO_SHIFT:</b> Sample 0 = first sample in the file; no adjustment is made</li>
+    <li><b>FFMS_DELAY_TIME_ZERO:</b> Sample 0 = Audio at time zero</li>
+    <li><b>FFMS_DELAY_FIRST_VIDEO_TRACK:</b> Sample 0 = Audio at frame 0 of the first video track</li>
     <li><b>&gt;=0:</b> Sample 0 = Audio at frame 0 of the specified video track</li>
 </ul>
 

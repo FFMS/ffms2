@@ -89,11 +89,11 @@ void FFMS_AudioSource::Init(FFMS_Index &Index, int DelayMode) {
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Codec returned zero size audio");
 
-	if (DelayMode < -3)
+	if (DelayMode < FFMS_DELAY_NO_SHIFT)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Bad audio delay compensation mode");
 
-	if (DelayMode == -3) return;
+	if (DelayMode == FFMS_DELAY_NO_SHIFT) return;
 
 	if (DelayMode > (signed)Index.size())
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
@@ -104,8 +104,8 @@ void FFMS_AudioSource::Init(FFMS_Index &Index, int DelayMode) {
 			"Audio delay compensation must be relative to a video track");
 
 	double AdjustRelative = 0;
-	if (DelayMode >= -1) {
-		if (DelayMode == -1) {
+	if (DelayMode != FFMS_DELAY_TIME_ZERO) {
+		if (DelayMode == FFMS_DELAY_FIRST_VIDEO_TRACK) {
 			for (size_t i = 0; i < Index.size(); ++i) {
 				if (Index[i].TT == FFMS_TYPE_VIDEO) {
 					DelayMode = i;

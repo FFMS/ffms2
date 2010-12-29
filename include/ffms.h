@@ -178,6 +178,12 @@ enum FFMS_Resizers {
 	FFMS_RESIZER_SPLINE			= 0x0400
 };
 
+enum FFMS_AudioDelayModes {
+	FFMS_DELAY_NO_SHIFT				= -3,
+	FFMS_DELAY_TIME_ZERO			= -2,
+	FFMS_DELAY_FIRST_VIDEO_TRACK	= -1
+};
+
 typedef struct {
 	uint8_t *Data[4];
 	int Linesize[4];
