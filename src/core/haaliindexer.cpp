@@ -160,7 +160,6 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 			IndexMask &= ~(1 << i);
 		}
 	}
-//
 
 	AVPacket TempPacket;
 	InitNullPacket(TempPacket);
@@ -191,7 +190,6 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 		pMMF->GetPointer(&TempPacket.data);
 		TempPacket.size = pMMF->GetActualDataLength();
 
-		// Only create index entries for video for now to save space
 		if (TrackType[Track] == FFMS_TYPE_VIDEO) {
 			uint8_t *OB;
 			int OBSize;
@@ -204,70 +202,12 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 
 			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(Ts, RepeatPict, pMMF->IsSyncPoint() == S_OK));
 		} else if (TrackType[Track] == FFMS_TYPE_AUDIO && (IndexMask & (1 << Track))) {
+			TempPacket.flags = pMMF->IsSyncPoint() == S_OK ? AV_PKT_FLAG_KEY : 0;
+
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
-			AVCodecContext *AudioCodecContext = AudioContexts[Track].CodecContext;
+			int64_t SampleCount = IndexAudioPacket(Track, &TempPacket, AudioContexts[Track], *TrackIndices);
 
-			if (pMMF->IsSyncPoint() == S_OK)
-				TempPacket.flags = AV_PKT_FLAG_KEY;
-			else
-				TempPacket.flags = 0;
-
-			bool first = true;
-			int LastNumChannels;
-			int LastSampleRate;
-			AVSampleFormat LastSampleFormat;
-			while (TempPacket.size > 0) {
-				int dbsize = AVCODEC_MAX_AUDIO_FRAME_SIZE*10;
-				int Ret = avcodec_decode_audio3(AudioCodecContext, &DecodingBuffer[0], &dbsize, &TempPacket);
-				if (Ret < 0) {
-					if (ErrorHandling == FFMS_IEH_ABORT) {
-						throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
-							"Audio decoding error");
-					} else if (ErrorHandling == FFMS_IEH_CLEAR_TRACK) {
-						(*TrackIndices)[Track].clear();
-						IndexMask &= ~(1 << Track);
-						break;
-					} else if (ErrorHandling == FFMS_IEH_STOP_TRACK) {
-						IndexMask &= ~(1 << Track);
-						break;
-					} else if (ErrorHandling == FFMS_IEH_IGNORE) {
-						break;
-					}
-				}
-
-				if (first) {
-					LastNumChannels		= AudioCodecContext->channels;
-					LastSampleRate		= AudioCodecContext->sample_rate;
-					LastSampleFormat	= AudioCodecContext->sample_fmt;
-					first = false;
-				}
-
-				if (LastNumChannels != AudioCodecContext->channels || LastSampleRate != AudioCodecContext->sample_rate
-					|| LastSampleFormat != AudioCodecContext->sample_fmt) {
-					std::ostringstream buf;
-					buf <<
-						"Audio format change detected. This is currently unsupported."
-						<< " Channels: " << LastNumChannels << " -> " << AudioCodecContext->channels << ";"
-						<< " Sample rate: " << LastSampleRate << " -> " << AudioCodecContext->sample_rate << ";"
-						<< " Sample format: " << GetLAVCSampleFormatName(LastSampleFormat) << " -> "
-						<< GetLAVCSampleFormatName(AudioCodecContext->sample_fmt);
-					throw FFMS_Exception(FFMS_ERROR_UNSUPPORTED, FFMS_ERROR_DECODING, buf.str());
-				}
-
-				if (Ret > 0) {
-					TempPacket.size -= Ret;
-					TempPacket.data += Ret;
-				}
-
-				if (dbsize > 0)
-					AudioContexts[Track].CurrentSample += (dbsize * 8) / (av_get_bits_per_sample_fmt(AudioCodecContext->sample_fmt) * AudioCodecContext->channels);
-
-				if (DumpMask & (1 << Track))
-					WriteAudio(AudioContexts[Track], TrackIndices.get(), Track, dbsize);
-			}
-
-			(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(Ts, StartSample,
-				static_cast<unsigned int>(AudioContexts[Track].CurrentSample - StartSample), pMMF->IsSyncPoint() == S_OK));
+			(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(Ts, StartSample, SampleCount, pMMF->IsSyncPoint() == S_OK));
 		}
 	}
 

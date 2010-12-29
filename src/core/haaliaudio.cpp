@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2009 Fredrik Mellbin
+//  Copyright (c) 2011 Thomas Goyne <tgoyne@gmail.com>
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -22,122 +22,57 @@
 
 #include "audiosource.h"
 
-
-
-void FFHaaliAudio::Free(bool CloseCodec) {
-	if (CloseCodec)
-		avcodec_close(CodecContext);
-	av_freep(&CodecContext);
-}
-
-void FFHaaliAudio::DecodeNextAudioBlock(int64_t *AFirstStartTime, int64_t *Count) {
-	const size_t SizeConst = (av_get_bits_per_sample_fmt(CodecContext->sample_fmt) * CodecContext->channels) / 8;
-	int Ret = -1;
-	*AFirstStartTime = -1;
-	*Count = 0;
-	uint8_t *Buf = &DecodingBuffer[0];
-	AVPacket Packet;
-	InitNullPacket(Packet);
-
-	for (;;) {
-		CComPtr<IMMFrame> pMMF;
-		if (pMMC->ReadFrame(NULL, &pMMF) != S_OK)
-			break;
-
-		REFERENCE_TIME  Ts, Te;
-		if (*AFirstStartTime < 0 && SUCCEEDED(pMMF->GetTime(&Ts, &Te)))
-			*AFirstStartTime = Ts;
-
-		if (pMMF->GetTrack() == AudioTrack) {
-			BYTE *Data = NULL;
-			if (FAILED(pMMF->GetPointer(&Data)))
-				goto Done;
-
-			Packet.data = Data;
-			Packet.size = pMMF->GetActualDataLength();
-			if (pMMF->IsSyncPoint() == S_OK)
-				Packet.flags = AV_PKT_FLAG_KEY;
-			else
-				Packet.flags = 0;
-
-			while (Packet.size > 0) {
-				int TempOutputBufSize = AVCODEC_MAX_AUDIO_FRAME_SIZE * 10;
-				Ret = avcodec_decode_audio3(CodecContext, (int16_t *)Buf, &TempOutputBufSize, &Packet);
-
-				if (Ret < 0) {// throw error or something?
-					goto Done;
-				}
-
-				if (Ret > 0) {
-					Packet.size -= Ret;
-					Packet.data += Ret;
-					Buf += TempOutputBufSize;
-					if (SizeConst)
-						*Count += TempOutputBufSize / SizeConst;
-				}
-			}
-
-			goto Done;
-        }
-	}
-
-Done:;
-}
-
-FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index *Index, enum FFMS_Sources SourceMode)
-						   : Res(FFSourceResources<FFMS_AudioSource>(this)), FFMS_AudioSource(SourceFile, Index, Track) {
-	AVCodec *Codec = NULL;
-	CodecContext = NULL;
-	AudioTrack = Track;
-	Frames = (*Index)[AudioTrack];
-
+FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index, enum FFMS_Sources SourceMode, int DelayMode)
+: FFMS_AudioSource(SourceFile, Index, Track) {
 	pMMC = HaaliOpenFile(SourceFile, SourceMode);
 
 	int CodecPrivateSize = 0;
-	int CurrentTrack = 0;
 	CComPtr<IEnumUnknown> pEU;
-	CComQIPtr<IPropertyBag> pBag;
-	if (SUCCEEDED(pMMC->EnumTracks(&pEU))) {
-		CComPtr<IUnknown> pU;
-		while (pEU->Next(1, &pU, NULL) == S_OK) {
-			if (CurrentTrack++ == Track) {
-				pBag = pU;
+	if (!SUCCEEDED(pMMC->EnumTracks(&pEU)))
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+			"Failed to enumerate tracks");
 
-				if (pBag) {
-					CComVariant pV;
+	CComPtr<IUnknown> pU;
+	int CurrentTrack = -1;
+	while (pEU->Next(1, &pU, NULL) == S_OK && ++CurrentTrack != Track) pU = NULL;
+	CComQIPtr<IPropertyBag> pBag = pU;
 
-					pV.Clear();
-					if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
-						CodecPrivateSize = vtSize(pV);
-						CodecPrivate.resize(CodecPrivateSize);
-						vtCopy(pV, FFMS_GET_VECTOR_PTR(CodecPrivate));
-					}
+	if (CurrentTrack != Track || !pBag)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+			"Failed to find track");
 
-					pV.Clear();
-					if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
-						char ACodecID[2048];
-						wcstombs(ACodecID, pV.bstrVal, 2000);
+	CComVariant pV;
 
-						int BitDepth = 0;
-						pV.Clear();
-						if (SUCCEEDED(pBag->Read(L"Audio.BitDepth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-							BitDepth = pV.uintVal;
-
-						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, FFMS_GET_VECTOR_PTR(CodecPrivate), 0, BitDepth));
-					}
-				}
-			}
-			pU = NULL;
-		}
+	pV.Clear();
+	if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
+		CodecPrivateSize = vtSize(pV);
+		CodecPrivate.resize(CodecPrivateSize);
+		vtCopy(pV, FFMS_GET_VECTOR_PTR(CodecPrivate));
 	}
 
-	CodecContext = avcodec_alloc_context();
-	CodecContext->extradata = FFMS_GET_VECTOR_PTR(CodecPrivate);
-	CodecContext->extradata_size = CodecPrivateSize;
+	AVCodec *Codec = NULL;
+
+	pV.Clear();
+	if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
+		char ACodecID[2048];
+		wcstombs(ACodecID, pV.bstrVal, 2000);
+
+		int BitDepth = 0;
+		pV.Clear();
+		if (SUCCEEDED(pBag->Read(L"Audio.BitDepth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+			BitDepth = pV.uintVal;
+
+		Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, FFMS_GET_VECTOR_PTR(CodecPrivate), 0, BitDepth));
+	}
+	pU = NULL;
 
 	if (Codec == NULL)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Audio codec not found");
+
+	CodecContext = avcodec_alloc_context();
+	CodecContext->extradata = FFMS_GET_VECTOR_PTR(CodecPrivate);
+	CodecContext->extradata_size = CodecPrivateSize;
 
 	InitializeCodecContextFromHaaliInfo(pBag, CodecContext);
 
@@ -145,80 +80,34 @@ FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index *Index,
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Could not open audio codec");
 
-	Res.CloseCodec(true);
-
-	// Always try to decode a frame to make sure all required parameters are known
-	int64_t Dummy1, Dummy2;
-	DecodeNextAudioBlock(&Dummy1, &Dummy2);
-
-	pMMC->Seek(Frames[0].PTS, MKVF_SEEK_TO_PREV_KEYFRAME_STRICT);
-	avcodec_flush_buffers(CodecContext);
-
-	FillAP(AP, CodecContext, Frames);
-
-	if (AP.SampleRate <= 0 || AP.BitsPerSample <= 0)
-		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-			"Codec returned zero size audio");
-
-	AudioCache.Initialize((AP.Channels * AP.BitsPerSample) / 8, 50);
+	Init(Index, DelayMode);
 }
 
-void FFHaaliAudio::GetAudio(void *Buf, int64_t Start, int64_t Count) {
-	GetAudioCheck(Start, Count);
+bool FFHaaliAudio::ReadPacket(AVPacket *Packet) {
+	InitNullPacket(*Packet);
 
-	const int64_t SizeConst = (av_get_bits_per_sample_fmt(CodecContext->sample_fmt) * CodecContext->channels) / 8;
-	memset(Buf, 0, static_cast<size_t>(SizeConst * Count));
-	bool HasSeeked = false;
+	for (;;) {
+		pMMF = NULL;
+		if (pMMC->ReadFrame(NULL, &pMMF) != S_OK)
+			return false;
 
-	int PreDecBlocks = 0;
-	uint8_t *DstBuf = static_cast<uint8_t *>(Buf);
+		if (pMMF->GetTrack() != TrackNumber) continue;
 
-	// Fill with everything in the cache
-	int64_t CacheEnd = AudioCache.FillRequest(Start, Count, DstBuf);
-	// Was everything in the cache?
-	if (CacheEnd == Start + Count)
-		return;
+		REFERENCE_TIME Ts, Te;
+		if (SUCCEEDED(pMMF->GetTime(&Ts, &Te)))
+			PacketNumber = Frames.ClosestFrameFromPTS(Ts);
 
-	int CurrentAudioBlock;
+		if (FAILED(pMMF->GetPointer(&Packet->data)))
+			return false;
 
-	if (CurrentSample != CacheEnd) {
-		PreDecBlocks = 15;
-		CurrentAudioBlock = FFMAX((int64_t)Frames.FindClosestAudioKeyFrame(CacheEnd) - PreDecBlocks - 20, (int64_t)0);
-
-		if (CurrentAudioBlock <= PreDecBlocks) {
-			CurrentAudioBlock = 0;
-			PreDecBlocks = 0;
-		}
-
-		pMMC->Seek(Frames[CurrentAudioBlock].PTS, MKVF_SEEK_TO_PREV_KEYFRAME_STRICT);
-		avcodec_flush_buffers(CodecContext);
-		HasSeeked = true;
-	} else {
-		CurrentAudioBlock = Frames.FindClosestAudioKeyFrame(CurrentSample);
+		Packet->size = pMMF->GetActualDataLength();
+		Packet->flags = pMMF->IsSyncPoint() == S_OK ? AV_PKT_FLAG_KEY : 0;
+		return true;
 	}
+}
 
-	int64_t FirstTime, DecodeCount;
-
-	do {
-		DecodeNextAudioBlock(&FirstTime, &DecodeCount);
-
-		if (HasSeeked) {
-			CurrentAudioBlock = Frames.ClosestFrameFromPTS(FirstTime);
-			HasSeeked = false;
-		}
-
-		// Cache the block if enough blocks before it have been decoded to avoid garbage
-		if (PreDecBlocks == 0) {
-			AudioCache.CacheBlock(Frames[CurrentAudioBlock].SampleStart, DecodeCount, &DecodingBuffer[0]);
-			CacheEnd = AudioCache.FillRequest(CacheEnd, Start + Count - CacheEnd, DstBuf + (CacheEnd - Start) * SizeConst);
-		} else {
-			PreDecBlocks--;
-		}
-
-		CurrentAudioBlock++;
-		if (CurrentAudioBlock < static_cast<int>(Frames.size()))
-			CurrentSample = Frames[CurrentAudioBlock].SampleStart;
-	} while (Start + Count - CacheEnd > 0 && CurrentAudioBlock < static_cast<int>(Frames.size()));
+void FFHaaliAudio::Seek() {
+	pMMC->Seek(Frames[PacketNumber].PTS, MKVF_SEEK_TO_PREV_KEYFRAME_STRICT);
 }
 
 #endif // HAALISOURCE

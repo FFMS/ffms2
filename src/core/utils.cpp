@@ -279,9 +279,11 @@ void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
 	AP.Channels = CTX->channels;;
 	AP.ChannelLayout = CTX->channel_layout;
 	AP.SampleRate = CTX->sample_rate;
-	AP.NumSamples = (Frames.back()).SampleStart + (Frames.back()).SampleCount;
-	AP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
-	AP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+	if (Frames.size() > 0) {
+		AP.NumSamples = (Frames.back()).SampleStart + (Frames.back()).SampleCount;
+		AP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+		AP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+	}
 }
 
 #ifdef HAALISOURCE
@@ -603,11 +605,9 @@ CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources So
 #endif
 
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
-	if (av_open_input_file(&FormatContext, SourceFile, NULL, 0, NULL) != 0) {
-		std::ostringstream buf;
-		buf << "Couldn't open '" << SourceFile << "'";
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
+	if (av_open_input_file(&FormatContext, SourceFile, NULL, 0, NULL) != 0)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("Couldn't open '") + SourceFile + "'");
 
 	if (av_find_stream_info(FormatContext) < 0) {
 		av_close_input_file(FormatContext);

@@ -129,6 +129,7 @@ public:
 
 	~MatroskaReaderContext() {
 		free(Buffer);
+		if (ST.fp) fclose(ST.fp);
 	}
 };
 

@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2009 Fredrik Mellbin
+//  Copyright (c) 2011 Thomas Goyne <tgoyne@gmail.com>
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -20,105 +20,199 @@
 
 #include "audiosource.h"
 
-/* Audio Cache */
+#include <algorithm>
+#include <cassert>
 
-TAudioBlock::TAudioBlock(int64_t Start, int64_t Samples, uint8_t *SrcData, size_t SrcBytes) {
-	this->Start = Start;
-	this->Samples = Samples;
-	Data = new uint8_t[SrcBytes];
-	memcpy(Data, SrcData, SrcBytes);
-}
-
-TAudioBlock::~TAudioBlock() {
-	delete[] Data;
-}
-
-TAudioCache::TAudioCache() {
-	MaxCacheBlocks = 0;
-	BytesPerSample = 0;
-}
-
-TAudioCache::~TAudioCache() {
-	for (TAudioCache::iterator it=begin(); it != end(); it++)
-		delete *it;
-}
-
-void TAudioCache::Initialize(int BytesPerSample, int MaxCacheBlocks) {
-	this->BytesPerSample = BytesPerSample;
-	this->MaxCacheBlocks = MaxCacheBlocks;
-}
-
-void TAudioCache::CacheBlock(int64_t Start, int64_t Samples, uint8_t *SrcData) {
-	if (BytesPerSample > 0) {
-		for (TAudioCache::iterator it=begin(); it != end(); it++) {
-			if ((*it)->Start == Start) {
-				delete *it;
-				erase(it);
-				break;
-			}
-		}
-
-		push_front(new TAudioBlock(Start, Samples, SrcData, static_cast<size_t>(Samples * BytesPerSample)));
-		if (static_cast<int>(size()) >= MaxCacheBlocks) {
-			delete back();
-			pop_back();
-		}
-	}
-}
-
-bool TAudioCache::AudioBlockComp(TAudioBlock *A, TAudioBlock *B) {
-	return A->Start < B->Start;
-}
-
-int64_t TAudioCache::FillRequest(int64_t Start, int64_t Samples, uint8_t *Dst) {
-	// May be better to move used blocks to the front
-	std::list<TAudioBlock *> UsedBlocks;
-	for (TAudioCache::iterator it=begin(); it != end(); it++) {
-		int64_t SrcOffset = FFMAX(0, Start - (*it)->Start);
-		int64_t DstOffset = FFMAX(0, (*it)->Start - Start);
-		int64_t CopySamples = FFMIN((*it)->Samples - SrcOffset, Samples - DstOffset);
-		if (CopySamples > 0) {
-			memcpy(Dst + DstOffset * BytesPerSample, (*it)->Data + SrcOffset * BytesPerSample, static_cast<size_t>(CopySamples * BytesPerSample));
-			UsedBlocks.push_back(*it);
-		}
-	}
-	UsedBlocks.sort(AudioBlockComp);
-	int64_t Ret = Start;
-	for (std::list<TAudioBlock *>::iterator it = UsedBlocks.begin(); it != UsedBlocks.end(); it++) {
-		if (it == UsedBlocks.begin() || Ret == (*it)->Start)
-			Ret = (*it)->Start + (*it)->Samples;
-		else
-			break;
-	}
-	return FFMIN(Ret, Start + Samples);
-}
-
-/* FFMS_AudioSource base class */
-
-FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index *Index, int Track) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10), CurrentSample(0) {
-	if (Track < 0 || Track >= static_cast<int>(Index->size()))
+FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track)
+: Delay(0)
+, MaxCacheBlocks(50)
+, BytesPerSample(0)
+, Decoded(0)
+, CurrentSample(-1)
+, PacketNumber(0)
+, CurrentFrame(NULL)
+, TrackNumber(Track)
+, SeekOffset(0)
+, DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10)
+, CodecContext(NULL)
+{
+	if (Track < 0 || Track >= static_cast<int>(Index.size()))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Out of bounds track index selected");
 
-	if (Index->at(Track).TT != FFMS_TYPE_AUDIO)
+	if (Index[Track].TT != FFMS_TYPE_AUDIO)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Not an audio track");
 
-	if (Index->at(Track).size() == 0)
+	if (Index[Track].empty())
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Audio track contains no audio frames");
 
-	if (!Index->CompareFileSignature(SourceFile))
+	Frames = Index[Track];
+
+	if (!Index.CompareFileSignature(SourceFile))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_MISMATCH,
 			"The index does not match the source file");
 }
+void FFMS_AudioSource::Init(FFMS_Index &Index, int DelayMode) {
+	// The first packet after a seek is often decoded incorrectly, which
+	// makes it impossible to ever correctly seek back to the beginning, so
+	// store the first block now
 
-FFMS_AudioSource::~FFMS_AudioSource() {
+	// In addition, anything with the same PTS as the first packet can't be
+	// distinguished from the first packet and so can't be seeked to, so
+	// store those as well
+
+	// Some of LAVF's splitters don't like to seek to the beginning of the
+	// file (ts and?), so cache a few blocks even if PTSes are unique
+	// Packet 7 is the last packet I've had be unseekable to, so cache up to
+	// 10 for a bit of an extra buffer
+	while ((Frames[0].PTS != ffms_av_nopts_value && Frames[PacketNumber].PTS == Frames[0].PTS) || Cache.size() < 10) {
+		DecodeNextBlock();
+		CacheBlock(Cache.end(), CurrentSample, Decoded, &DecodingBuffer[0]);
+	}
+	// Store the iterator to the last element of the cache which is used for
+	// correctness rather than speed, so that when looking for one to delete
+	// we know how much to skip
+	CacheNoDelete = Cache.end();
+	--CacheNoDelete;
+
+	// Read properties of the audio which may not be available until the first
+	// frame has been decoded
+	FillAP(AP, CodecContext, Frames);
+
+	if (AP.SampleRate <= 0 || AP.BitsPerSample <= 0)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+			"Codec returned zero size audio");
 
 }
 
-void FFMS_AudioSource::GetAudioCheck(int64_t Start, int64_t Count) {
+FFMS_AudioSource::~FFMS_AudioSource() {
+	if (CodecContext) {
+		avcodec_close(CodecContext);
+		av_freep(&CodecContext);
+	}
+}
+
+void FFMS_AudioSource::CacheBlock(CacheIterator &pos, int64_t Start, int64_t Samples, uint8_t *SrcData) {
+	Cache.insert(pos, AudioBlock(Start, Samples, SrcData, static_cast<size_t>(Samples * BytesPerSample)));
+
+	if (Cache.size() >= MaxCacheBlocks) {
+		// Kill the oldest one
+		CacheIterator min = CacheNoDelete;
+		// Never drop the first one as the first packet decoded after a seek
+		// is often decoded incorrectly and we can't seek to before the first one
+		++min;
+		for (CacheIterator it = min; it != Cache.end(); ++it)
+			if (it->Age < min->Age) min = it;
+		if (min == pos) ++pos;
+		Cache.erase(min);
+	}
+}
+
+void FFMS_AudioSource::DecodeNextBlock() {
+	if (BytesPerSample == 0) BytesPerSample = (av_get_bits_per_sample_format(CodecContext->sample_fmt) * CodecContext->channels) / 8;
+
+	CurrentFrame = &Frames[PacketNumber];
+
+	AVPacket Packet;
+	if (!ReadPacket(&Packet))
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_UNKNOWN, "ReadPacket unexpectedly failed to read a packet");
+
+	// ReadPacket may have changed the packet number
+	CurrentFrame = &Frames[PacketNumber];
+	CurrentSample = CurrentFrame->SampleStart;
+	++PacketNumber;
+
+	uint8_t *Buf = &DecodingBuffer[0];
+	uint8_t *Data = Packet.data;
+	while (Packet.size > 0) {
+		int TempOutputBufSize = AVCODEC_MAX_AUDIO_FRAME_SIZE * 10 - (Buf - &DecodingBuffer[0]);
+		int Ret = avcodec_decode_audio3(CodecContext, (int16_t *)Buf, &TempOutputBufSize, &Packet);
+
+		// Should only ever happen if the user chose to ignore decoding errors
+		// during indexing, so continue to just ignore decoding errors
+		if (Ret < 0) break;
+
+		if (Ret > 0) {
+			Packet.size -= Ret;
+			Packet.data += Ret;
+			Buf += TempOutputBufSize;
+		}
+	}
+	Packet.data = Data;
+	FreePacket(&Packet);
+
+	Decoded = (Buf - &DecodingBuffer[0]) / BytesPerSample;
+}
+
+static bool SampleStartComp(const TFrameInfo &a, const TFrameInfo &b) {
+	return a.SampleStart < b.SampleStart;
+}
+
+void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 	if (Start < 0 || Start + Count > AP.NumSamples)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_INVALID_ARGUMENT,
 			"Out of bounds audio samples requested");
+
+	uint8_t *Dst = static_cast<uint8_t*>(Buf);
+
+	CacheIterator it = Cache.begin();
+
+	while (Count > 0) {
+		// Find first useful cache block
+		while (it != Cache.end() && it->Start + it->Samples <= Start) ++it;
+
+		// Cache has the next block we want
+		if (it != Cache.end() && it->Start <= Start) {
+			int64_t SrcOffset = FFMAX(0, Start - it->Start);
+			int64_t DstOffset = FFMAX(0, it->Start - Start);
+			int64_t CopySamples = FFMIN(it->Samples - SrcOffset, Count - DstOffset);
+			size_t Bytes = static_cast<size_t>(CopySamples * BytesPerSample);
+
+			memcpy(Dst + DstOffset * BytesPerSample, &it->Data[SrcOffset * BytesPerSample], Bytes);
+			Start += CopySamples;
+			Count -= CopySamples;
+			Dst += Bytes;
+			++it;
+		}
+		// Decode another block
+		else {
+			if (Start < CurrentSample && SeekOffset == -1)
+				throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_CODEC, "Audio stream is not seekable");
+
+			if (SeekOffset >= 0 && (Start < CurrentSample || Start > CurrentSample + Decoded * 5)) {
+				TFrameInfo f;
+				f.SampleStart = Start;
+				int NewPacketNumber = std::distance(Frames.begin(), std::lower_bound(Frames.begin(), Frames.end(), f, SampleStartComp));
+				NewPacketNumber = FFMAX(0, NewPacketNumber - SeekOffset - 15);
+				while (NewPacketNumber > 0 && !Frames[NewPacketNumber].KeyFrame) --NewPacketNumber;
+
+				// Only seek forward if it'll actually result in moving forward
+				if (Start < CurrentSample || NewPacketNumber > PacketNumber) {
+					PacketNumber = NewPacketNumber;
+					Decoded = 0;
+					CurrentSample = -1;
+					avcodec_flush_buffers(CodecContext);
+					Seek();
+				}
+			}
+
+			// Decode everything between the last keyframe and the block we want
+			while (CurrentSample + Decoded <= Start) DecodeNextBlock();
+			assert(CurrentSample <= Start);
+
+			CacheBlock(it, CurrentSample, Decoded, &DecodingBuffer[0]);
+
+			size_t FirstSample = Start - CurrentSample;
+			size_t Samples = Decoded - FirstSample;
+			size_t Bytes = FFMIN(Samples, Count) * BytesPerSample;
+
+			memcpy(Dst, &DecodingBuffer[FirstSample * BytesPerSample], Bytes);
+
+			Start += Samples;
+			Count -= Samples;
+			Dst += Bytes;
+		}
+	}
 }
