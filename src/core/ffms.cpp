@@ -25,6 +25,11 @@
 #include "audiosource.h"
 #include "indexing.h"
 
+extern "C" {
+#include <libavutil/pixdesc.h>
+}
+
+
 #ifdef FFMS_WIN_DEBUG
 #	include <windows.h>
 #endif
@@ -441,7 +446,7 @@ FFMS_API(int) FFMS_WriteIndex(const char *IndexFile, FFMS_Index *Index, FFMS_Err
 }
 
 FFMS_API(int) FFMS_GetPixFmt(const char *Name) {
-	return avcodec_get_pix_fmt(Name);
+	return av_get_pix_fmt(Name);
 }
 
 FFMS_API(int) FFMS_GetPresentSources() {
