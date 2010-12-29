@@ -126,8 +126,11 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
 			int64_t SampleCount = IndexAudioPacket(Track, &Packet, AudioContexts[Track], *TrackIndices);
 
-			(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(LastValidTS[Track], StartSample,
-				SampleCount, KeyFrame, Packet.pos));
+			// WavPack has a terminating packet with pts zero and no data that
+			// we don't want to include in the index
+			if (LastValidTS[Track] != 0 || SampleCount != 0)
+				(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(LastValidTS[Track],
+					StartSample, SampleCount, KeyFrame, Packet.pos));
 		}
 
 		av_free_packet(&Packet);
