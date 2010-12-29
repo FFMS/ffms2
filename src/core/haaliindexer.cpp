@@ -142,7 +142,9 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
 			int64_t SampleCount = IndexAudioPacket(Track, &TempPacket, AudioContexts[Track], *TrackIndices);
 
-			(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(Ts, StartSample, SampleCount, pMMF->IsSyncPoint() == S_OK));
+			if (SampleCount != 0)
+				(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(Ts,
+					StartSample, SampleCount, pMMF->IsSyncPoint() == S_OK));
 		}
 	}
 

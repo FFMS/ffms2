@@ -72,7 +72,8 @@ void FFMS_AudioSource::Init(FFMS_Index &Index, int DelayMode) {
 		 Cache.size() < 10)) {
 
 		DecodeNextBlock();
-		CacheBlock(end, CurrentSample, Decoded, &DecodingBuffer[0]);
+		if (Decoded)
+			CacheBlock(end, CurrentSample, Decoded, &DecodingBuffer[0]);
 	}
 	// Store the iterator to the last element of the cache which is used for
 	// correctness rather than speed, so that when looking for one to delete
@@ -140,6 +141,11 @@ void FFMS_AudioSource::DecodeNextBlock() {
 	FreePacket(&Packet);
 
 	Decoded = (Buf - &DecodingBuffer[0]) / BytesPerSample;
+	if (Decoded == 0) {
+		// zero sample packets aren't included in the index so we didn't
+		// actually move to the next packet
+		--PacketNumber;
+	}
 }
 
 static bool SampleStartComp(const TFrameInfo &a, const TFrameInfo &b) {
