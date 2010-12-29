@@ -254,11 +254,20 @@ See above.</p>
 <p>Returns a pointer to the created <tt>FFMS_VideoSource</tt> object on success. Returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.</p>
 
 <h3>FFMS_CreateAudioSource - creates an audio source object</h3>
-<pre>FFMS_AudioSource *FFMS_CreateAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
+<pre>FFMS_AudioSource *FFMS_CreateAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, int DelayMode,
 	FFMS_ErrorInfo *ErrorInfo)</pre>
 <p>
 Does exactly the same thing as <tt>FFMS_CreateVideoSource</tt>, but for audio tracks. Arguments and return values are identical. Do note that audio support is somewhat experimental and not guaranteed to be sample-accurate.
 </p>
+<h4>Arguments</h4>
+<p><b><tt>int DelayMode</tt></b></p>
+<p>Controls how audio with a non-zero first PTS is handled<p>
+<ul>
+    <li><b>-3:</b> Sample 0 = first sample in the file; no adjustment is made</li>
+    <li><b>-2:</b> Sample 0 = Audio at time zero</li>
+    <li><b>-1:</b> Sample 0 = Audio at frame 0 of the first video track</li>
+    <li><b>&gt;=0:</b> Sample 0 = Audio at frame 0 of the specified video track</li>
+</ul>
 
 <h3>FFMS_DestroyVideoSource, FFMS_DestroyAudioSource - deallocates a video or audio source object</h3>
 <pre>void FFMS_DestroyVideoSource(FFMS_VideoSource *V)

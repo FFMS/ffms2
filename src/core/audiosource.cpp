@@ -89,6 +89,39 @@ void FFMS_AudioSource::Init(FFMS_Index &Index, int DelayMode) {
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Codec returned zero size audio");
 
+	if (DelayMode < -3)
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+			"Bad audio delay compensation mode");
+
+	if (DelayMode == -3) return;
+
+	if (DelayMode > (signed)Index.size())
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+			"Out of bounds track index selected for audio delay compensation");
+
+	if (DelayMode >= 0 && Index[DelayMode].TT != FFMS_TYPE_VIDEO)
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+			"Audio delay compensation must be relative to a video track");
+
+	double AdjustRelative = 0;
+	if (DelayMode >= -1) {
+		if (DelayMode == -1) {
+			for (size_t i = 0; i < Index.size(); ++i) {
+				if (Index[i].TT == FFMS_TYPE_VIDEO) {
+					DelayMode = i;
+					break;
+				}
+			}
+		}
+
+		if (DelayMode >= 0) {
+			const FFMS_Track &VTrack = Index[DelayMode];
+			AdjustRelative = VTrack[0].PTS * VTrack.TB.Num / (double)VTrack.TB.Den / 1000.;
+		}
+	}
+
+	Delay = static_cast<int64_t>((AdjustRelative - Frames[0].PTS) * AP.SampleRate + .5);
+	AP.NumSamples -= Delay;
 }
 
 void FFMS_AudioSource::CacheBlock(CacheIterator &pos, int64_t Start, size_t Samples, uint8_t *SrcData) {
@@ -158,6 +191,20 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 			"Out of bounds audio samples requested");
 
 	uint8_t *Dst = static_cast<uint8_t*>(Buf);
+
+	// Apply audio delay (if any) and fill any samples before the start time with zero
+	Start -= Delay;
+	if (Start < 0) {
+		size_t Bytes = static_cast<size_t>(BytesPerSample * FFMIN(-Start, Count));
+		memset(Dst, 0, Bytes);
+
+		Count += Start;
+		// Entire request was before the start of the audio
+		if (Count <= 0) return;
+
+		Start = 0;
+		Dst += Bytes;
+	}
 
 	CacheIterator it = Cache.begin();
 

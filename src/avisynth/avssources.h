@@ -63,7 +63,6 @@ class AvisynthAudioSource : public IClip {
 private:
 	VideoInfo VI;
 	FFMS_AudioSource *A;
-	int64_t SampleOffset;
 public:
 	AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int AdjustDelay, IScriptEnvironment* Env);

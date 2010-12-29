@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (14 << 16) | (0 << 8) | 1)
+#define FFMS_VERSION ((2 << 24) | (14 << 16) | (1 << 8) | 1)
 
 #include <stdint.h>
 
@@ -244,7 +244,7 @@ FFMS_API(void) FFMS_Init(int CPUFeatures, int UseUTF8Paths);
 FFMS_API(int) FFMS_GetLogLevel();
 FFMS_API(void) FFMS_SetLogLevel(int Level);
 FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, int SeekMode, FFMS_ErrorInfo *ErrorInfo);
-FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, FFMS_ErrorInfo *ErrorInfo);
+FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, int DelayMode, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(void) FFMS_DestroyVideoSource(FFMS_VideoSource *V);
 FFMS_API(void) FFMS_DestroyAudioSource(FFMS_AudioSource *A);
 FFMS_API(const FFMS_VideoProperties *) FFMS_GetVideoProperties(FFMS_VideoSource *V);
@@ -264,7 +264,7 @@ FFMS_API(int) FFMS_GetNumTracks(FFMS_Index *Index);
 FFMS_API(int) FFMS_GetNumTracksI(FFMS_Indexer *Indexer);
 FFMS_API(int) FFMS_GetTrackType(FFMS_Track *T);
 FFMS_API(int) FFMS_GetTrackTypeI(FFMS_Indexer *Indexer, int Track);
-FFMS_API(const char *) FFMS_GetCodecNameI(FFMS_Indexer *Indexer, int Track); 
+FFMS_API(const char *) FFMS_GetCodecNameI(FFMS_Indexer *Indexer, int Track);
 FFMS_API(int) FFMS_GetNumFrames(FFMS_Track *T);
 FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFMS_Track *T, int Frame);
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track);
