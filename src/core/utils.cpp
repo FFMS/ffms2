@@ -385,42 +385,80 @@ void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *
 
 #ifdef HAALISOURCE
 
-void InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag, AVCodecContext *CodecContext) {
-	if (pBag) {
-		CComVariant pV;
+FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag) {
+	CComVariant pV;
+	if (FAILED(pBag->Read(L"Type", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+		return FFCodecContext();
+
+	unsigned int TT = pV.uintVal;
+
+	FFCodecContext CodecContext(avcodec_alloc_context(), DeleteHaaliCodecContext);
+
+	unsigned int FourCC = 0;
+	if (TT == TT_VIDEO) {
+		pV.Clear();
+		if (SUCCEEDED(pBag->Read(L"Video.PixelWidth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+			CodecContext->coded_width = pV.uintVal;
 
 		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"Type", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4))) {
+		if (SUCCEEDED(pBag->Read(L"Video.PixelHeight", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+			CodecContext->coded_height = pV.uintVal;
 
-			unsigned int TT = pV.uintVal;
+		pV.Clear();
+		if (SUCCEEDED(pBag->Read(L"FOURCC", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+			FourCC = pV.uintVal;
 
-			if (TT == TT_VIDEO) {
+		// Reconstruct the missing codec private part for VC1
+		FFMS_BITMAPINFOHEADER bih;
+		memset(&bih, 0, sizeof bih);
+		bih.biSize = sizeof bih;
+		bih.biCompression = FourCC;
+		bih.biBitCount = 24;
+		bih.biPlanes = 1;
+		bih.biHeight = CodecContext->coded_height;
 
-				pV.Clear();
-				if (SUCCEEDED(pBag->Read(L"Video.PixelWidth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-					CodecContext->coded_width = pV.uintVal;
-
-				pV.Clear();
-				if (SUCCEEDED(pBag->Read(L"Video.PixelHeight", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-					CodecContext->coded_height = pV.uintVal;
-
-			} else if (TT == TT_AUDIO) {
-
-				pV.Clear();
-				if (SUCCEEDED(pBag->Read(L"Audio.SamplingFreq", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-					CodecContext->sample_rate = pV.uintVal;
-
-				pV.Clear();
-				if (SUCCEEDED(pBag->Read(L"Audio.BitDepth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-					CodecContext->bits_per_coded_sample = pV.uintVal;
-
-				pV.Clear();
-				if (SUCCEEDED(pBag->Read(L"Audio.Channels", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-					CodecContext->channels = pV.uintVal;
-
-			}
+		pV.Clear();
+		if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
+			bih.biSize += vtSize(pV);
+			CodecContext->extradata = static_cast<uint8_t*>(av_malloc(bih.biSize));
+			memcpy(CodecContext->extradata, &bih, sizeof bih);
+			vtCopy(pV, CodecContext->extradata + sizeof bih);
 		}
-  	}
+		else {
+			CodecContext->extradata = static_cast<uint8_t*>(av_malloc(bih.biSize));
+			memcpy(CodecContext->extradata, &bih, sizeof bih);
+		}
+		CodecContext->extradata_size = bih.biSize;
+	}
+	else if (TT == TT_AUDIO) {
+		pV.Clear();
+		if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
+			CodecContext->extradata_size = vtSize(pV);
+			CodecContext->extradata = static_cast<uint8_t*>(av_malloc(CodecContext->extradata_size));
+			vtCopy(pV, CodecContext->extradata);
+		}
+
+		pV.Clear();
+		if (SUCCEEDED(pBag->Read(L"Audio.SamplingFreq", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+			CodecContext->sample_rate = pV.uintVal;
+
+		pV.Clear();
+		if (SUCCEEDED(pBag->Read(L"Audio.BitDepth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+			CodecContext->bits_per_coded_sample = pV.uintVal;
+
+		pV.Clear();
+		if (SUCCEEDED(pBag->Read(L"Audio.Channels", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+			CodecContext->channels = pV.uintVal;
+	}
+
+	pV.Clear();
+	if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
+		char CodecStr[2048];
+		wcstombs(CodecStr, pV.bstrVal, 2000);
+
+		CodecContext->codec = avcodec_find_decoder(MatroskaToFFCodecID(CodecStr, CodecContext->extradata, FourCC, CodecContext->bits_per_coded_sample));
+	}
+	return CodecContext;
 }
 
 #endif

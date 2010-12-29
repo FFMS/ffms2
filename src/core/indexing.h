@@ -180,9 +180,6 @@ private:
 	CComPtr<IMMContainer> pMMC;
 	int NumTracks;
 	FFMS_TrackType TrackType[32];
-	AVCodec *Codec[32];
-	std::vector<uint8_t> CodecPrivate[32];
-	int CodecPrivateSize[32];
 	CComQIPtr<IPropertyBag> PropertyBags[32];
 	int64_t Duration;
 public:

@@ -41,44 +41,17 @@ FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index,
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Failed to find track");
 
-	CComVariant pV;
-
-	pV.Clear();
-	if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
-		CodecPrivateSize = vtSize(pV);
-		CodecPrivate.resize(CodecPrivateSize);
-		vtCopy(pV, FFMS_GET_VECTOR_PTR(CodecPrivate));
-	}
+	CodecContext = InitializeCodecContextFromHaaliInfo(pBag);
 
 	AVCodec *Codec = NULL;
-
-	pV.Clear();
-	if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
-		char ACodecID[2048];
-		wcstombs(ACodecID, pV.bstrVal, 2000);
-
-		int BitDepth = 0;
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"Audio.BitDepth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-			BitDepth = pV.uintVal;
-
-		Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, FFMS_GET_VECTOR_PTR(CodecPrivate), 0, BitDepth));
-	}
-	pU = NULL;
-
-	if (Codec == NULL)
-		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-			"Audio codec not found");
-
-	CodecContext = avcodec_alloc_context();
-	CodecContext->extradata = FFMS_GET_VECTOR_PTR(CodecPrivate);
-	CodecContext->extradata_size = CodecPrivateSize;
-
-	InitializeCodecContextFromHaaliInfo(pBag, CodecContext);
-
+	std::swap(Codec, CodecContext->codec);
 	if (avcodec_open(CodecContext, Codec) < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Could not open audio codec");
+
+	// Can't seek by PTS if they're all the same
+	if (Frames.back().PTS == Frames.front().PTS)
+		SeekOffset = -1;
 
 	Init(Index, DelayMode);
 }
@@ -94,8 +67,11 @@ bool FFHaaliAudio::ReadPacket(AVPacket *Packet) {
 		if (pMMF->GetTrack() != TrackNumber) continue;
 
 		REFERENCE_TIME Ts, Te;
-		if (SUCCEEDED(pMMF->GetTime(&Ts, &Te)))
-			PacketNumber = Frames.ClosestFrameFromPTS(Ts);
+		if (SUCCEEDED(pMMF->GetTime(&Ts, &Te))) {
+			int ClosestPacket = Frames.ClosestFrameFromPTS(Ts);
+			if (Frames[ClosestPacket].PTS != Frames[PacketNumber].PTS)
+				PacketNumber = ClosestPacket;
+		}
 
 		if (FAILED(pMMF->GetPointer(&Packet->data)))
 			return false;
@@ -107,7 +83,14 @@ bool FFHaaliAudio::ReadPacket(AVPacket *Packet) {
 }
 
 void FFHaaliAudio::Seek() {
-	pMMC->Seek(Frames[PacketNumber].PTS, MKVF_SEEK_TO_PREV_KEYFRAME_STRICT);
+	size_t TargetPacket = GetSeekablePacketNumber(Frames, PacketNumber);
+	pMMC->Seek(Frames[TargetPacket].PTS, MMSF_PREV_KF);
+
+	if (TargetPacket != PacketNumber) {
+		// Decode until the PTS changes so we know where we are
+		int64_t LastPTS = Frames[PacketNumber].PTS;
+		while (LastPTS == Frames[PacketNumber].PTS) DecodeNextBlock();
+	}
 }
 
 #endif // HAALISOURCE

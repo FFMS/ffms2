@@ -27,7 +27,7 @@ FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, i
 {
 	LAVFOpenFile(SourceFile, FormatContext);
 
-	CodecContext = FormatContext->streams[TrackNumber]->codec;
+	CodecContext.reset(FormatContext->streams[TrackNumber]->codec);
 	assert(CodecContext);
 
 	AVCodec *Codec = avcodec_find_decoder(CodecContext->codec_id);
@@ -42,7 +42,6 @@ FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, i
 	}
 	catch (...) {
 		av_close_input_file(FormatContext);
-		CodecContext = NULL;
 		throw;
 	}
 
@@ -50,7 +49,7 @@ FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, i
 	// timestamps, but the only format I've encountered that doesn't have any
 	// timestamps (flac) isn't seekable in any way
 	// https://roundup.ffmpeg.org/issue1150
-	if (Frames.back().PTS == ffms_av_nopts_value)
+	if (Frames.back().PTS == Frames.front().PTS)
 		SeekOffset = -1;
 	else
 		SeekOffset = 10;
@@ -59,26 +58,13 @@ FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, i
 
 FFLAVFAudio::~FFLAVFAudio() {
 	av_close_input_file(FormatContext);
-	CodecContext = NULL;
 }
 
 void FFLAVFAudio::Seek() {
-	// Packets don't always have unique PTSes, so we may not be able to
-	// uniquely identify the packet we want. If this is the case, we instead
-	// seek to the previous PTS and then decode until the PTS changes, as that's
-	// the only time we actually know what packet we're on.
-	size_t TargetPacket = PacketNumber;
-	if ((PacketNumber > 0 && Frames[PacketNumber].PTS == Frames[PacketNumber - 1].PTS) ||
-		(PacketNumber + 1 < Frames.size() && Frames[PacketNumber].PTS == Frames[PacketNumber + 1].PTS)) {
-			while (PacketNumber > 0 && Frames[TargetPacket].PTS == Frames[PacketNumber].PTS) --PacketNumber;
-	}
+	size_t TargetPacket = GetSeekablePacketNumber(Frames, PacketNumber);
 
-	// If PacketNumber == 0 now, we'll end up seeking past our desired packet,
-	// but most decoders don't handle seeking back to the beginning very well
-	// anyway, so that range is always held in the decoded cache
-
-	if (av_seek_frame(FormatContext, TrackNumber, Frames[PacketNumber].PTS, AVSEEK_FLAG_BACKWARD) < 0)
-		av_seek_frame(FormatContext, TrackNumber, Frames[PacketNumber].PTS, AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_ANY);
+	if (av_seek_frame(FormatContext, TrackNumber, Frames[TargetPacket].PTS, AVSEEK_FLAG_BACKWARD) < 0)
+		av_seek_frame(FormatContext, TrackNumber, Frames[TargetPacket].PTS, AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_ANY);
 
 	if (TargetPacket != PacketNumber) {
 		// Decode until the PTS changes so we know where we are

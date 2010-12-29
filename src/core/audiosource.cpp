@@ -34,7 +34,6 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 , TrackNumber(Track)
 , SeekOffset(0)
 , DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10)
-, CodecContext(NULL)
 {
 	if (Track < 0 || Track >= static_cast<int>(Index.size()))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
@@ -67,9 +66,13 @@ void FFMS_AudioSource::Init(FFMS_Index &Index, int DelayMode) {
 	// file (ts and?), so cache a few blocks even if PTSes are unique
 	// Packet 7 is the last packet I've had be unseekable to, so cache up to
 	// 10 for a bit of an extra buffer
-	while ((Frames[0].PTS != ffms_av_nopts_value && Frames[PacketNumber].PTS == Frames[0].PTS) || Cache.size() < 10) {
+	CacheIterator end = Cache.end();
+	while (PacketNumber < Frames.size() &&
+		((Frames[0].PTS != ffms_av_nopts_value && Frames[PacketNumber].PTS == Frames[0].PTS) ||
+		 Cache.size() < 10)) {
+
 		DecodeNextBlock();
-		CacheBlock(Cache.end(), CurrentSample, Decoded, &DecodingBuffer[0]);
+		CacheBlock(end, CurrentSample, Decoded, &DecodingBuffer[0]);
 	}
 	// Store the iterator to the last element of the cache which is used for
 	// correctness rather than speed, so that when looking for one to delete
@@ -87,15 +90,8 @@ void FFMS_AudioSource::Init(FFMS_Index &Index, int DelayMode) {
 
 }
 
-FFMS_AudioSource::~FFMS_AudioSource() {
-	if (CodecContext) {
-		avcodec_close(CodecContext);
-		av_freep(&CodecContext);
-	}
-}
-
-void FFMS_AudioSource::CacheBlock(CacheIterator &pos, int64_t Start, int64_t Samples, uint8_t *SrcData) {
-	Cache.insert(pos, AudioBlock(Start, Samples, SrcData, static_cast<size_t>(Samples * BytesPerSample)));
+void FFMS_AudioSource::CacheBlock(CacheIterator &pos, int64_t Start, size_t Samples, uint8_t *SrcData) {
+	Cache.insert(pos, AudioBlock(Start, Samples, SrcData, Samples * BytesPerSample));
 
 	if (Cache.size() >= MaxCacheBlocks) {
 		// Kill the oldest one
@@ -204,9 +200,9 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 
 			CacheBlock(it, CurrentSample, Decoded, &DecodingBuffer[0]);
 
-			size_t FirstSample = Start - CurrentSample;
-			size_t Samples = Decoded - FirstSample;
-			size_t Bytes = FFMIN(Samples, Count) * BytesPerSample;
+			size_t FirstSample = static_cast<size_t>(Start - CurrentSample);
+			size_t Samples = static_cast<size_t>(Decoded - FirstSample);
+			size_t Bytes = FFMIN(Samples, static_cast<size_t>(Count)) * BytesPerSample;
 
 			memcpy(Dst, &DecodingBuffer[FirstSample * BytesPerSample], Bytes);
 
@@ -215,4 +211,40 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 			Dst += Bytes;
 		}
 	}
+}
+
+size_t GetSeekablePacketNumber(FFMS_Track const& Frames, size_t PacketNumber) {
+	// Packets don't always have unique PTSes, so we may not be able to
+	// uniquely identify the packet we want. This function attempts to find
+	// a PTS we can seek to which will let us figure out which packet we're
+	// on before we get to the packet we actually wanted
+
+	// MatroskaAudioSource doesn't need this, as it seeks by byte offset
+	// rather than PTS. LAVF theoretically can seek by byte offset, but we
+	// don't use it as not all demuxers support it and it's broken in some of
+	// those that claim to support it
+
+	// However much we might wish to, we can't seek to before packet zero
+	if (PacketNumber == 0) return PacketNumber;
+
+	// Desired packet's PTS is unique, so don't do anything
+	if (Frames[PacketNumber].PTS != Frames[PacketNumber - 1].PTS &&
+		(PacketNumber + 1 == Frames.size() || Frames[PacketNumber].PTS != Frames[PacketNumber + 1].PTS))
+		return PacketNumber;
+
+	// When decoding, we only reliably know what packet we're at when the
+	// newly parsed packet has a different PTS from the previous one. As such,
+	// we walk backwards until we hit a different PTS and then seek to there,
+	// so that we can then decode until we hit the PTS group we actually wanted
+	// (and thereby know that we're at the first packet in the group rather
+	// than whatever the splitter happened to choose)
+
+	// This doesn't work if our desired packet has the same PTS as the first
+	// packet, but this scenario should never come up anyway; we permanently
+	// cache the decoded results from those packets, so there's no need to ever
+	// seek to them
+	int64_t PTS = Frames[PacketNumber].PTS;
+	while (PacketNumber > 0 && PTS == Frames[PacketNumber].PTS)
+		--PacketNumber;
+	return PacketNumber;
 }

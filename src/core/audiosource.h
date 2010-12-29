@@ -77,7 +77,7 @@ class FFMS_AudioSource {
 	size_t Decoded;
 
 	// Insert a block into the cache
-	void CacheBlock(CacheIterator &pos, int64_t Start, int64_t Samples, uint8_t *SrcData);
+	void CacheBlock(CacheIterator &pos, int64_t Start, size_t Samples, uint8_t *SrcData);
 
 	// Called after seeking
 	virtual void Seek() { };
@@ -100,7 +100,7 @@ protected:
 	// Buffer which audio is decoded into
 	AlignedBuffer<uint8_t> DecodingBuffer;
 	FFMS_Track Frames;
-	AVCodecContext *CodecContext;
+	FFCodecContext CodecContext;
 	FFMS_AudioProperties AP;
 
 	void DecodeNextBlock();
@@ -110,7 +110,7 @@ protected:
 	FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track);
 
 public:
-	virtual ~FFMS_AudioSource();
+	virtual ~FFMS_AudioSource() { };
 	FFMS_Track *GetTrack() { return &Frames; }
 	const FFMS_AudioProperties& GetAudioProperties() const { return AP; }
 	void GetAudio(void *Buf, int64_t Start, int64_t Count);
@@ -147,7 +147,6 @@ public:
 class FFHaaliAudio : public FFMS_AudioSource {
 	CComPtr<IMMContainer> pMMC;
 	CComPtr<IMMFrame> pMMF;
-	std::vector<uint8_t> CodecPrivate;
 
 	bool ReadPacket(AVPacket *);
 	void Seek();
@@ -157,5 +156,7 @@ public:
 };
 
 #endif // HAALISOURCE
+
+size_t GetSeekablePacketNumber(FFMS_Track const& Frames, size_t PacketNumber);
 
 #endif

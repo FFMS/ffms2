@@ -41,7 +41,7 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &
 	if (TI->CompEnabled)
 		TCC.reset(new TrackCompressionContext(MF, TI, Track));
 
-	CodecContext = avcodec_alloc_context();
+	CodecContext.reset(avcodec_alloc_context(), DeleteMatroskaCodecContext);
 	assert(CodecContext);
 
 	AVCodec *Codec = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate, 0, TI->AV.Audio.BitDepth));

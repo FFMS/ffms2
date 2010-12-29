@@ -30,8 +30,6 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, enum FFMS_Sources SourceMod
 	Duration = 0;
 	for (int i = 0; i < 32; i++) {
 		TrackType[i] = FFMS_TYPE_UNKNOWN;
-		Codec[i] = NULL;
-		CodecPrivateSize[i] = 0;
 	}
 
 	pMMC = HaaliOpenFile(SourceFile, SourceMode);
@@ -47,60 +45,12 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, enum FFMS_Sources SourceMod
 		CComPtr<IUnknown> pU;
 		while (pEU->Next(1, &pU, NULL) == S_OK) {
 			CComQIPtr<IPropertyBag> pBag = pU;
-			PropertyBags[NumTracks] = pBag;
-
 			if (pBag) {
 				CComVariant pV;
-				unsigned int FourCC = 0;
-
-				pV.Clear();
-				if (SUCCEEDED(pBag->Read(L"Type", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+				if (SUCCEEDED(pBag->Read(L"Type", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4))) {
 					TrackType[NumTracks] = HaaliTrackTypeToFFTrackType(pV.uintVal);
-
-				pV.Clear();
-				if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
-					CodecPrivateSize[NumTracks] = vtSize(pV);
-					CodecPrivate[NumTracks].resize(CodecPrivateSize[NumTracks]);
-					vtCopy(pV, FFMS_GET_VECTOR_PTR(CodecPrivate[NumTracks]));
-				}
-
-				pV.Clear();
-				if (SUCCEEDED(pBag->Read(L"FOURCC", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4))) {
-					FourCC = pV.uintVal;
-
-					// Reconstruct the missing codec private part for VC1
-					std::vector<uint8_t> bihvect;
-					bihvect.resize(sizeof(FFMS_BITMAPINFOHEADER));
-					FFMS_BITMAPINFOHEADER *bih = reinterpret_cast<FFMS_BITMAPINFOHEADER *>(FFMS_GET_VECTOR_PTR(bihvect));
-					memset(bih, 0, sizeof(FFMS_BITMAPINFOHEADER));
-					bih->biSize = sizeof(FFMS_BITMAPINFOHEADER) + CodecPrivateSize[NumTracks];
-					bih->biCompression = FourCC;
-					bih->biBitCount = 24;
-					bih->biPlanes = 1;
-
-					pV.Clear();
-					if (SUCCEEDED(pBag->Read(L"Video.PixelWidth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-						bih->biWidth = pV.uintVal;
-
-					pV.Clear();
-					if (SUCCEEDED(pBag->Read(L"Video.PixelHeight", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-						bih->biHeight = pV.uintVal;
-
-					CodecPrivate[NumTracks].insert(CodecPrivate[NumTracks].begin(), bihvect.begin(), bihvect.end());
-					CodecPrivateSize[NumTracks] += sizeof(FFMS_BITMAPINFOHEADER);
-				}
-
-				pV.Clear();
-				if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
-					char CodecStr[2048];
-					wcstombs(CodecStr, pV.bstrVal, 2000);
-
-					int BitDepth = 0;
-					pV.Clear();
-					if (SUCCEEDED(pBag->Read(L"Audio.BitDepth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-						BitDepth = pV.uintVal;
-
-					Codec[NumTracks] = avcodec_find_decoder(MatroskaToFFCodecID(CodecStr, FFMS_GET_VECTOR_PTR(CodecPrivate[NumTracks]), FourCC, BitDepth));
+					if (TrackType[NumTracks] == FFMS_TYPE_VIDEO || TrackType[NumTracks] == FFMS_TYPE_AUDIO)
+						PropertyBags[NumTracks] = pBag;
 				}
 			}
 
@@ -111,8 +61,9 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, enum FFMS_Sources SourceMod
 }
 
 FFMS_Index *FFHaaliIndexer::DoIndexing() {
-	std::vector<SharedAudioContext> AudioContexts(NumTracks, SharedAudioContext(true));
-	std::vector<SharedVideoContext> VideoContexts(NumTracks, SharedVideoContext(true));
+	FFCodecContext Contexts[32];
+	std::vector<SharedAudioContext> AudioContexts(NumTracks, SharedAudioContext(false));
+	std::vector<SharedVideoContext> VideoContexts(NumTracks, SharedVideoContext(false));
 
 	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest));
 	TrackIndices->Decoder = FFMS_SOURCE_HAALIMPEG;
@@ -121,44 +72,28 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 
 	for (int i = 0; i < NumTracks; i++) {
 		TrackIndices->push_back(FFMS_Track(1, 1000000, TrackType[i]));
+		if (!PropertyBags[i] || (TrackType[i] == FFMS_TYPE_AUDIO && !(IndexMask & (1 << i)))) continue;
 
-		if (TrackType[i] == FFMS_TYPE_VIDEO && Codec[i] && (VideoContexts[i].Parser = av_parser_init(Codec[i]->id))) {
+		FFCodecContext CodecContext(InitializeCodecContextFromHaaliInfo(PropertyBags[i]));
 
-			AVCodecContext *CodecContext = avcodec_alloc_context();
-			CodecContext->extradata = FFMS_GET_VECTOR_PTR(CodecPrivate[i]);
-			CodecContext->extradata_size = CodecPrivateSize[i];
+		if (!CodecContext->codec)
+			throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED, "Codec not found");
 
-			InitializeCodecContextFromHaaliInfo(PropertyBags[i], CodecContext);
+		AVCodec *Codec = NULL;
+		std::swap(Codec, CodecContext->codec);
+		if (avcodec_open(CodecContext, Codec) < 0)
+			throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
+				"Could not open codec");
 
-			if (avcodec_open(CodecContext, Codec[i]) < 0) {
-				av_freep(&CodecContext);
-				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
-					"Could not open video codec");
-			}
-
+		if (TrackType[i] == FFMS_TYPE_VIDEO) {
+			VideoContexts[i].Parser = av_parser_init(CodecContext->codec->id);
 			VideoContexts[i].CodecContext = CodecContext;
 			VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
 		}
-
-		if (IndexMask & (1 << i) && TrackType[i] == FFMS_TYPE_AUDIO) {
-			if (Codec[i] == NULL)
-				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
-					"Audio codec not found");
-
-			AVCodecContext *CodecContext = avcodec_alloc_context();
-			CodecContext->extradata = FFMS_GET_VECTOR_PTR(CodecPrivate[i]);
-			CodecContext->extradata_size = CodecPrivateSize[i];
+		else {
 			AudioContexts[i].CodecContext = CodecContext;
-
-			if (avcodec_open(CodecContext, Codec[i]) < 0) {
-				av_freep(&CodecContext);
-				AudioContexts[i].CodecContext = NULL;
-				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
-					"Could not open audio codec");
-			}
-		} else {
-			IndexMask &= ~(1 << i);
 		}
+		Contexts[i] = CodecContext;
 	}
 
 	AVPacket TempPacket;
@@ -224,10 +159,11 @@ FFMS_TrackType FFHaaliIndexer::GetTrackType(int Track) {
 }
 
 const char *FFHaaliIndexer::GetTrackCodec(int Track) {
-	if (Codec[Track])
-		return Codec[Track]->name;
-	else
-		return "Unsupported codec/Unknown codec name";
+	if (!PropertyBags[Track]) return NULL;
+
+	FFCodecContext CodecContext(InitializeCodecContextFromHaaliInfo(PropertyBags[Track]));
+	if (!CodecContext || !CodecContext->codec) return NULL;
+	return CodecContext->codec->name;
 }
 
 #endif
