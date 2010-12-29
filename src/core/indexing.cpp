@@ -152,7 +152,7 @@ int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) {
 
 	iterator Pos = std::lower_bound(begin(), end(), F, PTSComparison);
 	int Frame = std::distance(begin(), Pos);
-	if (Pos != end() && FFABS(Pos->PTS - PTS) > FFABS((Pos + 1)->PTS - PTS))
+	if ((Pos + 1) != end() && FFABS(Pos->PTS - PTS) > FFABS((Pos + 1)->PTS - PTS))
 		Frame += 1;
 	return Frame;
 }
@@ -519,6 +519,11 @@ void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 		FFMS_AudioProperties AP;
 		FillAP(AP, AudioContext.CodecContext, (*Index)[Track]);
 		int FNSize = (*ANC)(SourceFile, Track, &AP, NULL, 0, ANCPrivate);
+		if (FNSize <= 0) {
+			DumpMask = DumpMask & ~(1 << Track);
+			return;
+		}
+
 		std::vector<char> WName(FNSize);
 		(*ANC)(SourceFile, Track, &AP, &WName[0], FNSize, ANCPrivate);
 		std::string WN(&WName[0]);
