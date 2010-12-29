@@ -1,4 +1,4 @@
-//  Copyright (c) 2011 Thomas Goyne <tgoyne@gmail.com>
+//  Copyright (c) 2010 Thomas Goyne <tgoyne@gmail.com>
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -186,7 +186,7 @@ static bool SampleStartComp(const TFrameInfo &a, const TFrameInfo &b) {
 }
 
 void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
-	if (Start < 0 || Start + Count > AP.NumSamples)
+	if (Start < 0 || Start + Count > AP.NumSamples || Count < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_INVALID_ARGUMENT,
 			"Out of bounds audio samples requested");
 

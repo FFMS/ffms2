@@ -172,6 +172,17 @@ const char *GetLAVCSampleFormatName(AVSampleFormat s) {
 	}
 }
 
+template<class T> static void safe_realloc(T *&ptr, size_t size) {
+	void *newalloc = realloc(ptr, size);
+	if (newalloc) {
+		ptr = static_cast<T*>(newalloc);
+	}
+	else {
+		free(ptr);
+		ptr = 0;
+	}
+}
+
 void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContext *TCC, MatroskaReaderContext &Context) {
 	if (TCC && TCC->CS) {
 		CompressedStream *CS = TCC->CS;
@@ -196,7 +207,7 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 
 			if (Context.BufferSize < DecompressedFrameSize + ReadBytes) {
 				Context.BufferSize = DecompressedFrameSize + ReadBytes;
-				Context.Buffer = (uint8_t *)realloc(Context.Buffer, Context.BufferSize + FF_INPUT_BUFFER_PADDING_SIZE);
+				safe_realloc(Context.Buffer, Context.BufferSize + FF_INPUT_BUFFER_PADDING_SIZE);
 				if (Context.Buffer == NULL)
 					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
 					"Out of memory");
@@ -216,7 +227,7 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 			unsigned ReqBufsize = FrameSize + TCC->CompressedPrivateDataSize + 16;
 			if (Context.BufferSize < ReqBufsize) {
 				Context.BufferSize = FrameSize + TCC->CompressedPrivateDataSize;
-				Context.Buffer = (uint8_t *)realloc(Context.Buffer, ReqBufsize);
+				safe_realloc(Context.Buffer, ReqBufsize);
 				if (Context.Buffer == NULL)
 					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED, "Out of memory");
 			}
@@ -230,7 +241,7 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 		}
 		else if (Context.BufferSize < FrameSize) {
 			Context.BufferSize = FrameSize;
-			Context.Buffer = (uint8_t *)realloc(Context.Buffer, Context.BufferSize + 16);
+			safe_realloc(Context.Buffer, Context.BufferSize + 16);
 			if (Context.Buffer == NULL)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
 					"Out of memory");
