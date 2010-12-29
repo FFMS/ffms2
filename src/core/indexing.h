@@ -123,7 +123,7 @@ protected:
 	TAudioNameCallback ANC;
 	void *ANCPrivate;
 	const char *SourceFile;
-	AlignedBuffer<int16_t> DecodingBuffer;
+	AlignedBuffer<uint8_t> DecodingBuffer;
 
 	int64_t Filesize;
 	uint8_t Digest[20];

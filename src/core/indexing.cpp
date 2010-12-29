@@ -19,14 +19,19 @@
 //  THE SOFTWARE.
 
 #include "indexing.h"
-#include <iostream>
-#include <fstream>
+
 #include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <limits>
+
 
 extern "C" {
 #include <libavutil/sha1.h>
 #include <zlib.h>
 }
+
+#undef max
 
 #define INDEXID 0x53920873
 
@@ -34,7 +39,7 @@ extern bool HasHaaliMPEG;
 extern bool HasHaaliOGG;
 
 #ifndef FFMS_USE_POSTPROC
-unsigned postproc_version(void) { return 0; } // ugly workaround to avoid lots of ifdeffing
+unsigned postproc_version() { return 0; } // ugly workaround to avoid lots of ifdeffing
 #endif // FFMS_USE_POSTPROC
 
 struct IndexHeader {
@@ -52,11 +57,11 @@ struct IndexHeader {
 };
 
 struct TrackHeader {
-		uint32_t TT;
-		uint32_t Frames;
-		int64_t Num;
-		int64_t Den;
-		uint32_t UseDTS;
+	uint32_t TT;
+	uint32_t Frames;
+	int64_t Num;
+	int64_t Den;
+	uint32_t UseDTS;
 };
 
 
@@ -73,12 +78,8 @@ SharedVideoContext::~SharedVideoContext() {
 		if (FreeCodecContext)
 			av_freep(&CodecContext);
 	}
-
-	if (Parser)
-		av_parser_close(Parser);
-
-	if (TCC)
-		delete TCC;
+	av_parser_close(Parser);
+	delete TCC;
 }
 
 SharedAudioContext::SharedAudioContext(bool FreeCodecContext) {
@@ -96,9 +97,7 @@ SharedAudioContext::~SharedAudioContext() {
 		if (FreeCodecContext)
 			av_freep(&CodecContext);
 	}
-
-	if (TCC)
-		delete TCC;
+	delete TCC;
 }
 
 TFrameInfo::TFrameInfo() {
@@ -126,15 +125,13 @@ TFrameInfo TFrameInfo::AudioFrameInfo(int64_t PTS, int64_t SampleStart, int64_t 
 void FFMS_Track::WriteTimecodes(const char *TimecodeFile) {
 	ffms_fstream Timecodes(TimecodeFile, std::ios::out | std::ios::trunc);
 
-	if (!Timecodes.is_open()) {
-		std::ostringstream buf;
-		buf << "Failed to open '" << TimecodeFile << "' for writing";
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
+	if (!Timecodes.is_open())
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("Failed to open '") + TimecodeFile + "' for writing");
 
 	Timecodes << "# timecode format v2\n";
 
-	for (iterator Cur=begin(); Cur!=end(); Cur++)
+	for (iterator Cur = begin(); Cur != end(); ++Cur)
 		Timecodes << std::fixed << ((Cur->PTS * TB.Num) / (double)TB.Den) << "\n";
 }
 
@@ -145,29 +142,26 @@ int FFMS_Track::FrameFromPTS(int64_t PTS) {
 	return -1;
 }
 
-int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) {
-	int Frame = 0;
-	int64_t BestDiff = 0xFFFFFFFFFFFFFFLL; // big number
-	for (int i = 0; i < static_cast<int>(size()); i++) {
-		int64_t CurrentDiff = FFABS(at(i).PTS - PTS);
-		if (CurrentDiff < BestDiff) {
-			BestDiff = CurrentDiff;
-			Frame = i;
-		}
-	}
+static bool PTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
+	return FI1.PTS < FI2.PTS;
+}
 
+int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) {
+	TFrameInfo F;
+	F.PTS = PTS;
+
+	iterator Pos = std::lower_bound(begin(), end(), F, PTSComparison);
+	int Frame = std::distance(begin(), Pos);
+	if (Pos != end() && FFABS(Pos->PTS - PTS) > FFABS((Pos + 1)->PTS - PTS))
+		Frame += 1;
 	return Frame;
 }
 
 int FFMS_Track::FindClosestVideoKeyFrame(int Frame) {
 	Frame = FFMIN(FFMAX(Frame, 0), static_cast<int>(size()) - 1);
-	for (int i = Frame; i > 0; i--)
-		if (at(i).KeyFrame) {
-			for (int j = i; j >= 0; j--)
-				if (at(at(j).OriginalPos).KeyFrame)
-					return j;
-		}
-	return 0;
+	for (; Frame > 0 && !at(Frame).KeyFrame; Frame--) ;
+	for (; Frame > 0 && !at(at(Frame).OriginalPos).KeyFrame; Frame--) ;
+	return Frame;
 }
 
 FFMS_Track::FFMS_Track() {
@@ -186,63 +180,52 @@ FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS)
 
 void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]) {
 	FILE *SFile = ffms_fopen(Filename,"rb");
+	if (!SFile)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("Failed to open '") + Filename + "' for hashing");
 
-	if (SFile == NULL) {
-		std::ostringstream buf;
-		buf << "Failed to open '" << Filename << "' for hashing";
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
-
-	const int BlockSize = 1024*1024;
-	std::vector<uint8_t> FileBuffer(BlockSize);
+	std::vector<uint8_t> FileBuffer(1024*1024, 0);
 	std::vector<uint8_t> ctxmem(av_sha1_size);
-	AVSHA1 *ctx = (AVSHA1 *)&ctxmem[0];
+	AVSHA1 *ctx = (AVSHA1 *)(&ctxmem[0]);
 	av_sha1_init(ctx);
 
-	memset(&FileBuffer[0], 0, BlockSize);
-	fread(&FileBuffer[0], 1, BlockSize, SFile);
-	if (ferror(SFile) && !feof(SFile)) {
-		av_sha1_final(ctx, Digest);
-		fclose(SFile);
-		std::ostringstream buf;
-		buf << "Failed to read '" << Filename << "' for hashing";
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
-	av_sha1_update(ctx, &FileBuffer[0], BlockSize);
+	try {
+		fread(&FileBuffer[0], 1, FileBuffer.size(), SFile);
+		if (ferror(SFile) && !feof(SFile))
+			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+				std::string("Failed to read '") + Filename + "' for hashing");
 
-	fseeko(SFile, -BlockSize, SEEK_END);
-	memset(&FileBuffer[0], 0, BlockSize);
-	fread(&FileBuffer[0], 1, BlockSize, SFile);
-	if (ferror(SFile) && !feof(SFile)) {
-		av_sha1_final(ctx, Digest);
-		fclose(SFile);
-		std::ostringstream buf;
-		buf << "Failed to seek with offset " << BlockSize << " from file end in '" << Filename << "' for hashing";
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
-	av_sha1_update(ctx, &FileBuffer[0], BlockSize);
+		av_sha1_update(ctx, &FileBuffer[0], FileBuffer.size());
 
-	fseeko(SFile, 0, SEEK_END);
-	if (ferror(SFile)) {
-		av_sha1_final(ctx, Digest);
-		fclose(SFile);
-		std::ostringstream buf;
-		buf << "Failed to seek to end of '" << Filename << "' for hashing";
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
+		fseeko(SFile, -(int)FileBuffer.size(), SEEK_END);
+		std::fill(FileBuffer.begin(), FileBuffer.end(), 0);
+		fread(&FileBuffer[0], 1, FileBuffer.size(), SFile);
+		if (ferror(SFile) && !feof(SFile)) {
+			std::ostringstream buf;
+			buf << "Failed to seek with offset " << FileBuffer.size() << " from file end in '" << Filename << "' for hashing";
+			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
+		}
+
+		av_sha1_update(ctx, &FileBuffer[0], FileBuffer.size());
+
+		fseeko(SFile, 0, SEEK_END);
+		if (ferror(SFile))
+			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+				std::string("Failed to seek to end of '") + Filename + "' for hashing");
+
+		*Filesize = ftello(SFile);
 	}
-	*Filesize = ftello(SFile);
+	catch (...) {
+		fclose(SFile);
+		av_sha1_final(ctx, Digest);
+		throw;
+	}
 	fclose(SFile);
-
 	av_sha1_final(ctx, Digest);
 }
 
-static bool PTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
-	return FI1.PTS < FI2.PTS;
-}
-
 void FFMS_Index::Sort() {
-	for (FFMS_Index::iterator Cur=begin(); Cur!=end(); Cur++) {
-
+	for (FFMS_Index::iterator Cur = begin(); Cur != end(); ++Cur) {
 		for (size_t i = 0; i < Cur->size(); i++)
 			Cur->at(i).OriginalPos = i;
 
@@ -294,11 +277,9 @@ static unsigned int z_def(ffms_fstream *IndexStream, z_stream *stream, void *in,
 void FFMS_Index::WriteIndex(const char *IndexFile) {
 	ffms_fstream IndexStream(IndexFile, std::ios::out | std::ios::binary | std::ios::trunc);
 
-	if (!IndexStream.is_open()) {
-		std::ostringstream buf;
-		buf << "Failed to open '" << IndexFile << "' for writing";
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
+	if (!IndexStream.is_open())
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("Failed to open '") + IndexFile + "' for writing");
 
 	z_stream stream;
 	memset(&stream, 0, sizeof(z_stream));
@@ -316,11 +297,7 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 	IH.LAVFVersion = avformat_version();
 	IH.LAVCVersion = avcodec_version();
 	IH.LSWSVersion = swscale_version();
-#ifdef FFMS_USE_POSTPROC
 	IH.LPPVersion = postproc_version();
-#else
-	IH.LPPVersion = 0;
-#endif
 	IH.FileSize = Filesize;
 	memcpy(IH.FileSignature, Digest, sizeof(Digest));
 
@@ -357,8 +334,6 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 }
 
 static unsigned int z_inf(ffms_fstream *Index, z_stream *stream, void *in, size_t in_sz, void *out, size_t out_sz) {
-	int ret;
-
 	if (out_sz == 0 || out == 0) return 0;
 	stream->next_out = (Bytef*) out;
 	stream->avail_out = out_sz;
@@ -369,20 +344,16 @@ static unsigned int z_inf(ffms_fstream *Index, z_stream *stream, void *in, size_
 		stream->next_in = (Bytef*) in;
 		stream->avail_in += Index->gcount();
 
-		ret = inflate(stream, Z_SYNC_FLUSH);
-		switch (ret) {
+		switch (inflate(stream, Z_SYNC_FLUSH)) {
 		case Z_NEED_DICT:
 			inflateEnd(stream);
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to read data: Dictionary error.");
-			break;
 		case Z_DATA_ERROR:
 			inflateEnd(stream);
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to read data: Data error.");
-			break;
 		case Z_MEM_ERROR:
 			inflateEnd(stream);
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to read data: Memory error.");
-			break;
 		case Z_STREAM_END:
 			inflateEnd(stream);
 			return out_sz - stream->avail_out;
@@ -395,41 +366,34 @@ static unsigned int z_inf(ffms_fstream *Index, z_stream *stream, void *in, size_
 void FFMS_Index::ReadIndex(const char *IndexFile) {
 	ffms_fstream Index(IndexFile, std::ios::in | std::ios::binary);
 
-	if (!Index.is_open()) {
-		std::ostringstream buf;
-		buf << "Failed to open '" << IndexFile << "' for reading";
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
+	if (!Index.is_open())
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("Failed to open '") + IndexFile + "' for reading");
 
 	z_stream stream;
 	memset(&stream, 0, sizeof(z_stream));
 	unsigned char in[CHUNK];
-	if (inflateInit(&stream) != Z_OK) {
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to initialize zlib");
-	}
+	if (inflateInit(&stream) != Z_OK)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			"Failed to initialize zlib");
 
 	// Read the index file header
 	IndexHeader IH;
 	z_inf(&Index, &stream,  &in, CHUNK, &IH, sizeof(IndexHeader));
-	if (IH.Id != INDEXID) {
-		std::ostringstream buf;
-		buf << "'" << IndexFile << "' is not a valid index file";
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
 
-	if (IH.Version != FFMS_VERSION) {
-		std::ostringstream buf;
-		buf << "'" << IndexFile << "' is not the expected index version";
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
+	if (IH.Id != INDEXID)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("'") + IndexFile + "' is not a valid index file");
+
+	if (IH.Version != FFMS_VERSION)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("'") + IndexFile + "' is the expected index version");
 
 	if (IH.LAVUVersion != avutil_version() || IH.LAVFVersion != avformat_version() ||
 		IH.LAVCVersion != avcodec_version() || IH.LSWSVersion != swscale_version() ||
-		IH.LPPVersion != postproc_version()) {
-		std::ostringstream buf;
-		buf << "A different FFmpeg build was used to create '" << IndexFile << "'";
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
+		IH.LPPVersion != postproc_version())
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("A different FFmpeg build was used to create '") + IndexFile + "'");
 
 	if (!(IH.Decoder & FFMS_GetEnabledSources()))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_NOT_AVAILABLE,
@@ -458,16 +422,17 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 				ctrack[j].SampleStart = ctrack[j].SampleStart + ctrack[j - 1].SampleStart;
 			}
 		}
-
-	} catch (...) {
-		std::ostringstream buf;
-		buf << "Unknown error while reading index information in '" << IndexFile << "'";
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
+	}
+	catch (FFMS_Exception const&) {
+		throw;
+	}
+	catch (...) {
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("Unknown error while reading index information in '") + IndexFile + "'");
 	}
 }
 
 FFMS_Index::FFMS_Index() {
-
 }
 
 FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20]) {
@@ -504,11 +469,9 @@ void FFMS_Indexer::SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate
 FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename) {
 	AVFormatContext *FormatContext = NULL;
 
-	if (av_open_input_file(&FormatContext, Filename, NULL, 0, NULL) != 0) {
-		std::ostringstream buf;
-		buf << "Can't open '" << Filename << "'";
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
+	if (av_open_input_file(&FormatContext, Filename, NULL, 0, NULL) != 0)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("Can't open '") + Filename + "'");
 
 	// Do matroska indexing instead?
 	if (!strncmp(FormatContext->iformat->name, "matroska", 8)) {
@@ -550,25 +513,29 @@ FFMS_Indexer::~FFMS_Indexer() {
 
 void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track, int DBSize) {
 	// Delay writer creation until after an audio frame has been decoded. This ensures that all parameters are known when writing the headers.
-	if (DBSize > 0) {
-		if (!AudioContext.W64Writer) {
-			FFMS_AudioProperties AP;
-			FillAP(AP, AudioContext.CodecContext, (*Index)[Track]);
-			int FNSize = (*ANC)(SourceFile, Track, &AP, NULL, 0, ANCPrivate);
-			std::vector<char> WName(FNSize);
-			(*ANC)(SourceFile, Track, &AP, &WName[0], FNSize, ANCPrivate);
-			std::string WN(&WName[0]);
-			try {
-				AudioContext.W64Writer = new Wave64Writer(WN.c_str(), av_get_bits_per_sample_fmt(AudioContext.CodecContext->sample_fmt),
-					AudioContext.CodecContext->channels, AudioContext.CodecContext->sample_rate, (AudioContext.CodecContext->sample_fmt == AV_SAMPLE_FMT_FLT) || (AudioContext.CodecContext->sample_fmt == AV_SAMPLE_FMT_DBL));
-			} catch (...) {
-				throw FFMS_Exception(FFMS_ERROR_WAVE_WRITER, FFMS_ERROR_FILE_WRITE,
-					"Failed to write wave data");
-			}
-		}
+	if (DBSize <= 0) return;
 
-		AudioContext.W64Writer->WriteData(&DecodingBuffer[0], DBSize);
+	if (!AudioContext.W64Writer) {
+		FFMS_AudioProperties AP;
+		FillAP(AP, AudioContext.CodecContext, (*Index)[Track]);
+		int FNSize = (*ANC)(SourceFile, Track, &AP, NULL, 0, ANCPrivate);
+		std::vector<char> WName(FNSize);
+		(*ANC)(SourceFile, Track, &AP, &WName[0], FNSize, ANCPrivate);
+		std::string WN(&WName[0]);
+		try {
+			AudioContext.W64Writer =
+				new Wave64Writer(WN.c_str(),
+					av_get_bits_per_sample_fmt(AudioContext.CodecContext->sample_fmt),
+					AudioContext.CodecContext->channels,
+					AudioContext.CodecContext->sample_rate,
+					(AudioContext.CodecContext->sample_fmt == AV_SAMPLE_FMT_FLT) || (AudioContext.CodecContext->sample_fmt == AV_SAMPLE_FMT_DBL));
+		} catch (...) {
+			throw FFMS_Exception(FFMS_ERROR_WAVE_WRITER, FFMS_ERROR_FILE_WRITE,
+				"Failed to write wave data");
+		}
 	}
+
+	AudioContext.W64Writer->WriteData(&DecodingBuffer[0], DBSize);
 }
 
 int64_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices) {
@@ -577,7 +544,7 @@ int64_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioC
 	int Read = 0;
 	while (Packet->size > 0) {
 		int dbsize = AVCODEC_MAX_AUDIO_FRAME_SIZE*10;
-		int Ret = avcodec_decode_audio3(CodecContext, &DecodingBuffer[0], &dbsize, Packet);
+		int Ret = avcodec_decode_audio3(CodecContext, (int16_t *)&DecodingBuffer[0], &dbsize, Packet);
 		if (Ret < 0) {
 			if (ErrorHandling == FFMS_IEH_ABORT) {
 				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING, "Audio decoding error");
