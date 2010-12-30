@@ -266,8 +266,8 @@ void FFMS_VideoSource::ReAdjustOutputFormat(int64_t TargetFormats, int Width, in
 	}
 
 	if (CodecContext->pix_fmt != OutputFormat || Width != CodecContext->width || Height != CodecContext->height) {
-		SWS = sws_getContext(CodecContext->width, CodecContext->height, CodecContext->pix_fmt, Width, Height,
-			OutputFormat, GetSWSCPUFlags() | Resizer, NULL, NULL, NULL);
+		SWS = GetSwsContext(CodecContext->width, CodecContext->height, CodecContext->pix_fmt, Width, Height,
+			OutputFormat, GetSWSCPUFlags() | Resizer);
 		if (SWS == NULL) {
 			ResetOutputFormat();
 			throw FFMS_Exception(FFMS_ERROR_SCALING, FFMS_ERROR_INVALID_ARGUMENT,

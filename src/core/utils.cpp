@@ -45,6 +45,8 @@ extern const AVCodecTag ff_codec_bmp_tags[];
 extern const CodecTags ff_mkv_codec_tags[];
 extern const AVCodecTag ff_codec_movvideo_tags[];
 extern const AVCodecTag ff_codec_wav_tags[];
+
+#include <libavutil/opt.h>
 }
 
 extern int CPUFeatures;
@@ -123,6 +125,49 @@ int GetSWSCPUFlags() {
 
 	return Flags;
 }
+
+static int handle_jpeg(PixelFormat *format)
+{
+	switch (*format) {
+	case PIX_FMT_YUVJ420P: *format = PIX_FMT_YUV420P; return 1;
+	case PIX_FMT_YUVJ422P: *format = PIX_FMT_YUV422P; return 1;
+	case PIX_FMT_YUVJ444P: *format = PIX_FMT_YUV444P; return 1;
+	case PIX_FMT_YUVJ440P: *format = PIX_FMT_YUV440P; return 1;
+	default:                                          return 0;
+	}
+}
+SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, int DstH, PixelFormat DstFormat, int Flags) {
+#if LIBSWSCALE_VERSION_INT < AV_VERSION_INT(0, 12, 0)
+	return sws_getContext(SrcW, SrcH, SrcFormat, DstW, DstH, DstFormat, Flags, 0, 0, 0);
+#else
+	SwsContext *Context = sws_alloc_context();
+	if (!Context) return 0;
+
+	int SrcRange = handle_jpeg(&SrcFormat);
+	int DstRange = handle_jpeg(&DstFormat);
+
+	av_set_int(Context, "sws_flags", Flags);
+	av_set_int(Context, "srcw",       SrcW);
+	av_set_int(Context, "srch",       SrcH);
+	av_set_int(Context, "dstw",       DstW);
+	av_set_int(Context, "dsth",       DstH);
+	av_set_int(Context, "src_range",  SrcRange);
+	av_set_int(Context, "dst_range",  DstRange);
+	av_set_int(Context, "src_format", SrcFormat);
+	av_set_int(Context, "dst_format", DstFormat);
+
+	sws_setColorspaceDetails(Context, sws_getCoefficients(SWS_CS_DEFAULT), SrcRange, sws_getCoefficients(SWS_CS_DEFAULT) /* FIXME*/, DstRange, 0, 1<<16, 1<<16);
+
+	if(sws_init_context(Context, 0, 0) < 0){
+		sws_freeContext(Context);
+		return 0;
+	}
+
+	return Context;
+#endif
+
+}
+
 
 int GetPPCPUFlags() {
 	int Flags = 0;

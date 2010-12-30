@@ -20,8 +20,7 @@
 
 #include "ffswscale.h"
 #include "avsutils.h"
-
-
+#include "../core/utils.h"
 
 SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env) : GenericVideoFilter(Child) {
 	Context = NULL;
@@ -73,8 +72,8 @@ SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char 
 		Env->ThrowError("SWScale: mod 2 output width required");
 
 	// may one day need a SWS_CS_DEFAULT in flags
-	Context = sws_getContext(OrigWidth, OrigHeight, ConvertFromFormat, vi.width, vi.height, ConvertToFormat,
-		AvisynthToFFCPUFlags(Env->GetCPUFlags()) | Resizer, NULL, NULL, NULL);
+	Context = GetSwsContext(OrigWidth, OrigHeight, ConvertFromFormat, vi.width, vi.height, ConvertToFormat,
+		AvisynthToFFCPUFlags(Env->GetCPUFlags()) | Resizer);
 	if (Context == NULL)
 		Env->ThrowError("SWScale: Context creation failed");
 }
