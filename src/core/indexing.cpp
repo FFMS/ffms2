@@ -226,6 +226,8 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 
 void FFMS_Index::Sort() {
 	for (FFMS_Index::iterator Cur = begin(); Cur != end(); ++Cur) {
+		if (Cur->size() > 2 && Cur->front().PTS >= Cur->back().PTS) Cur->pop_back();
+
 		for (size_t i = 0; i < Cur->size(); i++)
 			Cur->at(i).OriginalPos = i;
 
