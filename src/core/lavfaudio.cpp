@@ -45,10 +45,6 @@ FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, i
 		throw;
 	}
 
-	// Theoretically seeking by byte offset could work even for files with no
-	// timestamps, but the only format I've encountered that doesn't have any
-	// timestamps (flac) isn't seekable in any way
-	// https://roundup.ffmpeg.org/issue1150
 	if (Frames.back().PTS == Frames.front().PTS)
 		SeekOffset = -1;
 	else
