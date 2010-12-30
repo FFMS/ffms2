@@ -136,12 +136,15 @@ static int handle_jpeg(PixelFormat *format)
 	default:                                          return 0;
 	}
 }
-SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, int DstH, PixelFormat DstFormat, int Flags) {
+SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, int DstH, PixelFormat DstFormat, int Flags, int ColorSpace) {
 #if LIBSWSCALE_VERSION_INT < AV_VERSION_INT(0, 12, 0)
 	return sws_getContext(SrcW, SrcH, SrcFormat, DstW, DstH, DstFormat, Flags, 0, 0, 0);
 #else
 	SwsContext *Context = sws_alloc_context();
 	if (!Context) return 0;
+
+	if (ColorSpace == -1)
+		ColorSpace = (SrcW > 1024 || SrcH >= 600) ? SWS_CS_ITU709 : SWS_CS_DEFAULT;
 
 	int SrcRange = handle_jpeg(&SrcFormat);
 	int DstRange = handle_jpeg(&DstFormat);
@@ -156,7 +159,7 @@ SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, i
 	av_set_int(Context, "src_format", SrcFormat);
 	av_set_int(Context, "dst_format", DstFormat);
 
-	sws_setColorspaceDetails(Context, sws_getCoefficients(SWS_CS_DEFAULT), SrcRange, sws_getCoefficients(SWS_CS_DEFAULT) /* FIXME*/, DstRange, 0, 1<<16, 1<<16);
+	sws_setColorspaceDetails(Context, sws_getCoefficients(ColorSpace), SrcRange, sws_getCoefficients(ColorSpace), DstRange, 0, 1<<16, 1<<16);
 
 	if(sws_init_context(Context, 0, 0) < 0){
 		sws_freeContext(Context);

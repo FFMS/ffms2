@@ -71,7 +71,6 @@ SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char 
 	if ((ConvertToFormat == PIX_FMT_YUV420P || ConvertToFormat == PIX_FMT_YUYV422) && vi.width & 1)
 		Env->ThrowError("SWScale: mod 2 output width required");
 
-	// may one day need a SWS_CS_DEFAULT in flags
 	Context = GetSwsContext(OrigWidth, OrigHeight, ConvertFromFormat, vi.width, vi.height, ConvertToFormat,
 		AvisynthToFFCPUFlags(Env->GetCPUFlags()) | Resizer);
 	if (Context == NULL)
