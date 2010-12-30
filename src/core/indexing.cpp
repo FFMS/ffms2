@@ -497,7 +497,7 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename) {
 	return new FFLAVFIndexer(Filename, FormatContext);
 }
 
-FFMS_Indexer::FFMS_Indexer(const char *Filename) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 5) {
+FFMS_Indexer::FFMS_Indexer(const char *Filename) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10) {
 	IndexMask = 0;
 	DumpMask = 0;
 	ErrorHandling = FFMS_IEH_CLEAR_TRACK;
