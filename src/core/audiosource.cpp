@@ -141,7 +141,7 @@ void FFMS_AudioSource::CacheBlock(CacheIterator &pos, int64_t Start, size_t Samp
 }
 
 void FFMS_AudioSource::DecodeNextBlock() {
-	if (BytesPerSample == 0) BytesPerSample = (av_get_bits_per_sample_format(CodecContext->sample_fmt) * CodecContext->channels) / 8;
+	if (BytesPerSample == 0) BytesPerSample = (av_get_bits_per_sample_fmt(CodecContext->sample_fmt) * CodecContext->channels) / 8;
 
 	CurrentFrame = &Frames[PacketNumber];
 
