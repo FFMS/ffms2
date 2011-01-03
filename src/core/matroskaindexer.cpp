@@ -42,7 +42,6 @@ FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename) : FFMS_Indexer(Filena
 
 	MF = mkv_OpenEx(&MC.ST.base, 0, 0, ErrorMessage, sizeof(ErrorMessage));
 	if (MF == NULL) {
-		fclose(MC.ST.fp);
 		std::ostringstream buf;
 		buf << "Can't parse Matroska file: " << ErrorMessage;
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
@@ -56,7 +55,6 @@ FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename) : FFMS_Indexer(Filena
 
 FFMatroskaIndexer::~FFMatroskaIndexer() {
 	mkv_Close(MF);
-	fclose(MC.ST.fp);
 }
 
 FFMS_Index *FFMatroskaIndexer::DoIndexing() {
