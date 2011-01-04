@@ -20,6 +20,7 @@
 
 #include "ffpp.h"
 #include "avsutils.h"
+#include "../core/utils.h"
 
 #ifdef FFMS_USE_POSTPROC
 
