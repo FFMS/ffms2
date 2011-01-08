@@ -109,8 +109,8 @@ TrackCompressionContext::~TrackCompressionContext() {
 		cs_Destroy(CS);
 }
 
-int GetSWSCPUFlags() {
-	int Flags = 0;
+int64_t GetSWSCPUFlags() {
+	int64_t Flags = 0;
 
 	if (CPUFeatures & FFMS_CPU_CAPS_MMX)
 		Flags |= SWS_CPU_CAPS_MMX;
@@ -122,6 +122,10 @@ int GetSWSCPUFlags() {
 		Flags |= SWS_CPU_CAPS_ALTIVEC;
 	if (CPUFeatures & FFMS_CPU_CAPS_BFIN)
 		Flags |= SWS_CPU_CAPS_BFIN;
+#ifdef SWS_CPU_CAPS_SSE2
+	if (CPUFeatures & FFMS_CPU_CAPS_SSE2)
+		Flags |= SWS_CPU_CAPS_SSE2;
+#endif
 
 	return Flags;
 }
@@ -136,7 +140,7 @@ static int handle_jpeg(PixelFormat *format)
 	default:                                          return 0;
 	}
 }
-SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, int DstH, PixelFormat DstFormat, int Flags, int ColorSpace) {
+SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, int DstH, PixelFormat DstFormat, int64_t Flags, int ColorSpace) {
 #if LIBSWSCALE_VERSION_INT < AV_VERSION_INT(0, 12, 0)
 	return sws_getContext(SrcW, SrcH, SrcFormat, DstW, DstH, DstFormat, Flags, 0, 0, 0);
 #else

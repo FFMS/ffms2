@@ -28,14 +28,19 @@ extern "C" {
 
 
 
-int AvisynthToFFCPUFlags(long AvisynthFlags) {
-	int Flags = 0;
+int64_t AvisynthToFFCPUFlags(long AvisynthFlags) {
+	int64_t Flags = 0;
 
 	if (AvisynthFlags & CPUF_MMX)
 		Flags |= SWS_CPU_CAPS_MMX;
-
 	if (AvisynthFlags & CPUF_INTEGER_SSE)
 		Flags |= SWS_CPU_CAPS_MMX2;
+	if (AvisynthFlags & CPUF_3DNOW_EXT)
+		Flags |= SWS_CPU_CAPS_3DNOW;
+#ifdef SWS_CPU_CAPS_SSE2
+	if (AvisynthFlags & CPUF_SSE2)
+		Flags |= SWS_CPU_CAPS_SSE2;
+#endif
 
 	return Flags;
 }

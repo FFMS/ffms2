@@ -198,8 +198,8 @@ public:
 };
 
 
-int GetSWSCPUFlags();
-SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, int DstH, PixelFormat DstFormat, int Flags, int ColorSpace = -1);
+int64_t GetSWSCPUFlags();
+SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, int DstH, PixelFormat DstFormat, int64_t Flags, int ColorSpace = -1);
 int GetPPCPUFlags();
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
 FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT);

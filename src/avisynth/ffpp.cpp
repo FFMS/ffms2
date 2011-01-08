@@ -40,7 +40,7 @@ FFPP::FFPP(PClip AChild, const char *PP, IScriptEnvironment *Env) : GenericVideo
 	if (!PPMode)
 		Env->ThrowError("FFPP: Invalid postprocesing settings");
 
-	int Flags = AvisynthToFFCPUFlags(Env->GetCPUFlags());
+	int64_t Flags = AvisynthToFFCPUFlags(Env->GetCPUFlags());
 
 	if (vi.IsYV12()) {
 		Flags |= PP_FORMAT_420;
@@ -54,7 +54,9 @@ FFPP::FFPP(PClip AChild, const char *PP, IScriptEnvironment *Env) : GenericVideo
 		Env->ThrowError("FFPP: Only YV12 and YUY2 video supported");
 	}
 
-	PPContext = pp_get_context(vi.width, vi.height, Flags);
+	/* Flags as passed to pp_get_context will potentially no longer be the same int value,
+	 * but it will still have the correct binary representation (which is the important part). */
+	PPContext = pp_get_context(vi.width, vi.height, (int)Flags);
 	if (!PPContext)
 		Env->ThrowError("FFPP: Failed to create context");
 }
