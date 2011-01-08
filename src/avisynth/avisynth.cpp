@@ -32,7 +32,7 @@ static int GetNumberOfLogicalCPUs() {
 }
 
 static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()),  Args[7].AsBool(false));
+	FFMS_Init((int)AvisynthToFFCPUFlags(Env->GetCPUFlags()),  Args[7].AsBool(false));
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
@@ -79,7 +79,7 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 }
 
 static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()), Args[15].AsBool(false));
+	FFMS_Init((int)AvisynthToFFCPUFlags(Env->GetCPUFlags()), Args[15].AsBool(false));
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
@@ -174,7 +174,7 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 }
 
 static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	FFMS_Init(AvisynthToFFCPUFlags(Env->GetCPUFlags()), Args[5].AsBool(false));
+	FFMS_Init((int)AvisynthToFFCPUFlags(Env->GetCPUFlags()), Args[5].AsBool(false));
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;

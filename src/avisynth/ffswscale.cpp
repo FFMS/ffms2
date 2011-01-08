@@ -72,7 +72,7 @@ SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char 
 		Env->ThrowError("SWScale: mod 2 output width required");
 
 	Context = GetSwsContext(OrigWidth, OrigHeight, ConvertFromFormat, vi.width, vi.height, ConvertToFormat,
-		AvisynthToFFCPUFlags(Env->GetCPUFlags()) | Resizer);
+		AvisynthToFFCPUFlags(Env->GetCPUFlags(), false) | Resizer);
 	if (Context == NULL)
 		Env->ThrowError("SWScale: Context creation failed");
 }

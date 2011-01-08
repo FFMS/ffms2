@@ -40,7 +40,7 @@ FFPP::FFPP(PClip AChild, const char *PP, IScriptEnvironment *Env) : GenericVideo
 	if (!PPMode)
 		Env->ThrowError("FFPP: Invalid postprocesing settings");
 
-	int64_t Flags = AvisynthToFFCPUFlags(Env->GetCPUFlags());
+	int64_t Flags = AvisynthToFFCPUFlags(Env->GetCPUFlags(), false);
 
 	if (vi.IsYV12()) {
 		Flags |= PP_FORMAT_420;
