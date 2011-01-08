@@ -20,6 +20,7 @@
 
 #include "ffpp.h"
 #include "avsutils.h"
+#include "../core/utils.h"
 
 #ifdef FFMS_USE_POSTPROC
 
@@ -39,21 +40,23 @@ FFPP::FFPP(PClip AChild, const char *PP, IScriptEnvironment *Env) : GenericVideo
 	if (!PPMode)
 		Env->ThrowError("FFPP: Invalid postprocesing settings");
 
-	int Flags = AvisynthToFFCPUFlags(Env->GetCPUFlags());
+	int64_t Flags = AvisynthToFFCPUFlags(Env->GetCPUFlags(), false);
 
 	if (vi.IsYV12()) {
 		Flags |= PP_FORMAT_420;
 	} else if (vi.IsYUY2()) {
 		Flags |= PP_FORMAT_422;
-		SWSTo422P = sws_getContext(vi.width, vi.height, PIX_FMT_YUYV422, vi.width, vi.height, PIX_FMT_YUV422P, Flags | SWS_BICUBIC, NULL, NULL, NULL);
-		SWSFrom422P = sws_getContext(vi.width, vi.height, PIX_FMT_YUV422P, vi.width, vi.height, PIX_FMT_YUYV422, Flags | SWS_BICUBIC, NULL, NULL, NULL);
+		SWSTo422P = GetSwsContext(vi.width, vi.height, PIX_FMT_YUYV422, vi.width, vi.height, PIX_FMT_YUV422P, Flags | SWS_BICUBIC);
+		SWSFrom422P = GetSwsContext(vi.width, vi.height, PIX_FMT_YUV422P, vi.width, vi.height, PIX_FMT_YUYV422, Flags | SWS_BICUBIC);
 		avpicture_alloc(&InputPicture, PIX_FMT_YUV422P, vi.width, vi.height);
 		avpicture_alloc(&OutputPicture, PIX_FMT_YUV422P, vi.width, vi.height);
 	} else {
 		Env->ThrowError("FFPP: Only YV12 and YUY2 video supported");
 	}
 
-	PPContext = pp_get_context(vi.width, vi.height, Flags);
+	/* Flags as passed to pp_get_context will potentially no longer be the same int value,
+	 * but it will still have the correct binary representation (which is the important part). */
+	PPContext = pp_get_context(vi.width, vi.height, (int)Flags);
 	if (!PPContext)
 		Env->ThrowError("FFPP: Failed to create context");
 }

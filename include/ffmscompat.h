@@ -68,6 +68,12 @@
 #	endif
 #endif
 
+#ifdef LIBAVUTIL_VERSION_INT
+#	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(50, 8, 0))
+#		define av_get_pix_fmt avcodec_get_pix_fmt
+#	endif
+#endif
+
 #ifdef LIBSWSCALE_VERSION_INT
 #	if (LIBSWSCALE_VERSION_INT) < (AV_VERSION_INT(0,8,0))
 #		define FFMS_SWS_CONST_PARAM

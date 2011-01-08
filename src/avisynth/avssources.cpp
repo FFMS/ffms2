@@ -360,14 +360,13 @@ bool AvisynthVideoSource::GetParity(int n) {
 AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
 										 int AdjustDelay, IScriptEnvironment* Env) {
 	memset(&VI, 0, sizeof(VI));
-	SampleOffset = 0;
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
 	E.Buffer = ErrorMsg;
 	E.BufferSize = sizeof(ErrorMsg);
 
-	A = FFMS_CreateAudioSource(SourceFile, Track, Index, &E);
+	A = FFMS_CreateAudioSource(SourceFile, Track, Index, AdjustDelay, &E);
 	if (!A)
 		Env->ThrowError("FFAudioSource: %s", E.Buffer);
 
@@ -384,23 +383,6 @@ AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS
 		case FFMS_FMT_FLT: VI.sample_type = SAMPLE_FLOAT; break;
 		default: Env->ThrowError("FFAudioSource: Bad audio format");
 	}
-
-	if (AdjustDelay >= -2) {
-		double AdjustRelative = 0;
-		if (AdjustDelay >= -1) {
-			int TrackNum = AdjustDelay;
-			if (AdjustDelay == -1)
-				TrackNum = FFMS_GetFirstTrackOfType(Index, FFMS_TYPE_VIDEO, &E);
-
-			if (TrackNum >= 0) {
-				FFMS_Track *VTrack = FFMS_GetTrackFromIndex(Index, TrackNum);
-				AdjustRelative = (FFMS_GetFrameInfo(VTrack, 0)->PTS * FFMS_GetTimeBase(VTrack)->Num) / (double)FFMS_GetTimeBase(VTrack)->Den / 1000;
-			}
-		}
-
-		SampleOffset = static_cast<int64_t>((AdjustRelative - AP->FirstTime) * VI.audio_samples_per_second);
-		VI.num_audio_samples += SampleOffset;
-	}
 }
 
 AvisynthAudioSource::~AvisynthAudioSource() {
@@ -413,14 +395,6 @@ void AvisynthAudioSource::GetAudio(void* Buf, __int64 Start, __int64 Count, IScr
 	E.Buffer = ErrorMsg;
 	E.BufferSize = sizeof(ErrorMsg);
 
-	uint8_t *Buf2 = static_cast<uint8_t *>(Buf);
-	__int64 AdjustedStart = Start + SampleOffset;
-	if (AdjustedStart < 0) {
-		size_t Bytes = static_cast<size_t>(VI.BytesFromAudioSamples(-AdjustedStart));
-		memset(Buf, 0, Bytes);
-		Buf2 += Bytes;
-	}
-
-	if (FFMS_GetAudio(A, Buf2, FFMAX(AdjustedStart, 0), Count + FFMIN(AdjustedStart, 0), &E))
+	if (FFMS_GetAudio(A, Buf, Start, Count, &E))
 		Env->ThrowError("FFAudioSource: %s", E.Buffer);
 }

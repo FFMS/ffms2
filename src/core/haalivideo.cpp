@@ -27,98 +27,46 @@
 void FFHaaliVideo::Free(bool CloseCodec) {
 	if (CloseCodec)
 		avcodec_close(CodecContext);
-	av_freep(&CodecContext);
 	if (BitStreamFilter)
 		av_bitstream_filter_close(BitStreamFilter);
 }
 
 FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	FFMS_Index *Index, int Threads, enum FFMS_Sources SourceMode)
-	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track) {
-
+: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track) {
 	BitStreamFilter = NULL;
-	AVCodec *Codec = NULL;
-	CodecContext = NULL;
 	VideoTrack = Track;
 	Frames = (*Index)[VideoTrack];
 
 	pMMC = HaaliOpenFile(SourceFile, SourceMode);
 
-	CodecContext = avcodec_alloc_context();
-
-	int CurrentTrack = 0;
 	CComPtr<IEnumUnknown> pEU;
-	CComQIPtr<IPropertyBag> pBag;
-	if (SUCCEEDED(pMMC->EnumTracks(&pEU))) {
-		CComPtr<IUnknown> pU;
-		while (pEU->Next(1, &pU, NULL) == S_OK) {
-			if (CurrentTrack++ == Track) {
-				pBag = pU;
-
-				if (pBag) {
-					CComVariant pV;
-					unsigned int FourCC = 0;
-					FFMS_BITMAPINFOHEADER *bih = NULL;
-
-					pV.Clear();
-					if (SUCCEEDED(pBag->Read(L"FOURCC", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4))) {
-						FourCC = pV.uintVal;
-
-						// Reconstruct the missing codec private part for VC1
-						CodecContext->extradata_size = sizeof(FFMS_BITMAPINFOHEADER);
-						CodecContext->extradata = reinterpret_cast<uint8_t*>(av_malloc(CodecContext->extradata_size));
-						bih = reinterpret_cast<FFMS_BITMAPINFOHEADER *>(CodecContext->extradata);
-						bih->biSize = sizeof(FFMS_BITMAPINFOHEADER);
-						bih->biCompression = FourCC;
-						bih->biBitCount = 24;
-						bih->biPlanes = 1;
-
-						pV.Clear();
-						if (SUCCEEDED(pBag->Read(L"Video.PixelWidth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-							bih->biWidth = pV.uintVal;
-
-						pV.Clear();
-						if (SUCCEEDED(pBag->Read(L"Video.PixelHeight", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-							bih->biHeight = pV.uintVal;
-					}
-
-					pV.Clear();
-					if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
-						CodecContext->extradata_size += vtSize(pV);
-						CodecContext->extradata = reinterpret_cast<uint8_t*>(av_realloc(CodecContext->extradata, CodecContext->extradata_size));
-						vtCopy(pV, CodecContext->extradata + (bih ? bih->biSize : 0));
-
-						if (bih) {
-							bih->biSize = CodecContext->extradata_size;
-						}
-					}
-
-					pV.Clear();
-					if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
-						char ACodecID[2048];
-						wcstombs(ACodecID, pV.bstrVal, 2000);
-						Codec = avcodec_find_decoder(MatroskaToFFCodecID(ACodecID, CodecContext->extradata, FourCC));
-					}
-				}
-			}
-			pU = NULL;
-		}
-	}
-
-	if (avcodec_thread_init(CodecContext, Threads))
-		CodecContext->thread_count = 1;
-
-	if (Codec == NULL)
+	if (!SUCCEEDED(pMMC->EnumTracks(&pEU)))
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-			"Video codec not found");
+			"Failed to enumerate tracks");
 
-	InitializeCodecContextFromHaaliInfo(pBag, CodecContext);
+	CComPtr<IUnknown> pU;
+	int CurrentTrack = -1;
+	while (pEU->Next(1, &pU, NULL) == S_OK && ++CurrentTrack != Track) pU = NULL;
+	CComQIPtr<IPropertyBag> pBag = pU;
 
+	if (CurrentTrack != Track || !pBag)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+			"Failed to find track");
+
+	HCodecContext = InitializeCodecContextFromHaaliInfo(pBag);
+	CodecContext = HCodecContext;
+
+	AVCodec *Codec = NULL;
+	std::swap(Codec, CodecContext->codec);
 	if (avcodec_open(CodecContext, Codec) < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Could not open video codec");
 
-	if (Codec->id == CODEC_ID_H264 && SourceMode == FFMS_SOURCE_HAALIMPEG)
+	if (avcodec_thread_init(CodecContext, Threads))
+		CodecContext->thread_count = 1;
+
+	if (CodecContext->codec->id == CODEC_ID_H264 && SourceMode == FFMS_SOURCE_HAALIMPEG)
 		BitStreamFilter = av_bitstream_filter_init("h264_mp4toannexb");
 
 	Res.CloseCodec(true);

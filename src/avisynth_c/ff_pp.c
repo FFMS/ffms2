@@ -103,7 +103,7 @@ AVS_Value FFPP_create( AVS_ScriptEnvironment *env, AVS_Value child, const char *
     if( !filter->pp_mode )
         return avs_new_value_error( "FFPP: Invalid postprocesing settings" );
 
-    int flags = avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ) );
+    int64_t flags = avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ), 0 );
 
     if( avs_is_yv12( vi ) )
         flags |= PP_FORMAT_420;
@@ -111,10 +111,10 @@ AVS_Value FFPP_create( AVS_ScriptEnvironment *env, AVS_Value child, const char *
     {
         flags |= PP_FORMAT_422;
         int ok = 1;
-        filter->sws_to_422p = sws_getContext( vi->width, vi->height, PIX_FMT_YUYV422,
-            vi->width, vi->height, PIX_FMT_YUV422P, flags | SWS_BICUBIC, NULL, NULL, NULL );
-        filter->sws_from_422p = sws_getContext( vi->width, vi->height, PIX_FMT_YUV422P,
-            vi->width, vi->height, PIX_FMT_YUYV422, flags | SWS_BICUBIC, NULL, NULL, NULL );
+        filter->sws_to_422p = ffms_sws_get_context( vi->width, vi->height, PIX_FMT_YUYV422,
+            vi->width, vi->height, PIX_FMT_YUV422P, flags | SWS_BICUBIC, -1 );
+        filter->sws_from_422p = ffms_sws_get_context( vi->width, vi->height, PIX_FMT_YUV422P,
+            vi->width, vi->height, PIX_FMT_YUYV422, flags | SWS_BICUBIC, -1 );
         ok &= !avpicture_alloc( &filter->in_pic, PIX_FMT_YUV422P, vi->width, vi->height );
         ok &= !avpicture_alloc( &filter->out_pic, PIX_FMT_YUV422P, vi->width, vi->height );
         ok &= filter->sws_to_422p && filter->sws_from_422p;
@@ -124,7 +124,7 @@ AVS_Value FFPP_create( AVS_ScriptEnvironment *env, AVS_Value child, const char *
     else
         return avs_new_value_error( "FFPP: Only YV12 and YUY2 video supported" );
 
-    filter->pp_ctx = pp_get_context( vi->width, vi->height, flags );
+    filter->pp_ctx = pp_get_context( vi->width, vi->height, (int)flags );
     if( !filter->pp_ctx )
         return avs_new_value_error( "FFPP: Failed to create context" );
 

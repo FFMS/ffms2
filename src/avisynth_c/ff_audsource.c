@@ -25,7 +25,6 @@ typedef struct
 {
     AVS_FilterInfo *fi;
     FFMS_AudioSource *aud;
-    int64_t sample_offset;
 } ffaudiosource_filter_t;
 
 static void AVSC_CC free_filter( AVS_FilterInfo *fi )
@@ -50,16 +49,7 @@ static int AVSC_CC get_audio( AVS_FilterInfo *fi, void *buf, INT64 start, INT64 
     ffaudiosource_filter_t *filter = fi->user_data;
     init_ErrorInfo( ei );
 
-    uint8_t *buf2 = buf;
-    int64_t adjusted_start = start + filter->sample_offset;
-    if( adjusted_start < 0 )
-    {
-        int64_t bytes = avs_bytes_from_audio_samples( &fi->vi, -adjusted_start );
-        memset( buf, 0, bytes );
-        buf2 += bytes;
-    }
-
-    if( FFMS_GetAudio( filter->aud, buf2, FFMAX( adjusted_start, 0 ), count + FFMIN( adjusted_start, 0 ), &ei ) )
+    if( FFMS_GetAudio( filter->aud, buf, start, count, &ei ) )
         fi->error = ffms_avs_sprintf( "FFAudioSource: %s", ei.Buffer );
     return 0;
 }
@@ -86,7 +76,7 @@ AVS_Value FFAudioSource_create( AVS_ScriptEnvironment *env, const char *src, int
 
     init_ErrorInfo( ei );
 
-    filter->aud = FFMS_CreateAudioSource( src, track, index, &ei );
+    filter->aud = FFMS_CreateAudioSource( src, track, index, adjust_delay, &ei );
     if( !filter->aud )
         return avs_new_value_error( ffms_avs_sprintf( "FFAudioSource: %s", ei.Buffer ) );
 
@@ -102,26 +92,6 @@ AVS_Value FFAudioSource_create( AVS_ScriptEnvironment *env, const char *src, int
         case FFMS_FMT_S32: filter->fi->vi.sample_type = AVS_SAMPLE_INT32; break;
         case FFMS_FMT_FLT: filter->fi->vi.sample_type = AVS_SAMPLE_FLOAT; break;
         default: return avs_new_value_error( "FFAudioSource: Invalid audio format" );
-    }
-
-    if( adjust_delay >= -2 )
-    {
-        double adjust_relative = 0;
-        if( adjust_delay >= -1 )
-        {
-            int trackno = adjust_delay;
-            if( adjust_delay == -1 )
-                trackno = FFMS_GetFirstTrackOfType( index, FFMS_TYPE_VIDEO, &ei );
-
-            if( trackno >= 0 )
-            {
-                FFMS_Track *vidtrack = FFMS_GetTrackFromIndex( index, trackno );
-                adjust_relative = (double)FFMS_GetFrameInfo( vidtrack, 0 )->PTS * FFMS_GetTimeBase( vidtrack )->Num / FFMS_GetTimeBase( vidtrack )->Den / 1000;
-            }
-        }
-
-        filter->sample_offset = ((adjust_relative - audp->FirstTime) * filter->fi->vi.audio_samples_per_second);
-        filter->fi->vi.num_audio_samples += filter->sample_offset;
     }
 
     filter->fi->free_filter = free_filter;

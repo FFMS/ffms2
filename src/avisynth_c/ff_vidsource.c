@@ -20,6 +20,7 @@
 
 #include "avs_common.h"
 #include "ff_filters.h"
+#include <libavutil/common.h>
 
 typedef struct
 {
@@ -126,7 +127,7 @@ static int AVSC_CC get_parity( AVS_FilterInfo *fi, int n )
     return fi->vi.image_type == AVS_IT_TFF;
 }
 
-static int AVSC_CC get_audio(AVS_FilterInfo *fi, void *buf, INT64 start, INT64 count )
+static int AVSC_CC get_audio( AVS_FilterInfo *fi, void *buf, INT64 start, INT64 count )
 {
     return 0;
 }

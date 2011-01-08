@@ -21,16 +21,29 @@
 #include "avs_common.h"
 #include <string.h>
 #include <stdio.h>
+#include <libswscale/swscale.h>
+#include <ffms.h>
 
-int avs_to_ff_cpu_flags( long avisynth_flags )
+#if LIBSWSCALE_VERSION_INT >= AV_VERSION_INT(0, 12, 0)
+#define USE_AVOPT_SWSCALE 1
+#include <libavutil/opt.h>
+#endif
+
+int64_t avs_to_ff_cpu_flags( long avisynth_flags, int for_ffms )
 {
+#define CPU_FLAG(FLAG) for_ffms ? FFMS_CPU_CAPS_##FLAG : SWS_CPU_CAPS_##FLAG
     int flags = 0;
     if( avisynth_flags & AVS_CPU_MMX )
-        flags |= SWS_CPU_CAPS_MMX;
+        flags |= CPU_FLAG(MMX);
     if( avisynth_flags & AVS_CPU_INTEGER_SSE )
-        flags |= SWS_CPU_CAPS_MMX2;
-    if( avisynth_flags & AVS_CPU_3DNOW )
-        flags |= SWS_CPU_CAPS_3DNOW;
+        flags |= CPU_FLAG(MMX2);
+    if( avisynth_flags & AVS_CPU_3DNOW_EXT )
+        flags |= CPU_FLAG(3DNOW);
+#ifdef SWS_CPU_CAPS_SSE2
+    if( avisynth_flags & AVS_CPU_SSE2 )
+        flags |= CPU_FLAG(SSE2);
+#endif
+#undef CPU_FLAG
     return flags;
 }
 
@@ -119,4 +132,50 @@ char *ffms_avs_sprintf( const char *format, ... )
     vsnprintf( buf, sizeof(buf), format, list );
     va_end( list );
     return strdup( buf );
+}
+
+static int handle_jpeg( int *format )
+{
+	switch( *format )
+    {
+	case PIX_FMT_YUVJ420P: *format = PIX_FMT_YUV420P; return 1;
+	case PIX_FMT_YUVJ422P: *format = PIX_FMT_YUV422P; return 1;
+	case PIX_FMT_YUVJ444P: *format = PIX_FMT_YUV444P; return 1;
+	case PIX_FMT_YUVJ440P: *format = PIX_FMT_YUV440P; return 1;
+	default:                                          return 0;
+	}
+}
+
+struct SwsContext *ffms_sws_get_context( int src_width, int src_height, int src_pix_fmt, int dst_width, int dst_height, int dst_pix_fmt, int64_t flags, int csp )
+{
+#if USE_AVOPT_SWSCALE
+    struct SwsContext *ctx = sws_alloc_context();
+    if( !ctx )
+        return NULL;
+    if( csp == -1 )
+        csp = (src_width > 1024 || src_height >= 600) ? SWS_CS_ITU709 : SWS_CS_DEFAULT;
+    int src_range = handle_jpeg( &src_pix_fmt );
+    int dst_range = handle_jpeg( &dst_pix_fmt );
+
+    av_set_int( ctx, "sws_flags", flags );
+    av_set_int( ctx, "srcw", src_width );
+    av_set_int( ctx, "srch", src_height );
+    av_set_int( ctx, "dstw", dst_width );
+    av_set_int( ctx, "dsth", dst_height );
+    av_set_int( ctx, "src_range", src_range );
+    av_set_int( ctx, "dst_range", dst_range );
+    av_set_int( ctx, "src_format", src_pix_fmt );
+    av_set_int( ctx, "dst_format", dst_pix_fmt );
+
+    sws_setColorspaceDetails( ctx, sws_getCoefficients( csp ), src_range, sws_getCoefficients( csp ), dst_range, 0, 1<<16, 1<<16 );
+    if( sws_init_context( ctx, NULL, NULL ) < 0 )
+    {
+        sws_freeContext( ctx );
+        return NULL;
+    }
+
+    return ctx;
+#else
+    return sws_getContext( src_width, src_height, src_pix_fmt, dst_width, dst_height, dst_pix_fmt, flags, NULL, NULL, NULL );
+#endif
 }

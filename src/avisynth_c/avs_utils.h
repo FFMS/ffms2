@@ -21,14 +21,19 @@
 #ifndef FFAVS_UTILS_H
 #define FFAVS_UTILS_H
 
-#include <libswscale/swscale.h>
+#include <stdint.h>
 
-int   avs_to_ff_cpu_flags( long avisynth_flags );
+struct SwsContext;
+
+int64_t avs_to_ff_cpu_flags( long avisynth_flags, int for_ffms );
 enum  PixelFormat csp_name_to_pix_fmt( const char *csp_name, enum PixelFormat def );
 enum  PixelFormat vi_to_pix_fmt( const AVS_VideoInfo *vi );
 int   resizer_name_to_swscale_name( const char *resizer );
 void  fill_avs_frame_data( AVS_VideoFrame *frm, uint8_t *ptr[3], int stride[3], char read, char vertical_flip );
 char *ffms_avs_sprintf( const char *str, ... );
+struct SwsContext *ffms_sws_get_context( int src_width, int src_height, int src_pix_fmt, int dst_width,
+                                         int dst_height, int dst_pix_fmt, int64_t flags, int csp );
+
 
 #define init_ErrorInfo(ei_name) \
     char err_msg[1024];\

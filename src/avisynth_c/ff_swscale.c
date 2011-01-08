@@ -22,6 +22,7 @@
 #include <malloc.h>
 #include "ff_filters.h"
 #include "avs_common.h"
+#include "avs_utils.h"
 
 typedef struct
 {
@@ -112,8 +113,8 @@ AVS_Value FFSWScale_create( AVS_ScriptEnvironment *env, AVS_Value child, int dst
     if( (dst_pix_fmt == PIX_FMT_YUV420P || dst_pix_fmt == PIX_FMT_YUYV422) && (filter->fi->vi.width&1) )
         return avs_new_value_error( "SWScale: mod 2 output width required" );
 
-    filter->context = sws_getContext( filter->orig_width, filter->orig_height, src_format, filter->fi->vi.width, filter->fi->vi.height,
-         dst_pix_fmt, avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ) ) | resizer, NULL, NULL, NULL );
+    filter->context = ffms_sws_get_context( filter->orig_width, filter->orig_height, src_format, filter->fi->vi.width, filter->fi->vi.height,
+         dst_pix_fmt, avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ), 0 ) | resizer, -1 );
     if( !filter->context )
     {
         free( filter );
