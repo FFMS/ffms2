@@ -46,7 +46,10 @@ extern const CodecTags ff_mkv_codec_tags[];
 extern const AVCodecTag ff_codec_movvideo_tags[];
 extern const AVCodecTag ff_codec_wav_tags[];
 
-#include <libavutil/opt.h>
+/* if you have this, we'll assume you have a new enough libavutil too */
+#if LIBSWSCALE_VERSION_INT >= AV_VERSION_INT(0, 12, 0)
+#	include <libavutil/opt.h>
+#endif
 }
 
 extern int CPUFeatures;

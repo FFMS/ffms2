@@ -337,7 +337,7 @@ fi
 if [ -z "$FFMPEG_LIBS" -a -z "$FFMPEG_CFLAGS" ]; then
     FFMPEG_LIBS="-lavformat -lavcodec -lswscale"
     [ "$postproc" = "yes" ] && FFMPEG_LIBS="$FFMPEG_LIBS -lpostproc"
-    for lib in -lavutil -lavcore -lm -lz -lbz2 -lpthread -lavifil32; do
+    for lib in -lavcore -lavutil -lm -lz -lbz2 -lpthread -lavifil32; do
         cc_check "" $lib && FFMPEG_LIBS="$FFMPEG_LIBS $lib"
     done
 fi
