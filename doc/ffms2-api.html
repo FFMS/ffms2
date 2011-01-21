@@ -261,12 +261,12 @@ Does exactly the same thing as <tt>FFMS_CreateVideoSource</tt>, but for audio tr
 </p>
 <h4>Arguments</h4>
 <p><b><tt>int DelayMode</tt></b></p>
-<p>Controls how audio with a non-zero first PTS is handled</p>
+<p>Controls how audio with a non-zero first PTS is handled; in other words what FFMS does about audio delay. Possible arguments are:</p>
 <ul>
-    <li><b>FFMS_DELAY_NO_SHIFT:</b> Sample 0 = first sample in the file; no adjustment is made</li>
-    <li><b>FFMS_DELAY_TIME_ZERO:</b> Sample 0 = Audio at time zero</li>
-    <li><b>FFMS_DELAY_FIRST_VIDEO_TRACK:</b> Sample 0 = Audio at frame 0 of the first video track</li>
-    <li><b>&gt;=0:</b> Sample 0 = Audio at frame 0 of the specified video track</li>
+    <li><b>FFMS_DELAY_NO_SHIFT:</b> No adjustment is made; the first decodable audio sample becomes the first sample in the output. May lead to audio/video desync.</li>
+    <li><b>FFMS_DELAY_TIME_ZERO:</b> Samples are created (with silence) or discarded so that sample 0 in the decoded audio starts at time zero.</li>
+    <li><b>FFMS_DELAY_FIRST_VIDEO_TRACK:</b> Samples are created (with silence) or discarded so that sample 0 in the decoded audio starts at the same time as frame 0 of the first video track. This is what most users want and is a sane default.</li>
+    <li><b>Any integer &gt;= 0:</b> Identical to <tt>FFMS_DELAY_FIRST_VIDEO_TRACK</tt>, but interprets the argument as a track number and adjusts the audio relative to the video track with that number (if the given track number isn't a video track, audio source creation will fail).</li>
 </ul>
 
 <h3>FFMS_DestroyVideoSource, FFMS_DestroyAudioSource - deallocates a video or audio source object</h3>
@@ -380,6 +380,12 @@ Resets the postprocessing filter chain that will be applied to frames retrieved 
 Checks which source module (libavformat, Haali's Matroska parsing library, or Haali's DirectShow splitter) was used when opening the file represented by the given <tt>FFMS_Index</tt> and returns an integer (as enumerated in <tt>FFMS_Sources</tt>; see the Constants and Preprocessor Definitions section below) that represents it.
 </p>
 
+<h3>FFMS_GetSourceTypeI - gets which source module was used to open the given indexer</h3>
+<pre>int FFMS_GetSourceTypeI(FFMS_Index *Indexer)</pre>
+<p>
+Does the same thing as <tt>FFMS_GetSourceType</tt>, but takes an indexer instead of an index.
+</p>
+
 <h3>FFMS_GetFirstTrackOfType - gets the track number of the first track of a given type</h3>
 <pre>int FFMS_GetFirstTrackOfType(FFMS_Index *Index, int TrackType, FFMS_ErrorInfo *ErrorInfo)</pre>
 <p>Finds the first track of the given <tt>FFMS_TrackType</tt> in the given <tt>FFMS_Index</tt> and returns its track number, suitable for use as an argument to <tt>FFMS_CreateVideoSource</tt> or <tt>FFMS_CreateAudioSource</tt>, as well as to some other functions.
@@ -422,6 +428,11 @@ See above.</p>
 <h3>FFMS_GetCodecNameI - gets the name of the codec used for a given track</h3>
 <pre>const char *FFMS_GetCodecNameI(FFMS_Indexer *Indexer, int Track)</pre>
 <p>Returns the human-readable name ("long name" in ffmpeg terms) of the codec used in the given track number in the media file represented by the given <tt>FFMS_Indexer</tt> object. Useful if you want to, say, pop up a menu asking the user which tracks he or she wishes to index. Note that specifying an invalid track number may lead to undefined behavior.
+</p>
+
+<h3>FFMS_GetFormatNameI - gets the name of the container format used in the given indexer</h3>
+<pre>const char *FFMS_GetFormatNameI(FFMS_Indexer *Indexer)</pre>
+<p>Returns the human-readable name ("long name" in ffmpeg terms) of the container format used by the file represented by the given <tt>FFMS_Indexer</tt>.
 </p>
 
 <h3>FFMS_GetNumFrames - gets the number of frames in a given track</h3>
@@ -543,7 +554,14 @@ The callback function's arguments are as follows:</p>
 
 <h3>FFMS_CreateIndexer - creates an indexer object for the given file</h3>
 <pre>FFMS_Indexer *FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo)</pre>
-<p>Creates a <tt>FFMS_Indexer</tt> object for the given <tt>SourceFile</tt> and returns a pointer to it. See Indexing and You for details on how to use the indexer.</p>
+<p>Creates a <tt>FFMS_Indexer</tt> object for the given <tt>SourceFile</tt> and returns a pointer to it. See Indexing and You for details on how to use the indexer. Is basically a shorthand for <tt>FFMS_CreateIndexerWithDemuxer(SourceFile, FFMS_SOURCE_DEFAULT, ErrorInfo)</tt>.</p>
+<h4>Return values</h4>
+<p>Returns a pointer to the <tt>FFMS_Indexer</tt> on success. Returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.</p>
+
+<h3>FFMS_CreateIndexerWithDemuxer - creates an indexer object for the given file, using the given source module</h3>
+<pre>FFMS_Indexer *FFMS_CreateIndexer(const char *SourceFile, int Demuxer, FFMS_ErrorInfo *ErrorInfo)</pre>
+<p>Creates a <tt>FFMS_Indexer</tt> object for the given <tt>SourceFile</tt> using the given <tt>Demuxer</tt> (as enumerated in <tt>FFMS_Sources</tt>) and returns a pointer to it. See Indexing and You for details on how to use the indexer.<br />
+The chosen demuxer gets used for both indexing and decoding later on. Only force one if you know what you're doing. Picking a demuxer that doesn't work on your file will not cause automatic fallback on lavf or automatic probing; it'll just cause indexer creation to fail.</p>
 <h4>Return values</h4>
 <p>Returns a pointer to the <tt>FFMS_Indexer</tt> on success. Returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.</p>
 

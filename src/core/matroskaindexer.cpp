@@ -158,3 +158,12 @@ FFMS_TrackType FFMatroskaIndexer::GetTrackType(int Track) {
 const char *FFMatroskaIndexer::GetTrackCodec(int Track) {
 	return Codec[Track] ? Codec[Track]->name : NULL;
 }
+
+const char *FFMatroskaIndexer::GetFormatName() {
+	return "matroska";
+}
+
+FFMS_Sources FFMatroskaIndexer::GetSourceType() {
+	return FFMS_SOURCE_MATROSKA;
+}
+

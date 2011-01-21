@@ -378,9 +378,13 @@ FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const
 }
 
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo) {
+	return FFMS_CreateIndexerWithDemuxer(SourceFile, FFMS_SOURCE_DEFAULT, ErrorInfo);
+}
+
+FFMS_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int Demuxer, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
-		return FFMS_Indexer::CreateIndexer(SourceFile);
+		return FFMS_Indexer::CreateIndexer(SourceFile, static_cast<FFMS_Sources>(Demuxer));
 	} catch (FFMS_Exception &e) {
 		e.CopyOut(ErrorInfo);
 		return NULL;
@@ -449,6 +453,7 @@ FFMS_API(int) FFMS_GetPixFmt(const char *Name) {
 	return av_get_pix_fmt(Name);
 }
 
+
 FFMS_API(int) FFMS_GetPresentSources() {
 	int Sources = FFMS_SOURCE_LAVF | FFMS_SOURCE_MATROSKA;
 #ifdef HAALISOURCE
@@ -466,4 +471,12 @@ FFMS_API(int) FFMS_GetEnabledSources() {
 	if (HasHaaliOGG)
 		Sources |= FFMS_SOURCE_HAALIOGG;
 	return Sources;
+}
+
+FFMS_API(const char *) FFMS_GetFormatNameI(FFMS_Indexer *Indexer) {
+	return Indexer->GetFormatName();
+}
+
+FFMS_API(int) FFMS_GetSourceTypeI(FFMS_Indexer *Indexer) {
+	return Indexer->GetSourceType();
 }

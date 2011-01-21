@@ -158,3 +158,11 @@ const char *FFLAVFIndexer::GetTrackCodec(int Track) {
 	AVCodec *codec = avcodec_find_decoder(FormatContext->streams[Track]->codec->codec_id);
 	return codec ? codec->name : NULL;
 }
+
+const char *FFLAVFIndexer::GetFormatName() {
+	return this->FormatContext->iformat->name;
+}
+
+FFMS_Sources FFLAVFIndexer::GetSourceType() {
+	return FFMS_SOURCE_LAVF;
+}

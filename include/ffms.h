@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (14 << 16) | (1 << 8) | 1)
+#define FFMS_VERSION ((2 << 24) | (14 << 16) | (2 << 8) | 0)
 
 #include <stdint.h>
 
@@ -95,6 +95,7 @@ enum FFMS_Errors {
 };
 
 enum FFMS_Sources {
+	FFMS_SOURCE_DEFAULT	= 0x00,
 	FFMS_SOURCE_LAVF		= 0x01,
 	FFMS_SOURCE_MATROSKA	= 0x02,
 	FFMS_SOURCE_HAALIMPEG	= 0x04,
@@ -265,6 +266,7 @@ FFMS_API(int) FFMS_SetPP(FFMS_VideoSource *V, const char *PP, FFMS_ErrorInfo *Er
 FFMS_API(void) FFMS_ResetPP(FFMS_VideoSource *V);
 FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index);
 FFMS_API(int) FFMS_GetSourceType(FFMS_Index *Index);
+FFMS_API(int) FFMS_GetSourceTypeI(FFMS_Indexer *Indexer);
 FFMS_API(int) FFMS_GetFirstTrackOfType(FFMS_Index *Index, int TrackType, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_GetFirstIndexedTrackOfType(FFMS_Index *Index, int TrackType, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_GetNumTracks(FFMS_Index *Index);
@@ -272,6 +274,7 @@ FFMS_API(int) FFMS_GetNumTracksI(FFMS_Indexer *Indexer);
 FFMS_API(int) FFMS_GetTrackType(FFMS_Track *T);
 FFMS_API(int) FFMS_GetTrackTypeI(FFMS_Indexer *Indexer, int Track);
 FFMS_API(const char *) FFMS_GetCodecNameI(FFMS_Indexer *Indexer, int Track);
+FFMS_API(const char *) FFMS_GetFormatNameI(FFMS_Indexer *Indexer);
 FFMS_API(int) FFMS_GetNumFrames(FFMS_Track *T);
 FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFMS_Track *T, int Frame);
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track);
@@ -282,6 +285,7 @@ FFMS_API(int) FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, FFMS_
 FFMS_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int FNSize, void *Private);
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo);
+FFMS_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int Demuxer, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(void) FFMS_CancelIndexing(FFMS_Indexer *Indexer);
 FFMS_API(FFMS_Index *) FFMS_ReadIndex(const char *IndexFile, FFMS_ErrorInfo *ErrorInfo);
@@ -290,5 +294,6 @@ FFMS_API(int) FFMS_WriteIndex(const char *IndexFile, FFMS_Index *Index, FFMS_Err
 FFMS_API(int) FFMS_GetPixFmt(const char *Name);
 FFMS_API(int) FFMS_GetPresentSources();
 FFMS_API(int) FFMS_GetEnabledSources();
+
 
 #endif

@@ -168,4 +168,15 @@ const char *FFHaaliIndexer::GetTrackCodec(int Track) {
 	return CodecContext->codec->name;
 }
 
+const char *FFHaaliIndexer::GetFormatName() {
+	if (this->SourceMode == FFMS_SOURCE_HAALIMPEG)
+		return "mpeg";
+	else
+		return "ogg";
+}
+
+FFMS_Sources FFHaaliIndexer::GetSourceType() {
+	return static_cast<FFMS_Sources>(this->SourceMode);
+}
+
 #endif
