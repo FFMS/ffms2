@@ -124,6 +124,8 @@ protected:
 	void *ANCPrivate;
 	const char *SourceFile;
 	AlignedBuffer<uint8_t> DecodingBuffer;
+	FFMS_Sources Demuxer;
+	const char *FormatName;
 
 	int64_t Filesize;
 	uint8_t Digest[20];
@@ -132,7 +134,7 @@ protected:
 	void CheckAudioProperties(int Track, AVCodecContext *Context);
 	int64_t IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices);
 public:
-	static FFMS_Indexer *CreateIndexer(const char *Filename);
+	static FFMS_Indexer *CreateIndexer(const char *Filename, enum FFMS_Sources Demuxer = FFMS_SOURCE_DEFAULT);
 	FFMS_Indexer(const char *Filename);
 	virtual ~FFMS_Indexer();
 	void SetIndexMask(int IndexMask);
@@ -144,6 +146,8 @@ public:
 	virtual int GetNumberOfTracks() = 0;
 	virtual FFMS_TrackType GetTrackType(int Track) = 0;
 	virtual const char *GetTrackCodec(int Track) = 0;
+	virtual FFMS_Sources GetSourceType() = 0;
+	virtual const char *GetFormatName() = 0;
 };
 
 class FFLAVFIndexer : public FFMS_Indexer {
@@ -156,6 +160,8 @@ public:
 	int GetNumberOfTracks();
 	FFMS_TrackType GetTrackType(int Track);
 	const char *GetTrackCodec(int Track);
+	const char *GetFormatName();
+	FFMS_Sources GetSourceType();
 };
 
 class FFMatroskaIndexer : public FFMS_Indexer {
@@ -170,6 +176,8 @@ public:
 	int GetNumberOfTracks();
 	FFMS_TrackType GetTrackType(int Track);
 	const char *GetTrackCodec(int Track);
+	const char *GetFormatName();
+	FFMS_Sources GetSourceType();
 };
 
 #ifdef HAALISOURCE
@@ -188,6 +196,8 @@ public:
 	int GetNumberOfTracks();
 	FFMS_TrackType GetTrackType(int Track);
 	const char *GetTrackCodec(int Track);
+	const char *GetFormatName();
+	FFMS_Sources GetSourceType();
 };
 
 #endif // HAALISOURCE

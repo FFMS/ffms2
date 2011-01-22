@@ -50,6 +50,7 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 	const char *AudioFile = Args[4].AsString("%sourcefile%.%trackzn%.w64");
 	int ErrorHandling = Args[5].AsInt(FFMS_IEH_IGNORE);
 	bool OverWrite = Args[6].AsBool(false);
+	const char *DemuxerStr = Args[8].AsString("default");
 
 	std::string DefaultCache(Source);
 	DefaultCache.append(".ffindex");
@@ -59,9 +60,26 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 	if (!strcmp(AudioFile, ""))
 		Env->ThrowError("FFIndex: Specifying an empty audio filename is not allowed");
 
+	int Demuxer;
+	if (!strcmp(DemuxerStr, "default"))
+		Demuxer = FFMS_SOURCE_DEFAULT;
+	else if (!strcmp(DemuxerStr, "lavf"))
+		Demuxer = FFMS_SOURCE_LAVF;
+	else if (!strcmp(DemuxerStr, "matroska"))
+		Demuxer = FFMS_SOURCE_MATROSKA;
+	else if (!strcmp(DemuxerStr, "haalimpeg"))
+		Demuxer = FFMS_SOURCE_HAALIMPEG;
+	else if (!strcmp(DemuxerStr, "haaliogg"))
+		Demuxer = FFMS_SOURCE_HAALIOGG;
+	else
+		Env->ThrowError("FFIndex: Invalid demuxer requested");
+
 	FFMS_Index *Index = NULL;
 	if (OverWrite || !(Index = FFMS_ReadIndex(CacheFile, &E))) {
-		if (!(Index = FFMS_MakeIndex(Source, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, ErrorHandling, NULL, NULL, &E)))
+		FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(Source, Demuxer, &E);
+		if (!Indexer)
+			Env->ThrowError("FFIndex: %s", E.Buffer);
+		if (!(Index = FFMS_DoIndexing(Indexer, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, ErrorHandling, NULL, NULL, &E)))
 			Env->ThrowError("FFIndex: %s", E.Buffer);
 		if (FFMS_WriteIndex(CacheFile, Index, &E)) {
 			FFMS_DestroyIndex(Index);
@@ -276,7 +294,7 @@ static AVSValue __cdecl FFSetLogLevel(AVSValue Args, void* UserData, IScriptEnvi
 }
 
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScriptEnvironment* Env) {
-    Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b", CreateFFIndex, 0);
+    Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b[demuxer]s", CreateFFIndex, 0);
 	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b", CreateFFVideoSource, 0);
     Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b", CreateFFAudioSource, 0);
 #ifdef FFMS_USE_POSTPROC

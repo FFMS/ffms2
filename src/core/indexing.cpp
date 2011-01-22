@@ -468,33 +468,64 @@ void FFMS_Indexer::SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate
 	this->ANCPrivate = ANCPrivate;
 }
 
-FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename) {
+FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, enum FFMS_Sources Demuxer) {
 	AVFormatContext *FormatContext = NULL;
 
 	if (av_open_input_file(&FormatContext, Filename, NULL, 0, NULL) != 0)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Can't open '") + Filename + "'");
 
-	// Do matroska indexing instead?
-	if (!strncmp(FormatContext->iformat->name, "matroska", 8)) {
-		av_close_input_file(FormatContext);
-		return new FFMatroskaIndexer(Filename);
-	}
+	// Demuxer was not forced, probe for the best one to use
+	if (Demuxer == FFMS_SOURCE_DEFAULT) {
+		// Do matroska indexing instead?
+		if (!strncmp(FormatContext->iformat->name, "matroska", 8)) {
+			av_close_input_file(FormatContext);
+			return new FFMatroskaIndexer(Filename);
+		}
 
 #ifdef HAALISOURCE
-	// Do haali ts indexing instead?
-	if (HasHaaliMPEG && (!strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts"))) {
-		av_close_input_file(FormatContext);
-		return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
-	}
+		// Do haali ts indexing instead?
+		if (HasHaaliMPEG && (!strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts"))) {
+			av_close_input_file(FormatContext);
+			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
+		}
 
-	if (HasHaaliOGG && !strcmp(FormatContext->iformat->name, "ogg")) {
-		av_close_input_file(FormatContext);
-		return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
-	}
+		if (HasHaaliOGG && !strcmp(FormatContext->iformat->name, "ogg")) {
+			av_close_input_file(FormatContext);
+			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
+		}
 #endif
 
-	return new FFLAVFIndexer(Filename, FormatContext);
+		return new FFLAVFIndexer(Filename, FormatContext);
+	}
+
+	// someone forced a demuxer, use it
+	if (Demuxer != FFMS_SOURCE_LAVF)
+		av_close_input_file(FormatContext);
+#if !defined(HAALISOURCE)
+	if (Demuxer == FFMS_SOURCE_HAALIOGG || Demuxer == FFMS_SOURCE_HAALIMPEG) {
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Your binary was not compiled with support for Haali's DirectShow parsers");
+	}
+#endif // !defined(HAALISOURCE)
+
+	switch (Demuxer) {
+		case FFMS_SOURCE_LAVF:
+			return new FFLAVFIndexer(Filename, FormatContext);
+#ifdef HAALISOURCE
+		case FFMS_SOURCE_HAALIOGG:
+			if (!HasHaaliOGG)
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali's Ogg parser is not available");
+			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
+		case FFMS_SOURCE_HAALIMPEG:
+			if (!HasHaaliMPEG)
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali's MPEG PS/TS parser is not available");
+			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
+#endif
+		case FFMS_SOURCE_MATROSKA:
+			return new FFMatroskaIndexer(Filename);
+		default:
+			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_INVALID_ARGUMENT, "Invalid demuxer requested");
+	}
 }
 
 FFMS_Indexer::FFMS_Indexer(const char *Filename) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10) {

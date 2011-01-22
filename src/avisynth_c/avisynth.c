@@ -66,6 +66,7 @@ static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value a
     const char *audio_file = as_string( as_elt( args, 4 ), "%sourcefile%.%trackzn%.w64" );
     int err_handler = as_int( as_elt( args, 5 ), FFMS_IEH_IGNORE );
     char overwrite = as_bool( as_elt( args, 6 ), 0 );
+    const char *demuxer_str = as_string( as_elt( args, 8 ), "default" );
 
     if( !(cache_file = default_cache_file( src, cache_file )) )
         return avs_new_value_error( "FFIndex: memory allocation failure" );
@@ -73,13 +74,32 @@ static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value a
     if( !strcmp( audio_file, "" ) )
         return avs_new_value_error( "FFIndex: Specifying an empty audio filename is not allowed" );
 
+    int demuxer;
+    if( !strcasecmp( demuxer_str, "default" ) )
+        demuxer = FFMS_SOURCE_DEFAULT;
+    else if( !strcasecmp( demuxer_str, "lavf" ) )
+        demuxer = FFMS_SOURCE_LAVF;
+    else if( !strcasecmp( demuxer_str, "matroska" ) )
+        demuxer = FFMS_SOURCE_MATROSKA;
+    else if( !strcasecmp( demuxer_str, "haalimpeg" ) )
+        demuxer = FFMS_SOURCE_HAALIMPEG;
+    else if( !strcasecmp( demuxer_str, "haaliogg" ) )
+        demuxer = FFMS_SOURCE_HAALIOGG;
+    else
+        return avs_new_value_error( "FFIndex: Invalid demuxer requested" );
+
     FFMS_Index *index = NULL;
     if( overwrite || !(index = FFMS_ReadIndex( cache_file, &ei )) )
     {
-        if( !(index = FFMS_MakeIndex( src, index_mask, dump_mask, FFMS_DefaultAudioFilename,
-                (void*)audio_file, 1, NULL, NULL, &ei )) )
+        FFMS_Indexer *indexer = FFMS_CreateIndexerWithDemuxer( src, demuxer, &ei );
+        if( !indexer )
             return avs_new_value_error( ffms_avs_sprintf( "FFIndex: %s", ei.Buffer ) );
-        if( FFMS_WriteIndex( cache_file, index, &ei ) ) {
+        index = FFMS_DoIndexing( indexer, index_mask, dump_mask, FFMS_DefaultAudioFilename,
+                                 (void*)audio_file, err_handler, NULL, NULL, &ei );
+        if( !index )
+            return avs_new_value_error( ffms_avs_sprintf( "FFIndex: %s", ei.Buffer ) );
+        if( FFMS_WriteIndex( cache_file, index, &ei ) )
+        {
             FFMS_DestroyIndex( index );
             return avs_new_value_error( ffms_avs_sprintf( "FFIndex: %s", ei.Buffer ) );
         }
@@ -279,7 +299,7 @@ const char *AVSC_CC avisynth_c_plugin_init( AVS_ScriptEnvironment* env )
     /* load the avs library */
     if( ffms_load_avs_lib( env ) )
         return "Failure";
-    ffms_avs_lib->avs_add_function( env, "FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b", create_FFIndex, 0 );
+    ffms_avs_lib->avs_add_function( env, "FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b[demuxer]s", create_FFIndex, 0 );
     ffms_avs_lib->avs_add_function( env, "FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b", create_FFVideoSource, 0 );
     ffms_avs_lib->avs_add_function( env, "FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b", create_FFAudioSource, 0 );
     ffms_avs_lib->avs_add_function( env, "SWScale", "c[width]i[height]i[resizer]s[colorspace]s", create_SWScale, 0 );

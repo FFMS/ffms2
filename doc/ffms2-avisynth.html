@@ -69,7 +69,7 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 
 <h2>Functions in FFMS2.dll</h2>
 <p>
-<b>FFIndex(string source, string cachefile = source + ".ffindex", int indexmask = -1, int dumpmask = 0, string audiofile = "%sourcefile%.%trackzn%.w64", int errorhandling = 3, bool overwrite = false, bool utf8 = false)</b><br />
+<b>FFIndex(string source, string cachefile = source + ".ffindex", int indexmask = -1, int dumpmask = 0, string audiofile = "%sourcefile%.%trackzn%.w64", int errorhandling = 3, bool overwrite = false, bool utf8 = false, string demuxer = "default")</b><br />
  Used to invoke indexing separately with a few additional options and to write audio tracks to disk as wave64 files. It can be useful to use to avoid remaking the index twice or if some audio tracks are unsupported/broken and cannot be indexed properly.
 </p>
 
@@ -247,6 +247,17 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
   If set to true, FFMS will assume that the .avs script is encoded as UTF-8 and therefore interpret all filenames as UTF-8 encoded strings. This makes it possible to open files with funny filenames that otherwise would not be openable.<br />
   <b>NOTE:</b> You must make sure you save the file without a BOM (byte-order marker) or Avisynth will refuse to open it. Notepad will write a BOM, so use something else.<br />
   You should also note that setting this parameter incorrectly will cause all file openings to fail unless your filenames are exclusively 7-bit ASCII compatible.
+</p>
+
+<p>
+<b>demuxer:</b>
+  Forces FFMS to use a given demuxer, namely one of:
+  <b>default:</b> probe for the best source module, i.e. choose automatically. This is the default (duh).<br />
+  <b>lavf:</b> use libavformat.<br />
+  <b>matroska:</b> use Haali's Matroska parser. Obviously only works for Matroska and WebM files.<br />
+  <b>haalimpeg:</b> use Haali's DirectShow MPEG TS/PS parser. Only works if Haali Media Splitter is installed and only on MPEG TS/PS files (.ts/.m2ts/.mpg/.mpeg).<br />
+  <b>haaliogg:</b> use Haali's DirectShow Ogg parser. As above, only works if Haali Media Splitter is installed, and only on Ogg files (.ogg/.ogm).<br />
+  You should only use this parameter if you know exactly what you're doing and exactly why you want to force another demuxer.
 </p>
 
 <h2>Exported Avisynth variables</h2>

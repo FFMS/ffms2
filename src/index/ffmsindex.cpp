@@ -36,6 +36,7 @@ int TrackMask;
 int DumpMask;
 int Verbose;
 int IgnoreErrors;
+int Demuxer;
 bool Overwrite;
 bool PrintProgress;
 bool WriteTC;
@@ -59,7 +60,8 @@ static void PrintUsage () {
 	     << "-t N      Set the audio indexing mask to N (-1 means index all tracks, 0 means index none, default: 0)" << endl
 	     << "-d N      Set the audio decoding mask to N (mask syntax same as -t, default: 0)" << endl
 	     << "-a NAME   Set the audio output base filename to NAME (default: input filename)" << endl
-	     << "-s N      Set audio decoding error handling. See the documentation for details. (default: 0)" << endl;
+	     << "-s N      Set audio decoding error handling. See the documentation for details. (default: 0)" << endl
+		 << "-m NAME   Force the use of demuxer NAME (default, lavf, matroska, haalimpeg, haaliogg)" << endl;
 }
 
 
@@ -76,6 +78,7 @@ static void ParseCMDLine (int argc, char *argv[]) {
 	TrackMask = 0;
 	DumpMask  = 0;
 	Verbose = 0;
+	Demuxer = FFMS_SOURCE_DEFAULT;
 	Overwrite = false;
 	IgnoreErrors = false;
 	PrintProgress = true;
@@ -108,6 +111,21 @@ static void ParseCMDLine (int argc, char *argv[]) {
 			i++;
 		} else if (!Option.compare("-s")) {
 			IgnoreErrors = atoi(OptionArg.c_str());
+			i++;
+		} else if (!Option.compare("-m")) {
+			if (!OptionArg.compare("default"))
+				Demuxer = FFMS_SOURCE_DEFAULT;
+			else if (!OptionArg.compare("lavf"))
+				Demuxer = FFMS_SOURCE_LAVF;
+			else if (!OptionArg.compare("matroska"))
+				Demuxer = FFMS_SOURCE_MATROSKA;
+			else if (!OptionArg.compare("haalimpeg"))
+				Demuxer = FFMS_SOURCE_HAALIMPEG;
+			else if (!OptionArg.compare("haaliogg"))
+				Demuxer = FFMS_SOURCE_HAALIOGG;
+			else
+				std::cout << "Warning: invalid argument to -m (" << OptionArg << "), using default instead" << std::endl;
+
 			i++;
 		} else if (InputFile.empty()) {
 			InputFile = argv[i];
@@ -178,7 +196,8 @@ static void DoIndexing () {
 	if (Overwrite || Index == NULL) {
 		if (PrintProgress)
 			std::cout << "Indexing, please wait... 0% \r" << std::flush;
-		Index = FFMS_MakeIndex(InputFile.c_str(), TrackMask, DumpMask, &GenAudioFilename, NULL, IgnoreErrors, UpdateProgress, &Progress, &E);
+		FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(InputFile.c_str(), Demuxer, &E);
+		Index = FFMS_DoIndexing(Indexer, TrackMask, DumpMask, &GenAudioFilename, NULL, IgnoreErrors, UpdateProgress, &Progress, &E);
 		if (Index == NULL) {
 			std::string Err = "\nIndexing error: ";
 			Err.append(E.Buffer);
