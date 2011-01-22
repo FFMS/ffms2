@@ -511,6 +511,7 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, enum FFMS_Source
 	switch (Demuxer) {
 		case FFMS_SOURCE_LAVF:
 			return new FFLAVFIndexer(Filename, FormatContext);
+#ifdef HAALISOURCE
 		case FFMS_SOURCE_HAALIOGG:
 			if (!HasHaaliOGG)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali's Ogg parser is not available");
@@ -519,6 +520,7 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, enum FFMS_Source
 			if (!HasHaaliMPEG)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali's MPEG PS/TS parser is not available");
 			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
+#endif
 		case FFMS_SOURCE_MATROSKA:
 			return new FFMatroskaIndexer(Filename);
 		default:
