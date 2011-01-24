@@ -474,22 +474,27 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag)
 		if (SUCCEEDED(pBag->Read(L"FOURCC", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
 			FourCC = pV.uintVal;
 
-		// Reconstruct the missing codec private part for VC1
 		FFMS_BITMAPINFOHEADER bih;
 		memset(&bih, 0, sizeof bih);
-		bih.biSize = sizeof bih;
-		bih.biCompression = FourCC;
-		bih.biBitCount = 24;
-		bih.biPlanes = 1;
-		bih.biHeight = CodecContext->coded_height;
+		if (FourCC) {
+			// Reconstruct the missing codec private part for VC1
+			bih.biSize = sizeof bih;
+			bih.biCompression = FourCC;
+			bih.biBitCount = 24;
+			bih.biPlanes = 1;
+			bih.biHeight = CodecContext->coded_height;
+		}
 
 		pV.Clear();
 		if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
 			bih.biSize += vtSize(pV);
 			CodecContext->extradata = static_cast<uint8_t*>(av_malloc(bih.biSize));
-			memcpy(CodecContext->extradata, &bih, sizeof bih);
-			vtCopy(pV, CodecContext->extradata + sizeof bih);
+			// prepend BITMAPINFOHEADER if there's anything interesting in it (i.e. we're decoding VC1)
+			if (FourCC)
+				memcpy(CodecContext->extradata, &bih, sizeof bih);
+			vtCopy(pV, CodecContext->extradata + (FourCC ? sizeof bih : 0));
 		}
+		// use the BITMAPINFOHEADER only. not sure if this is correct or if it's ever going to be used...
 		else {
 			CodecContext->extradata = static_cast<uint8_t*>(av_malloc(bih.biSize));
 			memcpy(CodecContext->extradata, &bih, sizeof bih);
