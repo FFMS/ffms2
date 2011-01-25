@@ -294,7 +294,7 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 			// screw it, memcpy and fuck the losers who use header compression
 			memcpy(Context.Buffer, TCC->CompressedPrivateData, TCC->CompressedPrivateDataSize);
 		}
-		else if (Context.BufferSize < FrameSize) {
+		else if (Context.BufferSize < FrameSize + 16) {
 			Context.BufferSize = FrameSize;
 			safe_realloc(Context.Buffer, Context.BufferSize + 16);
 			if (Context.Buffer == NULL)
