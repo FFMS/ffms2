@@ -155,7 +155,7 @@ public:
 	}
 
 	~MatroskaReaderContext() {
-		free(Buffer);
+		av_free(Buffer);
 		if (ST.fp) fclose(ST.fp);
 	}
 };
