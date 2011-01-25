@@ -228,12 +228,12 @@ const char *GetLAVCSampleFormatName(AVSampleFormat s) {
 }
 
 template<class T> static void safe_realloc(T *&ptr, size_t size) {
-	void *newalloc = realloc(ptr, size);
+	void *newalloc = av_realloc(ptr, size);
 	if (newalloc) {
 		ptr = static_cast<T*>(newalloc);
 	}
 	else {
-		free(ptr);
+		av_free(ptr);
 		ptr = 0;
 	}
 }
@@ -308,7 +308,6 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 
 		size_t ReadBytes = fread(TargetPtr, 1, FrameSize, Context.ST.fp);
 		if (ReadBytes != FrameSize) {
-			return;
 			if (ReadBytes == 0) {
 				if (feof(Context.ST.fp)) {
 					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
