@@ -164,8 +164,11 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 			if (FAILED(pMMF->GetPointer(&Data)))
 				goto Error;
 
-			Packet.data = Data;
+			// align input data
 			Packet.size = pMMF->GetActualDataLength();
+			Packet.data = static_cast<uint8_t *>(av_mallocz(Packet.size + FF_INPUT_BUFFER_PADDING_SIZE));
+			memcpy(Packet.data, Data, Packet.size);
+
 			if (pMMF->IsSyncPoint() == S_OK)
 				Packet.flags = AV_PKT_FLAG_KEY;
 			else
@@ -174,15 +177,13 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 			AVBitStreamFilterContext *bsf = BitStreamFilter;
 			while (bsf) {
 				av_bitstream_filter_filter(bsf, CodecContext, NULL, &Packet.data,
-					&Packet.size, Data, pMMF->GetActualDataLength(), !!Packet.flags);
+					&Packet.size, Data, Packet.size, Packet.flags & AV_PKT_FLAG_KEY);
 				bsf = bsf->next;
 			}
 
 			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
 
-			/* if the packet is pointing to data not attained originally by Haali, then it was allocated by ffmpeg and needs to be av_free'd */
-			if (Packet.data != Data)
-				av_free(Packet.data);
+			av_free(Packet.data);
 
 			if (!FrameFinished)
 				DelayCounter++;
