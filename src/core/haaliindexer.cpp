@@ -89,6 +89,9 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 			VideoContexts[i].Parser = av_parser_init(CodecContext->codec->id);
 			VideoContexts[i].CodecContext = CodecContext;
 			VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
+
+			if (CodecContext->codec->id == CODEC_ID_H264 && SourceMode == FFMS_SOURCE_HAALIMPEG)
+				VideoContexts[i].BitStreamFilter = av_bitstream_filter_init("h264_mp4toannexb");
 		}
 		else {
 			AudioContexts[i].CodecContext = CodecContext;
@@ -129,6 +132,16 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 			uint8_t *OB;
 			int OBSize;
 			int RepeatPict = -1;
+			uint8_t *OriginalData = TempPacket.data;
+
+			if (VideoContexts[Track].BitStreamFilter) {
+				AVBitStreamFilterContext *bsf = VideoContexts[Track].BitStreamFilter;
+				while (bsf) {
+					av_bitstream_filter_filter(bsf, VideoContexts[Track].CodecContext, NULL,
+						&TempPacket.data, &TempPacket.size, TempPacket.data, TempPacket.size, (pMMF->IsSyncPoint() == S_OK));
+					bsf = bsf->next;
+				}
+			}
 
 			if (VideoContexts[Track].Parser) {
 				av_parser_parse2(VideoContexts[Track].Parser, VideoContexts[Track].CodecContext, &OB, &OBSize, TempPacket.data, TempPacket.size, ffms_av_nopts_value, ffms_av_nopts_value, ffms_av_nopts_value);
@@ -136,6 +149,10 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 			}
 
 			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(Ts, RepeatPict, pMMF->IsSyncPoint() == S_OK));
+
+			// if TempPacket.data points at data not originally attained by Haali, then it was allocated by ffmpeg and needs to be av_free()'d
+			if (TempPacket.data != OriginalData)
+				av_free(TempPacket.data);
 		} else if (TrackType[Track] == FFMS_TYPE_AUDIO && (IndexMask & (1 << Track))) {
 			TempPacket.flags = pMMF->IsSyncPoint() == S_OK ? AV_PKT_FLAG_KEY : 0;
 

@@ -68,6 +68,7 @@ struct TrackHeader {
 SharedVideoContext::SharedVideoContext(bool FreeCodecContext) {
 	CodecContext = NULL;
 	Parser = NULL;
+	BitStreamFilter = NULL;
 	this->FreeCodecContext = FreeCodecContext;
 	TCC = NULL;
 }
@@ -79,6 +80,8 @@ SharedVideoContext::~SharedVideoContext() {
 			av_freep(&CodecContext);
 	}
 	av_parser_close(Parser);
+	if (BitStreamFilter)
+		av_bitstream_filter_close(BitStreamFilter);
 	delete TCC;
 }
 

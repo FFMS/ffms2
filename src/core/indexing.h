@@ -45,6 +45,7 @@ private:
 public:
 	AVCodecContext *CodecContext;
 	AVCodecParserContext *Parser;
+	AVBitStreamFilterContext *BitStreamFilter;
 	TrackCompressionContext *TCC;
 
 	SharedVideoContext(bool FreeCodecContext);
