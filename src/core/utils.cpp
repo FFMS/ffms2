@@ -227,18 +227,19 @@ const char *GetLAVCSampleFormatName(AVSampleFormat s) {
 	}
 }
 
-template<class T> static void safe_realloc(T *&ptr, size_t size) {
-	void *newalloc = av_realloc(ptr, size);
+template<class T> static void safe_aligned_reallocz(T *&ptr, size_t size) {
+	void *newalloc = av_mallocz(size);
 	if (newalloc) {
+		av_free(ptr);
 		ptr = static_cast<T*>(newalloc);
 	}
 	else {
-		av_free(ptr);
-		ptr = 0;
+		ptr = NULL;
 	}
 }
 
 void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContext *TCC, MatroskaReaderContext &Context) {
+	memset(Context.Buffer, 0, Context.BufferSize); // necessary to avoid lavc hurfing a durf with some mpeg4 video streams
 	if (TCC && TCC->CS) {
 		CompressedStream *CS = TCC->CS;
 		unsigned int DecompressedFrameSize = 0;
@@ -260,9 +261,9 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 				return;
 			}
 
-			if (Context.BufferSize < DecompressedFrameSize + ReadBytes) {
-				Context.BufferSize = DecompressedFrameSize + ReadBytes;
-				safe_realloc(Context.Buffer, Context.BufferSize + FF_INPUT_BUFFER_PADDING_SIZE);
+			if (Context.BufferSize < DecompressedFrameSize + ReadBytes + FF_INPUT_BUFFER_PADDING_SIZE) {
+				Context.BufferSize = (DecompressedFrameSize + ReadBytes) * 2;
+				safe_aligned_reallocz(Context.Buffer, Context.BufferSize);
 				if (Context.Buffer == NULL)
 					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
 					"Out of memory");
@@ -279,10 +280,10 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 		}
 
 		if (TCC && TCC->CompressionMethod == COMP_PREPEND) {
-			unsigned ReqBufsize = FrameSize + TCC->CompressedPrivateDataSize + 16;
+			unsigned ReqBufsize = FrameSize + TCC->CompressedPrivateDataSize + FF_INPUT_BUFFER_PADDING_SIZE;
 			if (Context.BufferSize < ReqBufsize) {
-				Context.BufferSize = FrameSize + TCC->CompressedPrivateDataSize;
-				safe_realloc(Context.Buffer, ReqBufsize);
+				Context.BufferSize = ReqBufsize * 2;
+				safe_aligned_reallocz(Context.Buffer, Context.BufferSize);
 				if (Context.Buffer == NULL)
 					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED, "Out of memory");
 			}
@@ -294,9 +295,9 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 			// screw it, memcpy and fuck the losers who use header compression
 			memcpy(Context.Buffer, TCC->CompressedPrivateData, TCC->CompressedPrivateDataSize);
 		}
-		else if (Context.BufferSize < FrameSize + 16) {
-			Context.BufferSize = FrameSize;
-			safe_realloc(Context.Buffer, Context.BufferSize + 16);
+		else if (Context.BufferSize < FrameSize + FF_INPUT_BUFFER_PADDING_SIZE) {
+			Context.BufferSize = FrameSize * 2;
+			safe_aligned_reallocz(Context.Buffer, Context.BufferSize);
 			if (Context.Buffer == NULL)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
 					"Out of memory");

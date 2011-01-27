@@ -141,7 +141,7 @@ inline void DeleteMatroskaCodecContext(AVCodecContext *CodecContext) {
 	av_freep(&CodecContext);
 }
 
-struct MatroskaReaderContext {
+class MatroskaReaderContext {
 public:
 	StdIoStream ST;
 	uint8_t *Buffer;
@@ -150,12 +150,15 @@ public:
 
 	MatroskaReaderContext() {
 		InitStdIoStream(&ST);
-		Buffer = NULL;
-		BufferSize = 0;
+		Buffer = static_cast<uint8_t *>(av_mallocz(16384)); // arbitrarily decided number
+		if (!Buffer)
+			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED, "Out of memory");
+		BufferSize = 16384;
 	}
 
 	~MatroskaReaderContext() {
-		av_free(Buffer);
+		if (Buffer)
+			av_free(Buffer);
 		if (ST.fp) fclose(ST.fp);
 	}
 };
@@ -171,7 +174,7 @@ class AlignedBuffer {
 	T *buf;
 
 public:
-	AlignedBuffer(size_t n = 1) {
+	AlignedBuffer(size_t n = 1, bool zero = false) {
 		buf = (T*) av_malloc(sizeof(*buf) * n);
 		if (!buf) throw std::bad_alloc();
 	}
