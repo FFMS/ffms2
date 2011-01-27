@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: MatroskaParser.c,v 1.73 2010/03/05 22:41:47 mike Exp $
+ * $Id: MatroskaParser.c,v 1.75 2010/08/14 08:38:41 mike Exp $
  *
  */
 
@@ -70,6 +70,7 @@
 #define	EBML_MAX_SIZE_LENGTH  8
 #define	MATROSKA_VERSION      2
 #define	MATROSKA_DOCTYPE      "matroska"
+#define WEBM_DOCTYPE          "webm"
 
 #define	MAX_STRING_LEN	      1023
 #define	QSEGSIZE	      512
@@ -967,7 +968,7 @@ static void parseEBML(MatroskaFile *mf,ulonglong toplen) {
       break;
     case 0x4282: // DocType
       readString(mf,len,buf,sizeof(buf));
-      if (strcmp(buf,MATROSKA_DOCTYPE))
+      if (strcmp(buf,MATROSKA_DOCTYPE) != 0 && strcmp(buf,WEBM_DOCTYPE) != 0)
 	errorjmp(mf,"Unsupported DocType: %s",buf);
       break;
     case 0x4287: // DocTypeVersion
@@ -1202,14 +1203,10 @@ static void parseVideoInfo(MatroskaFile *mf,ulonglong toplen,struct TrackInfo *t
       break;
     case 0x54b2: // DisplayUnit
       v = readUInt(mf,(unsigned)len);
-      if (v>2)
-	errorjmp(mf,"Invalid DisplayUnit: %d",(int)v);
       ti->AV.Video.DisplayUnit = (unsigned char)v;
       break;
     case 0x54b3: // AspectRatioType
       v = readUInt(mf,(unsigned)len);
-      if (v>2)
-	errorjmp(mf,"Invalid AspectRatioType: %d",(int)v);
       ti->AV.Video.AspectRatioType = (unsigned char)v;
       break;
     case 0x54aa: // PixelCropBottom
