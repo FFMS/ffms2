@@ -228,12 +228,12 @@ const char *GetLAVCSampleFormatName(AVSampleFormat s) {
 }
 
 template<class T> static void safe_realloc(T *&ptr, size_t size) {
-	void *newalloc = realloc(ptr, size);
+	void *newalloc = av_realloc(ptr, size);
 	if (newalloc) {
 		ptr = static_cast<T*>(newalloc);
 	}
 	else {
-		free(ptr);
+		av_free(ptr);
 		ptr = 0;
 	}
 }
@@ -294,7 +294,7 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 			// screw it, memcpy and fuck the losers who use header compression
 			memcpy(Context.Buffer, TCC->CompressedPrivateData, TCC->CompressedPrivateDataSize);
 		}
-		else if (Context.BufferSize < FrameSize) {
+		else if (Context.BufferSize < FrameSize + 16) {
 			Context.BufferSize = FrameSize;
 			safe_realloc(Context.Buffer, Context.BufferSize + 16);
 			if (Context.Buffer == NULL)
@@ -308,7 +308,6 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 
 		size_t ReadBytes = fread(TargetPtr, 1, FrameSize, Context.ST.fp);
 		if (ReadBytes != FrameSize) {
-			return;
 			if (ReadBytes == 0) {
 				if (feof(Context.ST.fp)) {
 					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
@@ -474,22 +473,27 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag)
 		if (SUCCEEDED(pBag->Read(L"FOURCC", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
 			FourCC = pV.uintVal;
 
-		// Reconstruct the missing codec private part for VC1
 		FFMS_BITMAPINFOHEADER bih;
 		memset(&bih, 0, sizeof bih);
-		bih.biSize = sizeof bih;
-		bih.biCompression = FourCC;
-		bih.biBitCount = 24;
-		bih.biPlanes = 1;
-		bih.biHeight = CodecContext->coded_height;
+		if (FourCC) {
+			// Reconstruct the missing codec private part for VC1
+			bih.biSize = sizeof bih;
+			bih.biCompression = FourCC;
+			bih.biBitCount = 24;
+			bih.biPlanes = 1;
+			bih.biHeight = CodecContext->coded_height;
+		}
 
 		pV.Clear();
 		if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
 			bih.biSize += vtSize(pV);
 			CodecContext->extradata = static_cast<uint8_t*>(av_malloc(bih.biSize));
-			memcpy(CodecContext->extradata, &bih, sizeof bih);
-			vtCopy(pV, CodecContext->extradata + sizeof bih);
+			// prepend BITMAPINFOHEADER if there's anything interesting in it (i.e. we're decoding VC1)
+			if (FourCC)
+				memcpy(CodecContext->extradata, &bih, sizeof bih);
+			vtCopy(pV, CodecContext->extradata + (FourCC ? sizeof bih : 0));
 		}
+		// use the BITMAPINFOHEADER only. not sure if this is correct or if it's ever going to be used...
 		else {
 			CodecContext->extradata = static_cast<uint8_t*>(av_malloc(bih.biSize));
 			memcpy(CodecContext->extradata, &bih, sizeof bih);

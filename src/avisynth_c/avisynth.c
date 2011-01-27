@@ -29,24 +29,23 @@
 #define AvisynthPluginInit2 _AvisynthPluginInit2
 #endif
 
-static const char* default_cache_file( const char *src, const char *cache_file )
+#define MAX_CACHE_FILE_LENGTH 512 // Windows API should explode before getting this long
+
+static void default_cache_file( const char *src, const char *user_cache_file, char *out_cache_file )
 {
-    if( !strcmp( cache_file, "" ) )
+    if( !strcmp( user_cache_file, "" ) )
     {
-        char *def_cache = malloc( strlen( src ) + 9 );
-        if( !def_cache )
-            return NULL;
-        strcpy( def_cache, src );
-        strcat( def_cache, ".ffindex" );
-        cache_file = def_cache;
+        strcpy( out_cache_file, src );
+        strcat( out_cache_file, ".ffindex" );
     }
-    return cache_file;
+    else
+        strcpy( out_cache_file, user_cache_file );
 }
 
 static int get_num_logical_cpus()
 {
     SYSTEM_INFO SI;
-    GetSystemInfo(&SI);
+    GetSystemInfo( &SI );
     return SI.dwNumberOfProcessors;
 }
 
@@ -60,7 +59,7 @@ static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value a
         return avs_new_value_error( "FFIndex: No source specified" );
 
     const char *src = as_string( elt0, NULL );
-    const char *cache_file = as_string( as_elt( args, 1 ), "" );
+    const char *user_cache_file = as_string( as_elt( args, 1 ), "" );
     int index_mask = as_int( as_elt( args, 2 ), -1 );
     int dump_mask = as_int( as_elt( args, 3 ), 0 );
     const char *audio_file = as_string( as_elt( args, 4 ), "%sourcefile%.%trackzn%.w64" );
@@ -68,8 +67,8 @@ static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value a
     char overwrite = as_bool( as_elt( args, 6 ), 0 );
     const char *demuxer_str = as_string( as_elt( args, 8 ), "default" );
 
-    if( !(cache_file = default_cache_file( src, cache_file )) )
-        return avs_new_value_error( "FFIndex: memory allocation failure" );
+    char cache_file[MAX_CACHE_FILE_LENGTH];
+    default_cache_file( src, user_cache_file, cache_file );
 
     if( !strcmp( audio_file, "" ) )
         return avs_new_value_error( "FFIndex: Specifying an empty audio filename is not allowed" );
@@ -122,7 +121,7 @@ static AVS_Value AVSC_CC create_FFVideoSource( AVS_ScriptEnvironment *env, AVS_V
     const char *src = as_string( elt0, NULL );
     int track = as_int( as_elt( args, 1 ), -1 );
     char cache = as_bool( as_elt( args, 2 ), 1 );
-    const char *cache_file = as_string( as_elt( args, 3 ), "" );
+    const char *user_cache_file = as_string( as_elt( args, 3 ), "" );
     int fps_num = as_int( as_elt( args, 4 ), -1 );
     int fps_den = as_int( as_elt( args, 5 ), 1 );
     const char *pp = as_string( as_elt( args, 6 ), "" );
@@ -150,8 +149,8 @@ static AVS_Value AVSC_CC create_FFVideoSource( AVS_ScriptEnvironment *env, AVS_V
     if( !stricmp( src, timecodes ) )
         return avs_new_value_error( "FFVideoSource: Timecodes will overwrite the source" );
 
-    if( !(cache_file = default_cache_file( src, cache_file )) )
-        return avs_new_value_error( "FFVideoSource: memory allocation failure" );
+    char cache_file[MAX_CACHE_FILE_LENGTH];
+    default_cache_file( src, user_cache_file, cache_file );
 
     FFMS_Index *index = NULL;
     if( cache )
@@ -199,14 +198,14 @@ static AVS_Value AVSC_CC create_FFAudioSource( AVS_ScriptEnvironment *env, AVS_V
     const char *src = as_string( as_elt( args, 0 ), NULL );
     int track = as_int( as_elt( args, 1 ), -1 );
     char cache = as_bool( as_elt( args, 2 ), 1 );
-    const char *cache_file = as_string( as_elt( args, 3 ), "" );
+    const char *user_cache_file = as_string( as_elt( args, 3 ), "" );
     int adjust_delay = as_int( as_elt( args, 4 ), -1 );
 
     if( track <= -2 )
         return avs_new_value_error( "FFAudioSource: No audio track selected" );
 
-    if( !(cache_file = default_cache_file( src, cache_file )) )
-        return avs_new_value_error( "FFAudioSource: memory allocation failure" );
+    char cache_file[MAX_CACHE_FILE_LENGTH];
+    default_cache_file( src, user_cache_file, cache_file );
 
     FFMS_Index *index = NULL;
     if( cache )
