@@ -74,6 +74,7 @@ bool FFLAVFAudio::ReadPacket(AVPacket *Packet) {
 
 	while (av_read_frame(FormatContext, Packet) >= 0) {
 		if (Packet->stream_index == TrackNumber) {
+			while (PacketNumber > 0 && Frames[PacketNumber].PTS > Packet->pts) --PacketNumber;
 			while (Frames[PacketNumber].PTS < Packet->pts) ++PacketNumber;
 			return true;
 		}
