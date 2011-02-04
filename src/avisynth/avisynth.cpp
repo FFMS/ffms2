@@ -144,14 +144,28 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	if (!_stricmp(Source, Timecodes))
 		Env->ThrowError("FFVideoSource: Timecodes will overwrite the source");
 
-	std::string DefaultCache(Source);
-	DefaultCache.append(".ffindex");
-	if (!strcmp(CacheFile, ""))
-		CacheFile = DefaultCache.c_str();
-
 	FFMS_Index *Index = NULL;
-	if (Cache)
-		Index = FFMS_ReadIndex(CacheFile, &E);
+	std::string DefaultCache;
+	if (Cache) {
+		if (*CacheFile) {
+			if (!_stricmp(Source, CacheFile))
+				Env->ThrowError("FFVideoSource: Cache will overwrite the source");
+			Index = FFMS_ReadIndex(CacheFile, &E);
+		}
+		else {
+			DefaultCache = Source;
+			DefaultCache += ".ffindex";
+			CacheFile = DefaultCache.c_str();
+			Index = FFMS_ReadIndex(CacheFile, &E);
+			// Reindex if the index doesn't match the file and its name wasn't
+			// explicitly given
+			if (Index && FFMS_IndexBelongsToFile(Index, Source, 0) != FFMS_ERROR_SUCCESS) {
+				FFMS_DestroyIndex(Index);
+				Index = 0;
+			}
+		}
+	}
+
 	if (!Index) {
 		if (!(Index = FFMS_MakeIndex(Source, 0, 0, NULL, NULL, true, NULL, NULL, &E)))
 			Env->ThrowError("FFVideoSource: %s", E.Buffer);
@@ -211,14 +225,27 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	if (Track <= -2)
 		Env->ThrowError("FFAudioSource: No audio track selected");
 
-	std::string DefaultCache(Source);
-	DefaultCache.append(".ffindex");
-	if (!strcmp(CacheFile, ""))
-		CacheFile = DefaultCache.c_str();
-
 	FFMS_Index *Index = NULL;
-	if (Cache)
-		Index = FFMS_ReadIndex(CacheFile, &E);
+	std::string DefaultCache;
+	if (Cache) {
+		if (*CacheFile) {
+			if (!_stricmp(Source, CacheFile))
+				Env->ThrowError("FFVideoSource: Cache will overwrite the source");
+			Index = FFMS_ReadIndex(CacheFile, &E);
+		}
+		else {
+			DefaultCache = Source;
+			DefaultCache += ".ffindex";
+			CacheFile = DefaultCache.c_str();
+			Index = FFMS_ReadIndex(CacheFile, &E);
+			// Reindex if the index doesn't match the file and its name wasn't
+			// explicitly given
+			if (Index && FFMS_IndexBelongsToFile(Index, Source, 0) != FFMS_ERROR_SUCCESS) {
+				FFMS_DestroyIndex(Index);
+				Index = 0;
+			}
+		}
+	}
 
 	// Index needs to be remade if it is an unindexed audio track
 	if (Index && Track >= 0 && Track < FFMS_GetNumTracks(Index)
