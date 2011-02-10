@@ -652,8 +652,7 @@ static int ffms_lavf_file_open(URLContext *h, const char *filename, int flags) {
 // Hijack lavf's file protocol handler's open function and use our own instead.
 // Hack by nielsm.
 void ffms_patch_lavf_file_open() {
-	extern URLProtocol *first_protocol;
-	URLProtocol *proto = first_protocol;
+	URLProtocol *proto = av_protocol_next(NULL);
 	while (proto != NULL) {
 		if (strcmp("file", proto->name) == 0) {
 			break;
