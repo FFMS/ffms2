@@ -12,6 +12,7 @@ FFmpegSource2 Changelog
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
 <li>2.15<ul>
+<li>FFVideoSource and FFAudioSource will now automatically reindex and overwrite the index file if it doesn't match the file being opened and the <tt>cachefile</tt> argument is left as the default. (Plorkyeran)</li>
 <li>FFMS2 can now be used to decode Lagarith, but note that libavcodec's decoder is very experimental at the moment. (Plorkyeran)</li>
 <li>SWScale can now use SSE2 optimizations for certain operations if your CPU supports it. (kemuri_-9)</li>
 <li>Fixed a bug that could cause SWScale initialization to fail. (kemuri_-9)</li>
