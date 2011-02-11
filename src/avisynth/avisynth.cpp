@@ -230,7 +230,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	if (Cache) {
 		if (*CacheFile) {
 			if (!_stricmp(Source, CacheFile))
-				Env->ThrowError("FFVideoSource: Cache will overwrite the source");
+				Env->ThrowError("FFAudioSource: Cache will overwrite the source");
 			Index = FFMS_ReadIndex(CacheFile, &E);
 		}
 		else {
