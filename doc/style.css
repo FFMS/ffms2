@@ -49,3 +49,8 @@ body div.maincontent {
 	text-align: left;
 	width: 90%;
 }
+
+.avisynth-functionref dt {
+	font-family: monospace;
+	padding: 5px 3px 3px 3px;
+}
