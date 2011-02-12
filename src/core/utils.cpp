@@ -227,15 +227,13 @@ const char *GetLAVCSampleFormatName(AVSampleFormat s) {
 	}
 }
 
-template<class T> static void safe_aligned_reallocz(T *&ptr, size_t size) {
-	void *newalloc = av_mallocz(size);
+template<class T> static void safe_aligned_reallocz(T *&ptr, size_t old_size, size_t new_size) {
+	void *newalloc = av_mallocz(new_size);
 	if (newalloc) {
-		av_free(ptr);
-		ptr = static_cast<T*>(newalloc);
+		memcpy(newalloc, ptr, min(old_size, new_size));
 	}
-	else {
-		ptr = NULL;
-	}
+	av_free(ptr);
+	ptr = static_cast<T*>(newalloc);
 }
 
 void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContext *TCC, MatroskaReaderContext &Context) {
@@ -256,16 +254,16 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 
 			if (ReadBytes == 0) {
 				FrameSize = DecompressedFrameSize;
-				memset(Context.Buffer + DecompressedFrameSize, 0, Context.BufferSize - DecompressedFrameSize);
 				return;
 			}
 
 			if (Context.BufferSize < DecompressedFrameSize + ReadBytes + FF_INPUT_BUFFER_PADDING_SIZE) {
-				Context.BufferSize = (DecompressedFrameSize + ReadBytes) * 2;
-				safe_aligned_reallocz(Context.Buffer, Context.BufferSize);
+				size_t NewSize = (DecompressedFrameSize + ReadBytes) * 2;
+				safe_aligned_reallocz(Context.Buffer, Context.BufferSize, NewSize);
 				if (Context.Buffer == NULL)
 					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
 					"Out of memory");
+				Context.BufferSize = NewSize;
 			}
 
 			memcpy(Context.Buffer + DecompressedFrameSize, Context.CSBuffer, ReadBytes);
@@ -281,10 +279,11 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 		if (TCC && TCC->CompressionMethod == COMP_PREPEND) {
 			unsigned ReqBufsize = FrameSize + TCC->CompressedPrivateDataSize + FF_INPUT_BUFFER_PADDING_SIZE;
 			if (Context.BufferSize < ReqBufsize) {
-				Context.BufferSize = ReqBufsize * 2;
-				safe_aligned_reallocz(Context.Buffer, Context.BufferSize);
+				size_t NewSize = ReqBufsize * 2;
+				safe_aligned_reallocz(Context.Buffer, Context.BufferSize, NewSize);
 				if (Context.Buffer == NULL)
 					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED, "Out of memory");
+				Context.BufferSize = NewSize;
 			}
 
 			/* // maybe faster? maybe not?
@@ -295,11 +294,12 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 			memcpy(Context.Buffer, TCC->CompressedPrivateData, TCC->CompressedPrivateDataSize);
 		}
 		else if (Context.BufferSize < FrameSize + FF_INPUT_BUFFER_PADDING_SIZE) {
-			Context.BufferSize = FrameSize * 2;
-			safe_aligned_reallocz(Context.Buffer, Context.BufferSize);
+			size_t NewSize = FrameSize * 2;
+			safe_aligned_reallocz(Context.Buffer, Context.BufferSize, NewSize);
 			if (Context.Buffer == NULL)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
 					"Out of memory");
+			Context.BufferSize = NewSize;
 		}
 
 		uint8_t *TargetPtr = Context.Buffer;
