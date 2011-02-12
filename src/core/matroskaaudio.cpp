@@ -61,6 +61,7 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &
 }
 
 FFMatroskaAudio::~FFMatroskaAudio() {
+	TCC.reset(); // cs_Destroy() must be called before mkv_Close()
 	mkv_Close(MF);
 }
 
