@@ -230,7 +230,7 @@ const char *GetLAVCSampleFormatName(AVSampleFormat s) {
 template<class T> static void safe_aligned_reallocz(T *&ptr, size_t old_size, size_t new_size) {
 	void *newalloc = av_mallocz(new_size);
 	if (newalloc) {
-		memcpy(newalloc, ptr, min(old_size, new_size));
+		memcpy(newalloc, ptr, FFMIN(old_size, new_size));
 	}
 	av_free(ptr);
 	ptr = static_cast<T*>(newalloc);
