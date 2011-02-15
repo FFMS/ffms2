@@ -20,6 +20,10 @@
 
 #include "msvc-config.h"
 
+extern "C" {
+#include <libavutil/avutil.h>
+}
+
 // someone claimed that the borland c++ compiler defines _MSC_VER too,
 // but nobody cares about borland so let them suffer
 #ifdef _MSC_VER
@@ -30,12 +34,15 @@
 #pragma comment(lib, "libmoldname.a")
 #pragma comment(lib, "libmingwex.a")
 #pragma comment(lib, "libz.a")
-#pragma comment(lib, "libavcore.a")
 #pragma comment(lib, "libavutil.a")
 #pragma comment(lib, "libavcodec.a")
 #pragma comment(lib, "libavformat.a")
 #pragma comment(lib, "libswscale.a")
 #pragma comment(lib, "libwsock32.a")
+
+#if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(50,38,0))
+#	pragma comment(lib, "libavcore.a")
+#endif
 
 
 #if defined(WITH_LIBPOSTPROC) && defined(FFMS_USE_POSTPROC)
