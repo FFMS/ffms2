@@ -11,7 +11,7 @@ FFmpegSource2 User Manual
 <div class="maincontent">
 <h1>FFmpegSource2 User Manual</h1>
 <p>
-Opens files using FFmpeg and nothing else. May be frame accurate on good days. The source is MIT licensed and can be obtained from <a href="http://code.google.com/p/ffmpegsource/source/checkout">http://code.google.com/p/ffmpegsource/source/checkout</a>. The precompiled binary is GPL3 licensed. If you are religious you may consider this the second coming.
+Opens files using FFmpeg and (almost) nothing else. May be frame accurate on good days. The source is MIT licensed and can be obtained from <a href="http://code.google.com/p/ffmpegsource/source/checkout">http://code.google.com/p/ffmpegsource/source/checkout</a>. The precompiled binary is GPL3 licensed. If you are religious you may consider this the second coming.
 </p>
 
 <h2>Donate</h2>
@@ -30,20 +30,20 @@ Donate if you like this software. Collecting weird clips from the internet and m
 
 <h2>Limitations</h2>
 <ul>
-<li>Requires <a href='http://haali.cs.msu.ru/mkv/'>Haali's Media Splitter</a> if ogm or mpeg ps/ts is to be opened.</li>
+<li>Requires <a href='http://haali.cs.msu.ru/mkv/'>Haali's Media Splitter</a> if you want to seek in OGM or MPEG PS/TS. Trying to do non-linear access in those containers without it will end in tears.</li>
 <li>Haali's splitter requires transport streams to be cut at packet boundaries. Use <a href='http://forum.doom9.org/showthread.php?t=125447'>TsRemux</a> to fix the stream before trying to open it.</li>
-<li>Because of LAVF's demuxer most raw streams will fail to work properly such as elementary h264 and other mpeg video streams.</li>
+<li>Because of LAVF's demuxer, most raw streams (such as elementary h264 and other mpeg video streams) will fail to work properly.</li>
 <li>FFAudioSource() will have to remake any index implicitly created by FFVideoSource() and therefore code like
 <pre>
 AudioDub(FFVideoSource(X), FFAudioSource(X))
 </pre>
-will require two indexing passes. Apart from the time consumed this is harmless. To work around it open the audio first
+will require two indexing passes. Apart from the time consumed this is harmless. To work around it open the audio first:
 <pre>
 A = FFAudioSource(X)
 V = FFVideoSource(X)
 AudioDub(V, A)
 </pre>
-or use FFIndex().
+or use FFIndex(), like so:
 <pre>
 FFIndex(X)
 AudioDub(FFVideoSource(X), FFAudioSource(X))
@@ -51,13 +51,16 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 </li>
 </ul>
 
+
 <h2>Known issues</h2>
 <ul>
-<li>There will appear decoding artifacts on h264 in transport streams.</li>
-<li>FFIndex() will silently ignore fatal decoding errors when indexing. This means that indexing a specific track may have failed even if FFIndex() succeeds.</li>
+<li>Interlaced H.264 is decoded in an odd way; each field gets its own full-height frame and the fieldrate is reported as the framerate, and furthermore one of the fields (odd or even) may "jump around". To get the correct behavior, you can try setting <tt>fpsnum</tt> and <tt>fpsden</tt> so that the framerate is halved (may or may not work). This issue is caused by libavcodec.</li>
+<li>Decoding some M2TS files using Haali's splitter will cause massive blocking and other corruption issues. You can work around the issue either by remuxing the file to MKV (using GDSMux (make sure you untick "minimize output file size" in the Global settings tab) or eac3to), or (if you will be doing linear decoding only) by setting <tt>demuxer="lavf"</tt> in <tt>FFIndex</tt> and using <tt>seekmode=0</tt> with <tt>FFVideoSource</tt>. The cause of this issue is unknown but being investigated.</li>
 </ul>
 
+
 <h2>Compatibility</h2>
+<h3>Video</h3>
 <ul>
 <li>AVI, MKV, MP4, FLV: Frame accurate</li>
 <li>WMV: Frame accurate(?) but avformat seems to pick keyframes relatively far away</li>
@@ -67,228 +70,281 @@ AudioDub(FFVideoSource(X), FFAudioSource(X))
 <li>Image files: Most formats can be opened if seekmode=-1 is set, no animation support</li>
 </ul>
 
-<h2>Functions in FFMS2.dll</h2>
+<h3>Audio</h3>
+<p>Seeking should be sample-accurate with most codecs in AVI, MKV, MP4 and FLV with two notable exceptions, namely <b>MP3</b> and <b>AC3</b> where FFmpeg's decoders seem to be completely broken (with MP3 in particular you can feed the decoder the same encoded data three times in a row and get a different decoded result every time). Still, results should usually be "good enough" for most purposes.</p>
+<p>Decoding linearly will almost always work correctly.</p>
+
+<h2>Indexing and You</h2>
+<p>Before FFMS2 can open a file, it must be indexed first so that keyframe/sample positions are known and seeking is easily accomplished. This is done automatically when using <tt>FFVideoSource()</tt> or <tt>FFAudioSource()</tt>, but if you want to you can invoke the indexing yourself by calling <tt>FFIndex()</tt>, or by running <tt>ffmsindex.exe</tt>. By default the index is written to a file so it can be reused the next time you open the same file, but this behavior can be turned off if desired.</p>
+<p>If you wonder why FFMS2 takes so long opening files, the indexing is the answer. If you want a progress report on the indexing, you can use the supplied <tt>ffmsindex.exe</tt> commandline program.</p>
+
+
+<div class="avisynth-functionref">
+<h2>Function reference</h2>
+<h3>FFIndex</h3>
+<pre>
+FFIndex(string source, string cachefile = source + ".ffindex", int indexmask = -1,
+    int dumpmask = 0, string audiofile = "%sourcefile%.%trackzn%.w64", int errorhandling = 3,
+    bool overwrite = false, bool utf8 = false, string demuxer = "default")
+</pre>
 <p>
-<b>FFIndex(string source, string cachefile = source + ".ffindex", int indexmask = -1, int dumpmask = 0, string audiofile = "%sourcefile%.%trackzn%.w64", int errorhandling = 3, bool overwrite = false, bool utf8 = false, string demuxer = "default")</b><br />
- Used to invoke indexing separately with a few additional options and to write audio tracks to disk as wave64 files. It can be useful to use to avoid remaking the index twice or if some audio tracks are unsupported/broken and cannot be indexed properly.
+Indexes a number of tracks in a given source file and writes the index file to disk, where it can be picked up and used by <tt>FFVideoSource</tt> or <tt>FFAudioSource</tt>. Normally you do not need to call this function manually; it's invoked automatically if necessary by <tt>FFVideoSource</tt>/<tt>FFAudioSource</tt>. It does, however, give you more control over how indexing is done and it can also dump audio tracks to WAVE64 files while indexing is in progress.
+</p>
+<p>
+Note that this function returns an integer, not a clip (since it doesn't open video, nor audio). The return value isn't particularly interesting, but for the record it's 0 if the index file already exists (and is valid) and overwrite was not enabled, 1 if the index file was created and no previous index existed, and 2 if the index file was created by overwriting an existing, valid index file.
 </p>
 
+<h4>Arguments</h4>
+<dl>
+<dt>string source</dt>
+<dd>The source file to index.</dd>
+
+<dt>string cachefile = source + ".ffindex"</dt>
+<dd>The filename of the index file (where the indexing data is saved). Defaults to <tt>sourcefilename.ffindex</tt>.</dd>
+
+<dt>int indexmask = -1</dt>
+<dd>
+A binary mask representing what audio tracks should be indexed (all video tracks are always indexed; you have no choice in the matter). The mask is constructed by bitshifting 1 left by the track number; if multiple tracks are desired, bitwise OR each value so created together to get the full mask. In other words, the mask is a bit field where each bit is a track number (the least significant bit is track number 0). Since Avisynth doesn't have any bitwise operators at all, constructing the mask inside an Avisynth script is a rather annoying task.<br />
+Since the mask works like it does, and FFMS2 is designed to run on a machine that uses two's complement integers, -1 means index all tracks (the default) and 0 means index none.<br />
+Note that FFMS2's idea about what track has what number may be completely different from what any other application might think.
+</dd>
+
+<dt>int dumpmask = 0</dt>
+<dd>
+The same as indexmask, but the tracks flagged by this mask are dumped to disk as decompressed Wave64 files. This mask overrides indexmask if set to nonzero (more specifically, they are bitwise OR'ed together), since dumping a track indexes it at the same time.
+</dd>
+
+<dt>string audiofile = "%sourcefile%.%trackzn%.w64"</dt>
+<dd>A string representing a filename template that determines where the audio tracks set to be dumped by the <tt>dumpmask</tt> will be written. You can use a number of variables here; make sure you include a track number variable if you're dumping multiple tracks, or you'll get really weird results when FFMS2 tries to write multiple tracks to the same file. Available variables:
+<ul>
+<li><b>%sourcefile%</b> - same as the source argument, i.e. the file the audio is decoded from</li>
+<li><b>%trackn%</b> - the track number</li>
+<li><b>%trackzn%</b> - the track number, zero padded to two digits</li>
+<li><b>%samplerate%</b> - sample rate in Hertz</li>
+<li><b>%channels%</b> - number of channels</li>
+<li><b>%bps%</b> - bits per sample</li>
+<li><b>%delay%</b> - delay, or more exactly the first timestamp encountered in the audio stream</li>
+</ul>
+</dd>
+
+<dt>int errorhandling = 3</dt>
+<dd>
+Controls what happens if an audio decoding error is encountered during indexing. Possible values are:
+<ul>
+<li><b>0:</b> Raise an error and abort indexing. No index file is written.</li>
+<li><b>1:</b> Clear the affected track (effectively making it silent) and continue.</li>
+<li><b>2:</b> Stop indexing the track but keep all the index entries so far, effectively ending the track where the error occured.</li>
+<li><b>3:</b> Pretend it's raining and continue anyway. This is the default; if you encounter odd noises in the audio, try mode 0 instead and see if it's FFMS2's fault.</li>
+</ul>
+</dd>
+
+<dt>bool overwrite = false</dt>
+<dd>If set to true, <tt>FFIndex()</tt> will reindex the source file and overwrite the index file even if the index file already exists and is valid. Mostly useful for trackmask changes and testing.</dd>
+
+<dt>bool utf8 = false</dt>
+<dd>
+If set to true, FFMS will assume that the .avs script is encoded as UTF-8 and therefore interpret all filenames as UTF-8 encoded strings. This makes it possible to open files with funny filenames that otherwise would not be openable. You only need to set this parameter on the first FFMS2 function you call in a script; subsequent uses will have no further effect.<br />
+<b>NOTE:</b> You must make sure you save the file without a BOM (byte-order marker) or Avisynth will refuse to open it. Notepad will write a BOM, so use something else.<br />
+You should also note that setting this parameter incorrectly will cause all file openings to fail unless your filenames are exclusively 7-bit ASCII compatible.
+</dd>
+
+<dt>string demuxer = "default"</dt>
+<dd>
+Forces FFMS to use a given demuxer, namely one of:
+<ul>
+  <li><b>default</b>: probe for the best source module, i.e. choose automatically. This is the default (duh).</li>
+  <li><b>lavf</b>: use libavformat.</li>
+  <li><b>matroska</b>: use Haali's Matroska parser. Obviously only works for Matroska and WebM files.</li>
+  <li><b>haalimpeg</b>: use Haali's DirectShow MPEG TS/PS parser. Only works if Haali Media Splitter is installed and only on MPEG TS/PS files (.ts/.m2ts/.mpg/.mpeg).</li>
+  <li><b>haaliogg:</b> use Haali's DirectShow Ogg parser. As above, only works if Haali Media Splitter is installed, and only on Ogg files (.ogg/.ogm).</li>
+</ul>
+You should only use this parameter if you know exactly what you're doing and exactly why you want to force another demuxer.
+</dd>
+</dl>
+
+
+<h3>FFVideoSource</h3>
+<pre>
+FFVideoSource(string source, int track = -1, bool cache = true,
+    string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1,
+    string pp = "", int threads = -1, string timecodes = "", int seekmode = 1,
+    int rffmode = 0, int width = -1, int height = -1, string resizer = "BICUBIC",
+    string colorspace = "", bool utf8 = false)
+</pre>
 <p>
-<b>FFVideoSource(string source, int track, bool cache = true, string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1, string pp, int threads = -1, string timecodes, int seekmode = 1, int rffmode = 0, int width = -1, int height = -1, string resizer = "BICUBIC", string colorspace = "", bool utf8 = false)</b><br />
- Opens video, will invoke indexing of all video tracks if no usable index is found.
+Opens video. Will invoke indexing of all video tracks (but no audio tracks) if no valid index file is found.
 </p>
 
-<p>
-<b>FFAudioSource(string source, int track, bool cache = true, string cachefile = source + ".ffindex", int adjustdelay = -1, bool utf8 = false)</b><br />
- Opens audio, will invoke indexing of all tracks if no index exists or the requested track is not present in the index.
-</p>
+<h4>Arguments</h4>
+<dl>
+<dt>string source</dt>
+<dd>The source file to open.</dd>
 
-<p>
-<b>FFPP(clip, string pp)</b><br />
-  Separate postprocessing which also seems to include a few simple deinterlacers. Use the pp argument in FFVideoSource whenever possible as it will also have access to the video quantizers and thus adapt better to the video.
-</p>
+<dt>int track = -1</dt>
+<dd>The video track number to open, as seen by the relevant demuxer. Track numbers start from zero, and are guaranteed to be countinous (i.e. there must be a track 1 if there is a track 0 and a track 2). -1 means open the first video track. Note that FFMS2's idea about what track has what number may (or may not) be completely different from what some other application might think. Trying to open an audio track with <tt>FFVideoSource</tt> will naturally fail.</dd>
 
-<p>
-<b>SWScale(clip, int width = -1, int height = -1, string resizer = "BICUBIC", string colorspace = "")</b><br />
-  A resizing/colorspace conversion filter that does nothing special at all. May be useful in some cases just because it does not do things exactly like avisynth.
-</p>
+<dt>bool cache = true</dt>
+<dd>If set to true (the default), <tt>FFVideoSource</tt> will first check if the <tt>cachefile</tt> contains a valid index, and if it does, that index will be used. If no index is found, all video tracks will be indexed, and the indexing data will be written to <tt>cachefile</tt> afterwards. If set to false, <tt>FFVideoSource</tt> not look for an existing index file; instead all video tracks will be indexed when the script is opened, and the indexing data will be discarded after the script is closed; you will have to index again next time you open the script.</dd>
 
-<p>
-<b>FFSetLogLevel(int Level = -8)</b><br />
-  Sets the log FFmpeg logging level. Defaults to quiet (-8) and the FFmpeg default is 16. All possible different values can be found in avutil/log.h.
-</p>
+<dt>string cachefile = source + ".ffindex"</dt>
+<dd>The filename of the index file (where the indexing data is saved). Defaults to <tt>sourcefilename.ffindex</tt>. Note that if you didn't change this parameter from its default value and <tt>FFVideoSource</tt> encounters an index file that doesn't seem to match the file it's trying to open, it will automatically reindex and then overwrite the old index file. On the other hand, if you <em>do</em> change it, <tt>FFVideoSource</tt> will assume you have your reasons and throw an error instead if the index doesn't match the file.</dd>
 
-<p>
-<b>FFGetLogLevel()</b><br />
-  Returns the current level of logging as an int.
-</p>
+<dt>int fpsnum = -1, int fpsden = 1</dt>
+<dd>Forces a given (constant) framerate, expressed as a rational number where <tt>fpsnum</tt> is the numerator and <tt>fpsden</tt> is the denominator. Used for VFR to CFR conversion, as it will make <tt>FFVideoSource</tt> drop or duplicate frames to convert VFR to CFR if <tt>fpsnum</tt> is greater than 0. Setting <tt>fpsnum</tt> to a number less than or equal to zero means no frames will be dropped or duplicated.</dd>
 
-<h2>Functions in FFMS2.avsi</h2>
-<p>
-<b>FFmpegSource2(string source, int vtrack = -1, int atrack = -2, bool cache = true,
- string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1, string pp, int threads = -1,
-	string timecodes, int seekmode = 1, bool overwrite = false, int width = -1, int height = -1, string resizer = "BICUBIC", string colorspace = "", int rffmode = 0,
-	int adjustdelay = -1)</b><br />
- Approximates the syntax later versions of the 1.x series. Can be convenient to use with atrack=-1 to load both audio and video at the same time. Note that the adjustdelay parameter may need to be specified for the expected behavior if a video track other than the first is selected.
-</p>
+<dt>string pp = ""</dt>
+<dd>Sets a chain of postprocessing filters, expressed as a string (see the "PP string format" section below). Mostly useful to do quantizer-based deblocking/deringing, but can also do simple deinterlacing and a few other odd things.</dd>
 
-<p>
-<b>FFImageSource(string source, int width = -1, int height = -1, string resizer = "BICUBIC", string colorspace = "")</b><br />
- Another alias for FFVideoSource with the options set optimally for using it as an image reader. Disables caching and seeking for maximum compatiblity.
-</p>
+<dt>int threads = -1</dt>
+<dd>The number of decoding threads to request from libavcodec. Setting it to less than or equal to zero means it defaults to the number of logical CPU's reported by Windows. Note that this setting might be completely ignored by libavcodec under a number of conditions; most commonly because a lot of decoders actually do not support multithreading. You may also have a libavcodec without threading support compiled in at all.</dd>
 
-<p>
-<b>FFFormatTime(int ms)</b><br />
- A helper function to format time given in milliseconds into a h:mm:ss.ttt string.
-</p>
+<dt>string timecodes = ""</dt>
+<dd>Filename to write Matroska v2 timecodes for the opened video track to. If the file exists, it will be truncated and overwritten. Set to the empty string to disable timecodes writing (this is the default).</dd>
 
-<p>
-<b>FFInfo(clip c, bool framenum = true, bool frametype = true, bool cfrtime = true, bool vfrtime = true)</b><br />
- A helper function to show general information about the current frame. Note that not all values are exported in all source modes and will therefore not always be shown.
-</p>
+<dt>int seekmode = 1</dt>
+<dd>Controls how seeking is done. Mostly useful for getting uncooperative files to work. Only has an effect on files opened with the libavformat demuxer; on other files the equivalent of mode 1 is always used. Valid modes are:
+<ul>
+<li><b>-1:</b> Linear access without rewind; i.e. will throw an error if each successive requested frame number isn't bigger than the last one. Only intended for opening images but might work on well with some obscure video format.</li>
+<li><b>0:</b> Linear access (i.e. if you request frame <tt>n</tt> without having requested frames 0 to <tt>n-1</tt> in order first, all frames from 0 to <tt>n</tt> will have to be decoded before <tt>n</tt> can be delivered). The definition of slow, but should make some formats "usable".</li>
+<li><b>1:</b> Safe normal. Bases seeking decisions on the keyframe positions reported by libavformat.</li>
+<li><b>2:</b> Unsafe normal. Same as mode 1, but no error will be thrown if the exact seek destination has to be guessed.</li>
+<li><b>3:</b> Aggressive. Seeks in the forward direction even if no closer keyframe is known to exist. Only useful for testing and containers where libavformat doesn't report keyframes properly.</li>
+</ul>
+</dd>
 
-<h2>Function arguments</h2>
-<p>
-<b>source:</b>
-  Source file.
-</p>
+<dt>int rffmode = 0</dt>
+<dd>Controls how RFF flags in the video stream are treated; in other words it's equivalent to the "field operation" mode switch in DVD2AVI/DGIndex. Valid modes are:
+<ul>
+<li><b>0:</b> Ignore all flags (the default mode).</li>
+<li><b>1:</b> Honor all pulldown flags.</li>
+<li><b>2:</b> Equivalent to DVD2AVI's "force film" mode.</li>
+</ul>
+Note that using modes 1 or 2 will make <tt>FFVideoSource</tt> throw an error if the video stream has no RFF flags at all. When using either of those modes, it will also make the output be assumed as CFR, disallow vertical scaling and disallow setting the output colorspace. <tt>FFPICT_TYPE</tt> will also not be set as the output is a combination of several frames. Other subtle behavior changes may also exist.<br />
+Also note that "force film" is mostly useless and only here for completeness' sake, since if your source really is safe to force film on, using mode 0 will have the exact same effect while being considerably more efficient.</dd>
 
-<p>
-<b>indexmask &amp; dumpmask:</b>
-  Which audio tracks to index/write to disk. Dumping a track also implies indexing since the same work has to be done anyway. It is a binary mask meaning that 7 corresponds to writing tracks 1-3. Non-audio tracks are ignored. -1 writes all tracks.
-</p>
+<dt>int width = -1, int height = -1</dt>
+<dd>Sets the resolution of the output video, in pixels. Setting either dimension to less than or equal to zero means the resolution of the first decoded video frame is used for that dimension. These parameters are mostly useful because FFMS2 supports video streams that change resolution mid-stream; since Avisynth does not, these parameters are used to set single resolution for the output.</dd>
 
-<p>
-<b>audiofile:</b>
-  The filename to use for dumped audio tracks. Make sure to include a track number variable to avoid multiple file access errors. The variables are case sensitive. The available variables are:<br />
-<b>%sourcefile%</b> - same as the source argument, the file the audio is decoded from<br />
-<b>%trackn%</b> - the track number<br />
-<b>%trackzn%</b> - the track number zero padded to 2 digits<br />
-<b>%samplerate%</b> - self explanatory<br />
-<b>%channels%</b> - self explanatory<br />
-<b>%bps%</b> - bits per sample<br />
-<b>%delay%</b> - delay, or more exactly the first timestamp encountered in the audio stream
-</p>
+<dt>string resizer = "BICUBIC"</dt>
+<dd>The resizing algorithm to use if rescaling the image is necessary. If the video uses subsampled chroma but your chosen output colorspace does not, the chosen resizer will be used to upscale the chroma planes, even if you did not request an image rescaling. The available choices are <tt>FAST_BILINEAR</tt>, <tt>BILINEAR</tt>, <tt>BICUBIC</tt> (default), <tt>X</tt>, <tt>POINT</tt>, <tt>AREA</tt>, <tt>BICUBLIN</tt>, <tt>GAUSS</tt>, <tt>SINC</tt>, <tt>LANCZOS</tt> and <tt>SPLINE</tt>. Note that <tt>SPLINE</tt> is completely different from Avisynth's builtin Spline resizers.</dd>
 
-<p>
-<b>overwrite:</b>
-  Forces reindexing even if a valid index already exists. May be useful for trackmask changes or testing.
-</p>
+<dt>string colorspace = ""</dt>
+<dd>Convert the output from whatever it was to the given colorspace, which can be one of <tt>YV12</tt>, <tt>YUY2</tt>, <tt>RGB24</tt> or <tt>RGB32</tt>. Setting this to an empty string (the default) means keeping the same colorspace as the input.</dd>
 
-<p>
-<b>track:</b>
-  Track number as seen by the relevant demuxer. Starts from 0, -1 means it will pick the first suitable track. This may however NOT be the first video/audio track found if it is not indexed but a later one is.
-</p>
+<dt>bool utf8 = false</dt>
+<dd>Does the same thing as in <tt>FFIndex()</tt>; see that function for details.</dd>
 
-<p>
-<b>fpsnum &amp; fpsden:</b>
-  For VFR -&gt; CFR conversion. Setting fpsnum &lt;= 0 means a 1:1 relation with the encoded frames.
-</p>
+</dl>
 
-<p>
-<b>timecodes:</b>
-  File to output timecodes to. If the file exists it will be overwritten.
-</p>
 
+<h3>FFAudioSource</h3>
+<pre>
+FFAudioSource(string source, int track = -1, bool cache = true,
+    string cachefile = source + ".ffindex", int adjustdelay = -1, bool utf8 = false)
+</pre>
 <p>
-<b>cache:</b>
-  Write indexing information to a file for later use. This setting controls both loading of existing indices and the writing of new ones.
+Opens audio. Invokes indexing of all tracks if no valid index file is found, or if the requested track isn't present in the index.
 </p>
+<h4>Arguments</h4>
+<p>Are exactly the same as to <tt>FFVideoSource</tt>, with one exception:</p>
+<dl>
+<dt>int adjustdelay = -1</dt>
+<dd>Controls how audio delay is handled, i.e. what happens if the first audio sample in the file doesn't have a timestamp of zero. The following arguments are valid:
+<ul>
+<li><b>-3:</b> No adjustment is made; the first decodable audio sample becomes the first sample in the output.</li>
+<li><b>-2:</b> Samples are created (with silence) or discarded so that sample 0 in the decoded audio starts at time zero.</li>
+<li><b>-1:</b> Samples are created (with silence) or discarded so that sample 0 in the decoded audio starts at the same time as frame 0 of the first video track. This is the default, and probably what most people want.</li>
+<li><b>Any integer &gt;= 0:</b> Same as -1, but adjust relative to the video track with the given track number instead. If the provided track number isn't a video track, an error is raised.</li>
+</ul>
+-2 obviously does the same thing as -1 if the first video frame of the first video track starts at time zero. In some containers this will always be the case, in others (most notably 188-byte MPEG TS) it will almost never happen.
+</dd>
+</dl>
 
-<p>
-<b>cachefile</b>
-  Where to write the cache information.
-</p>
 
-<p>
-<b>pp:</b>
-  See the table below for a full description, an empty string means no processing. It is recommended to avoid the autoq option since it's currently unknown what effect it will have on the processing.
-</p>
+<h3>FFmpegSource2</h3>
+<pre>
+FFmpegSource2(string source, int vtrack = -1, int atrack = -2, bool cache = true,
+    string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1,
+    string pp, int threads = -1, string timecodes = "", int seekmode = 1,
+    bool overwrite = false, int width = -1, int height = -1,
+    string resizer = "BICUBIC", string colorspace = "", int rffmode = 0,
+    int adjustdelay = -1, bool utf8 = false)
+</pre>
+<p>A convenience function that combines the functionality of <tt>FFVideoSource</tt> and <tt>FFAudioSource</tt>. The arguments do the same thing as in <tt>FFVideoSource</tt> and <tt>FFAudioSource</tt>; see those functions for details. <tt>vtrack</tt> and <tt>atrack</tt> are the video and audio track to open, respectively; setting <tt>atrack</tt> &lt;= -2 means audio is disabled.</p>
+<p><strong>Note:</strong> this function is provided by <tt>FFMS2.avsi</tt> and is not available unless that script has been imported or autoloaded.</p>
 
-<p>
-<b>threads:</b>
-  Sets the number of decoder threads used. Defaults to the number of logical cpus reported by windows. Ignored by lavc if the used decoder doesn't implement it.
-</p>
 
-<p>
-<b>seekmode:</b>
-  Control how seeking is handled, has no effect on matroska or haali splitter opened files which always use the equivalent of seekmode=1.<br />
-    <b>-1:</b> linear access without rewind, will throw an error if each successive requested frame number isn't bigger than the last one, only intended for opening images but might work on well with some obscure video format<br />
-    <b>0:</b> linear access, the definition of slow but should make some formats "usable"<br />
-    <b>1:</b> safe normal, bases seeking decisions on the reported keyframe positions<br />
-    <b>2:</b> unsafe normal, same as 1 but no error will be thrown if the exact destination has to be guessed<br />
-    <b>3:</b> aggressive, seek in the forward direction even if no closer keyframe is known to exist, only useful for testing and containers where avformat doesn't report keyframes properly
-</p>
+<h3>FFImageSource</h3>
+<pre>
+FFImageSource(string source, int width = -1, int height = -1,
+    string resizer = "BICUBIC", string colorspace = "", bool utf8 = false)
+</pre>
+<p>A convenience alias for <tt>FFVideoSource</tt>, with the options set optimally for using it as an image reader. Disables caching and seeking for maximum compatiblity.</p>
+<p><strong>Note:</strong> this function is provided by <tt>FFMS2.avsi</tt> and is not available unless that script has been imported or autoloaded.</p>
 
-<p>
-<b>rffmode:</b>
-  Controls how RFF flags in the video stream is treated.<br />
-    <b>0:</b> Ignore all flags<br />
-    <b>1:</b> Honor all pulldown flags<br />
-    <b>2:</b> Equivalent to force film<br />
-  Note that setting rffmode &gt; 0 will throw an error if the video stream has no RFF flags at all. When engaged it will also make the output be assumed as CFR, disallow vertical scaling and setting the output colorspace. FFPICT_TYPE will also not be set as the output is a combination of several frames. Other subtle behavior changes may also exist.
-</p>
 
-<p>
-<b>width &amp; height:</b>
-  Width and height to resize to. Value below or equal to 0 is the same as specifying the input dimensions.
-</p>
+<h3>FFPP</h3>
+<pre>FFPP(clip, string pp)</pre>
+<p>A postprocessing filter. See the <tt>pp</tt> argument to <tt>FFVideoSource</tt> and the "PP string format" section below. In general, using <tt>FFVideoSource</tt>'s <tt>pp</tt> argument instead of this function is recommended (if possible), since if it's used there it has access to video quantizers and can adapt better to the video, particularly when doing deblocking/deringing.</p>
 
-<p>
-<b>resizer:</b>
-  Selects the resizer used for resampling the chroma planes and normal resizing. The available methods are: FAST_BILINEAR, BILINEAR, BICUBIC, X, POINT, AREA, BICUBLIN, GAUSS, SINC, LANCZOS and SPLINE.
-</p>
 
-<p>
-<b>colorspace:</b>
-  The colorspace to convert to. The names are YV12, YUY2, RGB24, RGB32 and the empty string for same as input.
-</p>
+<h3>SWScale</h3>
+<pre>SWScale(clip, int width = -1, int height = -1, string resizer = "BICUBIC", string colorspace = "")</pre>
+<p>An image resizing and colorspace conversion filter. Does nothing special; it's almost always a better idea to just use Avisynth's builtins instead. Might potentially be useful for testing or odd experiments just because it does things in a different way from Avisynth. See the relevant arguments to <tt>FFVideoSource</tt> for details.</p>
 
-<p>
-<b>errorhandling:</b>
-  Controls what happens when an audio decoding error is encountered.<br />
-    <b>0:</b> Abort indexing<br />
-    <b>1:</b> Clear the affected track and continue<br />
-    <b>2:</b> Stop indexing the track but keep all the index entries so far<br />
-    <b>3:</b> Continue anyway<br />
-</p>
 
+<h3>FFFormatTime</h3>
+<pre>FFFormatTime(int ms)</pre>
 <p>
-<b>adjustdelay:</b>
-  Try to apply a suitable delay to the audio track. -1 is the default mode and should produce correct results in most cases<br />
-    <b>-3:</b> No delay adjustment<br />
-    <b>-2:</b> Adjust relative to time 0<br />
-    <b>-1:</b> Adjust relative to the first video track, adjusts the delay relative to time 0 if no video track is present<br />
-    <b>Any valid track number:</b> Adjust relative to the specified track<br />
+A helper function used to format a time given in milliseconds into a h:mm:ss.ttt string. Used internally by <tt>FFInfo</tt>.
 </p>
+<p><strong>Note:</strong> this function is provided by <tt>FFMS2.avsi</tt> and is not available unless that script has been imported or autoloaded.</p>
 
-<p>
-<b>utf8:</b>
-  If set to true, FFMS will assume that the .avs script is encoded as UTF-8 and therefore interpret all filenames as UTF-8 encoded strings. This makes it possible to open files with funny filenames that otherwise would not be openable.<br />
-  <b>NOTE:</b> You must make sure you save the file without a BOM (byte-order marker) or Avisynth will refuse to open it. Notepad will write a BOM, so use something else.<br />
-  You should also note that setting this parameter incorrectly will cause all file openings to fail unless your filenames are exclusively 7-bit ASCII compatible.
-</p>
 
+<h3>FFInfo</h3>
+<pre>FFInfo(clip c, bool framenum = true, bool frametype = true, bool cfrtime = true, bool vfrtime = true)</pre>
 <p>
-<b>demuxer:</b>
-  Forces FFMS to use a given demuxer, namely one of:
-  <b>default:</b> probe for the best source module, i.e. choose automatically. This is the default (duh).<br />
-  <b>lavf:</b> use libavformat.<br />
-  <b>matroska:</b> use Haali's Matroska parser. Obviously only works for Matroska and WebM files.<br />
-  <b>haalimpeg:</b> use Haali's DirectShow MPEG TS/PS parser. Only works if Haali Media Splitter is installed and only on MPEG TS/PS files (.ts/.m2ts/.mpg/.mpeg).<br />
-  <b>haaliogg:</b> use Haali's DirectShow Ogg parser. As above, only works if Haali Media Splitter is installed, and only on Ogg files (.ogg/.ogm).<br />
-  You should only use this parameter if you know exactly what you're doing and exactly why you want to force another demuxer.
+A helper function similar to Avisynth's internal <tt>Info()</tt> function; shows general information about the current frame. Note that not all values are exported in all source modes, so some information may not always be shown. The arguments can be used to disable the drawing of certain information if so desired.
 </p>
+<p><strong>Note:</strong> this function is provided by <tt>FFMS2.avsi</tt> and is not available unless that script has been imported or autoloaded.</p>
+
+
+<h3>FFSetLogLevel</h3>
+<pre>FFSetLogLevel(int Level = -8)</pre>
+<p>Sets the FFmpeg logging level, i.e. how much diagnostic spam it prints to STDERR. Since most applications that open Avisynth scripts do not provide a way to display things printed to STDERR, and since it's rather hard to make any sense of the printed messages unless you're quite familiar with FFmpeg internals, the usefulness of this function is rather limited for end users. It's mostly intended for debugging. Defaults to quiet (no messages printed); a list of meaningful values can be found in <tt>libavutil/log.h</tt>.</p>
+
+
+<h3>FFGetLogLevel</h3>
+<pre>FFGetLogLevel()</pre>
+<p>Returns the current log level, as an integer.</p>
+
 
 <h2>Exported Avisynth variables</h2>
-<p>
-<b>FFSAR_NUM, FFSAR_DEN, FFSAR:</b>
- The playback aspect ratio specified by the container. FFSAR_NUM and FFSAR_DEN make up the rational number of the ratio and FFSAR is only provided for convenience and may not be set in case it cannot be calculated (FFSAR_DEN=0).
-</p>
+<dl>
+<dt>FFSAR_NUM, FFSAR_DEN, FFSAR</dt>
+<dd>
+The playback aspect ratio specified by the container. <tt>FFSAR_NUM</tt> and <tt>FFSAR_DEN</tt> make up the rational number of the ratio; <tt>FFSAR</tt> is only provided for convenience and may not be set in case it cannot be calculated (i.e. if <tt>FFSAR_DEN</tt> is zero).
+</dd>
 
-<p>
-<b>FFCROP_LEFT, FFCROP_RIGHT, FFCROP_TOP, FFCROP_BOTTOM:</b>
- The on playback cropping specified by the container.
-</p>
+<dt>FFCROP_LEFT, FFCROP_RIGHT, FFCROP_TOP, FFCROP_BOTTOM</dt>
+<dd>The on-playback cropping specified by the container.</dd>
 
-<p>
-<b>FFCOLOR_SPACE:</b>
- The output colorimetry. Matches the values used by ColorMatrix() as input.
-</p>
+<dt>FFCOLOR_SPACE</dt>
+<dd>The output colorimetry. Matches the values used by <tt>ColorMatrix()</tt> as input.</dd>
 
-<p>
-<b>FFCOLOR_RANGE:</b>
- The range used by the output.<br />
-    <b>0:</b> Unknown/unspecified<br />
-    <b>1:</b> Limited-range<br />
-    <b>2:</b> Full-range<br />
-</p>
+<dt>FFCOLOR_RANGE</dt>
+<dd>
+The color range used by the output.
+<ul>
+<li><b>0:</b> Unknown/unspecified</li>
+<li><b>1:</b> Limited range (usually 16-235)</li>
+<li><b>2:</b> Full range (0-255)</li>
+</ul>
+</dd>
 
-
-<p>
-<b>FFPICT_TYPE:</b>
- The picture type of the most recently requested frame as the ascii number of the character listed below. Use Chr() to convert it to an actual letter in avisynth. Use after_frame=true in Avisynth's conditional scripting for proper results. Only set when rffmode=0. The FFmpeg source definition of the characters:
-</p>
+<dt>FFPICT_TYPE</dt>
+<dd>
+The picture type of the most recently requested frame as the ASCII number of the character listed below. Use <tt>Chr()</tt> to convert it to an actual letter in avisynth. Use after_frame=true in Avisynth's conditional scripting for proper results. Only set when rffmode=0. The FFmpeg source definition of the characters:
 <pre>
 I: Intra
 P: Predicted
@@ -299,12 +355,13 @@ p: Switching Predicted
 b: FF_BI_TYPE (no good explanation available)
 ?: Unknown
 </pre>
+</dd>
 
-<p>
-<b>FFVFR_TIME:</b>
- The actual time of the source frame in milliseconds. Only set when no type of CFR conversion is being done (rffmode and fpsnum left at their defaults).
-</p>
+<dt>FFVFR_TIME</dt>
+<dd>The actual time of the source frame in milliseconds. Only set when no type of CFR conversion is being done (<tt>rffmode</tt> and <tt>fpsnum</tt> left at their defaults).</dd>
+</dl>
 
+</div>
 
 
 <h2>PP string format</h2>

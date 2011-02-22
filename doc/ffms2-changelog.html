@@ -12,15 +12,23 @@ FFmpegSource2 Changelog
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
 <li>2.15<ul>
+<li>FFVideoSource and FFAudioSource will now automatically reindex and overwrite the index file if it doesn't match the file being opened and the <tt>cachefile</tt> argument is left as the default. (Plorkyeran)</li>
+<li>FFMS2 can now be used to decode Lagarith, but note that libavcodec's decoder is very experimental at the moment. (Plorkyeran)</li>
+<li>SWScale can now use SSE2 optimizations for certain operations if your CPU supports it. (kemuri_-9)</li>
+<li>Fixed a bug that could cause SWScale initialization to fail. (kemuri_-9)</li>
+<li>Fixed a bug that could cause index files to never be considered valid, forcing a reindexing every time a script was loaded. (TheRyuu)</li>
+<li>Trying to use postprocessing on a fullrange YUV clip will no longer cause errors. (TheFluff)</li>
+<li>Fixed a few random decoding bugs related to unaligned memory or buffers that were not initialized properly. (TheFluff)</li>
 <li>It is now possible to force FFMS2 to use a specific demuxer instead of letting it pick one automatically. (TheFluff)</li>
 <li>When converting YUV to RGB, FFMS2 will now try to actually use the correct color coefficients rather than assuming everything is bt470bg. (Plorkyeran)</li>
 <li>Moved support for container-level audio delay from the Avisynth plugin to the core and exposed it in the API (Plorkyeran)</li>
-<li>Audio decoding has been substantially rewritten. Linearly decoding audio now almost always works correctly and seeking is now actually sample-accurate for many formats. (Plorkyeran)</li>
+<li>Audio decoding has been substantially reworked. Linearly decoding audio now almost always works correctly and seeking is now actually sample-accurate for many formats. (Plorkyeran)</li>
 <li>It is now possible to build 64bit versions of the plugin for use with Avisynth (and whatever else) from MSVC by means of black magic (this probably only works when the planets are aligned, also 64bit builds might require msvcr90.dll). (TheRyuu)</li>
-<li>The Avisynth plugin now supports UTF8 filenames. (TheFluff)</li>
+<li>The Avisynth plugin now supports UTF8 filenames; ffmsindex.exe also supports Unicode filenames. FFMS_USE_UTF8_PATHS is now a runtime option instead of a compile-time one. (TheFluff)</li>
 <li>The FFInfo() function (supplied by ffms2.avsi) will now round timestamps to nearest millisecond instead of truncating them. It's also been cleaned up in general and no longer relies on global variables. (Gavino)</li>
 <li>Containers opened with libavformat will now report a framerate based on the average frame duration instead of the duration of the first frame, just like Matroska files and files opened with Haali's splitter does. Should fix CFR framerates being reported incorrectly in dumb containers like FLV. (TheFluff)</li>
 <li>PC/TV luma range (16-235 versus 0-255) detection should now be a bit more reliable. (TheFluff)</li>
+<li>Fixed a crash when opening files with Unicode filename support enabled. (Plorkyeran)</li>
 </ul></li>
 
 <li>2.14<ul>

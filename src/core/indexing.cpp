@@ -155,9 +155,9 @@ int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) {
 
 	iterator Pos = std::lower_bound(begin(), end(), F, PTSComparison);
 	int Frame = std::distance(begin(), Pos);
-	if ((Pos + 1) != end() && FFABS(Pos->PTS - PTS) > FFABS((Pos + 1)->PTS - PTS))
-		Frame += 1;
-	return Frame;
+	if (Pos == begin() || FFABS(Pos->PTS - PTS) <= FFABS((Pos - 1)->PTS - PTS))
+		return Frame;
+	return Frame - 1;
 }
 
 int FFMS_Track::FindClosestVideoKeyFrame(int Frame) {

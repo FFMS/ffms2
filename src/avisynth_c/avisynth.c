@@ -31,15 +31,20 @@
 
 #define MAX_CACHE_FILE_LENGTH 512 // Windows API should explode before getting this long
 
-static void default_cache_file( const char *src, const char *user_cache_file, char *out_cache_file )
+static int default_cache_file( const char *src, const char *user_cache_file, char *out_cache_file )
 {
+    int ret = 0;
     if( !strcmp( user_cache_file, "" ) )
     {
         strcpy( out_cache_file, src );
         strcat( out_cache_file, ".ffindex" );
     }
     else
+    {
         strcpy( out_cache_file, user_cache_file );
+        ret = !strcasecmp( src, user_cache_file );
+    }
+    return ret;
 }
 
 static int get_num_logical_cpus()
@@ -68,7 +73,8 @@ static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value a
     const char *demuxer_str = as_string( as_elt( args, 8 ), "default" );
 
     char cache_file[MAX_CACHE_FILE_LENGTH];
-    default_cache_file( src, user_cache_file, cache_file );
+    if( default_cache_file( src, user_cache_file, cache_file ) )
+        return avs_new_value_error( "FFIndex: Cache will overwrite the source" );
 
     if( !strcmp( audio_file, "" ) )
         return avs_new_value_error( "FFIndex: Specifying an empty audio filename is not allowed" );
@@ -150,11 +156,19 @@ static AVS_Value AVSC_CC create_FFVideoSource( AVS_ScriptEnvironment *env, AVS_V
         return avs_new_value_error( "FFVideoSource: Timecodes will overwrite the source" );
 
     char cache_file[MAX_CACHE_FILE_LENGTH];
-    default_cache_file( src, user_cache_file, cache_file );
+    if( default_cache_file( src, user_cache_file, cache_file ) )
+        return avs_new_value_error( "FFVideoSource: Cache will overwrite the source" );
 
     FFMS_Index *index = NULL;
     if( cache )
+    {
         index = FFMS_ReadIndex( cache_file, &ei );
+        if( index && *user_cache_file && FFMS_IndexBelongsToFile( index, src, 0 ) != FFMS_ERROR_SUCCESS )
+        {
+            FFMS_DestroyIndex( index );
+            index = NULL;
+        }
+    }
     if( !index )
     {
         if( !(index = FFMS_MakeIndex( src, 0, 0, NULL, NULL, 1, NULL, NULL, &ei )) )
@@ -205,11 +219,19 @@ static AVS_Value AVSC_CC create_FFAudioSource( AVS_ScriptEnvironment *env, AVS_V
         return avs_new_value_error( "FFAudioSource: No audio track selected" );
 
     char cache_file[MAX_CACHE_FILE_LENGTH];
-    default_cache_file( src, user_cache_file, cache_file );
+    if( default_cache_file( src, user_cache_file, cache_file ) )
+        return avs_new_value_error( "FFAudioSource: Cache will overwrite the source" );
 
     FFMS_Index *index = NULL;
     if( cache )
+    {
         index = FFMS_ReadIndex( cache_file, &ei );
+        if( index && *user_cache_file && FFMS_IndexBelongsToFile( index, src, 0 ) != FFMS_ERROR_SUCCESS )
+        {
+            FFMS_DestroyIndex( index );
+            index = NULL;
+        }
+    }
 
     // Index needs to be remade if it is an unindexed audio track
     if( index && track >= 0 && track < FFMS_GetNumTracks( index ) &&

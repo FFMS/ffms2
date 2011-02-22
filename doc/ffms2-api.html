@@ -627,19 +627,19 @@ The following public data structures may be of interest.
 
 <h3>FFMS_Frame</h3>
 <pre>typedef struct {
-	uint8_t *Data[4];
-	int Linesize[4];
-	int EncodedWidth;
-	int EncodedHeight;
-	int EncodedPixelFormat;
-	int ScaledWidth;
-	int ScaledHeight;
-	int ConvertedPixelFormat;
-	int KeyFrame;
-	int RepeatPict;
-	int InterlacedFrame;
-	int TopFieldFirst;
-	char PictType;
+    uint8_t *Data[4];
+    int Linesize[4];
+    int EncodedWidth;
+    int EncodedHeight;
+    int EncodedPixelFormat;
+    int ScaledWidth;
+    int ScaledHeight;
+    int ConvertedPixelFormat;
+    int KeyFrame;
+    int RepeatPict;
+    int InterlacedFrame;
+    int TopFieldFirst;
+    char PictType;
 } FFMS_Frame;</pre>
 <p>A struct representing a video frame. The fields are:</p>
 <ul>
@@ -650,7 +650,7 @@ The following public data structures may be of interest.
 <li><b><tt>int ScaledWidth; int ScaledHeight;</tt></b> - The output resolution of the frame (in pixels), i.e. the resolution of what is actually stored in the <tt>Data</tt> field. Same as <tt>FFMS_VideoProperties->Width/Height</tt>, but unlike that struct, this one gets updated automatically when you call <tt>FFMS_GetFrame</tt>, so you don't have to call <tt>FFMS_GetVideoProperties</tt> all the time to see if someone changed the output format while you weren't looking.</li>
 <li><b><tt>int ConvertedPixelFormat</tt></b> - The output pixel format of the frame, i.e. the pixel format of what is actually stored in the <tt>Data</tt> field.</li>
 <li><b><tt>int KeyFrame</tt></b> - Nonzero if the frame is a keyframe, 0 otherwise.</li>
-<li><b><tt>int RepeatPict</tt></b> - An integer repesenting the RFF flag for this frame; i.e. the frame shall be displayed for <tt>1+RepeatPict</tt> time units, where the time units are expressed in the special RFF timebase available in <tt>FFMS_VideoProperties->RFFDenominator</tt> and <tt>FFMS_VideoProperties->RFFNumerator</tt>. Note that if you actually end up using this, you need to ignore the usual timestamps (calculated via the <tt>FFMS_TrackTimeBase</tt> and the frame DTS) since they are fundamentally incompatible with RFF flags.</li>
+<li><b><tt>int RepeatPict</tt></b> - An integer repesenting the RFF flag for this frame; i.e. the frame shall be displayed for <tt>1+RepeatPict</tt> time units, where the time units are expressed in the special RFF timebase available in <tt>FFMS_VideoProperties->RFFDenominator</tt> and <tt>FFMS_VideoProperties->RFFNumerator</tt>. Note that if you actually end up using this, you need to ignore the usual timestamps (calculated via the <tt>FFMS_TrackTimeBase</tt> and the frame PTS) since they are fundamentally incompatible with RFF flags.</li>
 <li><b><tt>int InterlacedFrame</tt></b> - Nonzero if the frame was coded as interlaced, zero otherwise.</li>
 <li><b><tt>int TopFieldFirst</tt></b> - Nonzero if the frame has the top field first, zero if it has the bottom field first. Only relevant if <tt>InterlacedFrame</tt> is nonzero.</li>
 <li><b><tt>char PictType</tt></b> - A single character denoting coding type (I/B/P etc) of the compressed frame. See the Constants and Preprocessor Definitions section for more information about what the different letters mean.</li>
@@ -658,8 +658,8 @@ The following public data structures may be of interest.
 
 <h3>FFMS_TrackTimeBase</h3>
 <pre>typedef struct {
-	int64_t Num;
-	int64_t Den;
+    int64_t Num;
+    int64_t Den;
 } FFMS_TrackTimeBase;</pre>
 <p>
 A struct representing the basic time unit of a track, as a rational number where <tt>Num</tt> is the numerator and <tt>Den</tt> is the denominator. Note that while this rational number may occasionally turn out to be equal to 1/framerate for some CFR video tracks, it really has no relation whatsoever with the video framerate and you should definitely not assume anything framerate-related based on it.
@@ -667,39 +667,39 @@ A struct representing the basic time unit of a track, as a rational number where
 
 <h3>FFMS_FrameInfo</h3>
 <pre>typedef struct {
-	int64_t PTS;
-	int RepeatPict;
-	int KeyFrame;
+    int64_t PTS;
+    int RepeatPict;
+    int KeyFrame;
 } FFMS_FrameInfo;</pre>
 <p>A struct representing basic metadata about a given video frame. The fields are:</p>
 <ul>
-<li><b><tt>int64_t DTS</tt></b> - The decoding timestamp of the frame. To convert this to a timestamp in wallclock milliseconds, use the relation <tt>int64_t timestamp = (int64_t)((FFMS_FrameInfo-&gt;DTS * FFMS_TrackTimeBase-&gt;Num) / (double)FFMS_TrackTimeBase-&gt;Den)</tt>.</li>
+<li><b><tt>int64_t PTS</tt></b> - The decoding timestamp of the frame. To convert this to a timestamp in wallclock milliseconds, use the relation <tt>int64_t timestamp = (int64_t)((FFMS_FrameInfo-&gt;PTS * FFMS_TrackTimeBase-&gt;Num) / (double)FFMS_TrackTimeBase-&gt;Den)</tt>.</li>
 <li><b><tt>int RepeatPict</tt></b> - RFF flag for the frame; same as in <tt>FFMS_Frame</tt>, see that structure for an explanation.</li>
 <li><b><tt>int KeyFrame</tt></b> - Non-zero if the frame is a keyframe, zero otherwise.</li>
 </ul>
 
 <h3>FFMS_VideoProperties</h3>
 <pre>typedef struct {
-	int FPSDenominator;
-	int FPSNumerator;
-	int RFFDenominator;
-	int RFFNumerator;
-	int NumFrames;
-	int SARNum;
-	int SARDen;
-	int CropTop;
-	int CropBottom;
-	int CropLeft;
-	int CropRight;
-	int TopFieldFirst;
-	int ColorSpace;
-	int ColorRange;
-	double FirstTime;
-	double LastTime;
+    int FPSDenominator;
+    int FPSNumerator;
+    int RFFDenominator;
+    int RFFNumerator;
+    int NumFrames;
+    int SARNum;
+    int SARDen;
+    int CropTop;
+    int CropBottom;
+    int CropLeft;
+    int CropRight;
+    int TopFieldFirst;
+    int ColorSpace;
+    int ColorRange;
+    double FirstTime;
+    double LastTime;
 } FFMS_VideoProperties;</pre>
 <p>A struct containing metadata about a video track. The fields are:</p>
 <ul>
-<li><b><tt>int FPSDenominator; int FPSNumerator;</tt></b> - The nominal framerate of the track, as a rational number. For Matroska files, this number is based on the average frame duration of all frames, while for everything else it's based on the duration of the first frame. While it might seem tempting to use these values to extrapolate wallclock timestamps for each frame, you really shouldn't do that since it makes your code unable to handle variable framerate properly. The ugly reality is that these values are pretty much only useful for informational purposes; they are only somewhat reliable for antiquated containers like AVI. Normally they should never be used for practical purposes; generate individual frame timestamps from <tt>FFMS_FrameInfo-&gt;DTS</tt> instead.</li>
+<li><b><tt>int FPSDenominator; int FPSNumerator;</tt></b> - The nominal framerate of the track, as a rational number. For Matroska files, this number is based on the average frame duration of all frames, while for everything else it's based on the duration of the first frame. While it might seem tempting to use these values to extrapolate wallclock timestamps for each frame, you really shouldn't do that since it makes your code unable to handle variable framerate properly. The ugly reality is that these values are pretty much only useful for informational purposes; they are only somewhat reliable for antiquated containers like AVI. Normally they should never be used for practical purposes; generate individual frame timestamps from <tt>FFMS_FrameInfo-&gt;PTS</tt> instead.</li>
 <li><b><tt>int RFFDenominator; int RFFNumerator;</tt></b> - The special RFF timebase, as a rational number. See <tt>RepeatPict</tt> in the <tt>FFMS_Frame</tt> documentation for more information.</li>
 <li><b><tt>int NumFrames;</tt></b> - The number of frames in the video track.</li>
 <li><b><tt>int SARNum; int SARDen;</tt></b> - The sample aspect ratio of the video frames, as a rational number where <tt>SARNum</tt> is the numerator and <tt>SARDen</tt> is the denominator. Note that this is a metadata setting that you are free to ignore, but if you want the proper display aspect ratio with anamorphic material, you should honor it. On the other hand, there are situations (like when encoding) where you should probably ignore it because the user expects it to be ignored.</li>
@@ -712,14 +712,14 @@ A struct representing the basic time unit of a track, as a rational number where
 
 <h3>FFMS_AudioProperties</h3>
 <pre>typedef struct {
-	int SampleFormat;
-	int SampleRate;
-	int BitsPerSample;
-	int Channels;
-	int64_t ChannelLayout;
-	int64_t NumSamples;
-	double FirstTime;
-	double LastTime;
+    int SampleFormat;
+    int SampleRate;
+    int BitsPerSample;
+    int Channels;
+    int64_t ChannelLayout;
+    int64_t NumSamples;
+    double FirstTime;
+    double LastTime;
 } FFMS_AudioProperties;</pre>
 <p>A struct containing metadata about an audio track. The fields are:</p>
 <ul>
@@ -738,63 +738,64 @@ A struct representing the basic time unit of a track, as a rational number where
 
 <h3>FFMS_Errors</h3>
 <pre>enum FFMS_Errors {
-	// No error
-	FFMS_ERROR_SUCCESS = 0,
+    // No error
+    FFMS_ERROR_SUCCESS = 0,
 
-	// Main types - where the error occurred
-	FFMS_ERROR_INDEX = 1,
-	FFMS_ERROR_INDEXING,
-	FFMS_ERROR_POSTPROCESSING,
-	FFMS_ERROR_SCALING,
-	FFMS_ERROR_DECODING,
-	FFMS_ERROR_SEEKING,
-	FFMS_ERROR_PARSER,
-	FFMS_ERROR_TRACK,
-	FFMS_ERROR_WAVE_WRITER,
-	FFMS_ERROR_CANCELLED,
+    // Main types - where the error occurred
+    FFMS_ERROR_INDEX = 1,           // index file handling
+    FFMS_ERROR_INDEXING,            // indexing
+    FFMS_ERROR_POSTPROCESSING,      // video postprocessing (libpostproc)
+    FFMS_ERROR_SCALING,             // image scaling (libswscale)
+    FFMS_ERROR_DECODING,            // audio/video decoding
+    FFMS_ERROR_SEEKING,             // seeking
+    FFMS_ERROR_PARSER,              // file parsing
+    FFMS_ERROR_TRACK,               // track handling
+    FFMS_ERROR_WAVE_WRITER,         // WAVE64 file writer
+    FFMS_ERROR_CANCELLED,           // operation aborted
 
-	// Subtypes - what caused the error
-	FFMS_ERROR_UNKNOWN = 20,
-	FFMS_ERROR_UNSUPPORTED,
-	FFMS_ERROR_FILE_READ,
-	FFMS_ERROR_FILE_WRITE,
-	FFMS_ERROR_NO_FILE,
-	FFMS_ERROR_VERSION,
-	FFMS_ERROR_ALLOCATION_FAILED,
-	FFMS_ERROR_INVALID_ARGUMENT,
-	FFMS_ERROR_CODEC,
-	FFMS_ERROR_NOT_AVAILABLE,
-	FFMS_ERROR_FILE_MISMATCH,
-	FFMS_ERROR_USER
-};</pre>
+    // Subtypes - what caused the error
+    FFMS_ERROR_UNKNOWN = 20,        // unknown error
+    FFMS_ERROR_UNSUPPORTED,         // format or operation is not supported with this binary
+    FFMS_ERROR_FILE_READ,           // cannot read from file
+    FFMS_ERROR_FILE_WRITE,          // cannot write to file
+    FFMS_ERROR_NO_FILE,             // no such file or directory
+    FFMS_ERROR_VERSION,             // wrong version
+    FFMS_ERROR_ALLOCATION_FAILED,   // out of memory
+    FFMS_ERROR_INVALID_ARGUMENT,    // invalid or nonsensical argument
+    FFMS_ERROR_CODEC,               // decoder error
+    FFMS_ERROR_NOT_AVAILABLE,       // requested mode or operation unavailable in this binary
+    FFMS_ERROR_FILE_MISMATCH,       // provided index does not match the file
+    FFMS_ERROR_USER                 // problem exists between keyboard and chair
+};
+</pre>
 <p>
 Used to identify errors. Should be self-explanatory.
 </p>
 
 <h3>FFMS_Sources</h3>
 <pre>enum FFMS_Sources {
-	FFMS_SOURCE_LAVF		= 0x01,
-	FFMS_SOURCE_MATROSKA	= 0x02,
-	FFMS_SOURCE_HAALIMPEG	= 0x04,
-	FFMS_SOURCE_HAALIOGG	= 0x08
+    FFMS_SOURCE_LAVF        = 0x01,
+    FFMS_SOURCE_MATROSKA    = 0x02,
+    FFMS_SOURCE_HAALIMPEG   = 0x04,
+    FFMS_SOURCE_HAALIOGG    = 0x08
 };</pre>
 <p>
 Identifies source modules.
 </p>
 <ul>
 <li><b><tt>FFMS_SOURCE_LAVF</tt></b> - libavformat (ffmpeg)</li>
-<li><b><tt>FFMS_SOURCE_LAVF</tt></b> - Haali's BSD-licensed native Matroska parsing library</li>
+<li><b><tt>FFMS_SOURCE_MATROSKA</tt></b> - Haali's BSD-licensed native Matroska parsing library</li>
 <li><b><tt>FFMS_SOURCE_HAALIMPEG</tt></b> - Haali's closed-source DirectShow splitter (MPEG TS/PS)</li>
 <li><b><tt>FFMS_SOURCE_HAALIOGG</tt></b> - Haali's closed-source DirectShow splitter (Ogg/OGM)</li>
 </ul>
 
 <h3>FFMS_CPUFeatures</h3>
 <pre>enum FFMS_CPUFeatures {
-	FFMS_CPU_CAPS_MMX       = 0x01,
-	FFMS_CPU_CAPS_MMX2      = 0x02,
-	FFMS_CPU_CAPS_3DNOW     = 0x04,
-	FFMS_CPU_CAPS_ALTIVEC   = 0x08,
-	FFMS_CPU_CAPS_BFIN      = 0x10
+    FFMS_CPU_CAPS_MMX       = 0x01,
+    FFMS_CPU_CAPS_MMX2      = 0x02,
+    FFMS_CPU_CAPS_3DNOW     = 0x04,
+    FFMS_CPU_CAPS_ALTIVEC   = 0x08,
+    FFMS_CPU_CAPS_BFIN      = 0x10
 };</pre>
 <p>
 Used in <tt>FFMS_Init</tt> to indicate CPU instruction set capabilities. Should be self explanatory. For a lot of applications you can probably get away with simply hardcoding in <tt>FFMS_CPU_CAPS_MMX | FFMS_CPU_CAPS_MMX2</tt> in the call to <tt>FFMS_Init</tt>.
@@ -802,11 +803,11 @@ Used in <tt>FFMS_Init</tt> to indicate CPU instruction set capabilities. Should 
 
 <h3>FFMS_SeekMode</h3>
 <pre>enum FFMS_SeekMode {
-	FFMS_SEEK_LINEAR_NO_RW  = -1,
-	FFMS_SEEK_LINEAR        = 0,
-	FFMS_SEEK_NORMAL        = 1,
-	FFMS_SEEK_UNSAFE        = 2,
-	FFMS_SEEK_AGGRESSIVE    = 3
+    FFMS_SEEK_LINEAR_NO_RW  = -1,
+    FFMS_SEEK_LINEAR        = 0,
+    FFMS_SEEK_NORMAL        = 1,
+    FFMS_SEEK_UNSAFE        = 2,
+    FFMS_SEEK_AGGRESSIVE    = 3
 };</pre>
 <p>Used in <tt>FFMS_CreateVideoSource</tt> to control the way seeking is handled. Explanation of the values:</p>
 <ul>
@@ -819,10 +820,10 @@ Used in <tt>FFMS_Init</tt> to indicate CPU instruction set capabilities. Should 
 
 <h3>FFMS_IndexErrorHandling</h3>
 <pre>enum FFMS_IndexErrorHandling {
-	FFMS_IEH_ABORT = 0,
-	FFMS_IEH_CLEAR_TRACK = 1,
-	FFMS_IEH_STOP_TRACK = 2,
-	FFMS_IEH_IGNORE = 3
+    FFMS_IEH_ABORT = 0,
+    FFMS_IEH_CLEAR_TRACK = 1,
+    FFMS_IEH_STOP_TRACK = 2,
+    FFMS_IEH_IGNORE = 3
 };</pre>
 <p>
 Used by the indexing functions to control behavior when a decoding error is encountered.
@@ -836,12 +837,12 @@ Used by the indexing functions to control behavior when a decoding error is enco
 
 <h3>FFMS_TrackType</h3>
 <pre>enum FFMS_TrackType {
-	FFMS_TYPE_UNKNOWN = -1,
-	FFMS_TYPE_VIDEO,
-	FFMS_TYPE_AUDIO,
-	FFMS_TYPE_DATA,
-	FFMS_TYPE_SUBTITLE,
-	FFMS_TYPE_ATTACHMENT
+    FFMS_TYPE_UNKNOWN = -1,
+    FFMS_TYPE_VIDEO,
+    FFMS_TYPE_AUDIO,
+    FFMS_TYPE_DATA,
+    FFMS_TYPE_SUBTITLE,
+    FFMS_TYPE_ATTACHMENT
 };</pre>
 <p>
 Used for determining the type of a given track. Note that there are currently no functions to handle any type of track other than <tt>FFMS_TYPE_VIDEO</tt> and <tt>FFMS_TYPE_AUDIO</tt>. See <tt>FFMS_GetTrackType</tt>, <tt>FFMS_GetFirstTrackOfType</tt> and their variants.
@@ -866,26 +867,26 @@ Used for determining the type of a given track. Note that there are currently no
 
 <h3>FFMS_AudioChannel</h3>
 <pre>enum FFMS_AudioChannel {
-	FFMS_CH_FRONT_LEFT              = 0x00000001,
-	FFMS_CH_FRONT_RIGHT             = 0x00000002,
-	FFMS_CH_FRONT_CENTER            = 0x00000004,
-	FFMS_CH_LOW_FREQUENCY           = 0x00000008,
-	FFMS_CH_BACK_LEFT               = 0x00000010,
-	FFMS_CH_BACK_RIGHT              = 0x00000020,
-	FFMS_CH_FRONT_LEFT_OF_CENTER    = 0x00000040,
-	FFMS_CH_FRONT_RIGHT_OF_CENTER   = 0x00000080,
-	FFMS_CH_BACK_CENTER             = 0x00000100,
-	FFMS_CH_SIDE_LEFT               = 0x00000200,
-	FFMS_CH_SIDE_RIGHT              = 0x00000400,
-	FFMS_CH_TOP_CENTER              = 0x00000800,
-	FFMS_CH_TOP_FRONT_LEFT          = 0x00001000,
-	FFMS_CH_TOP_FRONT_CENTER        = 0x00002000,
-	FFMS_CH_TOP_FRONT_RIGHT         = 0x00004000,
-	FFMS_CH_TOP_BACK_LEFT           = 0x00008000,
-	FFMS_CH_TOP_BACK_CENTER         = 0x00010000,
-	FFMS_CH_TOP_BACK_RIGHT          = 0x00020000,
-	FFMS_CH_STEREO_LEFT             = 0x20000000,
-	FFMS_CH_STEREO_RIGHT            = 0x40000000
+    FFMS_CH_FRONT_LEFT              = 0x00000001,
+    FFMS_CH_FRONT_RIGHT             = 0x00000002,
+    FFMS_CH_FRONT_CENTER            = 0x00000004,
+    FFMS_CH_LOW_FREQUENCY           = 0x00000008,
+    FFMS_CH_BACK_LEFT               = 0x00000010,
+    FFMS_CH_BACK_RIGHT              = 0x00000020,
+    FFMS_CH_FRONT_LEFT_OF_CENTER    = 0x00000040,
+    FFMS_CH_FRONT_RIGHT_OF_CENTER   = 0x00000080,
+    FFMS_CH_BACK_CENTER             = 0x00000100,
+    FFMS_CH_SIDE_LEFT               = 0x00000200,
+    FFMS_CH_SIDE_RIGHT              = 0x00000400,
+    FFMS_CH_TOP_CENTER              = 0x00000800,
+    FFMS_CH_TOP_FRONT_LEFT          = 0x00001000,
+    FFMS_CH_TOP_FRONT_CENTER        = 0x00002000,
+    FFMS_CH_TOP_FRONT_RIGHT         = 0x00004000,
+    FFMS_CH_TOP_BACK_LEFT           = 0x00008000,
+    FFMS_CH_TOP_BACK_CENTER         = 0x00010000,
+    FFMS_CH_TOP_BACK_RIGHT          = 0x00020000,
+    FFMS_CH_STEREO_LEFT             = 0x20000000,
+    FFMS_CH_STEREO_RIGHT            = 0x40000000
 };</pre>
 <p>
 Describes various audio channel configurations. The names should be self-explanatory. The actual order if FFmpeg dictated and may vary.
@@ -912,9 +913,9 @@ Describes various image resizing algorithms, as used in the arguments to <tt>FFM
 
 <h3>FFMS_CC</h3>
 <pre>#ifdef _WIN32
-#	define FFMS_CC __stdcall
+#   define FFMS_CC __stdcall
 #else
-#	define FFMS_CC
+#   define FFMS_CC
 #endif
 </pre>
 <p>

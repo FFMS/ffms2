@@ -68,34 +68,34 @@ enum FFMS_Errors {
 	FFMS_ERROR_SUCCESS = 0,
 
 	// Main types - where the error occurred
-	FFMS_ERROR_INDEX = 1,
-	FFMS_ERROR_INDEXING,
-	FFMS_ERROR_POSTPROCESSING,
-	FFMS_ERROR_SCALING,
-	FFMS_ERROR_DECODING,
-	FFMS_ERROR_SEEKING,
-	FFMS_ERROR_PARSER,
-	FFMS_ERROR_TRACK,
-	FFMS_ERROR_WAVE_WRITER,
-	FFMS_ERROR_CANCELLED,
+	FFMS_ERROR_INDEX = 1,			// index file handling
+	FFMS_ERROR_INDEXING,			// indexing
+	FFMS_ERROR_POSTPROCESSING,		// video postprocessing (libpostproc)
+	FFMS_ERROR_SCALING,				// image scaling (libswscale)
+	FFMS_ERROR_DECODING,			// audio/video decoding
+	FFMS_ERROR_SEEKING,				// seeking
+	FFMS_ERROR_PARSER,				// file parsing
+	FFMS_ERROR_TRACK,				// track handling
+	FFMS_ERROR_WAVE_WRITER,			// WAVE64 file writer
+	FFMS_ERROR_CANCELLED,			// operation aborted
 
 	// Subtypes - what caused the error
-	FFMS_ERROR_UNKNOWN = 20,
-	FFMS_ERROR_UNSUPPORTED,
-	FFMS_ERROR_FILE_READ,
-	FFMS_ERROR_FILE_WRITE,
-	FFMS_ERROR_NO_FILE,
-	FFMS_ERROR_VERSION,
-	FFMS_ERROR_ALLOCATION_FAILED,
-	FFMS_ERROR_INVALID_ARGUMENT,
-	FFMS_ERROR_CODEC,
-	FFMS_ERROR_NOT_AVAILABLE,
-	FFMS_ERROR_FILE_MISMATCH,
-	FFMS_ERROR_USER
+	FFMS_ERROR_UNKNOWN = 20,		// unknown error
+	FFMS_ERROR_UNSUPPORTED,			// format or operation is not supported with this binary
+	FFMS_ERROR_FILE_READ,			// cannot read from file
+	FFMS_ERROR_FILE_WRITE,			// cannot write to file
+	FFMS_ERROR_NO_FILE,				// no such file or directory
+	FFMS_ERROR_VERSION,				// wrong version
+	FFMS_ERROR_ALLOCATION_FAILED,	// out of memory
+	FFMS_ERROR_INVALID_ARGUMENT,	// invalid or nonsensical argument
+	FFMS_ERROR_CODEC,				// decoder error
+	FFMS_ERROR_NOT_AVAILABLE,		// requested mode or operation unavailable in this binary
+	FFMS_ERROR_FILE_MISMATCH,		// provided index does not match the file
+	FFMS_ERROR_USER					// problem exists between keyboard and chair
 };
 
 enum FFMS_Sources {
-	FFMS_SOURCE_DEFAULT	= 0x00,
+	FFMS_SOURCE_DEFAULT		= 0x00,
 	FFMS_SOURCE_LAVF		= 0x01,
 	FFMS_SOURCE_MATROSKA	= 0x02,
 	FFMS_SOURCE_HAALIMPEG	= 0x04,
@@ -108,7 +108,7 @@ enum FFMS_CPUFeatures {
 	FFMS_CPU_CAPS_3DNOW		= 0x04,
 	FFMS_CPU_CAPS_ALTIVEC	= 0x08,
 	FFMS_CPU_CAPS_BFIN		= 0x10,
-	FFMS_CPU_CAPS_SSE2      = 0x20
+	FFMS_CPU_CAPS_SSE2		= 0x20
 };
 
 enum FFMS_SeekMode {
@@ -129,18 +129,18 @@ enum FFMS_IndexErrorHandling {
 enum FFMS_TrackType {
 	FFMS_TYPE_UNKNOWN = -1,
 	FFMS_TYPE_VIDEO,
-    FFMS_TYPE_AUDIO,
-    FFMS_TYPE_DATA,
-    FFMS_TYPE_SUBTITLE,
-    FFMS_TYPE_ATTACHMENT
+	FFMS_TYPE_AUDIO,
+	FFMS_TYPE_DATA,
+	FFMS_TYPE_SUBTITLE,
+	FFMS_TYPE_ATTACHMENT
 };
 
 enum FFMS_SampleFormat {
-    FFMS_FMT_U8 = 0,
-    FFMS_FMT_S16,
-    FFMS_FMT_S32,
-    FFMS_FMT_FLT,
-    FFMS_FMT_DBL
+	FFMS_FMT_U8 = 0,
+	FFMS_FMT_S16,
+	FFMS_FMT_S32,
+	FFMS_FMT_FLT,
+	FFMS_FMT_DBL
 };
 
 enum FFMS_AudioChannel {

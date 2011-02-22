@@ -116,12 +116,12 @@ void FFMS_AudioSource::Init(FFMS_Index &Index, int DelayMode) {
 
 		if (DelayMode >= 0) {
 			const FFMS_Track &VTrack = Index[DelayMode];
-			AdjustRelative = VTrack[0].PTS * VTrack.TB.Num / (double)VTrack.TB.Den / 1000.;
+			AdjustRelative = VTrack[0].PTS * VTrack.TB.Num / (double)VTrack.TB.Den;
 		}
 	}
 
-	Delay = static_cast<int64_t>((AdjustRelative - Frames[0].PTS) * AP.SampleRate + .5);
-	AP.NumSamples -= Delay;
+	Delay = static_cast<int64_t>((Frames[0].PTS * Frames.TB.Num / (double)Frames.TB.Den - AdjustRelative) * AP.SampleRate / 1000. + .5);
+	AP.NumSamples += Delay;
 }
 
 void FFMS_AudioSource::CacheBlock(CacheIterator &pos, int64_t Start, size_t Samples, uint8_t *SrcData) {

@@ -227,18 +227,17 @@ const char *GetLAVCSampleFormatName(AVSampleFormat s) {
 	}
 }
 
-template<class T> static void safe_realloc(T *&ptr, size_t size) {
-	void *newalloc = av_realloc(ptr, size);
+template<class T> static void safe_aligned_reallocz(T *&ptr, size_t old_size, size_t new_size) {
+	void *newalloc = av_mallocz(new_size);
 	if (newalloc) {
-		ptr = static_cast<T*>(newalloc);
+		memcpy(newalloc, ptr, FFMIN(old_size, new_size));
 	}
-	else {
-		av_free(ptr);
-		ptr = 0;
-	}
+	av_free(ptr);
+	ptr = static_cast<T*>(newalloc);
 }
 
 void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContext *TCC, MatroskaReaderContext &Context) {
+	memset(Context.Buffer, 0, Context.BufferSize); // necessary to avoid lavc hurfing a durf with some mpeg4 video streams
 	if (TCC && TCC->CS) {
 		CompressedStream *CS = TCC->CS;
 		unsigned int DecompressedFrameSize = 0;
@@ -255,17 +254,16 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 
 			if (ReadBytes == 0) {
 				FrameSize = DecompressedFrameSize;
-				memset(Context.Buffer + DecompressedFrameSize, 0,
-					Context.BufferSize  + FF_INPUT_BUFFER_PADDING_SIZE - DecompressedFrameSize);
 				return;
 			}
 
-			if (Context.BufferSize < DecompressedFrameSize + ReadBytes) {
-				Context.BufferSize = DecompressedFrameSize + ReadBytes;
-				safe_realloc(Context.Buffer, Context.BufferSize + FF_INPUT_BUFFER_PADDING_SIZE);
+			if (Context.BufferSize < DecompressedFrameSize + ReadBytes + FF_INPUT_BUFFER_PADDING_SIZE) {
+				size_t NewSize = (DecompressedFrameSize + ReadBytes) * 2;
+				safe_aligned_reallocz(Context.Buffer, Context.BufferSize, NewSize);
 				if (Context.Buffer == NULL)
 					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
 					"Out of memory");
+				Context.BufferSize = NewSize;
 			}
 
 			memcpy(Context.Buffer + DecompressedFrameSize, Context.CSBuffer, ReadBytes);
@@ -279,12 +277,13 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 		}
 
 		if (TCC && TCC->CompressionMethod == COMP_PREPEND) {
-			unsigned ReqBufsize = FrameSize + TCC->CompressedPrivateDataSize + 16;
+			unsigned ReqBufsize = FrameSize + TCC->CompressedPrivateDataSize + FF_INPUT_BUFFER_PADDING_SIZE;
 			if (Context.BufferSize < ReqBufsize) {
-				Context.BufferSize = FrameSize + TCC->CompressedPrivateDataSize;
-				safe_realloc(Context.Buffer, ReqBufsize);
+				size_t NewSize = ReqBufsize * 2;
+				safe_aligned_reallocz(Context.Buffer, Context.BufferSize, NewSize);
 				if (Context.Buffer == NULL)
 					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED, "Out of memory");
+				Context.BufferSize = NewSize;
 			}
 
 			/* // maybe faster? maybe not?
@@ -294,12 +293,13 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 			// screw it, memcpy and fuck the losers who use header compression
 			memcpy(Context.Buffer, TCC->CompressedPrivateData, TCC->CompressedPrivateDataSize);
 		}
-		else if (Context.BufferSize < FrameSize + 16) {
-			Context.BufferSize = FrameSize;
-			safe_realloc(Context.Buffer, Context.BufferSize + 16);
+		else if (Context.BufferSize < FrameSize + FF_INPUT_BUFFER_PADDING_SIZE) {
+			size_t NewSize = FrameSize * 2;
+			safe_aligned_reallocz(Context.Buffer, Context.BufferSize, NewSize);
 			if (Context.Buffer == NULL)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
 					"Out of memory");
+			Context.BufferSize = NewSize;
 		}
 
 		uint8_t *TargetPtr = Context.Buffer;
@@ -651,8 +651,7 @@ static int ffms_lavf_file_open(URLContext *h, const char *filename, int flags) {
 // Hijack lavf's file protocol handler's open function and use our own instead.
 // Hack by nielsm.
 void ffms_patch_lavf_file_open() {
-	extern URLProtocol *first_protocol;
-	URLProtocol *proto = first_protocol;
+	URLProtocol *proto = av_protocol_next(NULL);
 	while (proto != NULL) {
 		if (strcmp("file", proto->name) == 0) {
 			break;

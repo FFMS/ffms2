@@ -4,7 +4,8 @@
 function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", \
 	string "cachefile", int "fpsnum", int "fpsden", string "pp", int "threads", \
 	string "timecodes", int "seekmode", bool "overwrite", int "width", int "height", \
-	string "resizer", string "colorspace", int "rffmode", int "adjustdelay") {
+	string "resizer", string "colorspace", int "rffmode", int "adjustdelay", \
+	bool "utf8") {
 	
 	vtrack 		= default(vtrack,-1)
 	atrack		= default(atrack,-2)
@@ -12,7 +13,7 @@ function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", 
 	cachefile	= default(cachefile,source+".ffindex")
 	fpsnum		= default(fpsnum,-1)
 	fpsden		= default(fpsden,1)
-	pp		= default(pp,"")
+	pp			= default(pp,"")
 	threads		= default(threads,-1)
 	timecodes	= default(timecodes,"")
 	seekmode	= default(seekmode,1)
@@ -23,31 +24,32 @@ function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", 
 	colorspace	= default(colorspace,"")
 	rffmode		= default(rffmode,0)
 	adjustdelay	= default(adjustdelay,-1)
-
+	utf8		= default(utf8,false)
 	
 	((cache == true) && (atrack <= -2)) ? ffindex(source=source, cachefile=cachefile, \
 		indexmask=0, overwrite=overwrite) : (cache == true) ? ffindex(source=source, \
-		cachefile=cachefile, indexmask=-1, overwrite=overwrite) : nop
+		cachefile=cachefile, indexmask=-1, overwrite=overwrite, utf8=utf8) : nop
 	
 	v = ffvideosource(source=source, track=vtrack, cache=cache, cachefile=cachefile, \
 		fpsnum=fpsnum, fpsden=fpsden, pp=pp, threads=threads, timecodes=timecodes, \
 		seekmode=seekmode, rffmode=rffmode, width=width, height=height, resizer=resizer, \
-		colorspace=colorspace)
+		colorspace=colorspace, utf8=utf8)
 	
 	a = (atrack <= -2) ? blankclip(audio_rate=0) : ffaudiosource(source=source, \
-		track=atrack, cache=cache, cachefile=cachefile, adjustdelay=adjustdelay)
+		track=atrack, cache=cache, cachefile=cachefile, adjustdelay=adjustdelay, utf8=utf8)
 	
 	return audiodubex(v,a)
 }
 
-function FFImageSource(string source, int "width", int "height", string "resizer", string "colorspace") {
+function FFImageSource(string source, int "width", int "height", string "resizer", string "colorspace", bool "utf8") {
 
 	width		= default(width,-1)
 	height		= default(height,-1)
 	resizer		= default(resizer,"BICUBIC")
 	colorspace	= default(colorspace,"")
+	utf8		= default(utf8,false)
 
-	return FFVideoSource(source, cache=false, seekmode=-1, width=width, height=height, resizer=resizer, colorspace=colorspace)
+	return FFVideoSource(source, cache=false, seekmode=-1, width=width, height=height, resizer=resizer, colorspace=colorspace, utf8=utf8)
 }
 
 function FFCopyrightInfringement(string source) {
