@@ -154,6 +154,8 @@ int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) {
 	F.PTS = PTS;
 
 	iterator Pos = std::lower_bound(begin(), end(), F, PTSComparison);
+	if (Pos == end())
+		return size() - 1;
 	int Frame = std::distance(begin(), Pos);
 	if (Pos == begin() || FFABS(Pos->PTS - PTS) <= FFABS((Pos - 1)->PTS - PTS))
 		return Frame;
