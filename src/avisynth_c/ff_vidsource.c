@@ -228,6 +228,10 @@ AVS_Value FFVideoSource_create( AVS_ScriptEnvironment *env, const char *src, int
     if( !filter )
         return avs_void;
 
+    filter->fps_num = fps_num;
+    filter->fps_den = fps_den;
+    filter->rff_mode = rff_mode;
+
     AVS_Clip *clip = ffms_avs_lib->avs_new_c_filter( env, &filter->fi, avs_void, 0 );
     if( !clip )
     {
