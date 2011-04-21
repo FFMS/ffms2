@@ -43,14 +43,12 @@ bool GlobalUseUTF8Paths = false;
 
 #ifdef FFMS_WIN_DEBUG
 
-extern "C" int av_log_level;
-
 void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl) {
 	static int print_prefix=1;
 	static int count;
 	static char line[1024] = {0}, prev[1024] = {0};
 	AVClass* avc = ptr ? *(AVClass**)ptr : NULL;
-	if(level > av_log_level)
+	if(level > av_log_get_level())
 		return;
 
 	int written = 0;
