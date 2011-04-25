@@ -625,6 +625,7 @@ int ffms_wchar_open(const char *fname, int oflags, int pmode) {
     return -1;
 }
 
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(53,0,3)
 static int ffms_lavf_file_open(URLContext *h, const char *filename, int flags) {
     int access;
     int fd;
@@ -662,6 +663,8 @@ void ffms_patch_lavf_file_open() {
 		proto->url_open = &ffms_lavf_file_open;
 	}
 }
+#endif
+
 #endif // _WIN32
 
 // End of filename hackery.
