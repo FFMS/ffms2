@@ -36,8 +36,8 @@ extern "C" {
 
 class FFPP : public GenericVideoFilter {
 private:
-	pp_context_t *PPContext;
-	pp_mode_t *PPMode;
+	pp_context *PPContext;
+	pp_mode *PPMode;
 	SwsContext *SWSTo422P;
 	SwsContext *SWSFrom422P;
 	AVPicture InputPicture;
