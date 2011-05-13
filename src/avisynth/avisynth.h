@@ -48,15 +48,6 @@ enum { AVISYNTH_INTERFACE_VERSION = 3 };
 // Win32 API macros, notably the types BYTE, DWORD, ULONG, etc.
 #include <windef.h>
 
-#if (defined(_WIN64) && (_MSC_VER >= 1400))
-extern "C" LONG __cdecl _InterlockedIncrement(LONG volatile * pn);
-extern "C" LONG __cdecl _InterlockedDecrement(LONG volatile * pn);
-#pragma intrinsic(_InterlockedIncrement)
-#pragma intrinsic(_InterlockedDecrement)
-#define InterlockedIncrement _InterlockedIncrement
-#define InterlockedDecrement _InterlockedDecrement
-#endif
-
 // COM interface macros
 #include <objbase.h>
 
@@ -263,11 +254,7 @@ struct VideoInfo {
 
 	unsigned __int64 temp = numerator | denominator; // Just looking top bit
 	unsigned u = 0;
-#ifdef _WIN64
-	while (temp & 0xffffffff80000000ull) { // or perhaps > 16777216*2
-#else
 	while (temp & 0xffffffff80000000) { // or perhaps > 16777216*2
-#endif
 	  temp = Int64ShrlMod32(temp, 1);
 	  u++;
 	}
@@ -305,23 +292,12 @@ class VideoFrameBuffer {
   const int data_size;
   // sequence_number is incremented every time the buffer is changed, so
   // that stale views can tell they're no longer valid.
-#ifdef _WIN64
-  volatile long sequence_number;
-#else
   long sequence_number;
-#endif
 
   friend class VideoFrame;
   friend class Cache;
-#ifdef _WIN64
-  friend class CacheMT;
-#endif
   friend class ScriptEnvironment;
-#ifdef _WIN64
-  volatile long refcount;
-#else
   long refcount;
-#endif
 
 public:
   VideoFrameBuffer(int size);
@@ -329,11 +305,7 @@ public:
   ~VideoFrameBuffer();
 
   const BYTE* GetReadPtr() const { return data; }
-#ifdef _WIN64
-  BYTE* GetWritePtr() { InterlockedIncrement(&sequence_number); return data; }
-#else
   BYTE* GetWritePtr() { ++sequence_number; return data; }
-#endif
   int GetDataSize() { return data_size; }
   int GetSequenceNumber() { return sequence_number; }
   int GetRefcount() { return refcount; }
@@ -351,47 +323,27 @@ class AVSValue;
 // is overloaded to recycle class instances.
 
 class VideoFrame {
-#ifdef _WIN64
-  volatile long refcount;
-#else
   int refcount;
-#endif
   VideoFrameBuffer* const vfb;
   const int offset, pitch, row_size, height, offsetU, offsetV, pitchUV;  // U&V offsets are from top of picture.
 
   friend class PVideoFrame;
-#ifdef _WIN64
-  void AddRef() { InterlockedIncrement(&refcount); }
-  void Release() { VideoFrameBuffer* vfb_local = vfb; if (!InterlockedDecrement(&refcount)) InterlockedDecrement(&vfb_local->refcount); }
-#else
   void AddRef() { InterlockedIncrement((long *)&refcount); }
   void Release() { if (refcount==1) InterlockedDecrement(&vfb->refcount); InterlockedDecrement((long *)&refcount); }
-#endif
 
   friend class ScriptEnvironment;
   friend class Cache;
-#ifdef _WIN64
-  friend class CacheMT;
-#endif
 
   VideoFrame(VideoFrameBuffer* _vfb, int _offset, int _pitch, int _row_size, int _height);
   VideoFrame(VideoFrameBuffer* _vfb, int _offset, int _pitch, int _row_size, int _height, int _offsetU, int _offsetV, int _pitchUV);
 
-#ifdef _WIN64
-  void* operator new (size_t size);
-#else
   void* operator new(unsigned size);
-#endif
 // TESTME: OFFSET U/V may be switched to what could be expected from AVI standard!
 public:
   int GetPitch() const { return pitch; }
   int GetPitch(int plane) const { switch (plane) {case PLANAR_U: case PLANAR_V: return pitchUV;} return pitch; }
   int GetRowSize() const { return row_size; }
-#ifdef _WIN64
-  __declspec(noinline) int GetRowSize(int plane) const {
-#else
   int GetRowSize(int plane) const {
-#endif
     switch (plane) {
     case PLANAR_U: case PLANAR_V: if (pitchUV) return row_size>>1; else return 0;
     case PLANAR_U_ALIGNED: case PLANAR_V_ALIGNED:
@@ -445,11 +397,7 @@ public:
     return vfb->data + GetOffset(plane);
   }
 
-#ifdef _WIN64
-  ~VideoFrame() { VideoFrameBuffer* vfb_local = vfb; if (InterlockedDecrement(&refcount) >= 0) InterlockedDecrement(&vfb_local->refcount); }
-#else
   ~VideoFrame() { InterlockedDecrement(&vfb->refcount); }
-#endif
 };
 
 enum {
@@ -457,27 +405,16 @@ enum {
   CACHE_RANGE=1,
   CACHE_ALL=2,
   CACHE_AUDIO=3,
-#ifdef _WIN64
-  CACHE_AUDIO_NONE=4,
-  CACHE_AUDIO_AUTO=5
-#else
   CACHE_AUDIO_NONE=4
-#endif
  };
 
 // Base class for all filters.
 class IClip {
   friend class PClip;
   friend class AVSValue;
-#ifdef _WIN64
-  volatile long refcnt;
-  void AddRef() { InterlockedIncrement(&refcnt); }
-  void Release() { if (!InterlockedDecrement(&refcnt)) delete this; }
-#else
   int refcnt;
   void AddRef() { InterlockedIncrement((long *)&refcnt); }
   void Release() { InterlockedDecrement((long *)&refcnt); if (!refcnt) delete this; }
-#endif
 public:
   IClip() : refcnt(0) {}
 
@@ -488,11 +425,7 @@ public:
   virtual void __stdcall GetAudio(void* buf, __int64 start, __int64 count, IScriptEnvironment* env) = 0;  // start and count are in samples
   virtual void __stdcall SetCacheHints(int cachehints,int frame_range) = 0 ;  // We do not pass cache requests upwards, only to the next filter.
   virtual const VideoInfo& __stdcall GetVideoInfo() = 0;
-#ifdef _WIN64
-  virtual ~IClip() {}
-#else
   virtual __stdcall ~IClip() {}
-#endif
 };
 
 
@@ -633,14 +566,8 @@ private:
     if (!init && IsClip() && clip)
       clip->Release();
     // make sure this copies the whole struct!
-#ifdef _WIN64
-    this->clip = src->clip;
-    this->type = src->type;
-    this->array_size = src->array_size;
-#else
     ((__int32*)this)[0] = ((__int32*)src)[0];
     ((__int32*)this)[1] = ((__int32*)src)[1];
-#endif
   }
 };
 
@@ -707,9 +634,6 @@ public:
   static AVSValue __cdecl Create_24bit(AVSValue args, void*, IScriptEnvironment*);
   static AVSValue __cdecl Create_16bit(AVSValue args, void*, IScriptEnvironment*);
   static AVSValue __cdecl Create_8bit(AVSValue args, void*, IScriptEnvironment*);
-#ifdef _WIN64
-  static AVSValue __cdecl Create_Any  (AVSValue args, void*, IScriptEnvironment*);
-#endif
   virtual ~ConvertAudio();
 
 private:
@@ -750,28 +674,15 @@ enum {
   CPUF_X86_64       = 0xA0,   // Hammer (note: equiv. to 3DNow + SSE2, which only Hammer
                               //         will have anyway)
   CPUF_SSE3		= 0x100,		    // Some P4 & Athlon 64.
-#ifdef _WIN64
-  CPUF_SSSE3		= 0x200,   //  prescott?
-  CPUF_SSE4			= 0x400,   //  penryn
-  CPUF_SSE4_2		= 0x800	   //  Core iX
-#endif
 };
-#ifdef _WIN64
-#define MAX_INT MAXINT32
-#define MIN_INT MININT32  // ::FIXME:: research why this is not 0x80000000
-class IClipLocalStorage;
-#else
 #define MAX_INT 0x7fffffff
 #define MIN_INT -0x7fffffff
-#endif
+
+
 
 class IScriptEnvironment {
 public:
-#ifdef _WIN64
-  virtual ~IScriptEnvironment() {}
-#else
   virtual __stdcall ~IScriptEnvironment() {}
-#endif
 
   virtual /*static*/ long __stdcall GetCPUFlags() = 0;
 
@@ -825,15 +736,6 @@ public:
   virtual bool __stdcall PlanarChromaAlignment(PlanarChromaAlignmentMode key) = 0;
 
   virtual PVideoFrame __stdcall SubframePlanar(PVideoFrame src, int rel_offset, int new_pitch, int new_row_size, int new_height, int rel_offsetU, int rel_offsetV, int new_pitchUV) = 0;
-#ifdef _WIN64
-  virtual void __stdcall SetMTMode(int mode,int threads,bool temporary)=0;
-  virtual int __stdcall  GetMTMode(bool return_nthreads)=0;
-
-  virtual IClipLocalStorage* __stdcall AllocClipLocalStorage()=0;
-
-  virtual void __stdcall SaveClipLocalStorage()=0;
-  virtual void __stdcall RestoreClipLocalStorage()=0;
-#endif
 };
 
 

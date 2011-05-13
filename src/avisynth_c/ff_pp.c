@@ -28,8 +28,8 @@
 typedef struct
 {
     AVS_FilterInfo *fi;
-    pp_context_t *pp_ctx;
-    pp_mode_t *pp_mode;
+    pp_context *pp_ctx;
+    pp_mode *pp_mode;
     struct SwsContext *sws_to_422p;
     struct SwsContext *sws_from_422p;
     AVPicture in_pic;
