@@ -32,7 +32,7 @@
 int64_t avs_to_ff_cpu_flags( long avisynth_flags, int for_ffms )
 {
 #define CPU_FLAG(FLAG) for_ffms ? FFMS_CPU_CAPS_##FLAG : SWS_CPU_CAPS_##FLAG
-    int flags = 0;
+    int64_t flags = 0;
     if( avisynth_flags & AVS_CPU_MMX )
         flags |= CPU_FLAG(MMX);
     if( avisynth_flags & AVS_CPU_INTEGER_SSE )

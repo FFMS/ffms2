@@ -45,6 +45,17 @@ void av_sha_final(struct AVSHA* context, uint8_t *digest);
 #undef max
 
 #define INDEXID 0x53920873
+#ifdef __MINGW64__
+	#define ARCH 1
+#elif __MINGW32__
+	#define ARCH 2
+#elif _WIN32
+	#define ARCH 3
+#elif __i386__
+	#define ARCH 4
+#else
+	#define ARCH 5
+#endif
 
 extern bool HasHaaliMPEG;
 extern bool HasHaaliOGG;
@@ -56,6 +67,7 @@ unsigned postproc_version() { return 0; } // ugly workaround to avoid lots of if
 struct IndexHeader {
 	uint32_t Id;
 	uint32_t Version;
+	uint32_t Arch;
 	uint32_t Tracks;
 	uint32_t Decoder;
 	uint32_t LAVUVersion;
@@ -309,6 +321,7 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 	IndexHeader IH;
 	IH.Id = INDEXID;
 	IH.Version = FFMS_VERSION;
+	IH.Arch = ARCH;
 	IH.Tracks = size();
 	IH.Decoder = Decoder;
 	IH.LAVUVersion = avutil_version();
@@ -406,6 +419,10 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 	if (IH.Version != FFMS_VERSION)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("'") + IndexFile + "' is the expected index version");
+
+	if (IH.Arch != ARCH)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("'") + IndexFile + "' was not made with this FFMS2 binary");
 
 	if (IH.LAVUVersion != avutil_version() || IH.LAVFVersion != avformat_version() ||
 		IH.LAVCVersion != avcodec_version() || IH.LSWSVersion != swscale_version() ||
