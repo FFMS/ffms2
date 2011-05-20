@@ -320,6 +320,10 @@ static AVSValue __cdecl FFSetLogLevel(AVSValue Args, void* UserData, IScriptEnvi
 	return FFMS_GetLogLevel();
 }
 
+static AVSValue __cdecl FFGetVersion(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
+	return FFMS_GetVersion();
+}
+
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScriptEnvironment* Env) {
     Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b[demuxer]s", CreateFFIndex, 0);
 	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b", CreateFFVideoSource, 0);
@@ -330,6 +334,7 @@ extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScri
 	Env->AddFunction("SWScale", "c[width]i[height]i[resizer]s[colorspace]s", CreateSWScale, 0);
 	Env->AddFunction("FFGetLogLevel", "", FFGetLogLevel, 0);
 	Env->AddFunction("FFSetLogLevel", "i", FFSetLogLevel, 0);
+	Env->AddFunction("FFGetVersion", "", FFGetVersion, 0);
 
     return "FFmpegSource - The Second Coming V2.0 Final";
 }
