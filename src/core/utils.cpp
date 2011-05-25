@@ -115,6 +115,7 @@ TrackCompressionContext::~TrackCompressionContext() {
 int64_t GetSWSCPUFlags() {
 	int64_t Flags = 0;
 
+#ifdef SWS_CPU_CAPS_MMX
 	if (CPUFeatures & FFMS_CPU_CAPS_MMX)
 		Flags |= SWS_CPU_CAPS_MMX;
 	if (CPUFeatures & FFMS_CPU_CAPS_MMX2)
@@ -125,7 +126,6 @@ int64_t GetSWSCPUFlags() {
 		Flags |= SWS_CPU_CAPS_ALTIVEC;
 	if (CPUFeatures & FFMS_CPU_CAPS_BFIN)
 		Flags |= SWS_CPU_CAPS_BFIN;
-#ifdef SWS_CPU_CAPS_SSE2
 	if (CPUFeatures & FFMS_CPU_CAPS_SSE2)
 		Flags |= SWS_CPU_CAPS_SSE2;
 #endif

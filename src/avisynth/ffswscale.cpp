@@ -22,6 +22,21 @@
 #include "avsutils.h"
 #include "../core/utils.h"
 
+static int64_t AvisynthToSWSCPUFlags(long AvisynthFlags) {
+	int64_t Flags = 0;
+#ifdef SWS_CPU_CAPS_MMX
+	if (AvisynthFlags & CPUF_MMX)
+		Flags |= SWS_CPU_CAPS_MMX;
+	if (AvisynthFlags & CPUF_INTEGER_SSE)
+		Flags |= SWS_CPU_CAPS_MMX2;
+	if (AvisynthFlags & CPUF_3DNOW_EXT)
+		Flags |= SWS_CPU_CAPS_3DNOW;
+	if (AvisynthFlags & CPUF_SSE2)
+		Flags |= SWS_CPU_CAPS_SSE2;
+#endif
+	return Flags;
+}
+
 SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env) : GenericVideoFilter(Child) {
 	Context = NULL;
 	OrigWidth = vi.width;
@@ -72,7 +87,7 @@ SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char 
 		Env->ThrowError("SWScale: mod 2 output width required");
 
 	Context = GetSwsContext(OrigWidth, OrigHeight, ConvertFromFormat, vi.width, vi.height, ConvertToFormat,
-		AvisynthToFFCPUFlags(Env->GetCPUFlags(), false) | Resizer);
+		AvisynthToSWSCPUFlags(Env->GetCPUFlags()) | Resizer);
 	if (Context == NULL)
 		Env->ThrowError("SWScale: Context creation failed");
 }

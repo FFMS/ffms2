@@ -26,24 +26,16 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-
-
-int64_t AvisynthToFFCPUFlags(long AvisynthFlags, bool ForFFMS) {
+int64_t AvisynthToFFCPUFlags(long AvisynthFlags) {
 	int64_t Flags = 0;
-#define CPU_FLAG(FLAG) ForFFMS ? FFMS_CPU_CAPS_##FLAG : SWS_CPU_CAPS_##FLAG
-
 	if (AvisynthFlags & CPUF_MMX)
-		Flags |= CPU_FLAG(MMX);
+		Flags |= FFMS_CPU_CAPS_MMX;
 	if (AvisynthFlags & CPUF_INTEGER_SSE)
-		Flags |= CPU_FLAG(MMX2);
+		Flags |= FFMS_CPU_CAPS_MMX2;
 	if (AvisynthFlags & CPUF_3DNOW_EXT)
-		Flags |= CPU_FLAG(3DNOW);
-#ifdef SWS_CPU_CAPS_SSE2
+		Flags |= FFMS_CPU_CAPS_3DNOW;
 	if (AvisynthFlags & CPUF_SSE2)
-		Flags |= CPU_FLAG(SSE2);
-#endif
-
-#undef CPU_FLAG
+		Flags |= FFMS_CPU_CAPS_SSE2;
 	return Flags;
 }
 

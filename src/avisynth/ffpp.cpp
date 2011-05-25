@@ -24,6 +24,21 @@
 
 #ifdef FFMS_USE_POSTPROC
 
+static int64_t AvisynthToSWSCPUFlags(long AvisynthFlags) {
+	int64_t Flags = 0;
+#ifdef SWS_CPU_CAPS_MMX
+	if (AvisynthFlags & CPUF_MMX)
+		Flags |= SWS_CPU_CAPS_MMX;
+	if (AvisynthFlags & CPUF_INTEGER_SSE)
+		Flags |= SWS_CPU_CAPS_MMX2;
+	if (AvisynthFlags & CPUF_3DNOW_EXT)
+		Flags |= SWS_CPU_CAPS_3DNOW;
+	if (AvisynthFlags & CPUF_SSE2)
+		Flags |= SWS_CPU_CAPS_SSE2;
+#endif
+	return Flags;
+}
+
 FFPP::FFPP(PClip AChild, const char *PP, IScriptEnvironment *Env) : GenericVideoFilter(AChild) {
 	if (!strcmp(PP, ""))
 		Env->ThrowError("FFPP: PP argument is empty");
@@ -40,7 +55,7 @@ FFPP::FFPP(PClip AChild, const char *PP, IScriptEnvironment *Env) : GenericVideo
 	if (!PPMode)
 		Env->ThrowError("FFPP: Invalid postprocesing settings");
 
-	int64_t Flags = AvisynthToFFCPUFlags(Env->GetCPUFlags(), false);
+	int64_t Flags = AvisynthToSWSCPUFlags(Env->GetCPUFlags());
 
 	if (vi.IsYV12()) {
 		Flags |= PP_FORMAT_420;
