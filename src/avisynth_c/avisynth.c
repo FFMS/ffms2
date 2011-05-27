@@ -56,7 +56,7 @@ static int get_num_logical_cpus()
 
 static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value args, void *user_data )
 {
-    FFMS_Init( (int)avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ), 1 ), as_bool( as_elt( args, 7 ), 0 ) );
+    FFMS_Init( (int)avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ) ), as_bool( as_elt( args, 7 ), 0 ) );
     init_ErrorInfo( ei );
 
     AVS_Value elt0 = as_elt( args, 0 );
@@ -117,7 +117,7 @@ static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value a
 
 static AVS_Value AVSC_CC create_FFVideoSource( AVS_ScriptEnvironment *env, AVS_Value args, void *user_data )
 {
-    FFMS_Init( (int)avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ), 1 ), as_bool( as_elt( args, 15 ), 0 ) );
+    FFMS_Init( (int)avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ) ), as_bool( as_elt( args, 15 ), 0 ) );
     init_ErrorInfo( ei );
 
     AVS_Value elt0 = as_elt( args, 0 );
@@ -203,7 +203,7 @@ static AVS_Value AVSC_CC create_FFVideoSource( AVS_ScriptEnvironment *env, AVS_V
 
 static AVS_Value AVSC_CC create_FFAudioSource( AVS_ScriptEnvironment *env, AVS_Value args, void *user_data )
 {
-    FFMS_Init( (int)avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ), 1 ), as_bool( as_elt( args, 5 ), 0 ) );
+    FFMS_Init( (int)avs_to_ff_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ) ), as_bool( as_elt( args, 5 ), 0 ) );
     init_ErrorInfo( ei );
 
     if( !avs_is_string( as_elt( args, 0 ) ) )
@@ -314,6 +314,9 @@ static AVS_Value AVSC_CC create_FFSetLogLevel( AVS_ScriptEnvironment *env, AVS_V
     return avs_new_value_int( FFMS_GetLogLevel() );
 }
 
+static AVS_Value AVSC_CC create_FFGetVersion( AVS_ScriptEnvironment *env, AVS_Value args, void *user_data )
+{ return avs_new_value_int( FFMS_GetVersion() ); }
+
 /* the AVS loader for LoadCPlugin */
 const char *AVSC_CC avisynth_c_plugin_init( AVS_ScriptEnvironment* env )
 {
@@ -329,6 +332,7 @@ const char *AVSC_CC avisynth_c_plugin_init( AVS_ScriptEnvironment* env )
 #endif
     ffms_avs_lib->avs_add_function( env, "FFGetLogLevel", "", create_FFGetLogLevel, 0 );
     ffms_avs_lib->avs_add_function( env, "FFSetLogLevel", "i", create_FFSetLogLevel, 0 );
+    ffms_avs_lib->avs_add_function( env, "FFGetVersion", "", create_FFGetVersion, 0 );
 
     /* tell avs to call our cleanup method when it closes */
     ffms_avs_lib->avs_at_exit( env, ffms_free_avs_lib, 0 );

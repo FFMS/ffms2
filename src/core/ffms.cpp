@@ -110,6 +110,10 @@ FFMS_API(void) FFMS_Init(int CPUFeatures, int UseUTF8Paths) {
 	}
 }
 
+FFMS_API(int) FFMS_GetVersion() {
+	return FFMS_VERSION;
+}
+
 FFMS_API(int) FFMS_GetLogLevel() {
 	return av_log_get_level();
 }

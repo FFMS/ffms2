@@ -28,7 +28,7 @@ extern "C" {
 #include "ffmscompat.h"
 
 
-int64_t AvisynthToFFCPUFlags(long AvisynthFlags, bool ForFFMS = true);
+int64_t AvisynthToFFCPUFlags(long AvisynthFlags);
 PixelFormat CSNameToPIXFMT(const char *CSName, PixelFormat Default);
 int ResizerNameToSWSResizer(const char *ResizerName);
 

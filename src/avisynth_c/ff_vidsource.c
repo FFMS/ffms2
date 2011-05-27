@@ -246,7 +246,7 @@ AVS_Value FFVideoSource_create( AVS_ScriptEnvironment *env, const char *src, int
     if( !filter->vid )
         return avs_new_value_error( ffms_avs_sprintf( "FFVideoSource: %s", ei.Buffer ) );
 
-#ifdef WITH_LIBPOSTPROC
+#ifdef FFMS_USE_POSTPROC
     if( FFMS_SetPP( filter->vid, pp, &ei ) )
     {
         FFMS_DestroyVideoSource( filter->vid );
