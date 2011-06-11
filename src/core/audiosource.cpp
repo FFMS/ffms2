@@ -75,6 +75,8 @@ void FFMS_AudioSource::Init(FFMS_Index &Index, int DelayMode) {
 		((Frames[0].PTS != ffms_av_nopts_value && Frames[PacketNumber].PTS == Frames[0].PTS) ||
 		 Cache.size() < 10)) {
 
+		// Vorbis in particular seems to like having 60+ packets at the start of the file with a PTS of 0,
+		// so we might need to expand the search range to account for that.
 		if (Cache.size() >= MaxCacheBlocks - 1) {
 			 if (MaxCacheBlocks >= EXCESSIVE_CACHE_SIZE)
 				 throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED, "Exceeded the search range for an initial valid audio PTS");
