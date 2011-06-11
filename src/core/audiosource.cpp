@@ -77,7 +77,7 @@ void FFMS_AudioSource::Init(FFMS_Index &Index, int DelayMode) {
 
 		if (Cache.size() >= MaxCacheBlocks - 1) {
 			 if (MaxCacheBlocks >= EXCESSIVE_CACHE_SIZE)
-				 throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED, "Search range for a valid audio PTS exceeded");
+				 throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED, "Exceeded the search range for an initial valid audio PTS");
 			MaxCacheBlocks *= 2;
 		}
 
