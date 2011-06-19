@@ -504,7 +504,7 @@ void FFMS_Indexer::SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate
 FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, enum FFMS_Sources Demuxer) {
 	AVFormatContext *FormatContext = NULL;
 
-	if (av_open_input_file(&FormatContext, Filename, NULL, 0, NULL) != 0)
+	if (avformat_open_input(&FormatContext, Filename, NULL, NULL) != 0)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Can't open '") + Filename + "'");
 

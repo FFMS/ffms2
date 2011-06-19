@@ -39,6 +39,9 @@
 #		define ff_codec_movvideo_tags codec_movvideo_tags
 #		define ff_codec_wav_tags codec_wav_tags
 #	endif
+#	if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(53,2,0))
+#		define avformat_open_input(c,s,f,o) av_open_input_file(c,s,f,0,o) // this works because the parameters/options are not used
+#	endif
 #endif
 
 #ifdef LIBAVCODEC_VERSION_INT
