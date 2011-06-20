@@ -126,9 +126,11 @@ int64_t GetSWSCPUFlags() {
 		Flags |= SWS_CPU_CAPS_ALTIVEC;
 	if (CPUFeatures & FFMS_CPU_CAPS_BFIN)
 		Flags |= SWS_CPU_CAPS_BFIN;
+#ifdef SWS_CPU_CAPS_SSE2
 	if (CPUFeatures & FFMS_CPU_CAPS_SSE2)
 		Flags |= SWS_CPU_CAPS_SSE2;
-#endif
+#endif /* SWS_CPU_CAPS_SSE2 */
+#endif /* SWS_CPU_CAPS_MMX */
 
 	return Flags;
 }
