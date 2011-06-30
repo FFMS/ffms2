@@ -8,11 +8,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ffmsindex", "ffmsindex.vcpr
 		{AA137613-96A1-4388-8905-71345B4F8F87} = {AA137613-96A1-4388-8905-71345B4F8F87}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ffmstest", "ffmstest.vcproj", "{9A985ACA-33E1-4731-BAF6-9DC5E234A811}"
-	ProjectSection(ProjectDependencies) = postProject
-		{AA137613-96A1-4388-8905-71345B4F8F87} = {AA137613-96A1-4388-8905-71345B4F8F87}
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
