@@ -207,10 +207,10 @@ typedef struct {
 	int64_t Den;
 } FFMS_TrackTimeBase;
 
-#define FFMS_FRAMEINFO_COMMON int64_t PTS; int RepeatPict; int KeyFrame;
-
 typedef struct {
-	FFMS_FRAMEINFO_COMMON
+	int64_t PTS;
+	int RepeatPict;
+	int KeyFrame;
 } FFMS_FrameInfo;
 
 typedef struct {

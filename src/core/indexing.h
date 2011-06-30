@@ -65,9 +65,8 @@ public:
 	~SharedAudioContext();
 };
 
-struct TFrameInfo {
+struct TFrameInfo : public FFMS_FrameInfo {
 public:
-	FFMS_FRAMEINFO_COMMON
 	int64_t SampleStart;
 	unsigned int SampleCount;
 	int64_t FilePos;
