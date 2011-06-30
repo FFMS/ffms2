@@ -246,7 +246,7 @@ ReSeek:
 			if (StartTime < 0 || (CurrentFrame = Frames.FrameFromPTS(StartTime)) < 0) {
 				// No idea where we are so go back a bit further
 				if (n + SeekOffset == 0)
-					throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+					throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_UNKNOWN,
 						"Frame accurate seeking is not possible in this file");
 
 				SeekOffset -= FFMIN(20, n + SeekOffset);

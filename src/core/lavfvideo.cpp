@@ -243,7 +243,7 @@ ReSeek:
 					case 1:
 						// No idea where we are so go back a bit further
 						if (ClosestKF + SeekOffset == 0)
-							throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+							throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_UNKNOWN,
 								"Frame accurate seeking is not possible in this file");
 
 
