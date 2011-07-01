@@ -45,7 +45,8 @@ extern "C" {
 #	include "guids.h"
 #endif
 
-class FFMS_AudioSource {
+struct FFMS_AudioSource {
+private:
 	struct AudioBlock {
 		int64_t Age;
 		int64_t Start;

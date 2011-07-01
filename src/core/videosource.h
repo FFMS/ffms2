@@ -51,7 +51,7 @@ extern "C" {
 #	include "guids.h"
 #endif
 
-class FFMS_VideoSource {
+struct FFMS_VideoSource {
 friend class FFSourceResources<FFMS_VideoSource>;
 private:
 #ifdef FFMS_USE_POSTPROC

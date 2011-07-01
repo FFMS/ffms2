@@ -28,10 +28,8 @@
 
 #ifdef __cplusplus
 #	define FFMS_EXTERN_C extern "C"
-#	define FFMS_CLASS_TYPE class
 #else
 #	define FFMS_EXTERN_C
-#	define FFMS_CLASS_TYPE struct
 #endif
 
 #ifdef _WIN32
@@ -57,11 +55,11 @@ typedef struct {
 	char *Buffer;
 } FFMS_ErrorInfo;
 
-typedef FFMS_CLASS_TYPE FFMS_VideoSource FFMS_VideoSource;
-typedef FFMS_CLASS_TYPE FFMS_AudioSource FFMS_AudioSource;
-typedef FFMS_CLASS_TYPE FFMS_Indexer FFMS_Indexer;
-typedef FFMS_CLASS_TYPE FFMS_Index FFMS_Index;
-typedef FFMS_CLASS_TYPE FFMS_Track FFMS_Track;
+typedef struct FFMS_VideoSource FFMS_VideoSource;
+typedef struct FFMS_AudioSource FFMS_AudioSource;
+typedef struct FFMS_Indexer FFMS_Indexer;
+typedef struct FFMS_Index FFMS_Index;
+typedef struct FFMS_Track FFMS_Track;
 
 enum FFMS_Errors {
 	// No error

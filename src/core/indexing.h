@@ -80,7 +80,7 @@ private:
 	TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize);
 };
 
-class FFMS_Track : public std::vector<TFrameInfo> {
+struct FFMS_Track : public std::vector<TFrameInfo> {
 public:
 	FFMS_TrackType TT;
 	FFMS_TrackTimeBase TB;
@@ -95,7 +95,7 @@ public:
 	FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false);
 };
 
-class FFMS_Index : public std::vector<FFMS_Track> {
+struct FFMS_Index : public std::vector<FFMS_Track> {
 public:
 	static void CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]);
 
@@ -112,7 +112,8 @@ public:
 	FFMS_Index(int64_t Filesize, uint8_t Digest[20]);
 };
 
-class FFMS_Indexer {
+struct FFMS_Indexer {
+private:
 	std::map<int, FFMS_AudioProperties> LastAudioProperties;
 protected:
 	int IndexMask;
