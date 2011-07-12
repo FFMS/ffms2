@@ -11,6 +11,11 @@ FFmpegSource2 Changelog
 <div class="maincontent">
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
+<li>2.16<ul>
+<li>Added FFMS_SetOutputFormatV2 to the API. This function allows you to specify PixelFormats >= 64 for use as output. (Myrsloik)</li>
+<li>Fixed a serious bug that could cause crashes and completely useless index files with h264 in matroska. (Myrsloik)</li>
+</ul></li>
+
 <li>2.15<ul>
 <li>FFVideoSource and FFAudioSource will now automatically reindex and overwrite the index file if it doesn't match the file being opened and the <tt>cachefile</tt> argument is left as the default. (Plorkyeran)</li>
 <li>FFMS2 can now be used to decode Lagarith, but note that libavcodec's decoder is very experimental at the moment. (Plorkyeran)</li>
