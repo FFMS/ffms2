@@ -69,7 +69,7 @@ bool FFMatroskaAudio::ReadPacket(AVPacket *Packet) {
 	ReadFrame(CurrentFrame->FilePos, CurrentFrame->FrameSize, TCC.get(), MC);
 	InitNullPacket(*Packet);
 	Packet->data = MC.Buffer;
-	Packet->size = CurrentFrame->FrameSize + ((TCC.get() && TCC->CompressionMethod == COMP_PREPEND) ? TCC->CompressedPrivateDataSize : 0);
+	Packet->size = CurrentFrame->FrameSize;
 	Packet->flags = CurrentFrame->KeyFrame ? AV_PKT_FLAG_KEY : 0;
 
 	return true;

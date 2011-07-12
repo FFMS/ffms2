@@ -240,7 +240,7 @@ template<class T> static void safe_aligned_reallocz(T *&ptr, size_t old_size, si
 
 void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContext *TCC, MatroskaReaderContext &Context) {
 	memset(Context.Buffer, 0, Context.BufferSize); // necessary to avoid lavc hurfing a durf with some mpeg4 video streams
-	if (TCC && TCC->CS) {
+	if (TCC && TCC->CompressionMethod == COMP_ZLIB) {
 		CompressedStream *CS = TCC->CS;
 		unsigned int DecompressedFrameSize = 0;
 
@@ -327,6 +327,8 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 				"Unknown read error");
 		}
 
+		if (TCC && TCC->CompressionMethod == COMP_PREPEND)
+			FrameSize += TCC->CompressedPrivateDataSize;
 		return;
 	}
 }

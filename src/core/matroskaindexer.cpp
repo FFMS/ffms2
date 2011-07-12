@@ -115,9 +115,24 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 		if (IC && (*IC)(ftello(MC.ST.fp), Filesize, ICPrivate))
 			throw FFMS_Exception(FFMS_ERROR_CANCELLED, FFMS_ERROR_USER, "Cancelled by user");
 
-		if (mkv_GetTrackInfo(MF, Track)->Type == TT_VIDEO) {
-			uint8_t *OB;
-			int OBSize;
+		unsigned int CompressedFrameSize = FrameSize;
+		unsigned char TrackType = mkv_GetTrackInfo(MF, Track)->Type;
+
+		TrackCompressionContext *TCC = NULL;
+		if (VideoContexts[Track].Parser || TrackType == TT_AUDIO && (IndexMask & (1 << Track))) {
+			if (TrackType == TT_VIDEO)
+				TCC = VideoContexts[Track].TCC;
+			else
+				TCC = AudioContexts[Track].TCC;
+			ReadFrame(FilePos, FrameSize, TCC, MC);
+			TempPacket.data = MC.Buffer;
+			TempPacket.size = FrameSize;
+			TempPacket.flags = FrameFlags & FRAME_KF ? AV_PKT_FLAG_KEY : 0;
+		}
+
+		if (TrackType == TT_VIDEO) {
+			uint8_t *OB = NULL;
+			int OBSize = 0;
 			int RepeatPict = -1;
 
 			if (VideoContexts[Track].Parser) {
@@ -125,15 +140,8 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 				RepeatPict = VideoContexts[Track].Parser->repeat_pict;
 			}
 
-			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(StartTime, RepeatPict, (FrameFlags & FRAME_KF) != 0, FilePos, FrameSize));
-		} else if (mkv_GetTrackInfo(MF, Track)->Type == TT_AUDIO && (IndexMask & (1 << Track))) {
-			TrackCompressionContext *TCC = AudioContexts[Track].TCC;
-			unsigned int CompressedFrameSize = FrameSize;
-			ReadFrame(FilePos, FrameSize, TCC, MC);
-			TempPacket.data = MC.Buffer;
-			TempPacket.size = (TCC && TCC->CompressionMethod == COMP_PREPEND) ? FrameSize + TCC->CompressedPrivateDataSize : FrameSize;
-			TempPacket.flags = FrameFlags & FRAME_KF ? AV_PKT_FLAG_KEY : 0;
-
+			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(StartTime, RepeatPict, (FrameFlags & FRAME_KF) != 0, FilePos, CompressedFrameSize));
+		} else if (TrackType == TT_AUDIO && (IndexMask & (1 << Track))) {
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
 			int64_t SampleCount = IndexAudioPacket(Track, &TempPacket, AudioContexts[Track], *TrackIndices);
 

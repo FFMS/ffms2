@@ -175,7 +175,7 @@ void FFMatroskaVideo::DecodeNextFrame() {
 		ReadFrame(FI.FilePos, FrameSize, TCC, MC);
 
 		Packet.data = MC.Buffer;
-		Packet.size = (TCC && TCC->CompressionMethod == COMP_PREPEND) ? FrameSize + TCC->CompressedPrivateDataSize : FrameSize;
+		Packet.size = FrameSize;
 		if (FI.KeyFrame)
 			Packet.flags = AV_PKT_FLAG_KEY;
 		else
