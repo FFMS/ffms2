@@ -193,17 +193,23 @@ void AvisynthVideoSource::InitOutputFormat(
 	if (!F)
 		Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
-	int64_t TargetFormats = (1 << FFMS_GetPixFmt("yuvj420p")) |
-		(1 << FFMS_GetPixFmt("yuv420p")) | (1 << FFMS_GetPixFmt("yuyv422")) |
-		(1 << FFMS_GetPixFmt("rgb32")) | (1 << FFMS_GetPixFmt("bgr24"));
+	int TargetFormats[6];
+	TargetFormats[0] = FFMS_GetPixFmt("yuvj420p");
+	TargetFormats[1] = FFMS_GetPixFmt("yuv420p");
+	TargetFormats[2] = FFMS_GetPixFmt("yuyv422");
+	TargetFormats[3] = FFMS_GetPixFmt("rgb32");
+	TargetFormats[4] = FFMS_GetPixFmt("bgr24");
+	TargetFormats[5] = -1;
 
-	// PIX_FMT_NV12 is misused as a return value different to the defined ones in the function
-	PixelFormat TargetPixelFormat = CSNameToPIXFMT(ConvertToFormatName, PIX_FMT_NV12);
+	// PIX_FMT_NV21 is misused as a return value different to the defined ones in the function
+	PixelFormat TargetPixelFormat = CSNameToPIXFMT(ConvertToFormatName, PIX_FMT_NV21);
 	if (TargetPixelFormat == PIX_FMT_NONE)
 		Env->ThrowError("FFVideoSource: Invalid colorspace name specified");
 
-	if (TargetPixelFormat != PIX_FMT_NV12)
-		TargetFormats = static_cast<int64_t>(1) << TargetPixelFormat;
+	if (TargetPixelFormat != PIX_FMT_NV21) {
+		TargetFormats[0] = TargetPixelFormat;
+		TargetFormats[1] = -1;
+	}
 
 	if (ResizeToWidth <= 0)
 		ResizeToWidth = F->EncodedWidth;
@@ -215,14 +221,16 @@ void AvisynthVideoSource::InitOutputFormat(
 	if (Resizer == 0)
 		Env->ThrowError("FFVideoSource: Invalid resizer name specified");
 
-	if (FFMS_SetOutputFormatV(V, TargetFormats,
+	if (FFMS_SetOutputFormatV2(V, TargetFormats,
 		ResizeToWidth, ResizeToHeight, Resizer, &E))
 		Env->ThrowError("FFVideoSource: No suitable output format found");
 
 	F = FFMS_GetFrame(V, 0, &E);
+	TargetFormats[0] = F->ConvertedPixelFormat;
+	TargetFormats[1] = -1;
 
-	// This trick is required to first get the "best" default format and then set only that format as the output
-	if (FFMS_SetOutputFormatV(V, static_cast<int64_t>(1) << F->ConvertedPixelFormat,
+		// This trick is required to first get the "best" default format and then set only that format as the output
+	if (FFMS_SetOutputFormatV2(V, TargetFormats,
 		ResizeToWidth, ResizeToHeight, Resizer, &E))
 		Env->ThrowError("FFVideoSource: No suitable output format found");
 

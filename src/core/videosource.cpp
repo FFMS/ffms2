@@ -116,8 +116,8 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	if (LastFrameWidth != CodecContext->width || LastFrameHeight != CodecContext->height || LastFramePixelFormat != CodecContext->pix_fmt) {
 		ReAdjustPP(CodecContext->pix_fmt, CodecContext->width, CodecContext->height);
 
-		if (TargetHeight > 0 && TargetWidth > 0 && TargetPixelFormats != 0)
-			ReAdjustOutputFormat(TargetPixelFormats, TargetWidth, TargetHeight, TargetResizer);
+		if (TargetHeight > 0 && TargetWidth > 0 && !TargetPixelFormats.empty())
+			ReAdjustOutputFormat();
 	}
 
 #ifdef FFMS_USE_POSTPROC
@@ -206,7 +206,6 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, in
 	LastFramePixelFormat = PIX_FMT_NONE;
 	TargetHeight = -1;
 	TargetWidth = -1;
-	TargetPixelFormats = 0;
 	TargetResizer = 0;
 	OutputFormat = PIX_FMT_NONE;
 	DecodeFrame = avcodec_alloc_frame();
@@ -241,35 +240,55 @@ FFMS_Frame *FFMS_VideoSource::GetFrameByTime(double Time) {
 	return GetFrame(Frame);
 }
 
-void FFMS_VideoSource::SetOutputFormat(int64_t TargetFormats, int Width, int Height, int Resizer) {
-	this->TargetWidth = Width;
-	this->TargetHeight = Height;
-	this->TargetPixelFormats = TargetFormats;
-	this->TargetResizer = Resizer;
-	ReAdjustOutputFormat(TargetFormats, Width, Height, Resizer);
+void FFMS_VideoSource::SetOutputFormat(const PixelFormat *TargetFormats, int Width, int Height, int Resizer) {
+	TargetWidth = Width;
+	TargetHeight = Height;
+	TargetResizer = Resizer;
+	TargetPixelFormats.clear();
+	while (*TargetFormats != PIX_FMT_NONE) {
+		TargetPixelFormats.push_back(*TargetFormats);
+		TargetFormats++;
+	}
+	ReAdjustOutputFormat();
 	OutputFrame(DecodeFrame);
 }
 
-void FFMS_VideoSource::ReAdjustOutputFormat(int64_t TargetFormats, int Width, int Height, int Resizer) {
+void FFMS_VideoSource::ReAdjustOutputFormat() {
 	if (SWS) {
 		sws_freeContext(SWS);
 		SWS = NULL;
 	}
 
-	int Loss;
-	OutputFormat = avcodec_find_best_pix_fmt(TargetFormats,
-		CodecContext->pix_fmt, 1 /* Required to prevent pointless RGB32 => RGB24 conversion */, &Loss);
+	if (TargetPixelFormats.empty()) {
+		OutputFormat = PIX_FMT_NONE;
+	} else if (TargetPixelFormats.size() == 1) {
+		OutputFormat = TargetPixelFormats[0];
+	} else {
+		std::vector<PixelFormat>::iterator it = std::find(TargetPixelFormats.begin(), TargetPixelFormats.end(), CodecContext->pix_fmt);
+		if (it != TargetPixelFormats.end()) {
+			OutputFormat = CodecContext->pix_fmt;
+		} else {
+			int Loss;
+			int64_t TargetMask = 0;
+			for (std::vector<PixelFormat>::iterator i = TargetPixelFormats.begin(); i != TargetPixelFormats.end(); i++)
+				if (*i < 64)
+					TargetMask |= static_cast<int64_t>(1) << *i;
+			OutputFormat = avcodec_find_best_pix_fmt(TargetMask,
+				CodecContext->pix_fmt, 1 /* Required to prevent pointless RGB32 => RGB24 conversion */, &Loss);
+		}
+	}
+
 	if (OutputFormat == PIX_FMT_NONE) {
 		ResetOutputFormat();
 		throw FFMS_Exception(FFMS_ERROR_SCALING, FFMS_ERROR_INVALID_ARGUMENT,
 			"No suitable output format found");
 	}
 
-	if (CodecContext->pix_fmt != OutputFormat || Width != CodecContext->width || Height != CodecContext->height) {
+	if (CodecContext->pix_fmt != OutputFormat || TargetWidth != CodecContext->width || TargetHeight != CodecContext->height) {
 		int ColorSpace = CodecContext->colorspace;
 		if (ColorSpace == AVCOL_SPC_UNSPECIFIED) ColorSpace = -1;
-		SWS = GetSwsContext(CodecContext->width, CodecContext->height, CodecContext->pix_fmt, Width, Height,
-			OutputFormat, GetSWSCPUFlags() | Resizer, ColorSpace);
+		SWS = GetSwsContext(CodecContext->width, CodecContext->height, CodecContext->pix_fmt, TargetWidth, TargetHeight,
+			OutputFormat, GetSWSCPUFlags() | TargetResizer, ColorSpace);
 		if (SWS == NULL) {
 			ResetOutputFormat();
 			throw FFMS_Exception(FFMS_ERROR_SCALING, FFMS_ERROR_INVALID_ARGUMENT,
@@ -278,7 +297,7 @@ void FFMS_VideoSource::ReAdjustOutputFormat(int64_t TargetFormats, int Width, in
 	}
 
 	avpicture_free(&SWSFrame);
-	avpicture_alloc(&SWSFrame, OutputFormat, Width, Height);
+	avpicture_alloc(&SWSFrame, OutputFormat, TargetWidth, TargetHeight);
 }
 
 void FFMS_VideoSource::ResetOutputFormat() {
@@ -289,7 +308,7 @@ void FFMS_VideoSource::ResetOutputFormat() {
 
 	TargetWidth = -1;
 	TargetHeight = -1;
-	TargetPixelFormats = 0;
+	TargetPixelFormats.clear();
 	OutputFormat = PIX_FMT_NONE;
 
 	OutputFrame(DecodeFrame);
