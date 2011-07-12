@@ -161,7 +161,7 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	LocalFrame.ScaledHeight = TargetHeight;
 	LocalFrame.ConvertedPixelFormat = OutputFormat;
 	LocalFrame.KeyFrame = Frame->key_frame;
-	LocalFrame.PictType = av_get_pict_type_char(Frame->pict_type);
+	LocalFrame.PictType = av_get_picture_type_char(Frame->pict_type);
 	LocalFrame.RepeatPict = Frame->repeat_pict;
 	LocalFrame.InterlacedFrame = Frame->interlaced_frame;
 	LocalFrame.TopFieldFirst = Frame->top_field_first;

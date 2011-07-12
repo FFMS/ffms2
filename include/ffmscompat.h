@@ -75,6 +75,9 @@
 #	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(50, 8, 0))
 #		define av_get_pix_fmt avcodec_get_pix_fmt
 #	endif
+#	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(51, 1, 0))
+#		define av_get_picture_type_char av_get_pict_type_char
+#	endif
 #endif
 
 #ifdef LIBSWSCALE_VERSION_INT
