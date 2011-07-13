@@ -26,7 +26,6 @@ extern "C" {
 
 
 FFLAVFIndexer::FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContext) : FFMS_Indexer(Filename) {
-	SourceFile = Filename;
 	this->FormatContext = FormatContext;
 
 	if (av_find_stream_info(FormatContext) < 0) {

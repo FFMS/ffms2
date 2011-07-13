@@ -123,7 +123,7 @@ protected:
 	void *ICPrivate;
 	TAudioNameCallback ANC;
 	void *ANCPrivate;
-	const char *SourceFile;
+	std::string SourceFile;
 	AlignedBuffer<uint8_t> DecodingBuffer;
 
 	int64_t Filesize;

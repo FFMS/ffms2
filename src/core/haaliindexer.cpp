@@ -26,13 +26,12 @@
 
 FFHaaliIndexer::FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode) : FFMS_Indexer(Filename) {
 	this->SourceMode = SourceMode;
-	SourceFile = Filename;
 	Duration = 0;
 	for (int i = 0; i < 32; i++) {
 		TrackType[i] = FFMS_TYPE_UNKNOWN;
 	}
 
-	pMMC = HaaliOpenFile(SourceFile, SourceMode);
+	pMMC = HaaliOpenFile(Filename, SourceMode);
 
 	CComQIPtr<IPropertyBag> pBag2 = pMMC;
 	CComVariant pV2;

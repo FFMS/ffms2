@@ -560,15 +560,17 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Dem
 	}
 }
 
-FFMS_Indexer::FFMS_Indexer(const char *Filename) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10) {
-	IndexMask = 0;
-	DumpMask = 0;
-	ErrorHandling = FFMS_IEH_CLEAR_TRACK;
-	IC = NULL;
-	ICPrivate = NULL;
-	ANC = NULL;
-	ANCPrivate = NULL;
-
+FFMS_Indexer::FFMS_Indexer(const char *Filename)
+: IndexMask(0)
+, DumpMask(0)
+, ErrorHandling(FFMS_IEH_CLEAR_TRACK)
+, IC(0)
+, ICPrivate(0)
+, ANC(0)
+, ANCPrivate(0)
+, SourceFile(Filename)
+, DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10)
+{
 	FFMS_Index::CalculateFileSignature(Filename, &Filesize, Digest);
 }
 
@@ -583,14 +585,14 @@ void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 	if (!AudioContext.W64Writer) {
 		FFMS_AudioProperties AP;
 		FillAP(AP, AudioContext.CodecContext, (*Index)[Track]);
-		int FNSize = (*ANC)(SourceFile, Track, &AP, NULL, 0, ANCPrivate);
+		int FNSize = (*ANC)(SourceFile.c_str(), Track, &AP, NULL, 0, ANCPrivate);
 		if (FNSize <= 0) {
 			DumpMask = DumpMask & ~(1 << Track);
 			return;
 		}
 
 		std::vector<char> WName(FNSize);
-		(*ANC)(SourceFile, Track, &AP, &WName[0], FNSize, ANCPrivate);
+		(*ANC)(SourceFile.c_str(), Track, &AP, &WName[0], FNSize, ANCPrivate);
 		std::string WN(&WName[0]);
 		try {
 			AudioContext.W64Writer =

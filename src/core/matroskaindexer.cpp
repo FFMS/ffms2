@@ -24,17 +24,16 @@
 
 
 FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename) : FFMS_Indexer(Filename) {
-	SourceFile = Filename;
 	char ErrorMessage[256];
 	for (int i = 0; i < 32; i++) {
 		Codec[i] = NULL;
 	}
 
 	InitStdIoStream(&MC.ST);
-	MC.ST.fp = ffms_fopen(SourceFile, "rb");
+	MC.ST.fp = ffms_fopen(Filename, "rb");
 	if (MC.ST.fp == NULL) {
 		std::ostringstream buf;
-		buf << "Can't open '" << SourceFile << "': " << strerror(errno);
+		buf << "Can't open '" << Filename << "': " << strerror(errno);
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
 	}
 
