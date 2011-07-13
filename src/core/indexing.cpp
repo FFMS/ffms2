@@ -212,29 +212,28 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Failed to open '") + Filename + "' for hashing");
 
-	std::vector<uint8_t> FileBuffer(1024*1024, 0);
+	std::vector<uint8_t> FileBuffer(1024*1024);
 	std::vector<uint8_t> ctxmem(av_sha_size);
 	AVSHA *ctx = (AVSHA*)(&ctxmem[0]);
 	av_sha_init(ctx, 160);
 
 	try {
-		fread(&FileBuffer[0], 1, FileBuffer.size(), SFile);
+		size_t BytesRead = fread(&FileBuffer[0], 1, FileBuffer.size(), SFile);
 		if (ferror(SFile) && !feof(SFile))
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 				std::string("Failed to read '") + Filename + "' for hashing");
 
-		av_sha_update(ctx, &FileBuffer[0], FileBuffer.size());
+		av_sha_update(ctx, &FileBuffer[0], BytesRead);
 
 		fseeko(SFile, -(int)FileBuffer.size(), SEEK_END);
-		std::fill(FileBuffer.begin(), FileBuffer.end(), 0);
-		fread(&FileBuffer[0], 1, FileBuffer.size(), SFile);
+		BytesRead = fread(&FileBuffer[0], 1, FileBuffer.size(), SFile);
 		if (ferror(SFile) && !feof(SFile)) {
 			std::ostringstream buf;
 			buf << "Failed to seek with offset " << FileBuffer.size() << " from file end in '" << Filename << "' for hashing";
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
 		}
 
-		av_sha_update(ctx, &FileBuffer[0], FileBuffer.size());
+		av_sha_update(ctx, &FileBuffer[0], BytesRead);
 
 		fseeko(SFile, 0, SEEK_END);
 		if (ferror(SFile))
