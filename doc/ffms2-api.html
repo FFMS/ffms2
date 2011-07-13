@@ -11,7 +11,7 @@ FFmpegSource2 API Documentation
 <div class="maincontent">
 <h1>FFmpegSource2 API Documentation</h1>
 <p>
-FFmpegSource2 (FFMS2) is a wrapper library around ffmpeg, plus some additional components to deal with file formats libavformat has (or used to have) problems with. It gives you a convenient way to say "open and decompress this media file for me, I don't care how you do it", without having to bother with the sometimes less than straightforward and less than perfectly documented ffmpeg internals. May be frame and/or sample accurate on good days. The library is written in C++, but the public API is C-friendly and it is possible to simply include and link directly with a pure C application.</p>
+FFmpegSource2 (FFMS2) is a wrapper library around Libav/FFmpeg, plus some additional components to deal with file formats libavformat has (or used to have) problems with. It gives you a convenient way to say "open and decompress this media file for me, I don't care how you do it", without having to bother with the sometimes less than straightforward and less than perfectly documented Libav/FFmpeg internals. May be frame and/or sample accurate on good days. The library is written in C++, but the public API is C-friendly and it is possible to simply include and link directly with a pure C application.</p>
 
 <p>The source is MIT licensed and can be obtained from the Google Code project SVN; see <a href="http://code.google.com/p/ffmpegsource/source/checkout">http://code.google.com/p/ffmpegsource/source/checkout</a>.
 </p>
@@ -26,12 +26,12 @@ FFMS2 does not mux or encode anything. FFMS2 does not give you fine control over
 <h2>Compilation</h2>
 <p>FFMS2 has the following dependencies:</p>
 <ul>
-<li><b><a href="http://www.libav.org">Libav</a></b> (sure, you can use the <b><a href="http://www.ffmpeg.org">FFmpeg</a> branch too if you really want)
+<li><b><a href="http://www.libav.org">Libav</a></b> (sure, you can use the <b><a href="http://www.ffmpeg.org">FFmpeg</a></b> branch too if you really want)
 <ul><li>As new as possible. If it's over 1 year old it most likely won't compile at all. 0.5 means certain failure.</li>
-<li>If you're on Win32 you need to pass <tt>--enable-memalign-hack</tt> to ffmpeg's ./configure as well.</li>
+<li>If you're on Win32 you need to pass <tt>--enable-memalign-hack</tt> to FFmpeg's ./configure as well.</li>
 <li>On Win32 you should REALLY, REALLY make sure to have a good compile of the pthreads library.</li>
 <li>Further recommended configuration options: <tt>--disable-debug --disable-muxers --disable-encoders --disable-filters --disable-hwaccels --disable-network --disable-devices --enable-runtime-cpudetect</tt> (runtime cpudetect in particular is a good idea if you are planning on distributing the library; not disabling debug results in a gigantic dll).</li>
-<li>If you want to use the postprocessing filter functionality (i.e. <tt>FFMS_SetPP()</tt>) you need to compile ffmpeg with libpostproc (pass <tt>--enable-gpl --enable-postproc</tt> to its configure). Note that this will make the FFMS2 binary GPL licensed.</li>
+<li>If you want to use the postprocessing filter functionality (i.e. <tt>FFMS_SetPP()</tt>) you need to compile FFmpeg with libpostproc (pass <tt>--enable-gpl --enable-postproc</tt> to its configure). Note that this will make the FFMS2 binary GPL licensed.</li>
 </ul>
 </li>
 <li><b><a href="http://www.zlib.net/">zlib</a></b></li>
@@ -41,7 +41,7 @@ Compiling the library itself is fairly straightforward. For the basics, just add
 </p>
 <h3>Windows-specific compilation notes</h3>
 <p>
-If you're compiling the library on Windows, it is suggested that you use the Microsoft Visual Studio 2008 solution file from SVN. Any version of MSVC2008 and MSVC2010 should work for compiling it, including the free Express Edition (but if you use that you must undefine HAALISOURCE or find a copy of the ATL libraries). The project file in question assumes that you have compiled ffmpeg with MinGW (guides on how to do that are easy to find) and want to link FFMS2 with it statically (linking it dynamically is possible but not recommended since it usually leads to DLL hell). Add your mingw/include and mingw/lib folders to MSVC's respective global directory settings (Tools menu -&gt; Options -&gt; Projects and Solutions -&gt; VC++ Directories) and you should be good to go.
+If you're compiling the library on Windows, it is suggested that you use the Microsoft Visual Studio 2008 solution file from SVN. Any version of MSVC2008 and MSVC2010 should work for compiling it, including the free Express Edition (but if you use that you must undefine HAALISOURCE or find a copy of the ATL libraries). The project file in question assumes that you have compiled FFmpeg with MinGW (guides on how to do that are easy to find) and want to link FFMS2 with it statically (linking it dynamically is possible but not recommended since it usually leads to DLL hell). Add your mingw/include and mingw/lib folders to MSVC's respective global directory settings (Tools menu -&gt; Options -&gt; Projects and Solutions -&gt; VC++ Directories) and you should be good to go.
 </p>
 <p>
 If you're using anything else, you're on your own. It's possible to build the library using MinGW; this is also the only way to build a 64-bit version of FFMS2 at the moment (a 64bit avisynth plugin is available which uses the avisynth_c interface, it is available in <tt>branches/avs64</tt> in svn). If you're rolling your own MSVC solution file, remember that you need to <tt>#define FFMS_EXPORTS</tt> somewhere when compiling the library. You may also <tt>#define HAALISOURCE</tt> if you want to make the library able to open MPEG TS/PS and OGM files using Haali's DirectShow splitter (if you do not define it, those files will be opened with libavformat instead, and that usually doesn't work out all that well). Note that if you do so, opening those files will fail unless the user has the <a href="http://haali.cs.msu.ru/mkv/">Haali Media Splitter</a> DirectShow filter installed. Both those defines are enabled by default in the solution file in SVN.
@@ -232,14 +232,14 @@ On Windows, setting this parameter to a true value will make FFMS assume that al
 <b>NOTE:</b> setting this parameter to true will break most file open operations if you compiled FFMS in MinGW, because MinGW's <tt>std::fstream</tt> implementation doesn't support Unicode filenames.<br />
 Prior to API version 2.14.0.0 this functionality was a compile-time option and was controlled via <tt>FFMS_USE_UTF8_PATHS</tt>.</p>
 
-<h3>FFMS_GetLogLevel - gets ffmpeg message level</h3>
+<h3>FFMS_GetLogLevel - gets FFmpeg message level</h3>
 <pre>int FFMS_GetLogLevel()</pre>
-<p>Retrieves ffmpeg's current logging/message level (i.e. how much diagnostic noise it prints to <tt>STDERR</tt>). If you want to make any sense of the returned value you'd better <tt>#include &lt;libavutil/log.h&gt;</tt> from the ffmpeg source tree to get the relevant constant definitions. Alternatively, just copy the relevant constant definitions into your own code and hope the ffmpeg devs doesn't change them randomly for no particular reason like they do with everything else.
+<p>Retrieves FFmpeg's current logging/message level (i.e. how much diagnostic noise it prints to <tt>STDERR</tt>). If you want to make any sense of the returned value you'd better <tt>#include &lt;libavutil/log.h&gt;</tt> from the FFmpeg source tree to get the relevant constant definitions. Alternatively, just copy the relevant constant definitions into your own code and hope the FFmpeg devs doesn't change them randomly for no particular reason like they do with everything else.
 </p>
 
-<h3>FFMS_SetLogLevel - sets ffmpeg message level</h3>
+<h3>FFMS_SetLogLevel - sets FFmpeg message level</h3>
 <pre>void FFMS_SetLogLevel(int Level)</pre>
-<p>Sets ffmpeg's logging/message level; see <tt>FFMS_GetLogLevel()</tt> for details.</p>
+<p>Sets FFmpeg's logging/message level; see <tt>FFMS_GetLogLevel()</tt> for details.</p>
 
 <h3>FFMS_CreateVideoSource - creates a video source object</h3>
 <pre>FFMS_VideoSource *FFMS_CreateVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
@@ -254,7 +254,7 @@ The track number of the video track to open, as seen by the relevant demuxer. Se
 <p><b><tt>FFMS_Index *Index</tt></b><br />
 A pointer to a FFMS_Index object containing indexing information for the track you want to open.</p>
 <p><b><tt>int Threads</tt></b><br />
-The number of decoding threads to use. Passing funny values like 0 or -1 may lead to undefined behavior so you better sanity check the input if you let the user set this. Values &gt;1 have no effect if ffmpeg was not compiled with threading support.</p>
+The number of decoding threads to use. Passing funny values like 0 or -1 may lead to undefined behavior so you better sanity check the input if you let the user set this. Values &gt;1 have no effect if FFmpeg was not compiled with threading support.</p>
 <p><b><tt>int SeekMode</tt></b><br />
 Controls how seeking (random access) is handled and hence affects frame accuracy. You will almost always want to use <tt>FFMS_SEEK_NORMAL</tt>. Has no effect on Matroska files, where the equivalent of <tt>FFMS_SEEK_NORMAL</tt> is always used. For a list of valid values, see the Constants and Preprocessor Definitions section. <tt>FFMS_SEEK_LINEAR_NO_RW</tt> may come in handy if you want to open images.</p>
 <p><b><tt>FFMS_ErrorInfo *ErrorInfo</tt></b><br />
@@ -440,12 +440,12 @@ See above.</p>
 
 <h3>FFMS_GetCodecNameI - gets the name of the codec used for a given track</h3>
 <pre>const char *FFMS_GetCodecNameI(FFMS_Indexer *Indexer, int Track)</pre>
-<p>Returns the human-readable name ("long name" in ffmpeg terms) of the codec used in the given track number in the media file represented by the given <tt>FFMS_Indexer</tt> object. Useful if you want to, say, pop up a menu asking the user which tracks he or she wishes to index. Note that specifying an invalid track number may lead to undefined behavior.
+<p>Returns the human-readable name ("long name" in FFmpeg terms) of the codec used in the given track number in the media file represented by the given <tt>FFMS_Indexer</tt> object. Useful if you want to, say, pop up a menu asking the user which tracks he or she wishes to index. Note that specifying an invalid track number may lead to undefined behavior.
 </p>
 
 <h3>FFMS_GetFormatNameI - gets the name of the container format used in the given indexer</h3>
 <pre>const char *FFMS_GetFormatNameI(FFMS_Indexer *Indexer)</pre>
-<p>Returns the human-readable name ("long name" in ffmpeg terms) of the container format used by the file represented by the given <tt>FFMS_Indexer</tt>.
+<p>Returns the human-readable name ("long name" in FFmpeg terms) of the container format used by the file represented by the given <tt>FFMS_Indexer</tt>.
 </p>
 
 <h3>FFMS_GetNumFrames - gets the number of frames in a given track</h3>
@@ -612,7 +612,7 @@ The source file to verify the index against.</p>
 
 <h3>FFMS_GetPixFmt - gets a colorspace identifier from a colorspace name</h3>
 <pre>int FFMS_GetPixFmt(const char *Name)</pre>
-<p>Translates a given colorspace/pixel format <tt>Name</tt> to an integer constant representing it, suitable for passing to <tt>FFMS_SetOutputFormatV2</tt> (after some manipulation, see that function for details). This function exists so that you don't have to include a ffmpeg header file in every single program you ever write. For a list of colorspaces and their names, see <tt>libavutil/pixfmt.h</tt>. To get the name of a colorspace, strip the leading <tt>PIX_FMT_</tt> and convert the remainder to lowercase. For example, the name of <tt>PIX_FMT_YUV420P</tt> is <tt>yuv420p</tt>. It is strongly recommended to use this function instead of including pixfmt.h directly, since this function guarantees that you will always get the constant definitions from the version of ffmpeg that FFMS2 was linked against.
+<p>Translates a given colorspace/pixel format <tt>Name</tt> to an integer constant representing it, suitable for passing to <tt>FFMS_SetOutputFormatV2</tt> (after some manipulation, see that function for details). This function exists so that you don't have to include a FFmpeg header file in every single program you ever write. For a list of colorspaces and their names, see <tt>libavutil/pixfmt.h</tt>. To get the name of a colorspace, strip the leading <tt>PIX_FMT_</tt> and convert the remainder to lowercase. For example, the name of <tt>PIX_FMT_YUV420P</tt> is <tt>yuv420p</tt>. It is strongly recommended to use this function instead of including pixfmt.h directly, since this function guarantees that you will always get the constant definitions from the version of FFmpeg that FFMS2 was linked against.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>const char *Name</tt></b><br />
@@ -803,7 +803,7 @@ Used to identify errors. Should be self-explanatory.
 Identifies source modules.
 </p>
 <ul>
-<li><b><tt>FFMS_SOURCE_LAVF</tt></b> - libavformat (ffmpeg)</li>
+<li><b><tt>FFMS_SOURCE_LAVF</tt></b> - libavformat (Libav/FFmpeg)</li>
 <li><b><tt>FFMS_SOURCE_MATROSKA</tt></b> - Haali's BSD-licensed native Matroska parsing library</li>
 <li><b><tt>FFMS_SOURCE_HAALIMPEG</tt></b> - Haali's closed-source DirectShow splitter (MPEG TS/PS)</li>
 <li><b><tt>FFMS_SOURCE_HAALIOGG</tt></b> - Haali's closed-source DirectShow splitter (Ogg/OGM)</li>
