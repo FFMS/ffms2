@@ -125,8 +125,6 @@ protected:
 	void *ANCPrivate;
 	const char *SourceFile;
 	AlignedBuffer<uint8_t> DecodingBuffer;
-	FFMS_Sources Demuxer;
-	const char *FormatName;
 
 	int64_t Filesize;
 	uint8_t Digest[20];
