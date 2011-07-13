@@ -135,7 +135,7 @@ protected:
 	void CheckAudioProperties(int Track, AVCodecContext *Context);
 	int64_t IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices);
 public:
-	static FFMS_Indexer *CreateIndexer(const char *Filename, enum FFMS_Sources Demuxer = FFMS_SOURCE_DEFAULT);
+	static FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer = FFMS_SOURCE_DEFAULT);
 	FFMS_Indexer(const char *Filename);
 	virtual ~FFMS_Indexer();
 	void SetIndexMask(int IndexMask);
@@ -192,7 +192,7 @@ private:
 	CComQIPtr<IPropertyBag> PropertyBags[32];
 	int64_t Duration;
 public:
-	FFHaaliIndexer(const char *Filename, enum FFMS_Sources SourceMode);
+	FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode);
 	FFMS_Index *DoIndexing();
 	int GetNumberOfTracks();
 	FFMS_TrackType GetTrackType(int Track);

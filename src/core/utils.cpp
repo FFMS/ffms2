@@ -37,7 +37,7 @@ extern "C" {
 // Export the array but not its data type... fun...
 typedef struct CodecTags{
     char str[20];
-    enum CodecID id;
+    CodecID id;
 } CodecTags;
 
 extern "C" {
@@ -676,7 +676,7 @@ void ffms_patch_lavf_file_open() {
 
 #ifdef HAALISOURCE
 
-CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources SourceMode) {
+CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceMode) {
 	CComPtr<IMMContainer> pMMC;
 
 	CLSID clsid = HAALI_MPEG_PARSER;

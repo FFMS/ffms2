@@ -24,7 +24,7 @@
 
 
 
-FFHaaliIndexer::FFHaaliIndexer(const char *Filename, enum FFMS_Sources SourceMode) : FFMS_Indexer(Filename) {
+FFHaaliIndexer::FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode) : FFMS_Indexer(Filename) {
 	this->SourceMode = SourceMode;
 	SourceFile = Filename;
 	Duration = 0;

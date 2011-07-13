@@ -500,7 +500,7 @@ void FFMS_Indexer::SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate
 	this->ANCPrivate = ANCPrivate;
 }
 
-FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, enum FFMS_Sources Demuxer) {
+FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Demuxer) {
 	AVFormatContext *FormatContext = NULL;
 
 	if (avformat_open_input(&FormatContext, Filename, NULL, NULL) != 0)

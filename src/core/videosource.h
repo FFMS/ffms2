@@ -143,7 +143,7 @@ class FFHaaliVideo : public FFMS_VideoSource {
 protected:
 	void Free(bool CloseCodec);
 public:
-	FFHaaliVideo(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, enum FFMS_Sources SourceMode);
+	FFHaaliVideo(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, FFMS_Sources SourceMode);
 	FFMS_Frame *GetFrame(int n);
 };
 

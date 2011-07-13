@@ -153,7 +153,7 @@ class FFHaaliAudio : public FFMS_AudioSource {
 	void Seek();
 
 public:
-	FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index, enum FFMS_Sources SourceMode, int DelayMode);
+	FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index, FFMS_Sources SourceMode, int DelayMode);
 };
 
 #endif // HAALISOURCE
