@@ -48,7 +48,7 @@
 #	define FFMS_API(ret) FFMS_EXTERN_C ret FFMS_CC
 #endif
 
-typedef struct {
+typedef struct FFMS_ErrorInfo {
 	int ErrorType;
 	int SubType;
 	int BufferSize;
@@ -184,7 +184,7 @@ enum FFMS_AudioDelayModes {
 	FFMS_DELAY_FIRST_VIDEO_TRACK	= -1
 };
 
-typedef struct {
+typedef struct FFMS_Frame {
 	uint8_t *Data[4];
 	int Linesize[4];
 	int EncodedWidth;
@@ -200,18 +200,18 @@ typedef struct {
 	char PictType;
 } FFMS_Frame;
 
-typedef struct {
+typedef struct FFMS_TrackTimeBase {
 	int64_t Num;
 	int64_t Den;
 } FFMS_TrackTimeBase;
 
-typedef struct {
+typedef struct FFMS_FrameInfo {
 	int64_t PTS;
 	int RepeatPict;
 	int KeyFrame;
 } FFMS_FrameInfo;
 
-typedef struct {
+typedef struct FFMS_VideoProperties {
 	int FPSDenominator;
 	int FPSNumerator;
 	int RFFDenominator;
@@ -230,7 +230,7 @@ typedef struct {
 	double LastTime;
 } FFMS_VideoProperties;
 
-typedef struct {
+typedef struct FFMS_AudioProperties {
 	int SampleFormat;
 	int SampleRate;
 	int BitsPerSample;
