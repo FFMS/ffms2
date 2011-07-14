@@ -124,14 +124,14 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	if (PPMode) {
 		pp_postprocess(const_cast<const uint8_t **>(Frame->data), Frame->linesize, PPFrame.data, PPFrame.linesize, CodecContext->width, CodecContext->height, Frame->qscale_table, Frame->qstride, PPMode, PPContext, Frame->pict_type | (Frame->qscale_type ? PP_PICT_TYPE_QP2 : 0));
 		if (SWS) {
-			sws_scale(SWS, const_cast<FFMS_SWS_CONST_PARAM uint8_t **>(PPFrame.data), PPFrame.linesize, 0, CodecContext->height, SWSFrame.data, SWSFrame.linesize);
+			sws_scale(SWS, PPFrame.data, PPFrame.linesize, 0, CodecContext->height, SWSFrame.data, SWSFrame.linesize);
 			CopyAVPictureFields(SWSFrame, LocalFrame);
 		} else {
 			CopyAVPictureFields(PPFrame, LocalFrame);
 		}
 	} else {
 		if (SWS) {
-			sws_scale(SWS, const_cast<FFMS_SWS_CONST_PARAM uint8_t **>(Frame->data), Frame->linesize, 0, CodecContext->height, SWSFrame.data, SWSFrame.linesize);
+			sws_scale(SWS, Frame->data, Frame->linesize, 0, CodecContext->height, SWSFrame.data, SWSFrame.linesize);
 			CopyAVPictureFields(SWSFrame, LocalFrame);
 		} else {
 			// Special case to avoid ugly casts
@@ -143,7 +143,7 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	}
 #else // FFMS_USE_POSTPROC
 	if (SWS) {
-		sws_scale(SWS, const_cast<FFMS_SWS_CONST_PARAM uint8_t **>(Frame->data), Frame->linesize, 0, CodecContext->height, SWSFrame.data, SWSFrame.linesize);
+		sws_scale(SWS, Frame->data, Frame->linesize, 0, CodecContext->height, SWSFrame.data, SWSFrame.linesize);
 		CopyAVPictureFields(SWSFrame, LocalFrame);
 	} else {
 		// Special case to avoid ugly casts

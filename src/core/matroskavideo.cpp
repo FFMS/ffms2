@@ -102,13 +102,8 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	}
 	VP.NumFrames = Frames.size();
 	VP.TopFieldFirst = DecodeFrame->top_field_first;
-#ifdef FFMS_HAVE_FFMPEG_COLORSPACE_INFO
 	VP.ColorSpace = CodecContext->colorspace;
 	VP.ColorRange = CodecContext->color_range;
-#else
-	VP.ColorSpace = 0;
-	VP.ColorRange = 0;
-#endif
 	// these pixfmt's are deprecated but still used
 	if (
 		CodecContext->pix_fmt == PIX_FMT_YUVJ420P
