@@ -30,7 +30,7 @@ void FFLAVFVideo::Free(bool CloseCodec) {
 
 FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
 	int Threads, int SeekMode)
-	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track) {
+	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track, Threads) {
 
 	FormatContext = NULL;
 	AVCodec *Codec = NULL;
@@ -46,9 +46,9 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
 
 	CodecContext = FormatContext->streams[VideoTrack]->codec;
 #if LIBAVCODEC_VERSION_MAJOR >= 53 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR >= 112)
-	CodecContext->thread_count = Threads;
+	CodecContext->thread_count = DecodingThreads;
 #else
-	if (avcodec_thread_init(CodecContext, Threads))
+	if (avcodec_thread_init(CodecContext, DecodingThreads))
 		CodecContext->thread_count = 1;
 #endif
 
@@ -80,13 +80,8 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
 	}
 	VP.NumFrames = Frames.size();
 	VP.TopFieldFirst = DecodeFrame->top_field_first;
-#ifdef FFMS_HAVE_FFMPEG_COLORSPACE_INFO
 	VP.ColorSpace = CodecContext->colorspace;
 	VP.ColorRange = CodecContext->color_range;
-#else
-	VP.ColorSpace = 0;
-	VP.ColorRange = 0;
-#endif
 	// these pixfmt's are deprecated but still used
 	if (
 		CodecContext->pix_fmt == PIX_FMT_YUVJ420P
@@ -243,7 +238,7 @@ ReSeek:
 					case 1:
 						// No idea where we are so go back a bit further
 						if (ClosestKF + SeekOffset == 0)
-							throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+							throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_UNKNOWN,
 								"Frame accurate seeking is not possible in this file");
 
 

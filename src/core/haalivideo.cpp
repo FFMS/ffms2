@@ -32,8 +32,8 @@ void FFHaaliVideo::Free(bool CloseCodec) {
 }
 
 FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
-	FFMS_Index *Index, int Threads, enum FFMS_Sources SourceMode)
-: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track) {
+	FFMS_Index *Index, int Threads, FFMS_Sources SourceMode)
+: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track, Threads) {
 	BitStreamFilter = NULL;
 	VideoTrack = Track;
 	Frames = (*Index)[VideoTrack];
@@ -64,9 +64,9 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 			"Could not open video codec");
 
 #if LIBAVCODEC_VERSION_MAJOR >= 53 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR >= 112)
-	CodecContext->thread_count = Threads;
+	CodecContext->thread_count = DecodingThreads;
 #else
-	if (avcodec_thread_init(CodecContext, Threads))
+	if (avcodec_thread_init(CodecContext, DecodingThreads))
 		CodecContext->thread_count = 1;
 #endif
 
@@ -91,13 +91,8 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	}
 	VP.NumFrames = Frames.size();
 	VP.TopFieldFirst = DecodeFrame->top_field_first;
-#ifdef FFMS_HAVE_FFMPEG_COLORSPACE_INFO
 	VP.ColorSpace = CodecContext->colorspace;
 	VP.ColorRange = CodecContext->color_range;
-#else
-	VP.ColorSpace = 0;
-	VP.ColorRange = 0;
-#endif
 	// these pixfmt's are deprecated but still used
 	if (
 		CodecContext->pix_fmt == PIX_FMT_YUVJ420P
@@ -246,7 +241,7 @@ ReSeek:
 			if (StartTime < 0 || (CurrentFrame = Frames.FrameFromPTS(StartTime)) < 0) {
 				// No idea where we are so go back a bit further
 				if (n + SeekOffset == 0)
-					throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+					throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_UNKNOWN,
 						"Frame accurate seeking is not possible in this file");
 
 				SeekOffset -= FFMIN(20, n + SeekOffset);

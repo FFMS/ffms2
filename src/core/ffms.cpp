@@ -123,8 +123,6 @@ FFMS_API(void) FFMS_SetLogLevel(int Level) {
 }
 
 FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, int SeekMode, FFMS_ErrorInfo *ErrorInfo) {
-	if (Threads < 1)
-		Threads = 1;
 	try {
 		switch (Index->Decoder) {
 			case FFMS_SOURCE_LAVF:
@@ -223,9 +221,18 @@ FFMS_API(int) FFMS_GetAudio(FFMS_AudioSource *A, void *Buf, int64_t Start, int64
 }
 
 FFMS_API(int) FFMS_SetOutputFormatV(FFMS_VideoSource *V, int64_t TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo) {
+	std::vector<int> L;
+	for (int i = 0; i < 64; i++)
+		if ((TargetFormats >> i) & 1)
+			L.push_back(i);
+	L.push_back(PIX_FMT_NONE);
+	return FFMS_SetOutputFormatV2(V, &L[0], Width, Height, Resizer, ErrorInfo);
+}
+
+FFMS_API(int) FFMS_SetOutputFormatV2(FFMS_VideoSource *V, const int *TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
-		V->SetOutputFormat(TargetFormats, Width, Height, Resizer);
+		V->SetOutputFormat(reinterpret_cast<const PixelFormat *>(TargetFormats), Width, Height, Resizer);
 	} catch (FFMS_Exception &e) {
 		return e.CopyOut(ErrorInfo);
 	}
@@ -312,7 +319,7 @@ FFMS_API(int) FFMS_GetNumFrames(FFMS_Track *T) {
 }
 
 FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFMS_Track *T, int Frame) {
-	return reinterpret_cast<FFMS_FrameInfo *>(&(*T)[Frame]);
+	return &(*T)[Frame];
 }
 
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track) {

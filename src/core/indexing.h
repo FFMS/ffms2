@@ -65,9 +65,8 @@ public:
 	~SharedAudioContext();
 };
 
-struct TFrameInfo {
+struct TFrameInfo : public FFMS_FrameInfo {
 public:
-	FFMS_FRAMEINFO_COMMON
 	int64_t SampleStart;
 	unsigned int SampleCount;
 	int64_t FilePos;
@@ -81,7 +80,7 @@ private:
 	TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize);
 };
 
-class FFMS_Track : public std::vector<TFrameInfo> {
+struct FFMS_Track : public std::vector<TFrameInfo> {
 public:
 	FFMS_TrackType TT;
 	FFMS_TrackTimeBase TB;
@@ -96,7 +95,7 @@ public:
 	FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false);
 };
 
-class FFMS_Index : public std::vector<FFMS_Track> {
+struct FFMS_Index : public std::vector<FFMS_Track> {
 public:
 	static void CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]);
 
@@ -113,7 +112,8 @@ public:
 	FFMS_Index(int64_t Filesize, uint8_t Digest[20]);
 };
 
-class FFMS_Indexer {
+struct FFMS_Indexer {
+private:
 	std::map<int, FFMS_AudioProperties> LastAudioProperties;
 protected:
 	int IndexMask;
@@ -123,10 +123,8 @@ protected:
 	void *ICPrivate;
 	TAudioNameCallback ANC;
 	void *ANCPrivate;
-	const char *SourceFile;
+	std::string SourceFile;
 	AlignedBuffer<uint8_t> DecodingBuffer;
-	FFMS_Sources Demuxer;
-	const char *FormatName;
 
 	int64_t Filesize;
 	uint8_t Digest[20];
@@ -135,7 +133,7 @@ protected:
 	void CheckAudioProperties(int Track, AVCodecContext *Context);
 	int64_t IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices);
 public:
-	static FFMS_Indexer *CreateIndexer(const char *Filename, enum FFMS_Sources Demuxer = FFMS_SOURCE_DEFAULT);
+	static FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer = FFMS_SOURCE_DEFAULT);
 	FFMS_Indexer(const char *Filename);
 	virtual ~FFMS_Indexer();
 	void SetIndexMask(int IndexMask);
@@ -192,7 +190,7 @@ private:
 	CComQIPtr<IPropertyBag> PropertyBags[32];
 	int64_t Duration;
 public:
-	FFHaaliIndexer(const char *Filename, enum FFMS_Sources SourceMode);
+	FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode);
 	FFMS_Index *DoIndexing();
 	int GetNumberOfTracks();
 	FFMS_TrackType GetTrackType(int Track);

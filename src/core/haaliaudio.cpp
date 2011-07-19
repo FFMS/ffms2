@@ -22,7 +22,7 @@
 
 #include "audiosource.h"
 
-FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index, enum FFMS_Sources SourceMode, int DelayMode)
+FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index, FFMS_Sources SourceMode, int DelayMode)
 : FFMS_AudioSource(SourceFile, Index, Track) {
 	pMMC = HaaliOpenFile(SourceFile, SourceMode);
 

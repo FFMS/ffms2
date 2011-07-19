@@ -35,7 +35,7 @@ void FFMatroskaVideo::Free(bool CloseCodec) {
 
 FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	FFMS_Index *Index, int Threads)
-	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track) {
+	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track, Threads) {
 
 	AVCodec *Codec = NULL;
 	CodecContext = NULL;
@@ -68,9 +68,9 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 
 	CodecContext = avcodec_alloc_context();
 #if LIBAVCODEC_VERSION_MAJOR >= 53 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR >= 112)
-	CodecContext->thread_count = Threads;
+	CodecContext->thread_count = DecodingThreads;
 #else
-	if (avcodec_thread_init(CodecContext, Threads))
+	if (avcodec_thread_init(CodecContext, DecodingThreads))
 		CodecContext->thread_count = 1;
 #endif
 
@@ -102,13 +102,8 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	}
 	VP.NumFrames = Frames.size();
 	VP.TopFieldFirst = DecodeFrame->top_field_first;
-#ifdef FFMS_HAVE_FFMPEG_COLORSPACE_INFO
 	VP.ColorSpace = CodecContext->colorspace;
 	VP.ColorRange = CodecContext->color_range;
-#else
-	VP.ColorSpace = 0;
-	VP.ColorRange = 0;
-#endif
 	// these pixfmt's are deprecated but still used
 	if (
 		CodecContext->pix_fmt == PIX_FMT_YUVJ420P
@@ -175,7 +170,7 @@ void FFMatroskaVideo::DecodeNextFrame() {
 		ReadFrame(FI.FilePos, FrameSize, TCC, MC);
 
 		Packet.data = MC.Buffer;
-		Packet.size = (TCC && TCC->CompressionMethod == COMP_PREPEND) ? FrameSize + TCC->CompressedPrivateDataSize : FrameSize;
+		Packet.size = FrameSize;
 		if (FI.KeyFrame)
 			Packet.flags = AV_PKT_FLAG_KEY;
 		else

@@ -21,6 +21,7 @@
 #include "avs_common.h"
 #include "ff_filters.h"
 #include <libavutil/common.h>
+#include <libavutil/pixfmt.h>
 
 typedef struct
 {

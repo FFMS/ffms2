@@ -34,6 +34,7 @@ extern "C" {
 #include "ffmscompat.h"
 
 #include <vector>
+#include <algorithm>
 #include <sstream>
 #include "indexing.h"
 #include "utils.h"
@@ -51,7 +52,7 @@ extern "C" {
 #	include "guids.h"
 #endif
 
-class FFMS_VideoSource {
+struct FFMS_VideoSource {
 friend class FFSourceResources<FFMS_VideoSource>;
 private:
 #ifdef FFMS_USE_POSTPROC
@@ -64,7 +65,7 @@ private:
 	PixelFormat LastFramePixelFormat;
 	int TargetHeight;
 	int TargetWidth;
-	int64_t TargetPixelFormats;
+	std::vector<PixelFormat> TargetPixelFormats;
 	int TargetResizer;
 	PixelFormat OutputFormat;
 	AVPicture PPFrame;
@@ -79,11 +80,12 @@ protected:
 	int	CurrentFrame;
 	int DelayCounter;
 	int InitialDecode;
+	int DecodingThreads;
 	AVCodecContext *CodecContext;
 
-	FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, int Track);
+	FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, int Track, int Threads);
 	void ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height);
-	void ReAdjustOutputFormat(int64_t TargetFormats, int Width, int Height, int Resizer);
+	void ReAdjustOutputFormat();
 	FFMS_Frame *OutputFrame(AVFrame *Frame);
 	virtual void Free(bool CloseCodec) = 0;
 public:
@@ -95,7 +97,7 @@ public:
 	FFMS_Frame *GetFrameByTime(double Time);
 	void SetPP(const char *PP);
 	void ResetPP();
-	void SetOutputFormat(int64_t TargetFormats, int Width, int Height, int Resizer);
+	void SetOutputFormat(const PixelFormat *TargetFormats, int Width, int Height, int Resizer);
 	void ResetOutputFormat();
 };
 
@@ -142,7 +144,7 @@ class FFHaaliVideo : public FFMS_VideoSource {
 protected:
 	void Free(bool CloseCodec);
 public:
-	FFHaaliVideo(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, enum FFMS_Sources SourceMode);
+	FFHaaliVideo(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, FFMS_Sources SourceMode);
 	FFMS_Frame *GetFrame(int n);
 };
 

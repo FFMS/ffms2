@@ -1,6 +1,6 @@
 The FFMS2 source is licensed under the MIT license, but its binaries
 are licensed under the GPL because GPL components of FFmpeg are
-used. FFmpeg can be built with either GPLv2, GPLv3, or even be
+used. FFmpeg can be built as either LGPL, GPLv2, GPLv3, or even be
 nonredistributable. Refer to FFmpeg's sources for licensing information.
 
 Text of MIT license:

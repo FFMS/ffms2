@@ -275,6 +275,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\core\numthreads.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\core\numthreads.h"
+				>
+			</File>
+			<File
 				RelativePath="..\src\core\stdiostream.c"
 				>
 			</File>

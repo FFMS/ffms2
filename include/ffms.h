@@ -22,16 +22,14 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (15 << 16) | (1 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (15 << 16) | (4 << 8) | 0)
 
 #include <stdint.h>
 
 #ifdef __cplusplus
 #	define FFMS_EXTERN_C extern "C"
-#	define FFMS_CLASS_TYPE class
 #else
 #	define FFMS_EXTERN_C
-#	define FFMS_CLASS_TYPE struct
 #endif
 
 #ifdef _WIN32
@@ -50,18 +48,18 @@
 #	define FFMS_API(ret) FFMS_EXTERN_C ret FFMS_CC
 #endif
 
-typedef struct {
+typedef struct FFMS_ErrorInfo {
 	int ErrorType;
 	int SubType;
 	int BufferSize;
 	char *Buffer;
 } FFMS_ErrorInfo;
 
-typedef FFMS_CLASS_TYPE FFMS_VideoSource FFMS_VideoSource;
-typedef FFMS_CLASS_TYPE FFMS_AudioSource FFMS_AudioSource;
-typedef FFMS_CLASS_TYPE FFMS_Indexer FFMS_Indexer;
-typedef FFMS_CLASS_TYPE FFMS_Index FFMS_Index;
-typedef FFMS_CLASS_TYPE FFMS_Track FFMS_Track;
+typedef struct FFMS_VideoSource FFMS_VideoSource;
+typedef struct FFMS_AudioSource FFMS_AudioSource;
+typedef struct FFMS_Indexer FFMS_Indexer;
+typedef struct FFMS_Index FFMS_Index;
+typedef struct FFMS_Track FFMS_Track;
 
 enum FFMS_Errors {
 	// No error
@@ -186,7 +184,7 @@ enum FFMS_AudioDelayModes {
 	FFMS_DELAY_FIRST_VIDEO_TRACK	= -1
 };
 
-typedef struct {
+typedef struct FFMS_Frame {
 	uint8_t *Data[4];
 	int Linesize[4];
 	int EncodedWidth;
@@ -202,18 +200,18 @@ typedef struct {
 	char PictType;
 } FFMS_Frame;
 
-typedef struct {
+typedef struct FFMS_TrackTimeBase {
 	int64_t Num;
 	int64_t Den;
 } FFMS_TrackTimeBase;
 
-#define FFMS_FRAMEINFO_COMMON int64_t PTS; int RepeatPict; int KeyFrame;
-
-typedef struct {
-	FFMS_FRAMEINFO_COMMON
+typedef struct FFMS_FrameInfo {
+	int64_t PTS;
+	int RepeatPict;
+	int KeyFrame;
 } FFMS_FrameInfo;
 
-typedef struct {
+typedef struct FFMS_VideoProperties {
 	int FPSDenominator;
 	int FPSNumerator;
 	int RFFDenominator;
@@ -232,7 +230,7 @@ typedef struct {
 	double LastTime;
 } FFMS_VideoProperties;
 
-typedef struct {
+typedef struct FFMS_AudioProperties {
 	int SampleFormat;
 	int SampleRate;
 	int BitsPerSample;
@@ -261,7 +259,8 @@ FFMS_API(const FFMS_AudioProperties *) FFMS_GetAudioProperties(FFMS_AudioSource 
 FFMS_API(const FFMS_Frame *) FFMS_GetFrame(FFMS_VideoSource *V, int n, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(const FFMS_Frame *) FFMS_GetFrameByTime(FFMS_VideoSource *V, double Time, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_GetAudio(FFMS_AudioSource *A, void *Buf, int64_t Start, int64_t Count, FFMS_ErrorInfo *ErrorInfo);
-FFMS_API(int) FFMS_SetOutputFormatV(FFMS_VideoSource *V, int64_t TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo);
+FFMS_API(int) /*DEPRECATED*/ FFMS_SetOutputFormatV(FFMS_VideoSource *V, int64_t TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo);
+FFMS_API(int) FFMS_SetOutputFormatV2(FFMS_VideoSource *V, const int *TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo); /* Introduced in FFMS_VERSION ((2 << 24) | (15 << 16) | (3 << 8) | 0) */
 FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V);
 FFMS_API(int) FFMS_SetPP(FFMS_VideoSource *V, const char *PP, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(void) FFMS_ResetPP(FFMS_VideoSource *V);

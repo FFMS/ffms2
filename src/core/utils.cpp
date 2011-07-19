@@ -37,7 +37,7 @@ extern "C" {
 // Export the array but not its data type... fun...
 typedef struct CodecTags{
     char str[20];
-    enum CodecID id;
+    CodecID id;
 } CodecTags;
 
 extern "C" {
@@ -240,7 +240,7 @@ template<class T> static void safe_aligned_reallocz(T *&ptr, size_t old_size, si
 
 void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContext *TCC, MatroskaReaderContext &Context) {
 	memset(Context.Buffer, 0, Context.BufferSize); // necessary to avoid lavc hurfing a durf with some mpeg4 video streams
-	if (TCC && TCC->CS) {
+	if (TCC && TCC->CompressionMethod == COMP_ZLIB) {
 		CompressedStream *CS = TCC->CS;
 		unsigned int DecompressedFrameSize = 0;
 
@@ -327,6 +327,8 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 				"Unknown read error");
 		}
 
+		if (TCC && TCC->CompressionMethod == COMP_PREPEND)
+			FrameSize += TCC->CompressedPrivateDataSize;
 		return;
 	}
 }
@@ -674,7 +676,7 @@ void ffms_patch_lavf_file_open() {
 
 #ifdef HAALISOURCE
 
-CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources SourceMode) {
+CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceMode) {
 	CComPtr<IMMContainer> pMMC;
 
 	CLSID clsid = HAALI_MPEG_PARSER;
@@ -717,7 +719,7 @@ CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, enum FFMS_Sources So
 #endif
 
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
-	if (av_open_input_file(&FormatContext, SourceFile, NULL, 0, NULL) != 0)
+	if (avformat_open_input(&FormatContext, SourceFile, NULL, NULL) != 0)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Couldn't open '") + SourceFile + "'");
 

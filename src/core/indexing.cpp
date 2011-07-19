@@ -212,29 +212,28 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Failed to open '") + Filename + "' for hashing");
 
-	std::vector<uint8_t> FileBuffer(1024*1024, 0);
+	std::vector<uint8_t> FileBuffer(1024*1024);
 	std::vector<uint8_t> ctxmem(av_sha_size);
 	AVSHA *ctx = (AVSHA*)(&ctxmem[0]);
 	av_sha_init(ctx, 160);
 
 	try {
-		fread(&FileBuffer[0], 1, FileBuffer.size(), SFile);
+		size_t BytesRead = fread(&FileBuffer[0], 1, FileBuffer.size(), SFile);
 		if (ferror(SFile) && !feof(SFile))
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 				std::string("Failed to read '") + Filename + "' for hashing");
 
-		av_sha_update(ctx, &FileBuffer[0], FileBuffer.size());
+		av_sha_update(ctx, &FileBuffer[0], BytesRead);
 
 		fseeko(SFile, -(int)FileBuffer.size(), SEEK_END);
-		std::fill(FileBuffer.begin(), FileBuffer.end(), 0);
-		fread(&FileBuffer[0], 1, FileBuffer.size(), SFile);
+		BytesRead = fread(&FileBuffer[0], 1, FileBuffer.size(), SFile);
 		if (ferror(SFile) && !feof(SFile)) {
 			std::ostringstream buf;
 			buf << "Failed to seek with offset " << FileBuffer.size() << " from file end in '" << Filename << "' for hashing";
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
 		}
 
-		av_sha_update(ctx, &FileBuffer[0], FileBuffer.size());
+		av_sha_update(ctx, &FileBuffer[0], BytesRead);
 
 		fseeko(SFile, 0, SEEK_END);
 		if (ferror(SFile))
@@ -501,10 +500,10 @@ void FFMS_Indexer::SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate
 	this->ANCPrivate = ANCPrivate;
 }
 
-FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, enum FFMS_Sources Demuxer) {
+FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Demuxer) {
 	AVFormatContext *FormatContext = NULL;
 
-	if (av_open_input_file(&FormatContext, Filename, NULL, 0, NULL) != 0)
+	if (avformat_open_input(&FormatContext, Filename, NULL, NULL) != 0)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Can't open '") + Filename + "'");
 
@@ -561,15 +560,17 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, enum FFMS_Source
 	}
 }
 
-FFMS_Indexer::FFMS_Indexer(const char *Filename) : DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10) {
-	IndexMask = 0;
-	DumpMask = 0;
-	ErrorHandling = FFMS_IEH_CLEAR_TRACK;
-	IC = NULL;
-	ICPrivate = NULL;
-	ANC = NULL;
-	ANCPrivate = NULL;
-
+FFMS_Indexer::FFMS_Indexer(const char *Filename)
+: IndexMask(0)
+, DumpMask(0)
+, ErrorHandling(FFMS_IEH_CLEAR_TRACK)
+, IC(0)
+, ICPrivate(0)
+, ANC(0)
+, ANCPrivate(0)
+, SourceFile(Filename)
+, DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10)
+{
 	FFMS_Index::CalculateFileSignature(Filename, &Filesize, Digest);
 }
 
@@ -584,14 +585,14 @@ void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 	if (!AudioContext.W64Writer) {
 		FFMS_AudioProperties AP;
 		FillAP(AP, AudioContext.CodecContext, (*Index)[Track]);
-		int FNSize = (*ANC)(SourceFile, Track, &AP, NULL, 0, ANCPrivate);
+		int FNSize = (*ANC)(SourceFile.c_str(), Track, &AP, NULL, 0, ANCPrivate);
 		if (FNSize <= 0) {
 			DumpMask = DumpMask & ~(1 << Track);
 			return;
 		}
 
 		std::vector<char> WName(FNSize);
-		(*ANC)(SourceFile, Track, &AP, &WName[0], FNSize, ANCPrivate);
+		(*ANC)(SourceFile.c_str(), Track, &AP, &WName[0], FNSize, ANCPrivate);
 		std::string WN(&WName[0]);
 		try {
 			AudioContext.W64Writer =
