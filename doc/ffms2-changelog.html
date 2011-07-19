@@ -12,6 +12,7 @@ FFmpegSource2 Changelog
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
 <li>2.16<ul>
+<li>Automatically detect number of decoding threads.  The avisynth video source funtion already did this, now moved so the api can use it as well</li> 
 <li>Added FFMS_SetOutputFormatV2 to the API. This function allows you to specify PixelFormats >= 64 for use as output. (Myrsloik)</li>
 <li>Fixed a serious bug that could cause crashes and completely useless index files with h264 in matroska. (Myrsloik)</li>
 </ul></li>
