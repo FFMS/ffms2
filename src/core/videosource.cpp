@@ -19,6 +19,7 @@
 //  THE SOFTWARE.
 
 #include "videosource.h"
+#include "numthreads.h"
 
 void FFMS_VideoSource::GetFrameCheck(int n) {
 	if (n < 0 || n >= VP.NumFrames)
@@ -173,7 +174,7 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	return &LocalFrame;
 }
 
-FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, int Track) {
+FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, int Track, int Threads) {
 	if (Track < 0 || Track >= static_cast<int>(Index->size()))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Out of bounds track index selected");
@@ -208,6 +209,10 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, in
 	TargetWidth = -1;
 	TargetResizer = 0;
 	OutputFormat = PIX_FMT_NONE;
+	if (Threads < 1)
+		DecodingThreads = GetNumberOfLogicalCPUs();
+	else
+		DecodingThreads = Threads;
 	DecodeFrame = avcodec_alloc_frame();
 
 	// Dummy allocations so the unallocated case doesn't have to be handled later

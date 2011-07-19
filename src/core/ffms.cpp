@@ -123,8 +123,6 @@ FFMS_API(void) FFMS_SetLogLevel(int Level) {
 }
 
 FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, int SeekMode, FFMS_ErrorInfo *ErrorInfo) {
-	if (Threads < 1)
-		Threads = 1;
 	try {
 		switch (Index->Decoder) {
 			case FFMS_SOURCE_LAVF:

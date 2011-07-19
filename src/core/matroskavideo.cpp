@@ -35,7 +35,7 @@ void FFMatroskaVideo::Free(bool CloseCodec) {
 
 FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	FFMS_Index *Index, int Threads)
-	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track) {
+	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track, Threads) {
 
 	AVCodec *Codec = NULL;
 	CodecContext = NULL;
@@ -68,9 +68,9 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 
 	CodecContext = avcodec_alloc_context();
 #if LIBAVCODEC_VERSION_MAJOR >= 53 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR >= 112)
-	CodecContext->thread_count = Threads;
+	CodecContext->thread_count = DecodingThreads;
 #else
-	if (avcodec_thread_init(CodecContext, Threads))
+	if (avcodec_thread_init(CodecContext, DecodingThreads))
 		CodecContext->thread_count = 1;
 #endif
 

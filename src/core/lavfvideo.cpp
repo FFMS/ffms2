@@ -30,7 +30,7 @@ void FFLAVFVideo::Free(bool CloseCodec) {
 
 FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
 	int Threads, int SeekMode)
-	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track) {
+	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track, Threads) {
 
 	FormatContext = NULL;
 	AVCodec *Codec = NULL;
@@ -46,9 +46,9 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index,
 
 	CodecContext = FormatContext->streams[VideoTrack]->codec;
 #if LIBAVCODEC_VERSION_MAJOR >= 53 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR >= 112)
-	CodecContext->thread_count = Threads;
+	CodecContext->thread_count = DecodingThreads;
 #else
-	if (avcodec_thread_init(CodecContext, Threads))
+	if (avcodec_thread_init(CodecContext, DecodingThreads))
 		CodecContext->thread_count = 1;
 #endif
 

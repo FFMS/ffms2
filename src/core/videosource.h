@@ -80,9 +80,10 @@ protected:
 	int	CurrentFrame;
 	int DelayCounter;
 	int InitialDecode;
+	int DecodingThreads;
 	AVCodecContext *CodecContext;
 
-	FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, int Track);
+	FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, int Track, int Threads);
 	void ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height);
 	void ReAdjustOutputFormat();
 	FFMS_Frame *OutputFrame(AVFrame *Frame);

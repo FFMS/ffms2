@@ -33,7 +33,7 @@ void FFHaaliVideo::Free(bool CloseCodec) {
 
 FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	FFMS_Index *Index, int Threads, FFMS_Sources SourceMode)
-: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track) {
+: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track, Threads) {
 	BitStreamFilter = NULL;
 	VideoTrack = Track;
 	Frames = (*Index)[VideoTrack];
@@ -64,9 +64,9 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 			"Could not open video codec");
 
 #if LIBAVCODEC_VERSION_MAJOR >= 53 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR >= 112)
-	CodecContext->thread_count = Threads;
+	CodecContext->thread_count = DecodingThreads;
 #else
-	if (avcodec_thread_init(CodecContext, Threads))
+	if (avcodec_thread_init(CodecContext, DecodingThreads))
 		CodecContext->thread_count = 1;
 #endif
 

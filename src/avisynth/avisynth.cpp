@@ -25,12 +25,6 @@
 #include "ffpp.h"
 #include "avsutils.h"
 
-static int GetNumberOfLogicalCPUs() {
-	SYSTEM_INFO SI;
-	GetSystemInfo(&SI);
-	return SI.dwNumberOfProcessors;
-}
-
 static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	FFMS_Init((int)AvisynthToFFCPUFlags(Env->GetCPUFlags()),  Args[7].AsBool(false));
 
@@ -131,9 +125,6 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 
 	if (SeekMode < -1 || SeekMode > 3)
 		Env->ThrowError("FFVideoSource: Invalid seekmode selected");
-
-	if (Threads <= 0)
-		Threads = GetNumberOfLogicalCPUs();
 
 	if (RFFMode < 0 || RFFMode > 2)
 		Env->ThrowError("FFVideoSource: Invalid RFF mode selected");
