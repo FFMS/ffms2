@@ -29,6 +29,8 @@ src_core_libffms2_la_SOURCES = \
 	src/core/matroskaparser.h \
 	src/core/matroskaparser.c \
 	src/core/matroskavideo.cpp \
+	src/core/numthreads.h \
+	src/core/numthreads.cpp \
 	src/core/stdiostream.h \
 	src/core/stdiostream.c \
 	src/core/utils.h \

@@ -94,6 +94,7 @@ am_src_core_libffms2_la_OBJECTS = src/core/audiosource.lo \
 	src/core/lavfindexer.lo src/core/lavfvideo.lo \
 	src/core/matroskaaudio.lo src/core/matroskaindexer.lo \
 	src/core/matroskaparser.lo src/core/matroskavideo.lo \
+	src/core/numthreads.lo \
 	src/core/stdiostream.lo src/core/utils.lo \
 	src/core/videosource.lo src/core/wave64writer.lo
 src_core_libffms2_la_OBJECTS = $(am_src_core_libffms2_la_OBJECTS)
@@ -301,6 +302,8 @@ src_core_libffms2_la_SOURCES = \
 	src/core/matroskaparser.h \
 	src/core/matroskaparser.c \
 	src/core/matroskavideo.cpp \
+	src/core/numthreads.h \
+	src/core/numthreads.cpp \
 	src/core/stdiostream.h \
 	src/core/stdiostream.c \
 	src/core/utils.h \
@@ -437,6 +440,8 @@ src/core/matroskaparser.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/matroskavideo.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
+src/core/numthreads.lo: src/core/$(am__dirstamp) \
+	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/stdiostream.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/utils.lo: src/core/$(am__dirstamp) \
@@ -530,6 +535,8 @@ mostlyclean-compile:
 	-rm -f src/core/matroskaparser.lo
 	-rm -f src/core/matroskavideo.$(OBJEXT)
 	-rm -f src/core/matroskavideo.lo
+	-rm -f src/core/numthreads.$(OBJEXT)
+	-rm -f src/core/numthreads.lo
 	-rm -f src/core/stdiostream.$(OBJEXT)
 	-rm -f src/core/stdiostream.lo
 	-rm -f src/core/utils.$(OBJEXT)
@@ -556,6 +563,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/matroskaindexer.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/matroskaparser.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/matroskavideo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/numthreads.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/stdiostream.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/utils.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/videosource.Plo@am__quote@
