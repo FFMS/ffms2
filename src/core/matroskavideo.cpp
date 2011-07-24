@@ -66,7 +66,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	if (TI->CompEnabled)
 		TCC = new TrackCompressionContext(MF, TI, VideoTrack);
 
-	CodecContext = avcodec_alloc_context();
+	CodecContext = avcodec_alloc_context3(NULL);
 #if LIBAVCODEC_VERSION_MAJOR >= 53 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR >= 112)
 	CodecContext->thread_count = DecodingThreads;
 #else
@@ -81,7 +81,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 
 	InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);
 
-	if (avcodec_open(CodecContext, Codec) < 0)
+	if (avcodec_open2(CodecContext, Codec, NULL) < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Could not open video codec");
 

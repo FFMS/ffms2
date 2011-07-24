@@ -51,6 +51,10 @@
 #		define AV_SAMPLE_FMT_FLT	SAMPLE_FMT_FLT
 #		define AV_SAMPLE_FMT_DBL	SAMPLE_FMT_DBL
 #	endif
+#	if (LIBAVCODEC_VERSION_INT) < (AV_VERSION_INT(53,6,0))
+#		define avcodec_open2(a,c,o) avcodec_open(a,c)
+#		define avcodec_alloc_context3(c) avcodec_alloc_context()
+#	endif
 #endif
 
 #ifdef LIBAVUTIL_VERSION_INT

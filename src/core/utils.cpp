@@ -461,7 +461,7 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag)
 
 	unsigned int TT = pV.uintVal;
 
-	FFCodecContext CodecContext(avcodec_alloc_context(), DeleteHaaliCodecContext);
+	FFCodecContext CodecContext(avcodec_alloc_context3(NULL), DeleteHaaliCodecContext);
 
 	unsigned int FourCC = 0;
 	if (TT == TT_VIDEO) {

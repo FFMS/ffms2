@@ -69,12 +69,12 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 
 		if (!Codec[i]) continue;
 
-		AVCodecContext *CodecContext = avcodec_alloc_context();
+		AVCodecContext *CodecContext = avcodec_alloc_context3(NULL);
 		InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);
 
 		try {
 			if (TI->Type == TT_VIDEO && (VideoContexts[i].Parser = av_parser_init(Codec[i]->id))) {
-				if (avcodec_open(CodecContext, Codec[i]) < 0)
+				if (avcodec_open2(CodecContext, Codec[i], NULL) < 0)
 					throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
 						"Could not open video codec");
 
@@ -85,7 +85,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 				VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
 			}
 			else if (IndexMask & (1 << i) && TI->Type == TT_AUDIO) {
-				if (avcodec_open(CodecContext, Codec[i]) < 0)
+				if (avcodec_open2(CodecContext, Codec[i], NULL) < 0)
 					throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
 						"Could not open audio codec");
 
