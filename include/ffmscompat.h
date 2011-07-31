@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2009 Fredrik Mellbin
+//  Copyright (c) 2007-2011 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,10 @@
 #		define AV_SAMPLE_FMT_S32	SAMPLE_FMT_S32
 #		define AV_SAMPLE_FMT_FLT	SAMPLE_FMT_FLT
 #		define AV_SAMPLE_FMT_DBL	SAMPLE_FMT_DBL
+#	endif
+#	if (LIBAVCODEC_VERSION_INT) < (AV_VERSION_INT(53,6,0))
+#		define avcodec_open2(a,c,o) avcodec_open(a,c)
+#		define avcodec_alloc_context3(c) avcodec_alloc_context()
 #	endif
 #endif
 

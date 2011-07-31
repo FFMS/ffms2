@@ -36,7 +36,7 @@ FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, i
 			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 				"Audio codec not found");
 
-		if (avcodec_open(CodecContext, Codec) < 0)
+		if (avcodec_open2(CodecContext, Codec, NULL) < 0)
 			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 				"Could not open audio codec");
 	}

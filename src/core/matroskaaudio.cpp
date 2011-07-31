@@ -41,7 +41,7 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &
 	if (TI->CompEnabled)
 		TCC.reset(new TrackCompressionContext(MF, TI, Track));
 
-	CodecContext.reset(avcodec_alloc_context(), DeleteMatroskaCodecContext);
+	CodecContext.reset(avcodec_alloc_context3(NULL), DeleteMatroskaCodecContext);
 	assert(CodecContext);
 
 	AVCodec *Codec = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate, 0, TI->AV.Audio.BitDepth));
@@ -52,7 +52,7 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &
 
 	InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);
 
-	if (avcodec_open(CodecContext, Codec) < 0) {
+	if (avcodec_open2(CodecContext, Codec, NULL) < 0) {
 		mkv_Close(MF);
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC, "Could not open audio codec");
 	}

@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2009 Fredrik Mellbin
+//  Copyright (c) 2007-2011 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (15 << 16) | (4 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (15 << 16) | (4 << 8) | 1)
 
 #include <stdint.h>
 

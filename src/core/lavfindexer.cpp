@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2009 Fredrik Mellbin
+//  Copyright (c) 2007-2011 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -57,7 +57,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
 					"Video codec not found");
 
-			if (avcodec_open(FormatContext->streams[i]->codec, VideoCodec) < 0)
+			if (avcodec_open2(FormatContext->streams[i]->codec, VideoCodec, NULL) < 0)
 				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
 					"Could not open video codec");
 
@@ -75,7 +75,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
 					"Audio codec not found");
 
-			if (avcodec_open(AudioCodecContext, AudioCodec) < 0)
+			if (avcodec_open2(AudioCodecContext, AudioCodec, NULL) < 0)
 				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
 					"Could not open audio codec");
 

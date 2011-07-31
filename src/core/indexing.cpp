@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2009 Fredrik Mellbin
+//  Copyright (c) 2007-2011 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -47,13 +47,15 @@ void av_sha_final(struct AVSHA* context, uint8_t *digest);
 #define INDEXID 0x53920873
 #ifdef __MINGW64__
 	#define ARCH 1
-#elif __MINGW32__
+#elif defined(__MINGW32__)
 	#define ARCH 2
-#elif _WIN32
+#elif defined(_WIN64)
+	#define ARCH 6
+#elif defined(_WIN32)
 	#define ARCH 3
-#elif __i386__
+#elif defined(__i386__) //*nix 32bit
 	#define ARCH 4
-#else
+#else //*nix 64bit
 	#define ARCH 5
 #endif
 

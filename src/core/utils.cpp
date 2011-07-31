@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2009 Fredrik Mellbin
+//  Copyright (c) 2007-2011 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -129,8 +129,8 @@ int64_t GetSWSCPUFlags() {
 #ifdef SWS_CPU_CAPS_SSE2
 	if (CPUFeatures & FFMS_CPU_CAPS_SSE2)
 		Flags |= SWS_CPU_CAPS_SSE2;
-#endif // SWS_CPU_CAPS_SSE2
-#endif
+#endif /* SWS_CPU_CAPS_SSE2 */
+#endif /* SWS_CPU_CAPS_MMX */
 
 	return Flags;
 }
@@ -461,7 +461,7 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag)
 
 	unsigned int TT = pV.uintVal;
 
-	FFCodecContext CodecContext(avcodec_alloc_context(), DeleteHaaliCodecContext);
+	FFCodecContext CodecContext(avcodec_alloc_context3(NULL), DeleteHaaliCodecContext);
 
 	unsigned int FourCC = 0;
 	if (TT == TT_VIDEO) {
