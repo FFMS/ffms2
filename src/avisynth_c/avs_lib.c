@@ -1,4 +1,4 @@
-//  Copyright (c) 2010 FFmpegSource Project
+//  Copyright (c) 2010-2011 FFmpegSource Project
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
 
 #define LOAD_AVS_FUNC(name) \
 {\
-    ffms_avs_lib->name = (void*)GetProcAddress( GetModuleHandle(TEXT("avisynth")), #name );\
+    ffms_avs_lib->name = (name##_func)GetProcAddress( GetModuleHandle(TEXT("avisynth")), #name );\
     if( !ffms_avs_lib->name )\
         goto fail;\
 }
@@ -40,7 +40,7 @@ int ffms_load_avs_lib( AVS_ScriptEnvironment *env )
 {
     if( InterlockedIncrement( &ref ) > 1 ) /* already initted - exit */
         return 0;
-    ffms_avs_lib = malloc( sizeof(ffms_avs_lib_t) );
+    ffms_avs_lib = calloc( 1, sizeof(ffms_avs_lib_t) );
     if( !ffms_avs_lib )
         return -1;
     OutputDebugString( "FFMS2 avs plugin: Initializing..." );
@@ -48,6 +48,7 @@ int ffms_load_avs_lib( AVS_ScriptEnvironment *env )
     LOAD_AVS_FUNC( avs_add_function );
     LOAD_AVS_FUNC( avs_at_exit );
     LOAD_AVS_FUNC( avs_bit_blt );
+    LOAD_AVS_FUNC( avs_check_version );
     LOAD_AVS_FUNC( avs_get_audio );
     LOAD_AVS_FUNC( avs_get_cpu_flags );
     LOAD_AVS_FUNC( avs_get_frame );
@@ -60,6 +61,33 @@ int ffms_load_avs_lib( AVS_ScriptEnvironment *env )
     LOAD_AVS_FUNC( avs_take_clip );
 
     ffms_avs_lib->env = env;
+
+    // begin backwards compatibility support
+    // this returns 0 on success - '5' is the magic number for 2.6
+    if( !ffms_avs_lib->avs_check_version( env, 5 ) )
+    {
+        // 2.6
+        OutputDebugString( "FFMS2 - avs 2.6 mode" );
+        ffms_avs_lib->is_avs_26 = 1;
+        ffms_avs_lib->AVS_CS_I420 = AVS_CS_I420;
+        ffms_avs_lib->avs_get_height_p = avs_get_height_p;
+        ffms_avs_lib->avs_get_row_size_p = avs_get_row_size_p;
+        ffms_avs_lib->avs_is_yv12 = avs_is_yv12;
+        ffms_avs_lib->csp_name_to_pix_fmt = csp_name_to_pix_fmt_26;
+        ffms_avs_lib->vi_to_pix_fmt = vi_to_pix_fmt_26;
+    }
+    else
+    {
+        // 2.5
+        OutputDebugString( "FFMS2 - avs 2.5 mode" );
+        ffms_avs_lib->AVS_CS_I420 = AVS_CS_I420_25;
+        ffms_avs_lib->avs_get_height_p = avs_get_height_p_25;
+        ffms_avs_lib->avs_get_row_size_p = avs_get_row_size_p_25;
+        ffms_avs_lib->avs_is_yv12 = avs_is_yv12_25;
+        ffms_avs_lib->csp_name_to_pix_fmt = csp_name_to_pix_fmt_25;
+        ffms_avs_lib->vi_to_pix_fmt = vi_to_pix_fmt_25;
+    }
+
     return 0;
 fail:
     ffms_free_avs_lib( NULL, NULL );

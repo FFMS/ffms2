@@ -1,4 +1,4 @@
-//  Copyright (c) 2010 FFmpegSource Project
+//  Copyright (c) 2010-2011 FFmpegSource Project
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -79,7 +79,7 @@ int64_t avs_to_sws_cpu_flags( long avisynth_flags )
     return flags;
 }
 
-enum PixelFormat csp_name_to_pix_fmt( const char *csp_name, enum PixelFormat def )
+enum PixelFormat csp_name_to_pix_fmt_25( const char *csp_name, enum PixelFormat def )
 {
     if( !csp_name || !strcmp( csp_name, "" ) )
         return def;
@@ -94,9 +94,26 @@ enum PixelFormat csp_name_to_pix_fmt( const char *csp_name, enum PixelFormat def
     return PIX_FMT_NONE;
 }
 
-enum PixelFormat vi_to_pix_fmt( const AVS_VideoInfo *vi )
+enum PixelFormat csp_name_to_pix_fmt_26( const char *csp_name, enum PixelFormat def )
 {
-    if( avs_is_yv12( vi ) )
+    enum PixelFormat ret = csp_name_to_pix_fmt_25( csp_name, def );
+    if( ret != PIX_FMT_NONE )
+        return ret;
+    else if( !stricmp( csp_name, "YV16" ) )
+        return PIX_FMT_YUV422P;
+    else if( !stricmp( csp_name, "YV24" ) )
+        return PIX_FMT_YUV444P;
+    else if( !stricmp( csp_name, "Y8" ) )
+        return PIX_FMT_GRAY8;
+    else if( !stricmp( csp_name, "YV411" ) )
+        return PIX_FMT_YUV411P;
+    return PIX_FMT_NONE;
+}
+
+enum PixelFormat vi_to_pix_fmt_25( const AVS_VideoInfo *vi )
+{
+    // so i can still use this entire function in the 2.6 version
+    if( ffms_avs_lib->avs_is_yv12( vi ) )
         return PIX_FMT_YUV420P;
     else if( avs_is_yuy2( vi ) )
         return PIX_FMT_YUYV422;
@@ -104,6 +121,23 @@ enum PixelFormat vi_to_pix_fmt( const AVS_VideoInfo *vi )
         return PIX_FMT_BGR24;
     else if( avs_is_rgb32( vi ) )
         return PIX_FMT_BGRA;
+    else
+        return PIX_FMT_NONE;
+}
+
+enum PixelFormat vi_to_pix_fmt_26( const AVS_VideoInfo *vi )
+{
+    enum PixelFormat ret = vi_to_pix_fmt_25( vi );
+    if( ret != PIX_FMT_NONE )
+        return ret;
+    else if( avs_is_yv16( vi ) )
+        return PIX_FMT_YUV422P;
+    else if( avs_is_yv24( vi ) )
+        return PIX_FMT_YUV444P;
+    else if( avs_is_y8( vi ) )
+        return PIX_FMT_GRAY8;
+    else if( avs_is_yv411( vi ) )
+        return PIX_FMT_YUV411P;
     else
         return PIX_FMT_NONE;
 }
@@ -146,7 +180,7 @@ void fill_avs_frame_data( AVS_VideoFrame *frm, uint8_t *ptr[3], int stride[3], c
         {
             stride[i] = - avs_get_pitch_p( frm, plane[i] );
             ptr[i] = p_get_ptr( frm, plane[i] )
-                 - stride[i] * (avs_get_height_p( frm, plane[i] ) - 1);
+                 - stride[i] * (ffms_avs_lib->avs_get_height_p( frm, plane[i] ) - 1);
         }
         else
         {

@@ -1,4 +1,4 @@
-//  Copyright (c) 2010 FFmpegSource Project
+//  Copyright (c) 2010-2011 FFmpegSource Project
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -53,11 +53,11 @@ static void output_frame( AVS_FilterInfo *fi, AVS_VideoFrame *avs_frame, char fi
 {
     const static int planes[3] = { AVS_PLANAR_Y, AVS_PLANAR_U, AVS_PLANAR_V };
     uint8_t *dst[3];
-    int dst_stride[3], plane = avs_is_yv12( &fi->vi ) ? 3 : 1;
+    int dst_stride[3], plane = (avs_is_yuv( &fi->vi ) && !avs_is_y8( &fi->vi )) ? 3 : 1;
     fill_avs_frame_data( avs_frame, dst, dst_stride, 0, avs_is_rgb( &fi->vi ) );
     for( int i = 0; i < plane; i++ )
     {
-        int height = avs_get_height_p( avs_frame, planes[i] ) / (1<<!!field);
+        int height = ffms_avs_lib->avs_get_height_p( avs_frame, planes[i] ) / (1<<!!field);
         uint8_t *src = ffms_frame->Data[i];
         int src_stride = ffms_frame->Linesize[i];
         if( field == 1 ) // bottom
@@ -68,7 +68,7 @@ static void output_frame( AVS_FilterInfo *fi, AVS_VideoFrame *avs_frame, char fi
         dst_stride[i] *= 1<<!!field;
         src_stride *= 1<<!!field;
         ffms_avs_lib->avs_bit_blt( fi->env, dst[i], dst_stride[i], src,
-            src_stride, avs_get_row_size_p( avs_frame, planes[i] ), height );
+            src_stride, ffms_avs_lib->avs_get_row_size_p( avs_frame, planes[i] ), height );
     }
 }
 
@@ -148,18 +148,36 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
     if( !frame )
         return avs_new_value_error( ffms_avs_sprintf( "FFVideoSource: %s", ei.Buffer ) );
 
-    int64_t one = 1;
-    int64_t target_pix_fmts = (one << FFMS_GetPixFmt( "yuvj420p" )) |
-        (one << FFMS_GetPixFmt( "yuv420p" )) | (one << FFMS_GetPixFmt( "yuyv422" )) |
-        (one << FFMS_GetPixFmt( "bgra" )) | (one << FFMS_GetPixFmt( "bgr24" ));
+    int is_avs_26 = ffms_avs_lib->is_avs_26;
+    int pix_fmts[12];
+    pix_fmts[ 0 ] = PIX_FMT_YUVJ420P;
+    pix_fmts[ 1 ] = PIX_FMT_YUV420P;
+    pix_fmts[ 2 ] = PIX_FMT_YUYV422;
+    pix_fmts[ 3 ] = PIX_FMT_BGRA;
+    pix_fmts[ 4 ] = PIX_FMT_BGR24;
+    if( is_avs_26 )
+    {
+        pix_fmts[ 5 ] = PIX_FMT_YUV422P;
+        pix_fmts[ 6 ] = PIX_FMT_YUV444P;
+        pix_fmts[ 7 ] = PIX_FMT_YUV411P;
+        pix_fmts[ 8 ] = PIX_FMT_GRAY8;
+        pix_fmts[ 9 ] = PIX_FMT_YUVJ422P; // oh i hate you jpeg
+        pix_fmts[ 10 ] = PIX_FMT_YUVJ444P; // and i hate you more
+        pix_fmts[ 11 ] = -1;
+    }
+    else
+        pix_fmts[ 5 ] = -1;
 
     // PIX_FMT_NV12 is misused as a return value different to the defined ones in the function
-    enum PixelFormat dst_pix_fmt = csp_name_to_pix_fmt( csp_name, PIX_FMT_NV12 );
+    enum PixelFormat dst_pix_fmt = ffms_avs_lib->csp_name_to_pix_fmt( csp_name, PIX_FMT_NV12 );
     if( dst_pix_fmt == PIX_FMT_NONE )
         return avs_new_value_error( "FFVideoSource: Invalid colorspace name specified" );
 
     if( dst_pix_fmt != PIX_FMT_NV12 )
-        target_pix_fmts = one << dst_pix_fmt;
+    {
+        pix_fmts[ 0 ] = dst_pix_fmt;
+        pix_fmts[ 1 ] = -1;
+    }
 
     if( dst_width <= 0 )
         dst_width = frame->EncodedWidth;
@@ -171,25 +189,38 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
     if( !resizer )
         return avs_new_value_error( "FFVideoSource: Invalid resizer name specified" );
 
-    if( FFMS_SetOutputFormatV( filter->vid, target_pix_fmts, dst_width, dst_height, resizer, &ei ) )
+    if( FFMS_SetOutputFormatV2( filter->vid, pix_fmts, dst_width, dst_height, resizer, &ei ) )
         return avs_new_value_error( "FFVideoSource: No suitable output format found" );
 
     frame = FFMS_GetFrame( filter->vid, 0, &ei );
+
+    pix_fmts[ 0 ] = frame->ConvertedPixelFormat;
+    pix_fmts[ 1 ] = -1;
 
     // This trick is required to first get the "best" default format and then set only that format as the output
-    if( FFMS_SetOutputFormatV( filter->vid, one<<frame->ConvertedPixelFormat, dst_width, dst_height, resizer, &ei ) )
+    if( FFMS_SetOutputFormatV2( filter->vid, pix_fmts, dst_width, dst_height, resizer, &ei ) )
         return avs_new_value_error( "FFVideoSource: No suitable output format found" );
 
     frame = FFMS_GetFrame( filter->vid, 0, &ei );
 
-    if( frame->ConvertedPixelFormat == FFMS_GetPixFmt( "yuvj420p" ) || frame->ConvertedPixelFormat == FFMS_GetPixFmt( "yuv420p" ) )
-        filter->fi->vi.pixel_type = AVS_CS_I420;
-    else if( frame->ConvertedPixelFormat == FFMS_GetPixFmt( "yuyv422" ) )
+    enum PixelFormat pix_fmt = frame->ConvertedPixelFormat;
+
+    if( pix_fmt == PIX_FMT_YUVJ420P || pix_fmt == PIX_FMT_YUV420P )
+        filter->fi->vi.pixel_type = ffms_avs_lib->AVS_CS_I420;
+    else if( pix_fmt == PIX_FMT_YUYV422 )
         filter->fi->vi.pixel_type = AVS_CS_YUY2;
-    else if( frame->ConvertedPixelFormat == FFMS_GetPixFmt( "bgra" ) )
+    else if( pix_fmt == PIX_FMT_BGRA )
         filter->fi->vi.pixel_type = AVS_CS_BGR32;
-    else if( frame->ConvertedPixelFormat == FFMS_GetPixFmt( "bgr24" ) )
+    else if( pix_fmt == PIX_FMT_BGR24 )
         filter->fi->vi.pixel_type = AVS_CS_BGR24;
+    else if( pix_fmt == PIX_FMT_YUVJ422P || pix_fmt == PIX_FMT_YUV422P )
+        filter->fi->vi.pixel_type = AVS_CS_YV16;
+    else if( pix_fmt == PIX_FMT_YUVJ444P || pix_fmt == PIX_FMT_YUV444P )
+        filter->fi->vi.pixel_type = AVS_CS_YV24;
+    else if( pix_fmt == PIX_FMT_GRAY8 )
+        filter->fi->vi.pixel_type = AVS_CS_Y8;
+    else if( pix_fmt == PIX_FMT_YUV411P )
+        filter->fi->vi.pixel_type = AVS_CS_YV411;
     else
         return avs_new_value_error( "FFVideoSource: No suitable output format found" );
 
@@ -207,14 +238,18 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
     filter->fi->vi.width  = frame->ScaledWidth;
     filter->fi->vi.height = frame->ScaledHeight;
 
-    // Crop to obey avisynth's even width/height requirements
-    if( filter->fi->vi.pixel_type == AVS_CS_I420 )
+    int pixel_type = filter->fi->vi.pixel_type;
+
+    // Crop to obey avisynth's width/height requirements
+    if( pixel_type == ffms_avs_lib->AVS_CS_I420 )
     {
         filter->fi->vi.height &= ~1;
         filter->fi->vi.width  &= ~1;
     }
-    else if( filter->fi->vi.pixel_type == AVS_CS_YUY2 )
+    else if( pixel_type == AVS_CS_YUY2 || pixel_type == AVS_CS_YV16 )
         filter->fi->vi.width &= ~1;
+    else if( pixel_type == AVS_CS_YV411 )
+        filter->fi->vi.width &= ~3;
 
     if( filter->rff_mode > 0 )
         filter->fi->vi.height &= ~1;

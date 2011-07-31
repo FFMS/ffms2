@@ -1,4 +1,4 @@
-//  Copyright (c) 2010 FFmpegSource Project
+//  Copyright (c) 2010-2011 FFmpegSource Project
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,10 @@ struct SwsContext;
 int64_t avs_to_ff_cpu_flags( long avisynth_flags );
 int avs_to_pp_cpu_flags( long avisynth_flags );
 int64_t avs_to_sws_cpu_flags( long avisynth_flags );
-enum  PixelFormat csp_name_to_pix_fmt( const char *csp_name, enum PixelFormat def );
-enum  PixelFormat vi_to_pix_fmt( const AVS_VideoInfo *vi );
+enum  PixelFormat csp_name_to_pix_fmt_25( const char *csp_name, enum PixelFormat def );
+enum  PixelFormat csp_name_to_pix_fmt_26( const char *csp_name, enum PixelFormat def );
+enum  PixelFormat vi_to_pix_fmt_25( const AVS_VideoInfo *vi );
+enum  PixelFormat vi_to_pix_fmt_26( const AVS_VideoInfo *vi );
 int   resizer_name_to_swscale_name( const char *resizer );
 void  fill_avs_frame_data( AVS_VideoFrame *frm, uint8_t *ptr[3], int stride[3], char read, char vertical_flip );
 char *ffms_avs_sprintf( const char *str, ... );

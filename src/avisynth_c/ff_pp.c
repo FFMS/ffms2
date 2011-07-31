@@ -1,4 +1,4 @@
-//  Copyright (c) 2010 FFmpegSource Project
+//  Copyright (c) 2010-2011 FFmpegSource Project
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -63,7 +63,7 @@ static AVS_VideoFrame * AVSC_CC get_frame( AVS_FilterInfo *fi, int n )
     fill_avs_frame_data( src, src_data, src_stride, 1, 0 );
     fill_avs_frame_data( dst, dst_data, dst_stride, 0, 0 );
 
-    if( avs_is_yv12( &fi->vi ) )
+    if( ffms_avs_lib->avs_is_yv12( &fi->vi ) )
         pp_postprocess( (const uint8_t**)src_data, src_stride, dst_data, dst_stride, fi->vi.width, fi->vi.height,
             NULL, 0, filter->pp_mode, filter->pp_ctx, 0 );
     else if ( avs_is_yuy2( &fi->vi ) )
@@ -107,7 +107,7 @@ AVS_Value FFPP_create( AVS_ScriptEnvironment *env, AVS_Value child, const char *
     int ppflags = avs_to_pp_cpu_flags( avs_flags );
     int64_t swsflags = avs_to_sws_cpu_flags( avs_flags ) | SWS_BICUBIC;
 
-    if( avs_is_yv12( vi ) )
+    if( ffms_avs_lib->avs_is_yv12( vi ) )
         ppflags |= PP_FORMAT_420;
     else if( avs_is_yuy2( vi ) )
     {

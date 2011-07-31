@@ -1,4 +1,4 @@
-//  Copyright (c) 2010 FFmpegSource Project
+//  Copyright (c) 2010-2011 FFmpegSource Project
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -82,23 +82,27 @@ AVS_Value FFSWScale_create( AVS_ScriptEnvironment *env, AVS_Value child, int dst
     filter->orig_height = vi->height;
     filter->flip_output = avs_is_yuv( vi );
 
-    enum PixelFormat src_format = vi_to_pix_fmt( vi );
+    enum PixelFormat src_format = ffms_avs_lib->vi_to_pix_fmt( vi );
     if( src_format == PIX_FMT_NONE )
         return avs_new_value_error( "SWScale: Unknown input clip colorspace" );
 
     filter->fi->vi.width  = dst_width  > 0 ? dst_width  : filter->orig_width;
     filter->fi->vi.height = dst_height > 0 ? dst_height : filter->orig_height;
 
-    enum PixelFormat dst_pix_fmt = csp_name_to_pix_fmt( csp_name, src_format );
+    enum PixelFormat dst_pix_fmt = ffms_avs_lib->csp_name_to_pix_fmt( csp_name, src_format );
     if( dst_pix_fmt == PIX_FMT_NONE )
         return avs_new_value_error( ffms_avs_sprintf( "SWScale: Invalid colorspace specified (%s)", csp_name ) );
 
     switch( dst_pix_fmt )
     {
-        case PIX_FMT_YUV420P: filter->fi->vi.pixel_type = AVS_CS_I420;  break;
+        case PIX_FMT_YUV420P: filter->fi->vi.pixel_type = ffms_avs_lib->AVS_CS_I420;  break;
         case PIX_FMT_YUYV422: filter->fi->vi.pixel_type = AVS_CS_YUY2;  break;
         case PIX_FMT_BGR24:   filter->fi->vi.pixel_type = AVS_CS_BGR24; break;
         case PIX_FMT_BGRA:    filter->fi->vi.pixel_type = AVS_CS_BGR32; break;
+        case PIX_FMT_YUV422P: filter->fi->vi.pixel_type = AVS_CS_YV16;  break;
+        case PIX_FMT_YUV444P: filter->fi->vi.pixel_type = AVS_CS_YV24;  break;
+        case PIX_FMT_GRAY8:   filter->fi->vi.pixel_type = AVS_CS_Y8;    break;
+        case PIX_FMT_YUV411P: filter->fi->vi.pixel_type = AVS_CS_YV411; break;
         default: filter->fi->vi.pixel_type = AVS_CS_UNKNOWN; break; // shutup gcc
     }
 
@@ -110,7 +114,10 @@ AVS_Value FFSWScale_create( AVS_ScriptEnvironment *env, AVS_Value child, int dst
     if( dst_pix_fmt == PIX_FMT_YUV420P && (filter->fi->vi.height&1) )
         return avs_new_value_error( "SWScale: mod 2 output height required" );
 
-    if( (dst_pix_fmt == PIX_FMT_YUV420P || dst_pix_fmt == PIX_FMT_YUYV422) && (filter->fi->vi.width&1) )
+    if( dst_pix_fmt == PIX_FMT_YUV411P && (filter->fi->vi.width&3) )
+        return avs_new_value_error( "SWScale: mod 4 output width required" );
+
+    if( (dst_pix_fmt == PIX_FMT_YUV420P || dst_pix_fmt == PIX_FMT_YUYV422 || dst_pix_fmt == PIX_FMT_YUV422P) && (filter->fi->vi.width&1) )
         return avs_new_value_error( "SWScale: mod 2 output width required" );
 
     filter->context = ffms_sws_get_context( filter->orig_width, filter->orig_height, src_format, filter->fi->vi.width, filter->fi->vi.height,
