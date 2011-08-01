@@ -264,24 +264,7 @@ void FFMS_VideoSource::ReAdjustOutputFormat() {
 		SWS = NULL;
 	}
 
-	if (TargetPixelFormats.empty()) {
-		OutputFormat = PIX_FMT_NONE;
-	} else if (TargetPixelFormats.size() == 1) {
-		OutputFormat = TargetPixelFormats[0];
-	} else {
-		std::vector<PixelFormat>::iterator it = std::find(TargetPixelFormats.begin(), TargetPixelFormats.end(), CodecContext->pix_fmt);
-		if (it != TargetPixelFormats.end()) {
-			OutputFormat = CodecContext->pix_fmt;
-		} else {
-			int Loss;
-			int64_t TargetMask = 0;
-			for (std::vector<PixelFormat>::iterator i = TargetPixelFormats.begin(); i != TargetPixelFormats.end(); i++)
-				if (*i < 64)
-					TargetMask |= static_cast<int64_t>(1) << *i;
-			OutputFormat = avcodec_find_best_pix_fmt(TargetMask,
-				CodecContext->pix_fmt, 1 /* Required to prevent pointless RGB32 => RGB24 conversion */, &Loss);
-		}
-	}
+	OutputFormat = FindBestPixelFormat(TargetPixelFormats, CodecContext->pix_fmt);
 
 	if (OutputFormat == PIX_FMT_NONE) {
 		ResetOutputFormat();

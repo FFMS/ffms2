@@ -193,13 +193,11 @@ void AvisynthVideoSource::InitOutputFormat(
 	if (!F)
 		Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
-	int TargetFormats[6];
-	TargetFormats[0] = FFMS_GetPixFmt("yuvj420p");
-	TargetFormats[1] = FFMS_GetPixFmt("yuv420p");
-	TargetFormats[2] = FFMS_GetPixFmt("yuyv422");
-	TargetFormats[3] = FFMS_GetPixFmt("rgb32");
-	TargetFormats[4] = FFMS_GetPixFmt("bgr24");
-	TargetFormats[5] = -1;
+	int TargetFormats[4];
+	TargetFormats[0] = FFMS_GetPixFmt("yuv420p");
+	TargetFormats[1] = FFMS_GetPixFmt("yuyv422");
+	TargetFormats[2] = FFMS_GetPixFmt("bgra");
+	TargetFormats[3] = -1;
 
 	// PIX_FMT_NV21 is misused as a return value different to the defined ones in the function
 	PixelFormat TargetPixelFormat = CSNameToPIXFMT(ConvertToFormatName, PIX_FMT_NV21);

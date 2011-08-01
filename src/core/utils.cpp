@@ -20,8 +20,13 @@
 
 #include <string.h>
 #include <errno.h>
+#include <algorithm>
 #include "utils.h"
 #include "indexing.h"
+
+extern "C" {
+#include <libavutil/pixdesc.h>
+}
 
 #ifdef _WIN32
 #	define WIN32_LEAN_AND_MEAN
@@ -29,7 +34,7 @@
 #	include <io.h>
 #	include <fcntl.h>
 extern "C" {
-#	include "libavutil/avstring.h"
+#	include <libavutil/avstring.h>
 }
 #endif // _WIN32
 
@@ -765,4 +770,113 @@ void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase) {
 		TTimebase->Den = VP->FPSNumerator;
 		TTimebase->Num = (int64_t)VP->FPSDenominator * 1000;
 	}
+}
+
+// avcodec_find_best_pix_fmt() is broken, do it right here
+
+enum BCSType {
+	cGRAY,
+	cYUV,
+	cRGB,
+	cUNUSABLE
+};
+
+static BCSType GuessCSType(PixelFormat p) {
+	// guessing the colorspace type from the name is kinda hackish but libav doesn't export this kind of metadata
+	if (av_pix_fmt_descriptors[p].flags & PIX_FMT_HWACCEL)
+		return cUNUSABLE;
+	const char *n = av_get_pix_fmt_name(p);
+	if (strstr(n, "gray") || strstr(n, "mono") || strstr(n, "y400a"))
+		return cGRAY;
+	if (strstr(n, "rgb") || strstr(n, "bgr") || strstr(n, "pal8"))
+		return cRGB;
+	if (strstr(n, "yuv") || strstr(n, "yv") || strstr(n, "nv12") || strstr(n, "nv21"))
+		return cYUV;
+	return cUNUSABLE; // should never come here
+}
+
+struct LossAttributes {
+	PixelFormat Format;
+	int ChromaUndersampling;
+	int ChromaOversampling;
+	int DepthDifference;
+	int CSLoss; // 0 = same, 1 = no real loss (gray => yuv/rgb), 2 = full conversion required, 3 = complete color loss
+};
+
+static int GetPseudoDepth(const AVPixFmtDescriptor &Desc) {
+	// Comparing the pseudo depth makes sure that rgb565-ish formats get selected over rgb555-ish ones
+	int depth = -1;
+	for (int i = 0; i < Desc.nb_components; i++)
+		depth = FFMAX(depth, Desc.comp[i].depth_minus1);
+	return depth + 1;
+}
+
+static LossAttributes CalculateLoss(PixelFormat Dst, PixelFormat Src) {
+    const AVPixFmtDescriptor &SrcDesc = av_pix_fmt_descriptors[Src];
+    const AVPixFmtDescriptor &DstDesc = av_pix_fmt_descriptors[Dst];
+	BCSType SrcCS = GuessCSType(Src);
+	BCSType DstCS = GuessCSType(Dst);
+
+    LossAttributes Loss;
+	Loss.Format = Dst;
+	Loss.DepthDifference = GetPseudoDepth(DstDesc) - GetPseudoDepth(SrcDesc);;
+	Loss.ChromaOversampling = FFMAX(0, SrcDesc.log2_chroma_h - DstDesc.log2_chroma_h) + FFMAX(0, SrcDesc.log2_chroma_w - DstDesc.log2_chroma_w);
+	Loss.ChromaUndersampling = FFMAX(0, DstDesc.log2_chroma_h - SrcDesc.log2_chroma_h) + FFMAX(0, DstDesc.log2_chroma_w - SrcDesc.log2_chroma_w);
+
+	if (SrcCS == DstCS) {
+		Loss.CSLoss = 0;
+	} else if (SrcCS == cGRAY) {
+		Loss.ChromaOversampling = 10; // 10 is kinda arbitrarily chosen here, mostly to make it bigger than over/undersampling value that actually could appear
+		Loss.ChromaUndersampling = 0;
+		Loss.CSLoss = 0; // maybe set it to 1 as a special case but the chroma oversampling should have a similar effect
+	} else if (DstCS == cGRAY) {
+		Loss.ChromaOversampling = 0;
+		Loss.ChromaUndersampling = 10;
+		Loss.CSLoss = 3;
+	} else { // conversions between RGB and YUV here
+		Loss.CSLoss = 2;
+	}
+
+	return Loss;
+}
+
+PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelFormat Src) {
+	// some trivial special cases to make sure there's as little conversion as possible
+	if (Dsts.empty())
+		return PIX_FMT_NONE;
+	if (Dsts.size() == 1)
+		return Dsts[0];
+
+	// is the input in the output?
+	std::vector<PixelFormat>::const_iterator i = std::find(Dsts.begin(), Dsts.end(), Src);
+	if (i != Dsts.end())
+		return Src;
+	//
+
+	const AVPixFmtDescriptor &SrcDesc = av_pix_fmt_descriptors[Src];
+
+	i = Dsts.begin();
+	LossAttributes Loss = CalculateLoss(*i++, Src);
+	for (; i != Dsts.end(); i++) {
+		LossAttributes CLoss = CalculateLoss(*i, Src);
+		if (Loss.CSLoss == 3 && CLoss.CSLoss < 3) { // Preserve chroma information at any cost
+			Loss = CLoss;
+		} else if (Loss.DepthDifference >= 0 && CLoss.DepthDifference >= 0) { // focus on chroma undersamling and conversion loss if the target depth has been achieved
+			if ((CLoss.ChromaUndersampling < Loss.ChromaUndersampling)
+				|| (CLoss.ChromaUndersampling == Loss.ChromaUndersampling && CLoss.CSLoss < Loss.CSLoss)
+				|| (CLoss.ChromaUndersampling == Loss.ChromaUndersampling && CLoss.CSLoss == Loss.CSLoss && CLoss.DepthDifference < Loss.DepthDifference)
+				|| (CLoss.ChromaUndersampling == Loss.ChromaUndersampling && CLoss.CSLoss == Loss.CSLoss
+					&& CLoss.DepthDifference == Loss.DepthDifference && CLoss.ChromaOversampling < Loss.ChromaOversampling))
+				Loss = CLoss;
+		} else { // put priority on reaching the same depth as the input
+			if ((CLoss.DepthDifference > Loss.DepthDifference)
+				|| (CLoss.DepthDifference == Loss.DepthDifference && CLoss.ChromaUndersampling < Loss.ChromaUndersampling)
+				|| (CLoss.DepthDifference == Loss.DepthDifference && CLoss.ChromaUndersampling == Loss.ChromaUndersampling && CLoss.CSLoss < Loss.CSLoss)
+				|| (CLoss.DepthDifference == Loss.DepthDifference && CLoss.ChromaUndersampling == Loss.ChromaUndersampling
+					&& CLoss.CSLoss == Loss.CSLoss && CLoss.ChromaOversampling < Loss.ChromaOversampling))
+				Loss = CLoss;
+		}
+	}
+
+	return Loss.Format;
 }
