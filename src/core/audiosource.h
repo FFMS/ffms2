@@ -100,7 +100,8 @@ protected:
 
 	// Buffer which audio is decoded into
 	AlignedBuffer<uint8_t> DecodingBuffer;
-	FFMS_Track Frames;
+	FFMS_Index &Index;
+	FFMS_Track &Frames;
 	FFCodecContext CodecContext;
 	FFMS_AudioProperties AP;
 
@@ -111,7 +112,7 @@ protected:
 	FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track);
 
 public:
-	virtual ~FFMS_AudioSource() { };
+	virtual ~FFMS_AudioSource();
 	FFMS_Track *GetTrack() { return &Frames; }
 	const FFMS_AudioProperties& GetAudioProperties() const { return AP; }
 	void GetAudio(void *Buf, int64_t Start, int64_t Count);

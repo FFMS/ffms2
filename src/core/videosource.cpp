@@ -174,22 +174,29 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	return &LocalFrame;
 }
 
-FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, int Track, int Threads) {
-	if (Track < 0 || Track >= static_cast<int>(Index->size()))
+FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads)
+: Index(Index)
+, Frames(Index[0]) // dummy initialization
+, CodecContext(NULL)
+{
+	if (Track < 0 || Track >= static_cast<int>(Index.size()))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Out of bounds track index selected");
 
-	if (Index->at(Track).TT != FFMS_TYPE_VIDEO)
+	if (Index[Track].TT != FFMS_TYPE_VIDEO)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Not a video track");
 
-	if (Index->at(Track).size() == 0)
+	if (Index[Track].size() == 0)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Video track contains no frames");
 
-	if (!Index->CompareFileSignature(SourceFile))
+	if (!Index.CompareFileSignature(SourceFile))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_MISMATCH,
 			"The index does not match the source file");
+
+	Frames = Index[Track];
+	VideoTrack = Track;
 
 	memset(&VP, 0, sizeof(VP));
 #ifdef FFMS_USE_POSTPROC
@@ -220,6 +227,8 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, in
 	avpicture_alloc(&PPFrame, PIX_FMT_GRAY8, 16, 16);
 #endif // FFMS_USE_POSTPROC
 	avpicture_alloc(&SWSFrame, PIX_FMT_GRAY8, 16, 16);
+
+	Index.AddRef();
 }
 
 FFMS_VideoSource::~FFMS_VideoSource() {
@@ -238,6 +247,8 @@ FFMS_VideoSource::~FFMS_VideoSource() {
 
 	avpicture_free(&SWSFrame);
 	av_freep(&DecodeFrame);
+
+	Index.Release();
 }
 
 FFMS_Frame *FFMS_VideoSource::GetFrameByTime(double Time) {

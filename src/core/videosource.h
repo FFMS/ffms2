@@ -75,7 +75,8 @@ protected:
 	FFMS_Frame LocalFrame;
 	AVFrame *DecodeFrame;
 	int LastFrameNum;
-	FFMS_Track Frames;
+	FFMS_Index &Index;
+	FFMS_Track &Frames;
 	int VideoTrack;
 	int	CurrentFrame;
 	int DelayCounter;
@@ -83,7 +84,7 @@ protected:
 	int DecodingThreads;
 	AVCodecContext *CodecContext;
 
-	FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, int Track, int Threads);
+	FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads);
 	void ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height);
 	void ReAdjustOutputFormat();
 	FFMS_Frame *OutputFrame(AVFrame *Frame);
@@ -111,7 +112,7 @@ private:
 protected:
 	void Free(bool CloseCodec);
 public:
-	FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, int SeekMode);
+	FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode);
 	FFMS_Frame *GetFrame(int n);
 };
 
@@ -128,7 +129,7 @@ private:
 protected:
 	void Free(bool CloseCodec);
 public:
-	FFMatroskaVideo(const char *SourceFile, int Track, FFMS_Index *Index, int Threads);
+	FFMatroskaVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads);
 	FFMS_Frame *GetFrame(int n);
 };
 
@@ -144,7 +145,7 @@ class FFHaaliVideo : public FFMS_VideoSource {
 protected:
 	void Free(bool CloseCodec);
 public:
-	FFHaaliVideo(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, FFMS_Sources SourceMode);
+	FFHaaliVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, FFMS_Sources SourceMode);
 	FFMS_Frame *GetFrame(int n);
 };
 
