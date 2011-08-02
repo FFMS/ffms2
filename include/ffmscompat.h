@@ -37,6 +37,9 @@
 #	if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(53,2,0))
 #		define avformat_open_input(c,s,f,o) av_open_input_file(c,s,f,0,o) // this works because the parameters/options are not used
 #	endif
+#	if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(53,3,0))
+#		define avformat_find_stream_info(c,o) av_find_stream_info(c)
+#	endif
 #endif
 
 #ifdef LIBAVCODEC_VERSION_INT

@@ -28,7 +28,7 @@ extern "C" {
 FFLAVFIndexer::FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContext) : FFMS_Indexer(Filename) {
 	this->FormatContext = FormatContext;
 
-	if (av_find_stream_info(FormatContext) < 0) {
+	if (avformat_find_stream_info(FormatContext,NULL) < 0) {
 		av_close_input_file(FormatContext);
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			"Couldn't find stream information");
