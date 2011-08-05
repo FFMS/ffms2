@@ -113,7 +113,21 @@ static void CopyAVPictureFields(AVPicture &Picture, FFMS_Frame &Dst) {
 	}
 }
 
+
+// this might look stupid, but we have actually had crashes caused by not checking like this.
+static void SanityCheckFrameForData(AVFrame *Frame) {
+	for (int i = 0; i < 4; i++) {
+		if (Frame->data[i] != NULL && Frame->linesize[i] > 0)
+			return;
+	}
+
+	throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC, "Insanity detected: decoder returned an empty frame");
+}
+
+
 FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
+	SanityCheckFrameForData(Frame);
+
 	if (LastFrameWidth != CodecContext->width || LastFrameHeight != CodecContext->height || LastFramePixelFormat != CodecContext->pix_fmt) {
 		ReAdjustPP(CodecContext->pix_fmt, CodecContext->width, CodecContext->height);
 
