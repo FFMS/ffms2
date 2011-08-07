@@ -32,11 +32,9 @@ void FFHaaliVideo::Free(bool CloseCodec) {
 }
 
 FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
-	FFMS_Index *Index, int Threads, FFMS_Sources SourceMode)
+	FFMS_Index &Index, int Threads, FFMS_Sources SourceMode)
 : Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track, Threads) {
 	BitStreamFilter = NULL;
-	VideoTrack = Track;
-	Frames = (*Index)[VideoTrack];
 
 	pMMC = HaaliOpenFile(SourceFile, SourceMode);
 

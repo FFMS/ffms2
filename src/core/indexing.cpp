@@ -253,6 +253,17 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 	av_sha_final(ctx, Digest);
 }
 
+
+int FFMS_Index::AddRef() {
+	return ++RefCount;
+}
+
+int FFMS_Index::Release() {
+	if (!--RefCount)
+		delete this;
+	return RefCount;
+}
+
 void FFMS_Index::Sort() {
 	for (FFMS_Index::iterator Cur = begin(); Cur != end(); ++Cur) {
 		if (Cur->size() > 2 && Cur->front().PTS >= Cur->back().PTS) Cur->pop_back();
@@ -468,11 +479,10 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 	}
 }
 
-FFMS_Index::FFMS_Index() {
+FFMS_Index::FFMS_Index() : RefCount(1) {
 }
 
-FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20]) {
-	this->Filesize = Filesize;
+FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20]) : RefCount(1), Filesize(Filesize) {
 	memcpy(this->Digest, Digest, sizeof(this->Digest));
 }
 

@@ -113,7 +113,21 @@ static void CopyAVPictureFields(AVPicture &Picture, FFMS_Frame &Dst) {
 	}
 }
 
+
+// this might look stupid, but we have actually had crashes caused by not checking like this.
+static void SanityCheckFrameForData(AVFrame *Frame) {
+	for (int i = 0; i < 4; i++) {
+		if (Frame->data[i] != NULL && Frame->linesize[i] > 0)
+			return;
+	}
+
+	throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC, "Insanity detected: decoder returned an empty frame");
+}
+
+
 FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
+	SanityCheckFrameForData(Frame);
+
 	if (LastFrameWidth != CodecContext->width || LastFrameHeight != CodecContext->height || LastFramePixelFormat != CodecContext->pix_fmt) {
 		ReAdjustPP(CodecContext->pix_fmt, CodecContext->width, CodecContext->height);
 
@@ -174,22 +188,29 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	return &LocalFrame;
 }
 
-FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, int Track, int Threads) {
-	if (Track < 0 || Track >= static_cast<int>(Index->size()))
+FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads)
+: Index(Index)
+, Frames(Index[0]) // dummy initialization
+, CodecContext(NULL)
+{
+	if (Track < 0 || Track >= static_cast<int>(Index.size()))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Out of bounds track index selected");
 
-	if (Index->at(Track).TT != FFMS_TYPE_VIDEO)
+	if (Index[Track].TT != FFMS_TYPE_VIDEO)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Not a video track");
 
-	if (Index->at(Track).size() == 0)
+	if (Index[Track].size() == 0)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Video track contains no frames");
 
-	if (!Index->CompareFileSignature(SourceFile))
+	if (!Index.CompareFileSignature(SourceFile))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_MISMATCH,
 			"The index does not match the source file");
+
+	Frames = Index[Track];
+	VideoTrack = Track;
 
 	memset(&VP, 0, sizeof(VP));
 #ifdef FFMS_USE_POSTPROC
@@ -220,6 +241,8 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index *Index, in
 	avpicture_alloc(&PPFrame, PIX_FMT_GRAY8, 16, 16);
 #endif // FFMS_USE_POSTPROC
 	avpicture_alloc(&SWSFrame, PIX_FMT_GRAY8, 16, 16);
+
+	Index.AddRef();
 }
 
 FFMS_VideoSource::~FFMS_VideoSource() {
@@ -238,6 +261,8 @@ FFMS_VideoSource::~FFMS_VideoSource() {
 
 	avpicture_free(&SWSFrame);
 	av_freep(&DecodeFrame);
+
+	Index.Release();
 }
 
 FFMS_Frame *FFMS_VideoSource::GetFrameByTime(double Time) {
@@ -264,24 +289,7 @@ void FFMS_VideoSource::ReAdjustOutputFormat() {
 		SWS = NULL;
 	}
 
-	if (TargetPixelFormats.empty()) {
-		OutputFormat = PIX_FMT_NONE;
-	} else if (TargetPixelFormats.size() == 1) {
-		OutputFormat = TargetPixelFormats[0];
-	} else {
-		std::vector<PixelFormat>::iterator it = std::find(TargetPixelFormats.begin(), TargetPixelFormats.end(), CodecContext->pix_fmt);
-		if (it != TargetPixelFormats.end()) {
-			OutputFormat = CodecContext->pix_fmt;
-		} else {
-			int Loss;
-			int64_t TargetMask = 0;
-			for (std::vector<PixelFormat>::iterator i = TargetPixelFormats.begin(); i != TargetPixelFormats.end(); i++)
-				if (*i < 64)
-					TargetMask |= static_cast<int64_t>(1) << *i;
-			OutputFormat = avcodec_find_best_pix_fmt(TargetMask,
-				CodecContext->pix_fmt, 1 /* Required to prevent pointless RGB32 => RGB24 conversion */, &Loss);
-		}
-	}
+	OutputFormat = FindBestPixelFormat(TargetPixelFormats, CodecContext->pix_fmt);
 
 	if (OutputFormat == PIX_FMT_NONE) {
 		ResetOutputFormat();

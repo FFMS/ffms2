@@ -34,16 +34,13 @@ void FFMatroskaVideo::Free(bool CloseCodec) {
 }
 
 FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
-	FFMS_Index *Index, int Threads)
+	FFMS_Index &Index, int Threads)
 	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track, Threads) {
 
 	AVCodec *Codec = NULL;
-	CodecContext = NULL;
 	TrackInfo *TI = NULL;
 	TCC = NULL;
 	PacketNumber = 0;
-	VideoTrack = Track;
-	Frames = (*Index)[VideoTrack];
 
 	MC.ST.fp = ffms_fopen(SourceFile, "rb");
 	if (MC.ST.fp == NULL) {

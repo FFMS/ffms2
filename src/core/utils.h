@@ -231,5 +231,6 @@ void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
 void CorrectNTSCRationalFramerate(int *Num, int *Den);
 void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase);
 const char *GetLAVCSampleFormatName(AVSampleFormat s);
+PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelFormat Src);
 
 #endif

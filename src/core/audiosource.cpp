@@ -34,6 +34,8 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 , TrackNumber(Track)
 , SeekOffset(0)
 , DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10)
+, Index(Index)
+, Frames(Index[0]) // dummy initialization
 {
 	if (Track < 0 || Track >= static_cast<int>(Index.size()))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
@@ -47,11 +49,13 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Audio track contains no audio frames");
 
-	Frames = Index[Track];
-
 	if (!Index.CompareFileSignature(SourceFile))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_MISMATCH,
 			"The index does not match the source file");
+
+	Frames = Index[Track];
+
+	Index.AddRef();
 }
 
 
@@ -195,6 +199,10 @@ void FFMS_AudioSource::DecodeNextBlock() {
 
 static bool SampleStartComp(const TFrameInfo &a, const TFrameInfo &b) {
 	return a.SampleStart < b.SampleStart;
+}
+
+FFMS_AudioSource::~FFMS_AudioSource() {
+	Index.Release();
 }
 
 void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {

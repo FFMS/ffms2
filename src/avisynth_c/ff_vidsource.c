@@ -149,24 +149,21 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
         return avs_new_value_error( ffms_avs_sprintf( "FFVideoSource: %s", ei.Buffer ) );
 
     int is_avs_26 = ffms_avs_lib->is_avs_26;
-    int pix_fmts[12];
-    pix_fmts[ 0 ] = PIX_FMT_YUVJ420P;
-    pix_fmts[ 1 ] = PIX_FMT_YUV420P;
-    pix_fmts[ 2 ] = PIX_FMT_YUYV422;
-    pix_fmts[ 3 ] = PIX_FMT_BGRA;
-    pix_fmts[ 4 ] = PIX_FMT_BGR24;
+    int pix_fmts[9];
+    pix_fmts[ 0 ] = PIX_FMT_YUV420P;
+    pix_fmts[ 1 ] = PIX_FMT_YUYV422;
+    pix_fmts[ 2 ] = PIX_FMT_BGRA;
+    pix_fmts[ 3 ] = PIX_FMT_BGR24;
     if( is_avs_26 )
     {
-        pix_fmts[ 5 ] = PIX_FMT_YUV422P;
-        pix_fmts[ 6 ] = PIX_FMT_YUV444P;
-        pix_fmts[ 7 ] = PIX_FMT_YUV411P;
-        pix_fmts[ 8 ] = PIX_FMT_GRAY8;
-        pix_fmts[ 9 ] = PIX_FMT_YUVJ422P; // oh i hate you jpeg
-        pix_fmts[ 10 ] = PIX_FMT_YUVJ444P; // and i hate you more
-        pix_fmts[ 11 ] = -1;
+        pix_fmts[ 4 ] = PIX_FMT_YUV422P;
+        pix_fmts[ 5 ] = PIX_FMT_YUV444P;
+        pix_fmts[ 6 ] = PIX_FMT_YUV411P;
+        pix_fmts[ 7 ] = PIX_FMT_GRAY8;
+        pix_fmts[ 8 ] = -1;
     }
     else
-        pix_fmts[ 5 ] = -1;
+        pix_fmts[ 4 ] = -1;
 
     // PIX_FMT_NV12 is misused as a return value different to the defined ones in the function
     enum PixelFormat dst_pix_fmt = ffms_avs_lib->csp_name_to_pix_fmt( csp_name, PIX_FMT_NV12 );

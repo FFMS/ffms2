@@ -96,8 +96,13 @@ public:
 };
 
 struct FFMS_Index : public std::vector<FFMS_Track> {
+private:
+	int RefCount;
 public:
 	static void CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]);
+
+	int AddRef();
+	int Release();
 
 	int Decoder;
 	int64_t Filesize;

@@ -126,17 +126,17 @@ FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int 
 	try {
 		switch (Index->Decoder) {
 			case FFMS_SOURCE_LAVF:
-				return new FFLAVFVideo(SourceFile, Track, Index, Threads, SeekMode);
+				return new FFLAVFVideo(SourceFile, Track, *Index, Threads, SeekMode);
 			case FFMS_SOURCE_MATROSKA:
-				return new FFMatroskaVideo(SourceFile, Track, Index, Threads);
+				return new FFMatroskaVideo(SourceFile, Track, *Index, Threads);
 #ifdef HAALISOURCE
 			case FFMS_SOURCE_HAALIMPEG:
 				if (HasHaaliMPEG)
-					return new FFHaaliVideo(SourceFile, Track, Index, Threads, FFMS_SOURCE_HAALIMPEG);
+					return new FFHaaliVideo(SourceFile, Track, *Index, Threads, FFMS_SOURCE_HAALIMPEG);
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali MPEG/TS source unavailable");
 			case FFMS_SOURCE_HAALIOGG:
 				if (HasHaaliOGG)
-					return new FFHaaliVideo(SourceFile, Track, Index, Threads, FFMS_SOURCE_HAALIOGG);
+					return new FFHaaliVideo(SourceFile, Track, *Index, Threads, FFMS_SOURCE_HAALIOGG);
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali OGG/OGM source unavailable");
 #endif
 			default:
@@ -258,7 +258,7 @@ FFMS_API(void) FFMS_ResetPP(FFMS_VideoSource *V) {
 }
 
 FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {
-	delete Index;
+	Index->Release();
 }
 
 FFMS_API(int) FFMS_GetSourceType(FFMS_Index *Index) {
