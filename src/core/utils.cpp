@@ -151,6 +151,7 @@ static int handle_jpeg(PixelFormat *format)
 	}
 }
 SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, int DstH, PixelFormat DstFormat, int64_t Flags, int ColorSpace) {
+	Flags |= SWS_FULL_CHR_H_INT | SWS_FULL_CHR_H_INP;
 #if LIBSWSCALE_VERSION_INT < AV_VERSION_INT(0, 12, 0)
 	return sws_getContext(SrcW, SrcH, SrcFormat, DstW, DstH, DstFormat, Flags, 0, 0, 0);
 #else
