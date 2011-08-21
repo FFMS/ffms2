@@ -258,6 +258,9 @@ FFMS_API(void) FFMS_ResetPP(FFMS_VideoSource *V) {
 }
 
 FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {
+	assert(Index != NULL);
+	if (Index == NULL)
+		return;
 	Index->Release();
 }
 

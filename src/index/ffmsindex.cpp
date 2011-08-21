@@ -197,6 +197,11 @@ static void DoIndexing () {
 		if (PrintProgress)
 			std::cout << "Indexing, please wait... 0% \r" << std::flush;
 		FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(InputFile.c_str(), Demuxer, &E);
+		if (Indexer == NULL) {
+			std::string Err = "\nFailed to initialize indexing: ";
+			Err.append(E.Buffer);
+			throw Err;
+		}
 		Index = FFMS_DoIndexing(Indexer, TrackMask, DumpMask, &GenAudioFilename, NULL, IgnoreErrors, UpdateProgress, &Progress, &E);
 		if (Index == NULL) {
 			std::string Err = "\nIndexing error: ";
