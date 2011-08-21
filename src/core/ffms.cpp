@@ -20,6 +20,7 @@
 
 #include <sstream>
 #include <iomanip>
+#include <assert.h>
 #include "ffms.h"
 #include "videosource.h"
 #include "audiosource.h"
