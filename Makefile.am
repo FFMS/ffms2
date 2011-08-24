@@ -37,6 +37,8 @@ src_core_libffms2_la_SOURCES = \
 	src/core/utils.cpp \
 	src/core/videosource.h \
 	src/core/videosource.cpp \
+	src/core/videoutils.h \
+	src/core/videoutils.cpp \
 	src/core/wave64writer.h \
 	src/core/wave64writer.cpp
 
