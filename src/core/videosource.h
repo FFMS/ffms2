@@ -38,6 +38,7 @@ extern "C" {
 #include <sstream>
 #include "indexing.h"
 #include "utils.h"
+#include "videoutils.h"
 #include "ffms.h"
 
 #ifdef HAALISOURCE

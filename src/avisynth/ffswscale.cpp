@@ -20,7 +20,7 @@
 
 #include "ffswscale.h"
 #include "avsutils.h"
-#include "../core/utils.h"
+#include "../core/videoutils.h"
 
 static int64_t AvisynthToSWSCPUFlags(long AvisynthFlags) {
 	int64_t Flags = 0;

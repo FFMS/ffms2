@@ -399,6 +399,14 @@
 				RelativePath="..\src\core\videosource.h"
 				>
 			</File>
+			<File
+				RelativePath="..\src\core\videoutils.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\core\videoutils.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="API"
