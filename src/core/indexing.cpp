@@ -259,9 +259,10 @@ int FFMS_Index::AddRef() {
 }
 
 int FFMS_Index::Release() {
-	if (!--RefCount)
+	int Temp = --RefCount;
+	if (!RefCount)
 		delete this;
-	return RefCount;
+	return Temp;
 }
 
 void FFMS_Index::Sort() {
