@@ -120,6 +120,7 @@ public:
 
 class FFLAVFAudio : public FFMS_AudioSource {
 	AVFormatContext *FormatContext;
+	int64_t LastValidTS;
 
 	bool ReadPacket(AVPacket *);
 	void FreePacket(AVPacket *);
