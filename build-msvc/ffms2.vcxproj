@@ -204,6 +204,7 @@
     <ClCompile Include="..\src\core\numthreads.cpp" />
     <ClCompile Include="..\src\core\stdiostream.c" />
     <ClCompile Include="..\src\core\utils.cpp" />
+    <ClCompile Include="..\src\core\videoutils.cpp" />
     <ClCompile Include="..\src\core\wave64writer.cpp" />
     <ClCompile Include="..\src\avisynth\avisynth.cpp" />
     <ClCompile Include="..\src\avisynth\avssources.cpp" />
@@ -224,6 +225,7 @@
     <ClInclude Include="..\src\core\numthreads.h" />
     <ClInclude Include="..\src\core\stdiostream.h" />
     <ClInclude Include="..\src\core\utils.h" />
+    <ClInclude Include="..\src\core\videoutils.h" />
     <ClInclude Include="..\src\core\wave64writer.h" />
     <ClInclude Include="..\src\avisynth\avisynth.h" />
     <ClInclude Include="..\src\avisynth\avssources.h" />

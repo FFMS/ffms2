@@ -96,6 +96,9 @@
     <ClCompile Include="..\src\config\libs.cpp">
       <Filter>Config</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\core\videoutils.cpp">
+      <Filter>Video</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\core\audiosource.h">
@@ -151,6 +154,9 @@
     </ClInclude>
     <ClInclude Include="..\src\config\msvc-config.h">
       <Filter>Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\videoutils.h">
+      <Filter>Video</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
