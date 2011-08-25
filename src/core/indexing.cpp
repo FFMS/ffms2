@@ -272,6 +272,9 @@ void FFMS_Index::Sort() {
 		for (size_t i = 0; i < Cur->size(); i++)
 			Cur->at(i).OriginalPos = i;
 
+		if (Cur->TT != FFMS_TYPE_VIDEO)
+			continue;
+
 		std::sort(Cur->begin(), Cur->end(), PTSComparison);
 
 		std::vector<size_t> ReorderTemp;
