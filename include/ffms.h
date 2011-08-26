@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (16 << 16) | (0 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (16 << 16) | (1 << 8) | 0)
 
 #include <stdint.h>
 
@@ -184,6 +184,22 @@ enum FFMS_AudioDelayModes {
 	FFMS_DELAY_FIRST_VIDEO_TRACK	= -1
 };
 
+enum FFMS_ColorSpaces {
+	FFMS_CS_RGB			= 0,
+	FFMS_CS_BT709		= 1,
+	FFMS_CS_UNSPECIFIED	= 2,
+	FFMS_CS_FCC			= 4,
+	FFMS_CS_BT470BG		= 5,
+	FFMS_CS_SMPTE170M	= 6,
+	FFMS_CS_SMPTE240M	= 7,
+};
+
+enum FFMS_ColorRanges {
+	FFMS_CR_UNSPECIFIED = 0,
+	FFMS_CR_MPEG		= 1, // 219*2^(n-8), i.e. 16-235 with 8-bit samples
+	FFMS_CR_JPEG		= 2, // 2^n-1, or "fullrange"
+};
+
 typedef struct FFMS_Frame {
 	uint8_t *Data[4];
 	int Linesize[4];
@@ -224,8 +240,8 @@ typedef struct FFMS_VideoProperties {
 	int CropLeft;
 	int CropRight;
 	int TopFieldFirst;
-	int ColorSpace; // same as in the MPEG-2 specs, see AVColorSpace in avcodec.h
-	int ColorRange; // 0=unspecified, 1=16-235, 2=0-255
+	int ColorSpace;
+	int ColorRange;
 	double FirstTime;
 	double LastTime;
 } FFMS_VideoProperties;
