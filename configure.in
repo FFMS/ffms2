@@ -1,5 +1,5 @@
 AC_PREREQ([2.58])
-AC_INIT([ffms2],[2.15.0.1])
+AC_INIT([ffms2],[esyscmd([sh version.sh])])
 AC_CONFIG_SRCDIR([src/core/ffms.cpp])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([subdir-objects])
@@ -35,6 +35,9 @@ if test "$lt_cv_file_magic_cmd" = "func_win32_libid" ; then
     deplibs_check_method='file_magic file format pei*-(i386|x86-64)|(.*architecture: i386)?'
     file_magic_cmd='$OBJDUMP -f'
 fi
+
+FFMS_VERSION="$(sh $(dirname -- "$0")/version.sh)"
+AC_SUBST([FFMS_VERSION])
 
 CHECK_ZLIB
 
