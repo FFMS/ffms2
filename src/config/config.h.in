@@ -83,3 +83,9 @@
 
 /* Version number of package */
 #undef VERSION
+
+/* Building with postproc? */
+#undef WITH_LIBPOSTPROC
+
+/* Define to `unsigned int' if <sys/types.h> does not define. */
+#undef size_t
