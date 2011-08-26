@@ -3,6 +3,7 @@ AC_INIT([ffms2],[2.15.0.1])
 AC_CONFIG_SRCDIR([src/core/ffms.cpp])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([subdir-objects])
+AM_MAINTAINER_MODE([disable])
 
 if test -z "$CFLAGS"; then
     CFLAGS="-O3"
