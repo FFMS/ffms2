@@ -35,7 +35,12 @@ void FFMS_VideoSource::SetPP(const char *PP) {
 	PPMode = NULL;
 
 	if (PP != NULL && strcmp(PP, "")) {
-		PPMode = pp_get_mode_by_name_and_quality(PP, PP_QUALITY_MAX);
+		// due to a parsing bug in libpostproc it can read beyond the end of a string
+		// adding a ',' prevents the bug from manifesting
+		// libav head 2011-08-26
+		std::string s = PP;
+		s.append(",");
+		PPMode = pp_get_mode_by_name_and_quality(s.c_str(), PP_QUALITY_MAX);
 		if (!PPMode) {
 			ResetPP();
 			throw FFMS_Exception(FFMS_ERROR_POSTPROCESSING, FFMS_ERROR_INVALID_ARGUMENT,
