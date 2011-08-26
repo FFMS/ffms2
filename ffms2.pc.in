@@ -7,7 +7,7 @@ includedir=@includedir@
 
 Name: ffms2
 Description: The Fabulous FM Library 2
-Requires: libavformat libavcodec libswscale libpostproc libavutil
+Requires: libavformat libavcodec libswscale libavutil @postproc@
 Version: @VERSION@
 Libs: -L${libdir} -lffms2 @ZLIB_CPPFLAGS@ -lz
 Cflags: -I${includedir}

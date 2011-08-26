@@ -48,37 +48,81 @@ AC_LINK_IFELSE([
                }
                ], [AC_MSG_RESULT([yes])], [LIBS="$_LIBS"; AC_MSG_RESULT([no])])
 
+
+dnl Save CFLAGS and LIBS for later, as anything else we add will be from pkg-config
+dnl and thus should be separate in our .pc file.
+_CFLAGS="$CFLAGS"
+_LIBS="$LIBS"
+
 PKG_PROG_PKG_CONFIG([0.22])
-PKG_CHECK_MODULES(FFMPEG, [libavformat >= 52.39.0 libavcodec >= 52.38.0 libswscale >= 0.7.0 libpostproc >= 51.2.0 libavutil >= 50.4.0 ])
+pkgconfigdir="\$(libdir)/pkgconfig"
+AC_SUBST(pkgconfigdir)
+
+PKG_CHECK_MODULES(FFMPEG, [libavformat >= 52.39.0 libavcodec >= 52.38.0 libswscale >= 0.7.0 libavutil >= 50.4.0 ])
 CPPFLAGS="$CPPFLAGS -D__STDC_CONSTANT_MACROS"
 AC_SUBST([FFMPEG_CFLAGS])
 AC_SUBST([FFMPEG_LIBS])
-
-pkgconfigdir="\$(libdir)/pkgconfig"
-AC_SUBST(pkgconfigdir)
 
 AC_DEFUN([TEST_FFMPEG], [
         AC_LINK_IFELSE([
             #include <libavcodec/avcodec.h>
             #include <libswscale/swscale.h>
-            #include <libpostproc/postprocess.h>
             int main() {
                 avcodec_init();
                 swscale_version();
-                postproc_version();
                 return 0;
             }], [eval $1=yes], [eval $1=no])
         ])
 
-AC_MSG_CHECKING([whether ffmpeg works])
-_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS $FFMPEG_CFLAGS"
-_LIBS="$LIBS"
-LIBS="$FFMPEG_LIBS $LIBS"
+AC_MSG_CHECKING([whether FFmpeg/Libav works])
+CFLAGS="$_CFLAGS $FFMPEG_CFLAGS"
+LIBS="$_LIBS $FFMPEG_LIBS"
 TEST_FFMPEG([FFMPEG_WORKS])
 AC_MSG_RESULT([$FFMPEG_WORKS])
 if test "$FFMPEG_WORKS" = no; then
-    AC_MSG_FAILURE([cannot link with ffmpeg])
+    AC_MSG_FAILURE([cannot link with FFmpeg/Libav])
+fi
+
+AC_MSG_CHECKING([whether postproc was enabled])
+
+AC_ARG_ENABLE([postproc],
+        [AC_HELP_STRING([--enable-postproc],
+            [Enable postproc support in FFMS2. Changes license to GPL [default=no].])],
+        [enable_postproc=yes],
+        [enable_postproc=no]
+        )
+
+AC_MSG_RESULT([$enable_postproc])
+
+AC_SUBST([postproc])
+
+if test "$enable_postproc" = yes; then
+
+    PKG_CHECK_MODULES(POSTPROC, [libpostproc >= 51.2.0])
+    AC_SUBST([POSTPROC_CFLAGS])
+    AC_SUBST([POSTPROC_LIBS])
+
+    AC_DEFUN([TEST_POSTPROC], [
+            AC_LINK_IFELSE([
+                #include <libpostproc/postprocess.h>
+
+                int main() {
+                    postproc_version();
+                    return 0;
+                }], [eval $1=yes], [eval $1=no])
+            ])
+
+    AC_MSG_CHECKING([whether postproc works])
+    CFLAGS="$_CFLAGS $POSTPROC_CFLAGS"
+    LIBS="$_LIBS $POSTPROC_LIBS"
+    TEST_POSTPROC([POSTPROC_WORKS])
+    AC_MSG_RESULT([$POSTPROC_WORKS])
+    if test "$POSTPROC_WORKS" = no; then
+        AC_MSG_FAILURE([cannot link with postproc])
+    fi
+
+    postproc="libpostproc"
+    AC_DEFINE([WITH_LIBPOSTPROC], [1], [Building with postproc?])
 fi
 
 AC_MSG_CHECKING([whether -Wl,-Bsymbolic is needed])

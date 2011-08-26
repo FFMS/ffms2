@@ -6,10 +6,10 @@ pkgconfig_DATA = ffms2.pc
 
 dist_doc_DATA = doc/ffms2-api.html doc/ffms2-changelog.html doc/style.css
 
-INCLUDES = -I. -I$(top_srcdir)/include -I$(top_srcdir)/src/config @FFMPEG_CFLAGS@ @ZLIB_CPPFLAGS@
+INCLUDES = -I. -I$(top_srcdir)/include -I$(top_srcdir)/src/config @FFMPEG_CFLAGS@ @POSTPROC_CFLAGS@ @ZLIB_CPPFLAGS@
 
 lib_LTLIBRARIES = src/core/libffms2.la
-src_core_libffms2_la_LIBADD = @FFMPEG_LIBS@ @ZLIB_LDFLAGS@ -lz @LTUNDEF@
+src_core_libffms2_la_LIBADD = @FFMPEG_LIBS@ @POSTPROC_LIBS@ @ZLIB_LDFLAGS@ -lz @LTUNDEF@
 src_core_libffms2_la_SOURCES = \
 	src/core/audiosource.h \
 	src/core/audiosource.cpp \
