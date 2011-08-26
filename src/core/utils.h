@@ -201,9 +201,6 @@ public:
 };
 
 
-int64_t GetSWSCPUFlags();
-SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, int DstH, PixelFormat DstFormat, int64_t Flags, int ColorSpace = -1);
-int GetPPCPUFlags();
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
 FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT);
 void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContext *TCC, MatroskaReaderContext &Context);
@@ -228,9 +225,7 @@ void ffms_patch_lavf_file_open();
 CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceMode);
 #endif // HAALISOURCE
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
-void CorrectNTSCRationalFramerate(int *Num, int *Den);
-void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase);
 const char *GetLAVCSampleFormatName(AVSampleFormat s);
-PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelFormat Src);
+
 
 #endif

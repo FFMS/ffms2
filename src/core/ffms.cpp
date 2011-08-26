@@ -20,6 +20,7 @@
 
 #include <sstream>
 #include <iomanip>
+#include <assert.h>
 #include "ffms.h"
 #include "videosource.h"
 #include "audiosource.h"
@@ -258,6 +259,9 @@ FFMS_API(void) FFMS_ResetPP(FFMS_VideoSource *V) {
 }
 
 FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {
+	assert(Index != NULL);
+	if (Index == NULL)
+		return;
 	Index->Release();
 }
 

@@ -197,6 +197,11 @@ static void DoIndexing () {
 		if (PrintProgress)
 			std::cout << "Indexing, please wait... 0% \r" << std::flush;
 		FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(InputFile.c_str(), Demuxer, &E);
+		if (Indexer == NULL) {
+			std::string Err = "\nFailed to initialize indexing: ";
+			Err.append(E.Buffer);
+			throw Err;
+		}
 		Index = FFMS_DoIndexing(Indexer, TrackMask, DumpMask, &GenAudioFilename, NULL, IgnoreErrors, UpdateProgress, &Progress, &E);
 		if (Index == NULL) {
 			std::string Err = "\nIndexing error: ";
@@ -303,19 +308,23 @@ int main(int argc, char *argv[]) {
 		DoIndexing();
 	} catch (const char *Error) {
 		std::cout << Error << std::endl;
-		FFMS_DestroyIndex(Index);
+		if (Index)
+			FFMS_DestroyIndex(Index);
 		return 1;
 	} catch (std::string Error) {
 		std::cout << std::endl << Error << std::endl;
-		FFMS_DestroyIndex(Index);
+		if (Index)
+			FFMS_DestroyIndex(Index);
 		return 1;
 	} catch (...) {
 		std::cout << std::endl << "Unknown error" << std::endl;
-		FFMS_DestroyIndex(Index);
+		if (Index)
+			FFMS_DestroyIndex(Index);
 		return 1;
 	}
 
-	FFMS_DestroyIndex(Index);
+	if (Index)
+		FFMS_DestroyIndex(Index);
 #ifdef _WIN32
 	CoUninitialize();
 #endif

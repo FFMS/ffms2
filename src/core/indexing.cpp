@@ -259,9 +259,10 @@ int FFMS_Index::AddRef() {
 }
 
 int FFMS_Index::Release() {
-	if (!--RefCount)
+	int Temp = --RefCount;
+	if (!RefCount)
 		delete this;
-	return RefCount;
+	return Temp;
 }
 
 void FFMS_Index::Sort() {
@@ -270,6 +271,9 @@ void FFMS_Index::Sort() {
 
 		for (size_t i = 0; i < Cur->size(); i++)
 			Cur->at(i).OriginalPos = i;
+
+		if (Cur->TT != FFMS_TYPE_VIDEO)
+			continue;
 
 		std::sort(Cur->begin(), Cur->end(), PTSComparison);
 
