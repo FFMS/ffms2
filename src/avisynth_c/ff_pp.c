@@ -99,7 +99,12 @@ AVS_Value FFPP_create( AVS_ScriptEnvironment *env, AVS_Value child, const char *
     if( !vi->width || !vi->height )
         return avs_new_value_error( "FFPP: Input clip has no video" );
 
-    filter->pp_mode = pp_get_mode_by_name_and_quality( (char*)pp, PP_QUALITY_MAX );
+    int len = strlen( pp );
+    char pp_workaround[ len+2 ]; // c99 (actual length + ',' + '\0')
+    strcpy( pp_workaround, pp );
+    strcat( pp_workaround, "," );
+
+    filter->pp_mode = pp_get_mode_by_name_and_quality( pp_workaround, PP_QUALITY_MAX );
     if( !filter->pp_mode )
         return avs_new_value_error( "FFPP: Invalid postprocesing settings" );
 

@@ -51,7 +51,12 @@ FFPP::FFPP(PClip AChild, const char *PP, IScriptEnvironment *Env) : GenericVideo
 	memset(&InputPicture, 0, sizeof(InputPicture));
 	memset(&OutputPicture, 0, sizeof(OutputPicture));
 
-	PPMode = pp_get_mode_by_name_and_quality((char *)PP, PP_QUALITY_MAX);
+	// due to a parsing bug in libpostproc it can read beyond the end of a string
+	// adding a ',' prevents the bug from manifesting
+	// libav head 2011-08-26
+	std::string s = PP;
+	s.append(",");
+	PPMode = pp_get_mode_by_name_and_quality(s.c_str(), PP_QUALITY_MAX);
 	if (!PPMode)
 		Env->ThrowError("FFPP: Invalid postprocesing settings");
 

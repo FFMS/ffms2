@@ -401,12 +401,8 @@ rm -f conftest*
 
 # generate config files
 
-version=$(grep FFMS_VERSION include/ffms.h | awk '{printf "%s.%s.%s.%s", $3, $7, $11, $15}' | sed -e 's/(//g;s/)//g')
+version=`version.sh`
 API=$(echo $version | cut -f 1 -d '.')
-# truncate trailing 0s
-while [ "$version" != "$(echo $version | sed -e 's/\.0//')" ]; do
-    version="$(echo $version | sed -e 's/\.0//')"
-done
 
 cat > config.mak << EOF
 prefix=$prefix

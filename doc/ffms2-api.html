@@ -726,8 +726,8 @@ A struct representing the basic time unit of a track, as a rational number where
 <li><b><tt>int SARNum; int SARDen;</tt></b> - The sample aspect ratio of the video frames, as a rational number where <tt>SARNum</tt> is the numerator and <tt>SARDen</tt> is the denominator. Note that this is a metadata setting that you are free to ignore, but if you want the proper display aspect ratio with anamorphic material, you should honor it. On the other hand, there are situations (like when encoding) where you should probably ignore it because the user expects it to be ignored.</li>
 <li><b><tt>int CropTop; int CropBottom; int CropLeft; int CropRight;</tt></b> - The number of pixels in each direction you should crop the frame before displaying it. Note that like the SAR, this is a metadata setting and you are free to ignore it, but if you want things to display 100% correctly you should honor it.</li>
 <li><b><tt>int TopFieldFirst</tt></b> - Nonzero if the stream has the top field first, zero if it has the bottom field first.</li>
-<li><b><tt>int ColorSpace</tt></b> - Identifies the YUV color coefficients used in the stream. Same as in the MPEG-2 specs, see AVColorSpace in avcodec.h for more information.</li>
-<li><b><tt>int ColorRange</tt></b> - Identifies the luma range of the stream. 0 means unspecified or unknown, 1 means TV range (16-235) and 2 means PC range (0-255).</li>
+<li><b><tt>int ColorSpace</tt></b> - Identifies the YUV color coefficients used in the stream. Same as in the MPEG-2 specs; see the <tt>FFMS_ColorSpaces</tt> enum.</li>
+<li><b><tt>int ColorRange</tt></b> - Identifies the luma range of the stream. See the <tt>FFMS_ColorRanges</tt> enum.</li>
 <li><b><tt>double FirstTime; double LastTime;</tt></b> - The first and last timestamp of the stream respectively, in milliseconds. Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.</li>
 </ul>
 
@@ -943,6 +943,33 @@ Describes various image resizing algorithms, as used in the arguments to <tt>FFM
 Describes the different audio delay handling modes. See <tt>FFMS_CreateAudioSource</tt> for a detailed explanation.
 </p>
 
+<h3>FFMS_ColorSpaces</h3>
+<pre>enum FFMS_ColorSpaces {
+    FFMS_CS_RGB         = 0,
+    FFMS_CS_BT709       = 1,
+    FFMS_CS_UNSPECIFIED = 2,
+    FFMS_CS_FCC         = 4,
+    FFMS_CS_BT470BG     = 5,
+    FFMS_CS_SMPTE170M   = 6,
+    FFMS_CS_SMPTE240M   = 7,
+};</pre>
+<p>
+Identifies the color coefficients used for a YUV stream. The numerical constants are the same as in the MPEG-2 specification.<br />
+Some of these are specified or aliased in a number of places. Most importantly:<br />
+"BT709" (ITU-T Rec. 709) is equivalent to ITU-R BT1361, IEC 61966-2-4 xvYCC709 and SMPTE RP177 Annex B;<br />
+"BT470BG" (ITU-R BT. 470 or ITU-T Rec. 601) is equivalent to ITU-R BT601-6 625, ITU-R BT1358 625, ITU-R BT1700 625 PAL & SECAM and IEC 61966-2-4 xvYCC601;<br />
+"SMPTE170M" (SMPTE standard 170 M) is functionally equivalent to ITU-R BT601-6 525, ITU-R BT1358 525, and ITU-R BT1700 NTSC, and is functionally identical to BT470BG.
+</p>
+
+<h3>FFMS_ColorRanges</h3>
+<pre>enum FFMS_ColorRanges {
+    FFMS_CR_UNSPECIFIED = 0,
+    FFMS_CR_MPEG        = 1,
+    FFMS_CR_JPEG        = 2,
+};</pre>
+<p>
+Identifies the valid range of luma values in a YUV stream. <tt>FFMS_CR_MPEG</tt> is the standard "TV range" with head- and footroom. That is, valid luma values range from 16 to 235 with 8-bit color. <tt>FFMS_CR_JPEG</tt> is "full range"; all representable luma values are valid.
+</p>
 
 
 <h3>FFMS_CC</h3>
