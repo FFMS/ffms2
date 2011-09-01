@@ -401,7 +401,7 @@ rm -f conftest*
 
 # generate config files
 
-version=`version.sh`
+version=`./version.sh`
 API=$(echo $version | cut -f 1 -d '.')
 
 cat > config.mak << EOF
