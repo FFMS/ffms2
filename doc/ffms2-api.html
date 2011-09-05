@@ -912,7 +912,9 @@ Used for determining the type of a given track. Note that there are currently no
     FFMS_CH_STEREO_RIGHT            = 0x40000000
 };</pre>
 <p>
-Describes various audio channel configurations. The names should be self-explanatory. The actual order if FFmpeg dictated and may vary.
+Describes the audio channel layout of an audio stream. The names should be self-explanatory.<br />
+As you might have noticed, these constants are the same as the ones used for the <tt>dwChannelMask</tt> property of Microsoft's <tt>WAVEFORMATEXTENSIBLE</tt> struct; see <a href="http://msdn.microsoft.com/en-us/library/dd757714%28v=vs.85%29.aspx">its MSDN documentation page</a> for more information.<br />
+The exceptions to this convenient compatibility are <tt>FFMS_CH_STEREO_LEFT</tt> and <tt>FFMS_CH_STEREO_RIGHT</tt>, which are FFmpeg extensions.
 </p>
 
 <h3>FFMS_Resizers</h3>
