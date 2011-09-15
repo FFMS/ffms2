@@ -250,6 +250,8 @@ typedef struct FFMS_Frame {
 	int InterlacedFrame;
 	int TopFieldFirst;
 	char PictType;
+	int ColorSpace;
+	int ColorRange;
 } FFMS_Frame;
 
 typedef struct FFMS_TrackTimeBase {
@@ -276,8 +278,8 @@ typedef struct FFMS_VideoProperties {
 	int CropLeft;
 	int CropRight;
 	int TopFieldFirst;
-	int ColorSpace;
-	int ColorRange;
+	FFMS_DEPRECATED int ColorSpace;
+	FFMS_DEPRECATED int ColorRange;
 	double FirstTime;
 	double LastTime;
 } FFMS_VideoProperties;
