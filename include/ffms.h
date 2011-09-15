@@ -26,27 +26,48 @@
 
 #include <stdint.h>
 
-#ifdef __cplusplus
+
+/********
+*	The following preprocessor voodoo ensures that all API symbols are exported
+*	as intended on all supported platforms, that non-API symbols are hidden (where possible),
+*	and that the correct calling convention and extern declarations are used.
+*	The end result should be that linking to FFMS2 Just Works.
+********/
+
+// Convenience for C++ users.
+#if defined(__cplusplus)
 #	define FFMS_EXTERN_C extern "C"
 #else
 #	define FFMS_EXTERN_C
 #endif
 
-#ifdef _WIN32
+// On win32, we need to ensure we use stdcall with all compilers.
+#if defined(_WIN32)
 #	define FFMS_CC __stdcall
-#	ifdef _MSC_VER
-#		ifdef FFMS_EXPORTS
-#			define FFMS_API(ret) FFMS_EXTERN_C __declspec(dllexport) ret FFMS_CC
-#		else
-#			define FFMS_API(ret) FFMS_EXTERN_C __declspec(dllimport) ret FFMS_CC
-#		endif
-#	else
-#		define FFMS_API(ret) FFMS_EXTERN_C ret FFMS_CC
-#	endif
 #else
 #	define FFMS_CC
-#	define FFMS_API(ret) FFMS_EXTERN_C ret FFMS_CC
 #endif
+
+// And now for some symbol hide-and-seek...
+#if defined(_MSC_VER) // MSVC
+#	if defined(FFMS_EXPORTS) // building the FFMS2 library itself, with visible API symbols
+#		define FFMS_API(ret) FFMS_EXTERN_C __declspec(dllexport) ret FFMS_CC
+#	else // building something that depends on FFMS2
+#		define FFMS_API(ret) FFMS_EXTERN_C __declspec(dllimport) ret FFMS_CC
+#	endif // defined(FFMS_EXPORTS)
+#elif defined(__GNUC__) // GCC
+#	if __GNUC__ >= 4 // GCC 4 or later: export API symbols only.
+#		define FFMS_API(ret) FFMS_EXTERN_C __attribute__((visibility("default"))) ret FFMS_CC
+#	else
+#		define FFMS_API(ret) FFMS_EXTERN_C ret FFMS_CC
+#	endif // __GNUC___ >= 4
+#else // fallback (do we even support this?)
+#	define FFMS_CC
+#	define FFMS_API(ret) FFMS_EXTERN_C ret FFMS_CC
+#endif // defined(_MSC_VER)
+
+
+// we now return you to your regularly scheduled programming.
 
 typedef struct FFMS_ErrorInfo {
 	int ErrorType;
