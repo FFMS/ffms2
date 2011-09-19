@@ -169,10 +169,6 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 	Env->SetVar("FFCROP_RIGHT", VP->CropRight);
 	Env->SetVar("FFCROP_TOP", VP->CropTop);
 	Env->SetVar("FFCROP_BOTTOM", VP->CropBottom);
-
-	// Set color information
-	Env->SetVar("FFCOLOR_SPACE", VP->ColorSpace);
-	Env->SetVar("FFCOLOR_RANGE", VP->ColorRange);
 }
 
 AvisynthVideoSource::~AvisynthVideoSource() {
@@ -250,6 +246,10 @@ void AvisynthVideoSource::InitOutputFormat(
 
 	if (RFFMode > 0 && 	TargetPixelFormat != PIX_FMT_NV12)
 		Env->ThrowError("FFVideoSource: Only the default output colorspace can be used in RFF mode");
+
+	// set color information variables
+	Env->SetVar("FFCOLOR_SPACE", F->ColorSpace);
+	Env->SetVar("FFCOLOR_RANGE", F->ColorRange);
 
 	if (VP->TopFieldFirst)
 		VI.image_type = VideoInfo::IT_TFF;
