@@ -22,6 +22,7 @@
 #include "videoutils.h"
 
 #include <algorithm>
+#include <math.h>
 
 /* if you have this, we'll assume you have a new enough libavutil too */
 #if LIBSWSCALE_VERSION_INT >= AV_VERSION_INT(0, 12, 0)
@@ -29,6 +30,7 @@ extern "C" {
 #include <libavutil/opt.h>
 }
 #endif
+
 
 
 // hack
