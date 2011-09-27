@@ -312,7 +312,8 @@ static AVSValue __cdecl FFSetLogLevel(AVSValue Args, void* UserData, IScriptEnvi
 }
 
 static AVSValue __cdecl FFGetVersion(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	return FFMS_GetVersion();
+	int Version = FFMS_GetVersion();
+	return Env->Sprintf("%d.%d.%d.%d", Version >> 24, (Version & 0xFF0000) >> 16, (Version & 0xFF00) >> 8, Version & 0xFF);
 }
 
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScriptEnvironment* Env) {
