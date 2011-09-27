@@ -289,7 +289,7 @@ typedef struct FFMS_AudioProperties {
 	int SampleRate;
 	int BitsPerSample;
 	int Channels;
-	int64_t ChannelLayout;
+	int64_t ChannelLayout; // should probably be a plain int, none of the constants are >32 bits long
 	int64_t NumSamples;
 	double FirstTime;
 	double LastTime;

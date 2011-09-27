@@ -41,6 +41,7 @@ private:
 	int FPSDen;
 	int RFFMode;
 	std::vector<FrameFields> FieldList;
+	const char *VarPrefix;
 
 	void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 		const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env);
@@ -50,7 +51,7 @@ public:
 	AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode, int RFFMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
-		const char *ConvertToFormatName, IScriptEnvironment* Env);
+		const char *ConvertToFormatName, const char *VarPrefix, IScriptEnvironment* Env);
 	~AvisynthVideoSource();
 	bool __stdcall GetParity(int n);
 	void __stdcall SetCacheHints(int cachehints, int frame_range) { }
@@ -65,7 +66,7 @@ private:
 	FFMS_AudioSource *A;
 public:
 	AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
-		int AdjustDelay, IScriptEnvironment* Env);
+		int AdjustDelay, const char *VarPrefix, IScriptEnvironment* Env);
 	~AvisynthAudioSource();
 	bool __stdcall GetParity(int n) { return false; }
 	void __stdcall SetCacheHints(int cachehints, int frame_range) { }
