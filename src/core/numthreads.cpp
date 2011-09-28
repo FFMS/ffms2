@@ -29,6 +29,9 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
+#ifdef __CYGWIN__
+#include <sys/unistd.h>
+#endif
 #ifdef __LINUX__
 #include <sched.h>
 #endif
