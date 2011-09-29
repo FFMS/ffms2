@@ -40,7 +40,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 
 	LAVFOpenFile(SourceFile, FormatContext);
 
-	if (SeekMode >= 0 && av_seek_frame(FormatContext, VideoTrack, Frames[0].PTS, AVSEEK_FLAG_BACKWARD) < 0)
+	if (SeekMode >= 0 && Frames.size() > 1 && av_seek_frame(FormatContext, VideoTrack, Frames[0].PTS, AVSEEK_FLAG_BACKWARD) < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Video track is unseekable");
 
