@@ -169,7 +169,7 @@ FFVideoSource(string source, int track = -1, bool cache = true,
     string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1,
     string pp = "", int threads = -1, string timecodes = "", int seekmode = 1,
     int rffmode = 0, int width = -1, int height = -1, string resizer = "BICUBIC",
-    string colorspace = "", bool utf8 = false)
+    string colorspace = "", bool utf8 = false, string varprefix = "")
 </pre>
 <p>
 Opens video. Will invoke indexing of all video tracks (but no audio tracks) if no valid index file is found.
@@ -234,13 +234,17 @@ Also note that "force film" is mostly useless and only here for completeness' sa
 <dt>bool utf8 = false</dt>
 <dd>Does the same thing as in <tt>FFIndex()</tt>; see that function for details.</dd>
 
+<dt>string varprefix = ""</dt>
+<dd>A string that is added as a prefix to all exported Avisynth variables. This makes it possible to differentiate between variables from different clips. For convenience the last used FFMS function in a script sets the global variable <tt>FFVAR_PREFIX</tt> to its own variable prefix so that <tt>FFInfo()</tt> can default to it.</dd>
+
 </dl>
 
 
 <h3>FFAudioSource</h3>
 <pre>
 FFAudioSource(string source, int track = -1, bool cache = true,
-    string cachefile = source + ".ffindex", int adjustdelay = -1, bool utf8 = false)
+    string cachefile = source + ".ffindex", int adjustdelay = -1, bool utf8 = false,
+	string varprefix = "")
 </pre>
 <p>
 Opens audio. Invokes indexing of all tracks if no valid index file is found, or if the requested track isn't present in the index.
@@ -268,7 +272,7 @@ FFmpegSource2(string source, int vtrack = -1, int atrack = -2, bool cache = true
     string pp, int threads = -1, string timecodes = "", int seekmode = 1,
     bool overwrite = false, int width = -1, int height = -1,
     string resizer = "BICUBIC", string colorspace = "", int rffmode = 0,
-    int adjustdelay = -1, bool utf8 = false)
+    int adjustdelay = -1, bool utf8 = false, string varprefix = "")
 </pre>
 <p>A convenience function that combines the functionality of <tt>FFVideoSource</tt> and <tt>FFAudioSource</tt>. The arguments do the same thing as in <tt>FFVideoSource</tt> and <tt>FFAudioSource</tt>; see those functions for details. <tt>vtrack</tt> and <tt>atrack</tt> are the video and audio track to open, respectively; setting <tt>atrack</tt> &lt;= -2 means audio is disabled.</p>
 <p><strong>Note:</strong> this function is provided by <tt>FFMS2.avsi</tt> and is not available unless that script has been imported or autoloaded.</p>
@@ -302,9 +306,10 @@ A helper function used to format a time given in milliseconds into a h:mm:ss.ttt
 
 
 <h3>FFInfo</h3>
-<pre>FFInfo(clip c, bool framenum = true, bool frametype = true, bool cfrtime = true, bool vfrtime = true)</pre>
+<pre>FFInfo(clip c, bool framenum = true, bool frametype = true, bool cfrtime = true,
+	bool vfrtime = true, string varprefix = "")</pre>
 <p>
-A helper function similar to Avisynth's internal <tt>Info()</tt> function; shows general information about the current frame. Note that not all values are exported in all source modes, so some information may not always be shown. The arguments can be used to disable the drawing of certain information if so desired.
+A helper function similar to Avisynth's internal <tt>Info()</tt> function; shows general information about the current frame. Note that not all values are exported in all source modes, so some information may not always be shown. The arguments can be used to disable the drawing of certain information if so desired. Use the varprefix argument to determine which clip you want information about.
 </p>
 <p><strong>Note:</strong> this function is provided by <tt>FFMS2.avsi</tt> and is not available unless that script has been imported or autoloaded.</p>
 
@@ -318,8 +323,14 @@ A helper function similar to Avisynth's internal <tt>Info()</tt> function; shows
 <pre>FFGetLogLevel()</pre>
 <p>Returns the current log level, as an integer.</p>
 
+<h3>FFGetVersion</h3>
+<pre>FFGetVersion()</pre>
+<p>Returns the FFMS2 version, as a string.</p>
+
 
 <h2>Exported Avisynth variables</h2>
+<p>All variable names are prefixed by the <tt>varprefix</tt> argument to the respective <tt>FFVideoSource</tt> or <tt>FFAudioSource</tt> call that generated them.</p>
+
 <dl>
 <dt>FFSAR_NUM, FFSAR_DEN, FFSAR</dt>
 <dd>
@@ -359,8 +370,15 @@ b: FF_BI_TYPE (no good explanation available)
 
 <dt>FFVFR_TIME</dt>
 <dd>The actual time of the source frame in milliseconds. Only set when no type of CFR conversion is being done (<tt>rffmode</tt> and <tt>fpsnum</tt> left at their defaults).</dd>
-</dl>
 
+
+<dt>FFCHANNEL_LAYOUT</dt>
+<dd>The audio channel layout of the audio stream. This is exported as a very cryptic integer that is constructed in the same way as the <tt>dwChannelMask</tt> property of the Windows <tt>WAVEFORMATEXTENSIBLE</tt> struct. If you don't know what the <tt>WAVEFORMATEXTENSIBLE</tt> is or what the <tt>dwChannelMask</tt> does, don't worry about it.</dd>
+
+<dt>FFVAR_PREFIX</dt>
+<dd>The variable prefix of the last called FFMS source function. Note that this is a global variable</dd>
+
+</dl>
 </div>
 
 

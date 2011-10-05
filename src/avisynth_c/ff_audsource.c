@@ -60,7 +60,7 @@ static int AVSC_CC set_cache_hints( AVS_FilterInfo *fi, int cachehints, int fram
 }
 
 AVS_Value FFAudioSource_create( AVS_ScriptEnvironment *env, const char *src, int track,
-    FFMS_Index *index, int adjust_delay )
+    FFMS_Index *index, int adjust_delay, const char *var_prefix )
 {
     ffaudiosource_filter_t *filter = calloc( 1, sizeof(ffaudiosource_filter_t) );
     if( !filter )
@@ -84,6 +84,11 @@ AVS_Value FFAudioSource_create( AVS_ScriptEnvironment *env, const char *src, int
     filter->fi->vi.nchannels = audp->Channels;
     filter->fi->vi.num_audio_samples = audp->NumSamples;
     filter->fi->vi.audio_samples_per_second = audp->SampleRate;
+
+    char buf[512] = {0};
+    ffms_avs_sprintf2( buf, sizeof(buf), "%sFFCHANNEL_LAYOUT", var_prefix );
+    ffms_avs_lib->avs_set_var( env, buf, avs_new_value_int( (int)audp->ChannelLayout ) );
+    ffms_avs_lib->avs_set_var( env, "FFVAR_PREFIX", avs_new_value_string( var_prefix ) );
 
     switch( audp->SampleFormat )
     {

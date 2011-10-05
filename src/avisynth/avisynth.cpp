@@ -116,6 +116,7 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	int Height = Args[12].AsInt(0);
 	const char *Resizer = Args[13].AsString("BICUBIC");
 	const char *ColorSpace = Args[14].AsString("");
+	const char *VarPrefix = Args[16].AsString("");
 
 	if (FPSDen < 1)
 		Env->ThrowError("FFVideoSource: FPS denominator needs to be 1 or higher");
@@ -186,7 +187,7 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	AvisynthVideoSource *Filter;
 
 	try {
-		Filter = new AvisynthVideoSource(Source, Track, Index, FPSNum, FPSDen, PP, Threads, SeekMode, RFFMode, Width, Height, Resizer, ColorSpace, Env);
+		Filter = new AvisynthVideoSource(Source, Track, Index, FPSNum, FPSDen, PP, Threads, SeekMode, RFFMode, Width, Height, Resizer, ColorSpace, VarPrefix, Env);
 	} catch (...) {
 		FFMS_DestroyIndex(Index);
 		throw;
@@ -212,6 +213,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	bool Cache = Args[2].AsBool(true);
 	const char *CacheFile = Args[3].AsString("");
 	int AdjustDelay = Args[4].AsInt(-1);
+	const char *VarPrefix = Args[6].AsString("");
 
 	if (Track <= -2)
 		Env->ThrowError("FFAudioSource: No audio track selected");
@@ -282,7 +284,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	AvisynthAudioSource *Filter;
 
 	try {
-		Filter = new AvisynthAudioSource(Source, Track, Index, AdjustDelay, Env);
+		Filter = new AvisynthAudioSource(Source, Track, Index, AdjustDelay, VarPrefix, Env);
 	} catch (...) {
 		FFMS_DestroyIndex(Index);
 		throw;
@@ -312,13 +314,14 @@ static AVSValue __cdecl FFSetLogLevel(AVSValue Args, void* UserData, IScriptEnvi
 }
 
 static AVSValue __cdecl FFGetVersion(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	return FFMS_GetVersion();
+	int Version = FFMS_GetVersion();
+	return Env->Sprintf("%d.%d.%d.%d", Version >> 24, (Version & 0xFF0000) >> 16, (Version & 0xFF00) >> 8, Version & 0xFF);
 }
 
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScriptEnvironment* Env) {
     Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b[demuxer]s", CreateFFIndex, 0);
-	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b", CreateFFVideoSource, 0);
-    Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b", CreateFFAudioSource, 0);
+	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", CreateFFVideoSource, 0);
+	Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b[varprefix]s", CreateFFAudioSource, 0);
 #ifdef FFMS_USE_POSTPROC
 	Env->AddFunction("FFPP", "c[pp]s", CreateFFPP, 0);
 #endif // FFMS_USE_POSTPROC

@@ -18,13 +18,19 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
+
 #define MAX_NUM_THREADS 16 //libav currently has bugs with > 16 threads
 #include "numthreads.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#endif
+#ifdef __CYGWIN__
+#include <sys/unistd.h>
 #endif
 #ifdef __LINUX__
 #include <sched.h>

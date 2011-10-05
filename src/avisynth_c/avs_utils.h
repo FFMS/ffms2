@@ -35,9 +35,10 @@ enum  PixelFormat vi_to_pix_fmt_26( const AVS_VideoInfo *vi );
 int   resizer_name_to_swscale_name( const char *resizer );
 void  fill_avs_frame_data( AVS_VideoFrame *frm, uint8_t *ptr[3], int stride[3], char read, char vertical_flip );
 char *ffms_avs_sprintf( const char *str, ... );
+char *ffms_avs_sprintf2( char *buf, size_t buf_len, const char *str, ... );
 struct SwsContext *ffms_sws_get_context( int src_width, int src_height, int src_pix_fmt, int dst_width,
-                                         int dst_height, int dst_pix_fmt, int64_t flags, int csp );
-
+                                         int dst_height, int dst_pix_fmt, int64_t flags, int csp, int crange );
+int get_sws_assumed_color_space( int width, int height );
 
 #define init_ErrorInfo(ei_name) \
     char err_msg[1024];\

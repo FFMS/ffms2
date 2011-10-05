@@ -22,31 +22,67 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (16 << 16) | (1 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (16 << 16) | (2 << 8) | 0)
 
 #include <stdint.h>
 
-#ifdef __cplusplus
+
+/********
+*	The following preprocessor voodoo ensures that all API symbols are exported
+*	as intended on all supported platforms, that non-API symbols are hidden (where possible),
+*	and that the correct calling convention and extern declarations are used.
+*	The end result should be that linking to FFMS2 Just Works.
+********/
+
+// Convenience for C++ users.
+#if defined(__cplusplus)
 #	define FFMS_EXTERN_C extern "C"
 #else
 #	define FFMS_EXTERN_C
 #endif
 
-#ifdef _WIN32
+// On win32, we need to ensure we use stdcall with all compilers.
+#if defined(_WIN32)
 #	define FFMS_CC __stdcall
-#	ifdef _MSC_VER
-#		ifdef FFMS_EXPORTS
-#			define FFMS_API(ret) FFMS_EXTERN_C __declspec(dllexport) ret FFMS_CC
-#		else
-#			define FFMS_API(ret) FFMS_EXTERN_C __declspec(dllimport) ret FFMS_CC
-#		endif
-#	else
-#		define FFMS_API(ret) FFMS_EXTERN_C ret FFMS_CC
-#	endif
 #else
 #	define FFMS_CC
-#	define FFMS_API(ret) FFMS_EXTERN_C ret FFMS_CC
 #endif
+
+// compiler-specific deprecation attributes
+#if defined(__GNUC__) && (__GNUC__ >= 4)
+#	define FFMS_DEPRECATED __attribute__((deprecated))
+#elif defined(_MSC_VER)
+#	define FFMS_DEPRECATED __declspec(deprecated)
+#else
+#	define FFMS_DEPRECATED
+#endif
+
+
+// And now for some symbol hide-and-seek...
+#if defined(_MSC_VER) // MSVC
+#	if defined(FFMS_EXPORTS) // building the FFMS2 library itself, with visible API symbols
+#		define FFMS_API(ret) FFMS_EXTERN_C __declspec(dllexport) ret FFMS_CC
+#		define FFMS_DEPRECATED_API(ret) FFMS_EXTERN_C FFMS_DEPRECATED __declspec(dllexport) ret FFMS_CC
+#	else // building something that depends on FFMS2
+#		define FFMS_API(ret) FFMS_EXTERN_C __declspec(dllimport) ret FFMS_CC
+#		define FFMS_DEPRECATED_API(ret) FFMS_EXTERN_C FFMS_DEPRECATED __declspec(dllimport) ret FFMS_CC
+#	endif // defined(FFMS_EXPORTS)
+#elif defined(__GNUC__) // GCC
+#	if __GNUC__ >= 4 // GCC 4 or later: export API symbols only.
+#		define FFMS_API(ret) FFMS_EXTERN_C __attribute__((visibility("default"))) ret FFMS_CC
+#		define FFMS_DEPRECATED_API(ret) FFMS_EXTERN_C FFMS_DEPRECATED __attribute__((visibility("default"))) ret FFMS_CC
+#	else
+#		define FFMS_API(ret) FFMS_EXTERN_C ret FFMS_CC
+#		define FFMS_DEPRECATED_API(ret) FFMS_EXTERN_C FFMS_DEPRECATED ret FFMS_CC
+#	endif // __GNUC___ >= 4
+#else // fallback (do we even support this?)
+#	define FFMS_CC
+#	define FFMS_API(ret) FFMS_EXTERN_C ret FFMS_CC
+#	define FFMS_DEPRECATED_API(ret) FFMS_EXTERN_C FFMS_DEPRECATED ret FFMS_CC
+#endif // defined(_MSC_VER)
+
+
+// we now return you to your regularly scheduled programming.
 
 typedef struct FFMS_ErrorInfo {
 	int ErrorType;
@@ -214,6 +250,8 @@ typedef struct FFMS_Frame {
 	int InterlacedFrame;
 	int TopFieldFirst;
 	char PictType;
+	int ColorSpace;
+	int ColorRange;
 } FFMS_Frame;
 
 typedef struct FFMS_TrackTimeBase {
@@ -240,8 +278,8 @@ typedef struct FFMS_VideoProperties {
 	int CropLeft;
 	int CropRight;
 	int TopFieldFirst;
-	int ColorSpace;
-	int ColorRange;
+	FFMS_DEPRECATED int ColorSpace;
+	FFMS_DEPRECATED int ColorRange;
 	double FirstTime;
 	double LastTime;
 } FFMS_VideoProperties;
@@ -251,7 +289,7 @@ typedef struct FFMS_AudioProperties {
 	int SampleRate;
 	int BitsPerSample;
 	int Channels;
-	int64_t ChannelLayout;
+	int64_t ChannelLayout; // should probably be a plain int, none of the constants are >32 bits long
 	int64_t NumSamples;
 	double FirstTime;
 	double LastTime;
@@ -275,7 +313,7 @@ FFMS_API(const FFMS_AudioProperties *) FFMS_GetAudioProperties(FFMS_AudioSource 
 FFMS_API(const FFMS_Frame *) FFMS_GetFrame(FFMS_VideoSource *V, int n, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(const FFMS_Frame *) FFMS_GetFrameByTime(FFMS_VideoSource *V, double Time, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_GetAudio(FFMS_AudioSource *A, void *Buf, int64_t Start, int64_t Count, FFMS_ErrorInfo *ErrorInfo);
-FFMS_API(int) /*DEPRECATED*/ FFMS_SetOutputFormatV(FFMS_VideoSource *V, int64_t TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo);
+FFMS_DEPRECATED_API(int) FFMS_SetOutputFormatV(FFMS_VideoSource *V, int64_t TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_SetOutputFormatV2(FFMS_VideoSource *V, const int *TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo); /* Introduced in FFMS_VERSION ((2 << 24) | (15 << 16) | (3 << 8) | 0) */
 FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V);
 FFMS_API(int) FFMS_SetPP(FFMS_VideoSource *V, const char *PP, FFMS_ErrorInfo *ErrorInfo);

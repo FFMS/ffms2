@@ -121,7 +121,8 @@ AVS_Value FFSWScale_create( AVS_ScriptEnvironment *env, AVS_Value child, int dst
         return avs_new_value_error( "SWScale: mod 2 output width required" );
 
     filter->context = ffms_sws_get_context( filter->orig_width, filter->orig_height, src_format, filter->fi->vi.width, filter->fi->vi.height,
-         dst_pix_fmt, avs_to_sws_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ) ) | resizer, -1 );
+         dst_pix_fmt, avs_to_sws_cpu_flags( ffms_avs_lib->avs_get_cpu_flags( env ) ) | resizer,
+         get_sws_assumed_color_space( filter->fi->vi.width, filter->fi->vi.height ), -1 );
     if( !filter->context )
     {
         free( filter );

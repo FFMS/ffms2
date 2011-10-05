@@ -200,40 +200,38 @@ char *ffms_avs_sprintf( const char *format, ... )
     return strdup( buf );
 }
 
-static int handle_jpeg( int *format )
+char *ffms_avs_sprintf2( char *buf, size_t buf_len, const char *format, ... )
 {
-	switch( *format )
-    {
-	case PIX_FMT_YUVJ420P: *format = PIX_FMT_YUV420P; return 1;
-	case PIX_FMT_YUVJ422P: *format = PIX_FMT_YUV422P; return 1;
-	case PIX_FMT_YUVJ444P: *format = PIX_FMT_YUV444P; return 1;
-	case PIX_FMT_YUVJ440P: *format = PIX_FMT_YUV440P; return 1;
-	default:                                          return 0;
-	}
+    va_list list;
+    va_start( list, format );
+    vsnprintf( buf, buf_len, format, list );
+    va_end( list );
+    return buf;
 }
 
-struct SwsContext *ffms_sws_get_context( int src_width, int src_height, int src_pix_fmt, int dst_width, int dst_height, int dst_pix_fmt, int64_t flags, int csp )
+struct SwsContext *ffms_sws_get_context( int src_width, int src_height, int src_pix_fmt, int dst_width,
+                                         int dst_height, int dst_pix_fmt, int64_t flags, int csp, int crange )
 {
 #if USE_AVOPT_SWSCALE
     struct SwsContext *ctx = sws_alloc_context();
     if( !ctx )
         return NULL;
-    if( csp == -1 )
-        csp = (src_width > 1024 || src_height >= 600) ? SWS_CS_ITU709 : SWS_CS_DEFAULT;
-    int src_range = handle_jpeg( &src_pix_fmt );
-    int dst_range = handle_jpeg( &dst_pix_fmt );
+
+    // The intention here is to never change the color range.
+    // 0 = limited range, 1 = full range
+    int range = crange == FFMS_CR_JPEG;
 
     av_set_int( ctx, "sws_flags", flags );
     av_set_int( ctx, "srcw", src_width );
     av_set_int( ctx, "srch", src_height );
     av_set_int( ctx, "dstw", dst_width );
     av_set_int( ctx, "dsth", dst_height );
-    av_set_int( ctx, "src_range", src_range );
-    av_set_int( ctx, "dst_range", dst_range );
+    av_set_int( ctx, "src_range", range );
+    av_set_int( ctx, "dst_range", range );
     av_set_int( ctx, "src_format", src_pix_fmt );
     av_set_int( ctx, "dst_format", dst_pix_fmt );
 
-    sws_setColorspaceDetails( ctx, sws_getCoefficients( csp ), src_range, sws_getCoefficients( csp ), dst_range, 0, 1<<16, 1<<16 );
+    sws_setColorspaceDetails( ctx, sws_getCoefficients( csp ), range, sws_getCoefficients( csp ), range, 0, 1<<16, 1<<16 );
     if( sws_init_context( ctx, NULL, NULL ) < 0 )
     {
         sws_freeContext( ctx );
@@ -244,4 +242,9 @@ struct SwsContext *ffms_sws_get_context( int src_width, int src_height, int src_
 #else
     return sws_getContext( src_width, src_height, src_pix_fmt, dst_width, dst_height, dst_pix_fmt, flags, NULL, NULL, NULL );
 #endif
+}
+
+int get_sws_assumed_color_space( int width, int height )
+{
+    return (width > 1024 || height >= 600) ? SWS_CS_ITU709 : SWS_CS_DEFAULT;
 }

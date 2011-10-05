@@ -118,10 +118,11 @@ AVS_Value FFPP_create( AVS_ScriptEnvironment *env, AVS_Value child, const char *
     {
         ppflags |= PP_FORMAT_422;
         int ok = 1;
+        int colorspace = get_sws_assumed_color_space( vi->width, vi->height );
         filter->sws_to_422p = ffms_sws_get_context( vi->width, vi->height, PIX_FMT_YUYV422,
-            vi->width, vi->height, PIX_FMT_YUV422P, swsflags, -1 );
+            vi->width, vi->height, PIX_FMT_YUV422P, swsflags, colorspace, -1 );
         filter->sws_from_422p = ffms_sws_get_context( vi->width, vi->height, PIX_FMT_YUV422P,
-            vi->width, vi->height, PIX_FMT_YUYV422, swsflags, -1 );
+            vi->width, vi->height, PIX_FMT_YUYV422, swsflags, colorspace, -1 );
         ok &= !avpicture_alloc( &filter->in_pic, PIX_FMT_YUV422P, vi->width, vi->height );
         ok &= !avpicture_alloc( &filter->out_pic, PIX_FMT_YUV422P, vi->width, vi->height );
         ok &= filter->sws_to_422p && filter->sws_from_422p;

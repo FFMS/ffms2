@@ -434,7 +434,7 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 
 	if (IH.Version != FFMS_VERSION)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			std::string("'") + IndexFile + "' is the expected index version");
+			std::string("'") + IndexFile + "' is not the expected index version");
 
 	if (IH.Arch != ARCH)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,

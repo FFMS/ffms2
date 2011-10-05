@@ -37,6 +37,10 @@ typedef struct
     int fps_den;
     int rff_mode;
     frame_fields_t *field_list;
+
+    // env var names, because they're leaky otherwise
+    char *var_name_vfr_time;
+    char *var_name_pict_type;
 } ffvideosource_filter_t;
 
 static void AVSC_CC free_filter( AVS_FilterInfo *fi )
@@ -45,6 +49,10 @@ static void AVSC_CC free_filter( AVS_FilterInfo *fi )
     FFMS_DestroyVideoSource( filter->vid );
     if( filter->field_list )
         free( filter->field_list );
+    if( filter->var_name_vfr_time )
+        free( filter->var_name_vfr_time );
+    if( filter->var_name_pict_type )
+        free( filter->var_name_pict_type );
     free( filter );
 }
 
@@ -109,14 +117,14 @@ static AVS_VideoFrame * AVSC_CC get_frame( AVS_FilterInfo *fi, int n )
             frame = FFMS_GetFrame( filter->vid, n, &ei );
             FFMS_Track *track = FFMS_GetTrackFromVideo( filter->vid );
             const FFMS_TrackTimeBase *timebase = FFMS_GetTimeBase( track );
-            ffms_avs_lib->avs_set_var( fi->env, "FFVFR_TIME",
+            ffms_avs_lib->avs_set_var( fi->env, filter->var_name_vfr_time,
                 avs_new_value_int( (double)FFMS_GetFrameInfo( track, n )->PTS * timebase->Num / timebase->Den ) );
         }
 
         if( !frame )
             fi->error = ffms_avs_sprintf( "FFVideoSource: %s", ei.Buffer );
 
-        ffms_avs_lib->avs_set_var( fi->env, "FFPICT_TYPE", avs_new_value_int( frame->PictType ) );
+        ffms_avs_lib->avs_set_var( fi->env, filter->var_name_pict_type, avs_new_value_int( frame->PictType ) );
         output_frame( fi, dst, 0, frame );
     }
 
@@ -139,7 +147,7 @@ static int AVSC_CC set_cache_hints( AVS_FilterInfo *fi, int cachehints, int fram
 }
 
 static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_width, int dst_height,
-    const char *resizer_name, const char *csp_name )
+    const char *resizer_name, const char *csp_name, const char *var_prefix )
 {
     init_ErrorInfo( ei );
 
@@ -227,6 +235,13 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
     if( filter->rff_mode > 0 && dst_pix_fmt != PIX_FMT_NV12 )
         return avs_new_value_error( "FFVideoSource: Only the default output colorspace can be used in RFF mode" );
 
+    // Set color information
+    char buf[512] = {0};
+    ffms_avs_sprintf2( buf, sizeof(buf), "%sFFCOLOR_SPACE", var_prefix );
+    ffms_avs_lib->avs_set_var( filter->fi->env, buf, avs_new_value_int( frame->ColorSpace ) );
+    ffms_avs_sprintf2( buf, sizeof(buf), "%sFFCOLOR_RANGE", var_prefix );
+    ffms_avs_lib->avs_set_var( filter->fi->env, buf, avs_new_value_int( frame->ColorRange ) );
+
     if( vidp->TopFieldFirst )
         filter->fi->vi.image_type = AVS_IT_TFF;
     else
@@ -255,7 +270,8 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
 
 AVS_Value FFVideoSource_create( AVS_ScriptEnvironment *env, const char *src, int track,
     FFMS_Index *index, int fps_num, int fps_den, const char *pp, int threads, int seek_mode,
-    int rff_mode, int width, int height, const char *resizer_name, const char *csp_name )
+    int rff_mode, int width, int height, const char *resizer_name, const char *csp_name,
+    const char *var_prefix )
 {
     ffvideosource_filter_t *filter = calloc( 1, sizeof(ffvideosource_filter_t) );
     if( !filter )
@@ -287,7 +303,8 @@ AVS_Value FFVideoSource_create( AVS_ScriptEnvironment *env, const char *src, int
     }
 #endif
 
-    AVS_Value result = init_output_format( filter, width, height, resizer_name, csp_name );
+    AVS_Value result = init_output_format( filter, width, height, resizer_name, csp_name,
+        var_prefix );
     if( avs_is_error( result ) )
     {
         FFMS_DestroyVideoSource( filter->vid );
@@ -423,20 +440,31 @@ AVS_Value FFVideoSource_create( AVS_ScriptEnvironment *env, const char *src, int
     }
 
     // Set AR variables
-    ffms_avs_lib->avs_set_var( env, "FFSAR_NUM", avs_new_value_int( vidp->SARNum ) );
-    ffms_avs_lib->avs_set_var( env, "FFSAR_DEN", avs_new_value_int( vidp->SARDen ) );
+    char buf[512] = {0};
+    ffms_avs_sprintf2( buf, sizeof(buf), "%sFFSAR_NUM", var_prefix );
+    ffms_avs_lib->avs_set_var( env, buf, avs_new_value_int( vidp->SARNum ) );
+    ffms_avs_sprintf2( buf, sizeof(buf), "%sFFSAR_DEN", var_prefix );
+    ffms_avs_lib->avs_set_var( env, buf, avs_new_value_int( vidp->SARDen ) );
     if( vidp->SARNum > 0 && vidp->SARDen > 0 )
-        ffms_avs_lib->avs_set_var( env, "FFSAR", avs_new_value_float( vidp->SARNum / (double)vidp->SARDen ) );
+    {
+        ffms_avs_sprintf2( buf, sizeof(buf), "%sFFSAR", var_prefix );
+        ffms_avs_lib->avs_set_var( env, buf, avs_new_value_float( vidp->SARNum / (double)vidp->SARDen ) );
+    }
 
     // Set crop variables
-    ffms_avs_lib->avs_set_var( env, "FFCROP_LEFT",   avs_new_value_int( vidp->CropLeft ) );
-    ffms_avs_lib->avs_set_var( env, "FFCROP_RIGHT",  avs_new_value_int( vidp->CropRight ) );
-    ffms_avs_lib->avs_set_var( env, "FFCROP_TOP",    avs_new_value_int( vidp->CropTop ) );
-    ffms_avs_lib->avs_set_var( env, "FFCROP_BOTTOM", avs_new_value_int( vidp->CropBottom ) );
+    ffms_avs_sprintf2( buf, sizeof(buf), "%sFFCROP_LEFT", var_prefix );
+    ffms_avs_lib->avs_set_var( env, buf, avs_new_value_int( vidp->CropLeft ) );
+    ffms_avs_sprintf2( buf, sizeof(buf), "%sFFCROP_RIGHT", var_prefix );
+    ffms_avs_lib->avs_set_var( env, buf,  avs_new_value_int( vidp->CropRight ) );
+    ffms_avs_sprintf2( buf, sizeof(buf), "%sFFCROP_TOP", var_prefix );
+    ffms_avs_lib->avs_set_var( env, buf, avs_new_value_int( vidp->CropTop ) );
+    ffms_avs_sprintf2( buf, sizeof(buf), "%sFFCROP_BOTTOM", var_prefix );
+    ffms_avs_lib->avs_set_var( env, buf, avs_new_value_int( vidp->CropBottom ) );
 
-    // Set color information
-    ffms_avs_lib->avs_set_var( env, "FFCOLOR_SPACE", avs_new_value_int( vidp->ColorSpace ) );
-    ffms_avs_lib->avs_set_var( env, "FFCOLOR_RANGE", avs_new_value_int( vidp->ColorRange ) );
+    ffms_avs_lib->avs_set_var( env, "FFVAR_PREFIX", avs_new_value_string( var_prefix ) );
+
+    filter->var_name_vfr_time = ffms_avs_sprintf( "%sFFVFR_TIME", var_prefix );
+    filter->var_name_pict_type = ffms_avs_sprintf( "%sFFPICT_TYPE", var_prefix );
 
     filter->fi->free_filter     = free_filter;
     filter->fi->get_frame       = get_frame;

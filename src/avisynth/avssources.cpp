@@ -27,12 +27,13 @@
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode, int RFFMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
-		const char *ConvertToFormatName, IScriptEnvironment* Env) {
+		const char *ConvertToFormatName, const char *VarPrefix, IScriptEnvironment* Env) {
 
 	memset(&VI, 0, sizeof(VI));
 	this->FPSNum = FPSNum;
 	this->FPSDen = FPSDen;
 	this->RFFMode = RFFMode;
+	this->VarPrefix = VarPrefix;
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
@@ -159,20 +160,18 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 	}
 
 	// Set AR variables
-	Env->SetVar("FFSAR_NUM", VP->SARNum);
-	Env->SetVar("FFSAR_DEN", VP->SARDen);
+	Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFSAR_NUM"), VP->SARNum);
+	Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFSAR_DEN"), VP->SARDen);
 	if (VP->SARNum > 0 && VP->SARDen > 0)
-		Env->SetVar("FFSAR", VP->SARNum / (double)VP->SARDen);
+		Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFSAR"), VP->SARNum / (double)VP->SARDen);
 
 	// Set crop variables
-	Env->SetVar("FFCROP_LEFT", VP->CropLeft);
-	Env->SetVar("FFCROP_RIGHT", VP->CropRight);
-	Env->SetVar("FFCROP_TOP", VP->CropTop);
-	Env->SetVar("FFCROP_BOTTOM", VP->CropBottom);
+	Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCROP_LEFT"), VP->CropLeft);
+	Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCROP_RIGHT"), VP->CropRight);
+	Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCROP_TOP"), VP->CropTop);
+	Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCROP_BOTTOM"), VP->CropBottom);
 
-	// Set color information
-	Env->SetVar("FFCOLOR_SPACE", VP->ColorSpace);
-	Env->SetVar("FFCOLOR_RANGE", VP->ColorRange);
+	Env->SetGlobalVar("FFVAR_PREFIX", this->VarPrefix);
 }
 
 AvisynthVideoSource::~AvisynthVideoSource() {
@@ -250,6 +249,10 @@ void AvisynthVideoSource::InitOutputFormat(
 
 	if (RFFMode > 0 && 	TargetPixelFormat != PIX_FMT_NV12)
 		Env->ThrowError("FFVideoSource: Only the default output colorspace can be used in RFF mode");
+
+	// set color information variables
+	Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCOLOR_SPACE"), F->ColorSpace);
+	Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCOLOR_RANGE"), F->ColorRange);
 
 	if (VP->TopFieldFirst)
 		VI.image_type = VideoInfo::IT_TFF;
@@ -346,13 +349,13 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 			Frame = FFMS_GetFrame(V, n, &E);
 			FFMS_Track *T = FFMS_GetTrackFromVideo(V);
 			const FFMS_TrackTimeBase *TB = FFMS_GetTimeBase(T);
-			Env->SetVar("FFVFR_TIME", static_cast<int>(FFMS_GetFrameInfo(T, n)->PTS * static_cast<double>(TB->Num) / TB->Den));
+			Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), static_cast<int>(FFMS_GetFrameInfo(T, n)->PTS * static_cast<double>(TB->Num) / TB->Den));
 		}
 
 		if (Frame == NULL)
 			Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
-		Env->SetVar("FFPICT_TYPE", static_cast<int>(Frame->PictType));
+		Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>(Frame->PictType));
 		OutputFrame(Frame, Dst, Env);
 	}
 
@@ -364,7 +367,7 @@ bool AvisynthVideoSource::GetParity(int n) {
 }
 
 AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
-										 int AdjustDelay, IScriptEnvironment* Env) {
+										 int AdjustDelay, const char *VarPrefix, IScriptEnvironment* Env) {
 	memset(&VI, 0, sizeof(VI));
 
 	char ErrorMsg[1024];
@@ -381,6 +384,11 @@ AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS
 
 	VI.num_audio_samples = AP->NumSamples;
 	VI.audio_samples_per_second = AP->SampleRate;
+
+	// casting to int should be safe; none of the channel constants are greater than INT_MAX
+	Env->SetVar(Env->Sprintf("%s%s", VarPrefix, "FFCHANNEL_LAYOUT"), static_cast<int>(AP->ChannelLayout));
+
+	Env->SetGlobalVar("FFVAR_PREFIX", VarPrefix);
 
 	switch (AP->SampleFormat) {
 		case FFMS_FMT_U8: VI.sample_type = SAMPLE_INT8; break;

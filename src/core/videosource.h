@@ -69,6 +69,8 @@ private:
 	std::vector<PixelFormat> TargetPixelFormats;
 	int TargetResizer;
 	PixelFormat OutputFormat;
+	AVColorRange OutputColorRange;
+	AVColorSpace OutputColorSpace;
 	AVPicture PPFrame;
 	AVPicture SWSFrame;
 protected:
