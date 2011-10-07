@@ -289,27 +289,3 @@ PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelForma
 
 	return Loss.Format;
 }
-
-
-void RGB24PlanarToPacked(AVFrame *Frame, int Width, int Height) {
-	uint8_t *Dst	= (uint8_t *)av_malloc(Width * Height * 3);
-	uint8_t *SrcG	= Frame->data[0];
-	uint8_t *SrcB	= Frame->data[1];
-	uint8_t *SrcR	= Frame->data[2];
-
-	for (int y=0; y < Height; y++) {
-		for (int x=0; x < Frame->linesize[0]; x++) { // assume equal linesizes for the three planes
-			if (x >= Width) {
-				SrcR++; SrcG++; SrcB++;
-				continue;
-			}
-			*Dst++ = *SrcB++; *Dst++ = *SrcG++; *Dst++ = *SrcR++;
-		}
-	}
-
-	av_free(Frame->data[0]); Frame->data[0] = Dst;  Frame->linesize[0] = Width;
-	av_free(Frame->data[1]); Frame->data[1] = NULL; Frame->linesize[1] = 0;
-	av_free(Frame->data[2]); Frame->data[2] = NULL; Frame->linesize[2] = 0;
-}
-
-
