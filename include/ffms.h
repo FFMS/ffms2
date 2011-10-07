@@ -67,16 +67,12 @@
 #		define FFMS_API(ret) FFMS_EXTERN_C __declspec(dllimport) ret FFMS_CC
 #		define FFMS_DEPRECATED_API(ret) FFMS_EXTERN_C FFMS_DEPRECATED __declspec(dllimport) ret FFMS_CC
 #	endif // defined(FFMS_EXPORTS)
-#elif defined(__GNUC__) // GCC
-#	if __GNUC__ >= 4 // GCC 4 or later: export API symbols only.
-#		define FFMS_API(ret) FFMS_EXTERN_C __attribute__((visibility("default"))) ret FFMS_CC
-#		define FFMS_DEPRECATED_API(ret) FFMS_EXTERN_C FFMS_DEPRECATED __attribute__((visibility("default"))) ret FFMS_CC
-#	else
-#		define FFMS_API(ret) FFMS_EXTERN_C ret FFMS_CC
-#		define FFMS_DEPRECATED_API(ret) FFMS_EXTERN_C FFMS_DEPRECATED ret FFMS_CC
-#	endif // __GNUC___ >= 4
-#else // fallback (do we even support this?)
-#	define FFMS_CC
+// GCC 4 or later: export API symbols only. Some GCC 3.x versions support the visibility attribute too,
+// but we don't really care enough about that to add compatibility defines for it.
+#elif defined(__GNUC__) && __GNUC__ >= 4 
+#	define FFMS_API(ret) FFMS_EXTERN_C __attribute__((visibility("default"))) ret FFMS_CC
+#	define FFMS_DEPRECATED_API(ret) FFMS_EXTERN_C FFMS_DEPRECATED __attribute__((visibility("default"))) ret FFMS_CC
+#else // fallback for everything else
 #	define FFMS_API(ret) FFMS_EXTERN_C ret FFMS_CC
 #	define FFMS_DEPRECATED_API(ret) FFMS_EXTERN_C FFMS_DEPRECATED ret FFMS_CC
 #endif // defined(_MSC_VER)

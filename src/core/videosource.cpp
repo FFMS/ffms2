@@ -133,6 +133,10 @@ static void SanityCheckFrameForData(AVFrame *Frame) {
 FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	SanityCheckFrameForData(Frame);
 
+	if (UsingBGR24InYUV444) {
+		RGB24PlanarToPacked(Frame, CodecContext->width, CodecContext->height);
+	}
+
 	if (LastFrameWidth != CodecContext->width || LastFrameHeight != CodecContext->height || LastFramePixelFormat != CodecContext->pix_fmt) {
 		ReAdjustPP(CodecContext->pix_fmt, CodecContext->width, CodecContext->height);
 
@@ -199,6 +203,7 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 : Index(Index)
 , Frames(Index[0]) // dummy initialization
 , CodecContext(NULL)
+, UsingBGR24InYUV444(false)
 {
 	if (Track < 0 || Track >= static_cast<int>(Index.size()))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
@@ -307,6 +312,11 @@ void FFMS_VideoSource::ReAdjustOutputFormat() {
 	if (SWS) {
 		sws_freeContext(SWS);
 		SWS = NULL;
+	}
+
+	if (CodecContext->codec_id == CODEC_ID_H264 && CodecContext->pix_fmt == PIX_FMT_YUVJ444P && CodecContext->colorspace == AVCOL_SPC_RGB) {
+		UsingBGR24InYUV444 = true;
+		CodecContext->pix_fmt = PIX_FMT_BGR24;
 	}
 
 	OutputFormat = FindBestPixelFormat(TargetPixelFormats, CodecContext->pix_fmt);

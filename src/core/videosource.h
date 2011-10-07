@@ -73,6 +73,7 @@ private:
 	AVColorSpace OutputColorSpace;
 	AVPicture PPFrame;
 	AVPicture SWSFrame;
+	bool UsingBGR24InYUV444;
 protected:
 	FFMS_VideoProperties VP;
 	FFMS_Frame LocalFrame;
