@@ -35,7 +35,6 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 , SeekOffset(0)
 , DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10)
 , Index(Index)
-, Frames(Index[0]) // dummy initialization
 {
 	if (Track < 0 || Track >= static_cast<int>(Index.size()))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
@@ -61,7 +60,7 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 
 #define EXCESSIVE_CACHE_SIZE 400
 
-void FFMS_AudioSource::Init(FFMS_Index &Index, int DelayMode) {
+void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 	// The first packet after a seek is often decoded incorrectly, which
 	// makes it impossible to ever correctly seek back to the beginning, so
 	// store the first block now
