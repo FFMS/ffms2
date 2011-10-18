@@ -79,7 +79,7 @@ protected:
 	AVFrame *DecodeFrame;
 	int LastFrameNum;
 	FFMS_Index &Index;
-	FFMS_Track &Frames;
+	FFMS_Track Frames;
 	int VideoTrack;
 	int	CurrentFrame;
 	int DelayCounter;

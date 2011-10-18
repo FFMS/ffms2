@@ -197,7 +197,6 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 
 FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads)
 : Index(Index)
-, Frames(Index[0]) // dummy initialization
 , CodecContext(NULL)
 {
 	if (Track < 0 || Track >= static_cast<int>(Index.size()))
