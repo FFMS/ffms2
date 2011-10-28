@@ -68,8 +68,8 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 	else
 		Env->ThrowError("FFIndex: Invalid demuxer requested");
 
-	FFMS_Index *Index = NULL;
-	if (OverWrite || !(Index = FFMS_ReadIndex(CacheFile, &E))) {
+	FFMS_Index *Index = FFMS_ReadIndex(CacheFile, &E);
+	if (OverWrite || !Index || (Index && FFMS_IndexBelongsToFile(Index, Source, 0) != FFMS_ERROR_SUCCESS)) {
 		FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(Source, Demuxer, &E);
 		if (!Indexer)
 			Env->ThrowError("FFIndex: %s", E.Buffer);
