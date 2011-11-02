@@ -101,13 +101,13 @@ protected:
 	// Buffer which audio is decoded into
 	AlignedBuffer<uint8_t> DecodingBuffer;
 	FFMS_Index &Index;
-	FFMS_Track &Frames;
+	FFMS_Track Frames;
 	FFCodecContext CodecContext;
 	FFMS_AudioProperties AP;
 
 	void DecodeNextBlock();
 	// Initialization which has to be done after the codec is opened
-	void Init(FFMS_Index &Index, int DelayMode);
+	void Init(const FFMS_Index &Index, int DelayMode);
 
 	FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track);
 

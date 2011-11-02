@@ -93,8 +93,8 @@ static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value a
     else
         return avs_new_value_error( "FFIndex: Invalid demuxer requested" );
 
-    FFMS_Index *index = NULL;
-    if( overwrite || !(index = FFMS_ReadIndex( cache_file, &ei )) )
+    FFMS_Index *index = FFMS_ReadIndex( cache_file, &ei );
+    if( overwrite || !index || (index && FFMS_IndexBelongsToFile( index, src, 0 ) != FFMS_ERROR_SUCCESS) )
     {
         FFMS_Indexer *indexer = FFMS_CreateIndexerWithDemuxer( src, demuxer, &ei );
         if( !indexer )

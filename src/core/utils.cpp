@@ -251,9 +251,6 @@ void InitNullPacket(AVPacket &pkt) {
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
 	AP.SampleFormat = static_cast<FFMS_SampleFormat>(CTX->sample_fmt);
 	AP.BitsPerSample = av_get_bits_per_sample_fmt(CTX->sample_fmt);
-	if (CTX->sample_fmt == AV_SAMPLE_FMT_S32 && CTX->bits_per_raw_sample)
-		AP.BitsPerSample = CTX->bits_per_raw_sample;
-
 	AP.Channels = CTX->channels;;
 	AP.ChannelLayout = CTX->channel_layout;
 	AP.SampleRate = CTX->sample_rate;
