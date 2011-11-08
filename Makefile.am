@@ -13,6 +13,8 @@ src_core_libffms2_la_LIBADD = @FFMPEG_LIBS@ @POSTPROC_LIBS@ @ZLIB_LDFLAGS@ -lz @
 src_core_libffms2_la_SOURCES = \
 	src/core/audiosource.h \
 	src/core/audiosource.cpp \
+	src/core/codectype.h \
+	src/core/codectype.cpp \
 	src/core/coparser.h \
 	src/core/ffms.cpp \
 	src/core/guids.h \

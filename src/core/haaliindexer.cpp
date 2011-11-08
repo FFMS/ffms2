@@ -22,7 +22,7 @@
 
 #include "indexing.h"
 
-
+#include "codectype.h"
 
 FFHaaliIndexer::FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode) : FFMS_Indexer(Filename) {
 	this->SourceMode = SourceMode;

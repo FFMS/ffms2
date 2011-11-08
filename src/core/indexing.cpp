@@ -20,6 +20,8 @@
 
 #include "indexing.h"
 
+#include "codectype.h"
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>

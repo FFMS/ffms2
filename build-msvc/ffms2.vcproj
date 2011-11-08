@@ -414,6 +414,14 @@
 			Name="Utils"
 			>
 			<File
+				RelativePath="..\src\core\codectype.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\core\codectype.h"
+				>
+			</File>
+			<File
 				RelativePath="..\src\core\coparser.h"
 				>
 			</File>
