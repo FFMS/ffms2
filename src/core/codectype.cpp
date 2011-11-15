@@ -343,9 +343,11 @@ static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_DPX,          MKTAG('d', 'p', 'x', ' ') },
 	{ CODEC_ID_KGV1,         MKTAG('K', 'G', 'V', '1') },
 	{ CODEC_ID_LAGARITH,     MKTAG('L', 'A', 'G', 'S') },
+#ifdef CODEC_ID_G2M
 	{ CODEC_ID_G2M,          MKTAG('G', '2', 'M', '2') },
 	{ CODEC_ID_G2M,          MKTAG('G', '2', 'M', '3') },
 	{ CODEC_ID_G2M,          MKTAG('G', '2', 'M', '4') },
+#endif
 	{ CODEC_ID_AMV,          MKTAG('A', 'M', 'V', 'F') },
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'R', 'A') },
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'R', 'G') },
