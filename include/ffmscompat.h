@@ -41,7 +41,7 @@
 #		define avformat_find_stream_info(c,o) av_find_stream_info(c)
 #	endif
 #	if (LIBAVFORMAT_VERSION_INT) > (AV_VERSION_INT(53,16,0))
-#		define av_close_input_file(c) avformat_close_input(& ## c)
+#		define av_close_input_file(c) avformat_close_input(&c)
 #	endif
 #endif
 
