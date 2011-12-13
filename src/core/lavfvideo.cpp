@@ -134,7 +134,7 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 	*AStartTime = -1;
 
 	if (InitialDecode == -1) {
-		if (DelayCounter > CodecContext->has_b_frames) {
+		if (DelayCounter > CodecContext->thread_count + (CodecContext->has_b_frames ? 1 : -1)) {
 			DelayCounter--;
 			goto Done;
 		} else {
@@ -155,7 +155,7 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 
 			if (!FrameFinished)
 				DelayCounter++;
-			if (DelayCounter > CodecContext->has_b_frames && !InitialDecode) {
+			if (DelayCounter > CodecContext->thread_count + (CodecContext->has_b_frames ? 1 : -1) && !InitialDecode) {
 				av_free_packet(&Packet);
 				goto Done;
 			}
@@ -168,7 +168,7 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 	}
 
 	// Flush the last frames
-	if (CodecContext->has_b_frames) {
+	if (CodecContext->thread_count + (CodecContext->has_b_frames ? 1 : -1)) {
 		AVPacket NullPacket;
 		InitNullPacket(NullPacket);
 		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
@@ -223,7 +223,7 @@ ReSeek:
 
 	do {
 		int64_t StartTime;
-		if (CurrentFrame+CodecContext->has_b_frames >= n)
+		if (CurrentFrame + CodecContext->thread_count + (CodecContext->has_b_frames ? 1 : -1) >= n)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;
