@@ -40,7 +40,7 @@
 #	if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(53,3,0))
 #		define avformat_find_stream_info(c,o) av_find_stream_info(c)
 #	endif
-#	if (LIBAVFORMAT_VERSION_INT) > (AV_VERSION_INT(53,24,0)) //53.17 for libav, 53.25 for ffmpeg
+#	if (((LIBAVFORMAT_VERSION_INT) > (AV_VERSION_INT(53,16,0))) && defined(FF_API_CLOSE_INPUT_FILE)) || (LIBAVFORMAT_VERSION_MAJOR > 53)
 #		define av_close_input_file(c) avformat_close_input(&c)
 #	endif
 #endif
