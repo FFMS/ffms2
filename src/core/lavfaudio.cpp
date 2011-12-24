@@ -42,7 +42,7 @@ FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, i
 				"Could not open audio codec");
 	}
 	catch (...) {
-		av_close_input_file(FormatContext);
+		avformat_close_input(&FormatContext);
 		throw;
 	}
 
@@ -54,7 +54,7 @@ FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, i
 }
 
 FFLAVFAudio::~FFLAVFAudio() {
-	av_close_input_file(FormatContext);
+	avformat_close_input(&FormatContext);
 }
 
 void FFLAVFAudio::Seek() {

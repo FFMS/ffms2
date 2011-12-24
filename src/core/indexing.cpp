@@ -529,19 +529,19 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Dem
 	if (Demuxer == FFMS_SOURCE_DEFAULT) {
 		// Do matroska indexing instead?
 		if (!strncmp(FormatContext->iformat->name, "matroska", 8)) {
-			av_close_input_file(FormatContext);
+			avformat_close_input(&FormatContext);
 			return new FFMatroskaIndexer(Filename);
 		}
 
 #ifdef HAALISOURCE
 		// Do haali ts indexing instead?
 		if (HasHaaliMPEG && (!strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts"))) {
-			av_close_input_file(FormatContext);
+			avformat_close_input(&FormatContext);
 			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
 		}
 
 		if (HasHaaliOGG && !strcmp(FormatContext->iformat->name, "ogg")) {
-			av_close_input_file(FormatContext);
+			avformat_close_input(&FormatContext);
 			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
 		}
 #endif
@@ -551,7 +551,7 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Dem
 
 	// someone forced a demuxer, use it
 	if (Demuxer != FFMS_SOURCE_LAVF)
-		av_close_input_file(FormatContext);
+		avformat_close_input(&FormatContext);
 #if !defined(HAALISOURCE)
 	if (Demuxer == FFMS_SOURCE_HAALIOGG || Demuxer == FFMS_SOURCE_HAALIMPEG) {
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Your binary was not compiled with support for Haali's DirectShow parsers");

@@ -29,14 +29,14 @@ FFLAVFIndexer::FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContex
 	this->FormatContext = FormatContext;
 
 	if (avformat_find_stream_info(FormatContext,NULL) < 0) {
-		av_close_input_file(FormatContext);
+		avformat_close_input(&FormatContext);
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			"Couldn't find stream information");
 	}
 }
 
 FFLAVFIndexer::~FFLAVFIndexer() {
-	av_close_input_file(FormatContext);
+	avformat_close_input(&FormatContext);
 }
 
 FFMS_Index *FFLAVFIndexer::DoIndexing() {

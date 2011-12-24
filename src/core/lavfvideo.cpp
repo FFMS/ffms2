@@ -25,7 +25,7 @@
 void FFLAVFVideo::Free(bool CloseCodec) {
 	if (CloseCodec)
 		avcodec_close(CodecContext);
-	av_close_input_file(FormatContext);
+	avformat_close_input(&FormatContext);
 }
 
 FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,

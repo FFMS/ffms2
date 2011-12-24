@@ -539,7 +539,7 @@ void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
 			std::string("Couldn't open '") + SourceFile + "'");
 
 	if (avformat_find_stream_info(FormatContext,NULL) < 0) {
-		av_close_input_file(FormatContext);
+		avformat_close_input(&FormatContext);
 		FormatContext = NULL;
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			"Couldn't find stream information");
