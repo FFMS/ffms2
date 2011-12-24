@@ -78,6 +78,19 @@
 #		define avcodec_open2(a,c,o) avcodec_open(a,c)
 #		define avcodec_alloc_context3(c) avcodec_alloc_context()
 #	endif
+#	ifdef FFMS_USE_FFMPEG_COMPAT
+#		if (LIBAVCODEC_VERSION_INT) < (AV_VERSION_INT(53,31,0))
+#			define FFMS_CALCULATE_DELAY (CodecContext->has_b_frames)
+#		else
+#			define FFMS_CALCULATE_DELAY (CodecContext->has_b_frames + (CodecContext->thread_count - 1))
+#		endif
+#	else
+#		if (LIBAVCODEC_VERSION_INT) < (AV_VERSION_INT(53,22,0))
+#			define FFMS_CALCULATE_DELAY (CodecContext->has_b_frames)
+#		else
+#			define FFMS_CALCULATE_DELAY (CodecContext->has_b_frames + (CodecContext->thread_count - 1))
+#		endif
+#	endif
 #endif
 
 #ifdef LIBAVUTIL_VERSION_INT

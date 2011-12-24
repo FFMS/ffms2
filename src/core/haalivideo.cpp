@@ -139,7 +139,7 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 	InitNullPacket(Packet);
 
 	if (InitialDecode == -1) {
-		if (DelayCounter > CodecContext->thread_count + (CodecContext->has_b_frames ? 1 : -1)) {
+		if (DelayCounter > FFMS_CALCULATE_DELAY) {
 			DelayCounter--;
 			goto Done;
 		} else {
@@ -184,7 +184,7 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 
 			if (!FrameFinished)
 				DelayCounter++;
-			if (DelayCounter > CodecContext->thread_count + (CodecContext->has_b_frames ? 1 : -1) && !InitialDecode)
+			if (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode)
 				goto Done;
 
 			if (FrameFinished)
@@ -193,7 +193,7 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 	}
 
 	// Flush the last frames
-	if (CodecContext->thread_count + (CodecContext->has_b_frames ? 1 : -1)) {
+	if (FFMS_CALCULATE_DELAY) {
 		AVPacket NullPacket;
 		InitNullPacket(NullPacket);
 		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
@@ -227,7 +227,7 @@ ReSeek:
 
 	do {
 		int64_t StartTime;
-		if (CurrentFrame + CodecContext->thread_count + (CodecContext->has_b_frames ? 1 : -1) >= n)
+		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;

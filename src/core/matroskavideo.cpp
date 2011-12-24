@@ -150,7 +150,7 @@ void FFMatroskaVideo::DecodeNextFrame() {
 	unsigned int FrameSize;
 
 	if (InitialDecode == -1) {
-		if (DelayCounter > CodecContext->thread_count + (CodecContext->has_b_frames ? 1 : -1)) {
+		if (DelayCounter > FFMS_CALCULATE_DELAY) {
 			DelayCounter--;
 			goto Done;
 		} else {
@@ -179,7 +179,7 @@ void FFMatroskaVideo::DecodeNextFrame() {
 
 		if (!FrameFinished)
 			DelayCounter++;
-		if (DelayCounter > CodecContext->thread_count + (CodecContext->has_b_frames ? 1 : -1) && !InitialDecode)
+		if (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode)
 			goto Done;
 
 		if (FrameFinished)
@@ -187,7 +187,7 @@ void FFMatroskaVideo::DecodeNextFrame() {
 	}
 
 	// Flush the last frames
-	if (CodecContext->thread_count + (CodecContext->has_b_frames ? 1 : -1)) {
+	if (FFMS_CALCULATE_DELAY) {
 		AVPacket NullPacket;
 		InitNullPacket(NullPacket);
 		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
@@ -217,7 +217,7 @@ FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
 	}
 
 	do {
-		if (CurrentFrame + CodecContext->thread_count + (CodecContext->has_b_frames ? 1 : -1) >= n)
+		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;
