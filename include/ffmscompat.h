@@ -53,11 +53,11 @@
 #	endif
 #	ifdef FFMS_USE_FFMPEG_COMPAT
 #		if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(53,25,0))
-#			define avformat_close_input(&c) av_close_input_file(c) 
+#			define avformat_close_input(c) av_close_input_file(*c)
 #		endif
 #	else
 #		if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(53,17,0))
-#			define avformat_close_input(&c) av_close_input_file(c) 
+#			define avformat_close_input(c) av_close_input_file(*c)
 #		endif
 #	endif
 #endif
