@@ -22,7 +22,6 @@
 #define	FFMSCOMPAT_H
 
 // Defaults to libav compatibility, uncomment (when building with msvc) to force ffmpeg compatibility.
-// This is controlled through the command line option --with-ffmpeg or --with-libav when building with the configure script.
 //#define FFMS_USE_FFMPEG_COMPAT
 
 // Attempt to auto-detect whether or not we are using ffmpeg.  Newer versions of ffmpeg have their micro versions 100+
