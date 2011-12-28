@@ -349,10 +349,12 @@ static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_G2M,          MKTAG('G', '2', 'M', '4') },
 #endif
 	{ CODEC_ID_AMV,          MKTAG('A', 'M', 'V', 'F') },
+#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >, 53, 12, 2, 53, 20, 1)
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'R', 'A') },
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'R', 'G') },
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'Y', '0') },
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'Y', '2') },
+#endif
 	{ CODEC_ID_NONE,         0 }
 };
 
