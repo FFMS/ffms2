@@ -15569,12 +15569,12 @@ if test -n "$LIBAV_CFLAGS"; then
     pkg_cv_LIBAV_CFLAGS="$LIBAV_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libavformat >= 52.39.0 libavcodec >= 52.38.0 libswscale >= 0.7.0 libavutil >= 50.4.0 \""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libavformat >= 52.39.0 libavcodec >= 52.38.0 libswscale >= 0.7.0 libavutil >= 50.4.0 ") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 \""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 ") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBAV_CFLAGS=`$PKG_CONFIG --cflags "libavformat >= 52.39.0 libavcodec >= 52.38.0 libswscale >= 0.7.0 libavutil >= 50.4.0 " 2>/dev/null`
+  pkg_cv_LIBAV_CFLAGS=`$PKG_CONFIG --cflags "libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 " 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -15585,12 +15585,12 @@ if test -n "$LIBAV_LIBS"; then
     pkg_cv_LIBAV_LIBS="$LIBAV_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libavformat >= 52.39.0 libavcodec >= 52.38.0 libswscale >= 0.7.0 libavutil >= 50.4.0 \""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libavformat >= 52.39.0 libavcodec >= 52.38.0 libswscale >= 0.7.0 libavutil >= 50.4.0 ") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 \""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 ") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBAV_LIBS=`$PKG_CONFIG --libs "libavformat >= 52.39.0 libavcodec >= 52.38.0 libswscale >= 0.7.0 libavutil >= 50.4.0 " 2>/dev/null`
+  pkg_cv_LIBAV_LIBS=`$PKG_CONFIG --libs "libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 " 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -15610,14 +15610,14 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBAV_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libavformat >= 52.39.0 libavcodec >= 52.38.0 libswscale >= 0.7.0 libavutil >= 50.4.0 " 2>&1`
+	        LIBAV_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 " 2>&1`
         else
-	        LIBAV_PKG_ERRORS=`$PKG_CONFIG --print-errors "libavformat >= 52.39.0 libavcodec >= 52.38.0 libswscale >= 0.7.0 libavutil >= 50.4.0 " 2>&1`
+	        LIBAV_PKG_ERRORS=`$PKG_CONFIG --print-errors "libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 " 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LIBAV_PKG_ERRORS" >&5
 
-	as_fn_error $? "Package requirements (libavformat >= 52.39.0 libavcodec >= 52.38.0 libswscale >= 0.7.0 libavutil >= 50.4.0 ) were not met:
+	as_fn_error $? "Package requirements (libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 ) were not met:
 
 $LIBAV_PKG_ERRORS
 
