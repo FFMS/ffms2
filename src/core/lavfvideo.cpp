@@ -30,12 +30,11 @@ void FFLAVFVideo::Free(bool CloseCodec) {
 
 FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	int Threads, int SeekMode)
-: Res(FFSourceResources<FFMS_VideoSource>(this))
-, FFMS_VideoSource(SourceFile, Index, Track, Threads)
-, SeekMode(SeekMode)
+: FFMS_VideoSource(SourceFile, Index, Track, Threads)
 , FormatContext(NULL)
+, SeekMode(SeekMode)
+, Res(FFSourceResources<FFMS_VideoSource>(this))
 {
-
 	AVCodec *Codec = NULL;
 
 	LAVFOpenFile(SourceFile, FormatContext);

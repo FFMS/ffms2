@@ -174,7 +174,7 @@ class AlignedBuffer {
 	T *buf;
 
 public:
-	AlignedBuffer(size_t n = 1, bool zero = false) {
+	explicit AlignedBuffer(size_t n = 1) {
 		buf = (T*) av_malloc(sizeof(*buf) * n);
 		if (!buf) throw std::bad_alloc();
 	}

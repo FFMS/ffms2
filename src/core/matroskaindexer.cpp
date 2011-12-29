@@ -50,7 +50,6 @@ FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename, AVFormatContext *Form
 	}
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++) {
-		TrackInfo *TI = mkv_GetTrackInfo(MF, i);
 		Codec[i] = avcodec_find_decoder(FormatContext->streams[i]->codec->codec_id);
 	}
 
@@ -127,7 +126,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 		unsigned char TrackType = mkv_GetTrackInfo(MF, Track)->Type;
 
 		TrackCompressionContext *TCC = NULL;
-		if (VideoContexts[Track].Parser || TrackType == TT_AUDIO && (IndexMask & (1 << Track))) {
+		if (VideoContexts[Track].Parser || (TrackType == TT_AUDIO && (IndexMask & (1 << Track)))) {
 			if (TrackType == TT_VIDEO)
 				TCC = VideoContexts[Track].TCC;
 			else

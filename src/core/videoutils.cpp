@@ -221,12 +221,12 @@ static int GetPseudoDepth(const AVPixFmtDescriptor &Desc) {
 }
 
 static LossAttributes CalculateLoss(PixelFormat Dst, PixelFormat Src) {
-    const AVPixFmtDescriptor &SrcDesc = av_pix_fmt_descriptors[Src];
-    const AVPixFmtDescriptor &DstDesc = av_pix_fmt_descriptors[Dst];
+	const AVPixFmtDescriptor &SrcDesc = av_pix_fmt_descriptors[Src];
+	const AVPixFmtDescriptor &DstDesc = av_pix_fmt_descriptors[Dst];
 	BCSType SrcCS = GuessCSType(Src);
 	BCSType DstCS = GuessCSType(Dst);
 
-    LossAttributes Loss;
+	LossAttributes Loss;
 	Loss.Format = Dst;
 	Loss.DepthDifference = GetPseudoDepth(DstDesc) - GetPseudoDepth(SrcDesc);;
 	Loss.ChromaOversampling = FFMAX(0, SrcDesc.log2_chroma_h - DstDesc.log2_chroma_h) + FFMAX(0, SrcDesc.log2_chroma_w - DstDesc.log2_chroma_w);
@@ -260,13 +260,10 @@ PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelForma
 	std::vector<PixelFormat>::const_iterator i = std::find(Dsts.begin(), Dsts.end(), Src);
 	if (i != Dsts.end())
 		return Src;
-	//
-
-	const AVPixFmtDescriptor &SrcDesc = av_pix_fmt_descriptors[Src];
 
 	i = Dsts.begin();
 	LossAttributes Loss = CalculateLoss(*i++, Src);
-	for (; i != Dsts.end(); i++) {
+	for (; i != Dsts.end(); ++i) {
 		LossAttributes CLoss = CalculateLoss(*i, Src);
 		if (Loss.CSLoss == 3 && CLoss.CSLoss < 3) { // Preserve chroma information at any cost
 			Loss = CLoss;

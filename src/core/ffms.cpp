@@ -370,7 +370,7 @@ static std::string IntToStr(int i, int zp = 0) {
 }
 
 static void ReplaceString(std::string &s, std::string from, std::string to) {
-	int idx;
+	std::string::size_type idx;
 	while ((idx = s.find(from)) != std::string::npos)
 		s.replace(idx, from.length(), to);
 }

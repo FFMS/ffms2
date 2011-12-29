@@ -23,8 +23,7 @@
 
 
 void FFMatroskaVideo::Free(bool CloseCodec) {
-	if (TCC)
-		delete TCC;
+	delete TCC;
 	if (MC.ST.fp) {
 		mkv_Close(MF);
 	}
@@ -35,12 +34,14 @@ void FFMatroskaVideo::Free(bool CloseCodec) {
 
 FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	FFMS_Index &Index, int Threads)
-	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track, Threads) {
-
+: FFMS_VideoSource(SourceFile, Index, Track, Threads)
+, MF(0)
+, TCC(0)
+, Res(FFSourceResources<FFMS_VideoSource>(this))
+, PacketNumber(0)
+{
 	AVCodec *Codec = NULL;
 	TrackInfo *TI = NULL;
-	TCC = NULL;
-	PacketNumber = 0;
 
 	MC.ST.fp = ffms_fopen(SourceFile, "rb");
 	if (MC.ST.fp == NULL) {
