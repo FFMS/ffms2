@@ -30,11 +30,14 @@ a:visited {
 	color: #103020;
 }
 h1, h2, h3 {
-	margin: 1.2em 0em -0.2em; 
+	margin: 1.2em 0em -0.2em;
 }
 h4 {
 	margin: 0em 0em -0.5em;
 	text-decoration: underline;
+}
+.deprecated {
+	color: red;
 }
 img {
 	border-width: 0px;
@@ -54,3 +57,4 @@ body div.maincontent {
 	font-family: monospace;
 	padding: 5px 3px 3px 3px;
 }
+
