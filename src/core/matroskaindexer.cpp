@@ -23,7 +23,9 @@
 
 
 
-FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename, AVFormatContext *FormatContext) : FFMS_Indexer(Filename) {
+FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename, AVFormatContext *FormatContext) try
+: FFMS_Indexer(Filename)
+{
 	char ErrorMessage[256];
 
 	for (int i = 0; i < 32; i++) {
@@ -53,6 +55,10 @@ FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename, AVFormatContext *Form
 	}
 
 	av_close_input_file(FormatContext);
+}
+catch (...) {
+	av_close_input_file(FormatContext);
+	throw;
 }
 
 FFMatroskaIndexer::~FFMatroskaIndexer() {

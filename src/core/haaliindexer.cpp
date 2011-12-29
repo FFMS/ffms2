@@ -22,24 +22,23 @@
 
 #include "indexing.h"
 
-
-
-FFHaaliIndexer::FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode, AVFormatContext *FormatContext) : FFMS_Indexer(Filename) {
-	this->SourceMode = SourceMode;
-	this->FormatContext = FormatContext;
-	Duration = 0;
+FFHaaliIndexer::FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode, AVFormatContext *FormatContext) try
+: FFMS_Indexer(Filename)
+, SourceMode(SourceMode)
+, pMMC(HaaliOpenFile(Filename, SourceMode))
+, NumTracks(0)
+, Duration(0)
+, FormatContext(FormatContext)
+{
 	for (int i = 0; i < 32; i++) {
 		TrackType[i] = FFMS_TYPE_UNKNOWN;
 	}
-
-	pMMC = HaaliOpenFile(Filename, SourceMode);
 
 	CComQIPtr<IPropertyBag> pBag2 = pMMC;
 	CComVariant pV2;
 	if (SUCCEEDED(pBag2->Read(L"Duration", &pV2, NULL)) && SUCCEEDED(pV2.ChangeType(VT_UI8)))
 		Duration = pV2.ullVal;
 
-	NumTracks = 0;
 	CComPtr<IEnumUnknown> pEU;
 	if (SUCCEEDED(pMMC->EnumTracks(&pEU))) {
 		CComPtr<IUnknown> pU;
@@ -58,6 +57,10 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode, AV
 			NumTracks++;
 		}
 	}
+}
+catch (...) {
+	av_close_input_file(FormatContext);
+	throw;
 }
 
 FFMS_Index *FFHaaliIndexer::DoIndexing() {
