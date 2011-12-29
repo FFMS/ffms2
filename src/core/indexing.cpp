@@ -87,6 +87,7 @@ struct TrackHeader {
 	int64_t Num;
 	int64_t Den;
 	uint32_t UseDTS;
+	uint32_t TCI;
 };
 
 
@@ -201,10 +202,11 @@ FFMS_Track::FFMS_Track() {
 	this->UseDTS = false;
 }
 
-FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS) {
+FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, CodecID TCI, bool UseDTS) {
 	this->TT = TT;
 	this->TB.Num = Num;
 	this->TB.Den = Den;
+	this->TCI = TCI;
 	this->UseDTS = UseDTS;
 }
 
@@ -357,6 +359,7 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 		TH.Frames = ctrack.size();
 		TH.Num = ctrack.TB.Num;;
 		TH.Den = ctrack.TB.Den;
+		TH.TCI = ctrack.TCI;
 		TH.UseDTS = ctrack.UseDTS;
 
 		FFMS_Track temptrack;
@@ -458,7 +461,7 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 		for (unsigned int i = 0; i < IH.Tracks; i++) {
 			TrackHeader TH;
 			z_inf(&Index, &stream, &in, CHUNK, &TH, sizeof(TrackHeader));
-			push_back(FFMS_Track(TH.Num, TH.Den, static_cast<FFMS_TrackType>(TH.TT), TH.UseDTS != 0));
+			push_back(FFMS_Track(TH.Num, TH.Den, static_cast<FFMS_TrackType>(TH.TT), static_cast<CodecID>(TH.TCI), TH.UseDTS != 0));
 			FFMS_Track &ctrack = at(i);
 
 			if (TH.Frames) {
@@ -527,20 +530,17 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Dem
 	if (Demuxer == FFMS_SOURCE_DEFAULT) {
 		// Do matroska indexing instead?
 		if (!strncmp(FormatContext->iformat->name, "matroska", 8)) {
-			avformat_close_input(&FormatContext);
-			return new FFMatroskaIndexer(Filename);
+			return new FFMatroskaIndexer(Filename, FormatContext);
 		}
 
 #ifdef HAALISOURCE
 		// Do haali ts indexing instead?
 		if (HasHaaliMPEG && (!strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts"))) {
-			avformat_close_input(&FormatContext);
-			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
+			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG, FormatContext);
 		}
 
 		if (HasHaaliOGG && !strcmp(FormatContext->iformat->name, "ogg")) {
-			avformat_close_input(&FormatContext);
-			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
+			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG, FormatContext);
 		}
 #endif
 
@@ -548,8 +548,6 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Dem
 	}
 
 	// someone forced a demuxer, use it
-	if (Demuxer != FFMS_SOURCE_LAVF)
-		avformat_close_input(&FormatContext);
 #if !defined(HAALISOURCE)
 	if (Demuxer == FFMS_SOURCE_HAALIOGG || Demuxer == FFMS_SOURCE_HAALIMPEG) {
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Your binary was not compiled with support for Haali's DirectShow parsers");
@@ -563,14 +561,14 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Dem
 		case FFMS_SOURCE_HAALIOGG:
 			if (!HasHaaliOGG)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali's Ogg parser is not available");
-			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
+			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG, FormatContext);
 		case FFMS_SOURCE_HAALIMPEG:
 			if (!HasHaaliMPEG)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali's MPEG PS/TS parser is not available");
-			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
+			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG, FormatContext);
 #endif
 		case FFMS_SOURCE_MATROSKA:
-			return new FFMatroskaIndexer(Filename);
+			return new FFMatroskaIndexer(Filename, FormatContext);
 		default:
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_INVALID_ARGUMENT, "Invalid demuxer requested");
 	}

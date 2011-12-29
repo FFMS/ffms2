@@ -41,7 +41,7 @@ FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index,
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Failed to find track");
 
-	CodecContext = InitializeCodecContextFromHaaliInfo(pBag);
+	CodecContext = InitializeCodecContextFromHaaliInfo(pBag, Frames.TCI);
 
 	AVCodec *Codec = NULL;
 	std::swap(Codec, CodecContext->codec);

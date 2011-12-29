@@ -52,7 +52,7 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Failed to find track");
 
-	HCodecContext = InitializeCodecContextFromHaaliInfo(pBag);
+	HCodecContext = InitializeCodecContextFromHaaliInfo(pBag, Frames.TCI);
 	CodecContext = HCodecContext;
 
 	AVCodec *Codec = NULL;

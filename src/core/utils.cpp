@@ -34,24 +34,7 @@ extern "C" {
 }
 #endif // _WIN32
 
-
-// Export the array but not its data type... fun...
-typedef struct CodecTags{
-    char str[20];
-    CodecID id;
-} CodecTags;
-
-extern "C" {
-extern const AVCodecTag ff_codec_bmp_tags[];
-extern const CodecTags ff_mkv_codec_tags[];
-extern const AVCodecTag ff_codec_movvideo_tags[];
-extern const AVCodecTag ff_codec_wav_tags[];
-}
-
-
 extern bool GlobalUseUTF8Paths;
-
-
 
 FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const char *Message) : _ErrorType(ErrorType), _SubType(SubType), _Message(Message) {
 }
@@ -286,64 +269,6 @@ void vtCopy(VARIANT& vt,void *dest) {
 
 #endif
 
-CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC, unsigned int BitsPerSample) {
-/* Look up native codecs */
-	for(int i = 0; ff_mkv_codec_tags[i].id != CODEC_ID_NONE; i++){
-		if(!strncmp(ff_mkv_codec_tags[i].str, Codec,
-			strlen(ff_mkv_codec_tags[i].str))) {
-
-				// Uncompressed and exotic format fixup
-				// This list is incomplete
-				CodecID CID = ff_mkv_codec_tags[i].id;
-				switch (CID) {
-					case CODEC_ID_PCM_S16LE:
-						switch (BitsPerSample) {
-							case 8: CID = CODEC_ID_PCM_S8; break;
-							case 16: CID = CODEC_ID_PCM_S16LE; break;
-							case 24: CID = CODEC_ID_PCM_S24LE; break;
-							case 32: CID = CODEC_ID_PCM_S32LE; break;
-						}
-						break;
-					case CODEC_ID_PCM_S16BE:
-						switch (BitsPerSample) {
-							case 8: CID = CODEC_ID_PCM_S8; break;
-							case 16: CID = CODEC_ID_PCM_S16BE; break;
-							case 24: CID = CODEC_ID_PCM_S24BE; break;
-							case 32: CID = CODEC_ID_PCM_S32BE; break;
-						}
-						break;
-					default:
-						break;
-				}
-
-				return CID;
-			}
-	}
-
-/* Video codecs for "avi in mkv" mode */
-	const AVCodecTag *const tags[] = { ff_codec_bmp_tags, 0 };
-
-	if (!strcmp(Codec, "V_MS/VFW/FOURCC")) {
-		FFMS_BITMAPINFOHEADER *b = reinterpret_cast<FFMS_BITMAPINFOHEADER *>(CodecPrivate);
-		return av_codec_get_id(tags, b->biCompression);
-	}
-
-	if (!strcmp(Codec, "V_FOURCC")) {
-		return av_codec_get_id(tags, FourCC);
-	}
-
-// FIXME
-/* Audio codecs for "acm in mkv" mode */
-		//#include "Mmreg.h"
-		//((WAVEFORMATEX *)TI->CodecPrivate)->wFormatTag
-
-/* Fixup for uncompressed video formats */
-
-/* Fixup for uncompressed audio formats */
-
-	return CODEC_ID_NONE;
-}
-
 void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext) {
 	CodecContext->extradata = static_cast<uint8_t *>(TI->CodecPrivate);
 	CodecContext->extradata_size = TI->CodecPrivateSize;
@@ -360,7 +285,7 @@ void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *
 
 #ifdef HAALISOURCE
 
-FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag) {
+FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag, CodecID CI) {
 	CComVariant pV;
 	if (FAILED(pBag->Read(L"Type", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
 		return FFCodecContext();
@@ -436,7 +361,7 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag)
 		char CodecStr[2048];
 		wcstombs(CodecStr, pV.bstrVal, 2000);
 
-		CodecContext->codec = avcodec_find_decoder(MatroskaToFFCodecID(CodecStr, CodecContext->extradata, FourCC, CodecContext->bits_per_coded_sample));
+		CodecContext->codec = avcodec_find_decoder(CI);
 	}
 	return CodecContext;
 }

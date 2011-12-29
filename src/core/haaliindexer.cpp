@@ -24,8 +24,9 @@
 
 
 
-FFHaaliIndexer::FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode) : FFMS_Indexer(Filename) {
+FFHaaliIndexer::FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode, AVFormatContext *FormatContext) : FFMS_Indexer(Filename) {
 	this->SourceMode = SourceMode;
+	this->FormatContext = FormatContext;
 	Duration = 0;
 	for (int i = 0; i < 32; i++) {
 		TrackType[i] = FFMS_TYPE_UNKNOWN;
@@ -70,10 +71,10 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 		TrackIndices->Decoder = FFMS_SOURCE_HAALIOGG;
 
 	for (int i = 0; i < NumTracks; i++) {
-		TrackIndices->push_back(FFMS_Track(1, 1000000, TrackType[i]));
+		TrackIndices->push_back(FFMS_Track(1, 1000000, TrackType[i], FormatContext->streams[i]->codec->codec_id));
 		if (!PropertyBags[i] || (TrackType[i] == FFMS_TYPE_AUDIO && !(IndexMask & (1 << i)))) continue;
 
-		FFCodecContext CodecContext(InitializeCodecContextFromHaaliInfo(PropertyBags[i]));
+		FFCodecContext CodecContext(InitializeCodecContextFromHaaliInfo(PropertyBags[i], FormatContext->streams[i]->codec->codec_id));
 
 		if (!CodecContext->codec)
 			throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED, "Codec not found");
@@ -172,6 +173,10 @@ int FFHaaliIndexer::GetNumberOfTracks() {
 	return NumTracks;
 }
 
+FFHaaliIndexer::~FFHaaliIndexer() {
+	av_close_input_file(FormatContext);
+}
+
 FFMS_TrackType FFHaaliIndexer::GetTrackType(int Track) {
 	return TrackType[Track];
 }
@@ -179,7 +184,7 @@ FFMS_TrackType FFHaaliIndexer::GetTrackType(int Track) {
 const char *FFHaaliIndexer::GetTrackCodec(int Track) {
 	if (!PropertyBags[Track]) return NULL;
 
-	FFCodecContext CodecContext(InitializeCodecContextFromHaaliInfo(PropertyBags[Track]));
+	FFCodecContext CodecContext(InitializeCodecContextFromHaaliInfo(PropertyBags[Track], FormatContext->streams[Track]->codec->codec_id));
 	if (!CodecContext || !CodecContext->codec) return NULL;
 	return CodecContext->codec->name;
 }
