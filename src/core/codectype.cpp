@@ -59,7 +59,9 @@ static const CodecTags mkv_codec_tags[] = {
 	{"A_WAVPACK4"       , CODEC_ID_WAVPACK},
 
 	{"S_TEXT/UTF8"      , CODEC_ID_TEXT},
+#if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(52, 101, 0))
 	{"S_TEXT/UTF8"      , CODEC_ID_SRT},
+#endif
 	{"S_TEXT/ASCII"     , CODEC_ID_TEXT},
 	{"S_TEXT/ASS"       , CODEC_ID_SSA},
 	{"S_TEXT/SSA"       , CODEC_ID_SSA},
@@ -261,7 +263,9 @@ static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_RAWVIDEO,     MKTAG('Y', 'V', 'U', '9') },
 	{ CODEC_ID_RAWVIDEO,     MKTAG('a', 'u', 'v', '2') },
 	{ CODEC_ID_FRWU,         MKTAG('F', 'R', 'W', 'U') },
+#if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(52, 89, 0))
 	{ CODEC_ID_R10K,         MKTAG('R', '1', '0', 'k') },
+#endif
 	{ CODEC_ID_R210,         MKTAG('r', '2', '1', '0') },
 	{ CODEC_ID_V210,         MKTAG('v', '2', '1', '0') },
 	{ CODEC_ID_INDEO3,       MKTAG('I', 'V', '3', '1') },
@@ -309,10 +313,14 @@ static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_QPEG,         MKTAG('Q', '1', '.', '0') },
 	{ CODEC_ID_QPEG,         MKTAG('Q', '1', '.', '1') },
 	{ CODEC_ID_WMV3,         MKTAG('W', 'M', 'V', '3') },
+#if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(53, 9, 0))
 	{ CODEC_ID_WMV3IMAGE,    MKTAG('W', 'M', 'V', 'P') },
+#endif
 	{ CODEC_ID_VC1,          MKTAG('W', 'V', 'C', '1') },
 	{ CODEC_ID_VC1,          MKTAG('W', 'M', 'V', 'A') },
+#if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(53, 9, 0))
 	{ CODEC_ID_VC1IMAGE,     MKTAG('W', 'V', 'P', '2') },
+#endif
 	{ CODEC_ID_LOCO,         MKTAG('L', 'O', 'C', 'O') },
 	{ CODEC_ID_WNV1,         MKTAG('W', 'N', 'V', '1') },
 	{ CODEC_ID_AASC,         MKTAG('A', 'A', 'S', 'C') },
@@ -342,7 +350,9 @@ static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_AURA2,        MKTAG('A', 'U', 'R', '2') },
 	{ CODEC_ID_DPX,          MKTAG('d', 'p', 'x', ' ') },
 	{ CODEC_ID_KGV1,         MKTAG('K', 'G', 'V', '1') },
+#if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(52, 108, 0))
 	{ CODEC_ID_LAGARITH,     MKTAG('L', 'A', 'G', 'S') },
+#endif
 #ifdef FFMS_USE_FFMPEG_COMPAT
 	{ CODEC_ID_G2M,          MKTAG('G', '2', 'M', '2') },
 	{ CODEC_ID_G2M,          MKTAG('G', '2', 'M', '3') },
