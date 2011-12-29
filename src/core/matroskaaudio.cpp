@@ -19,7 +19,6 @@
 //  THE SOFTWARE.
 
 #include "audiosource.h"
-#include "codectype.h"
 #include <cassert>
 
 FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode)

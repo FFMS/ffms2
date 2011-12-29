@@ -20,7 +20,7 @@
 
 #include "videosource.h"
 
-#include "codectype.h"
+
 
 void FFMatroskaVideo::Free(bool CloseCodec) {
 	if (TCC)

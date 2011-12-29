@@ -202,6 +202,7 @@ public:
 
 
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
+FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT);
 void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContext *TCC, MatroskaReaderContext &Context);
 bool AudioFMTIsFloat(AVSampleFormat FMT);
 void InitNullPacket(AVPacket &pkt);
@@ -214,6 +215,7 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag)
 #endif
 
 void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext);
+CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC = 0, unsigned int BitsPerSample = 0);
 FILE *ffms_fopen(const char *filename, const char *mode);
 size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max);
 #if defined(_WIN32) && LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(53,0,3)
@@ -223,5 +225,7 @@ void ffms_patch_lavf_file_open();
 CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceMode);
 #endif // HAALISOURCE
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
+const char *GetLAVCSampleFormatName(AVSampleFormat s);
+
 
 #endif

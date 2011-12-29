@@ -21,11 +21,7 @@
 #include <string.h>
 #include <errno.h>
 #include <algorithm>
-
-
 #include "utils.h"
-
-#include "codectype.h"
 #include "indexing.h"
 
 #ifdef _WIN32
@@ -38,7 +34,24 @@ extern "C" {
 }
 #endif // _WIN32
 
+
+// Export the array but not its data type... fun...
+typedef struct CodecTags{
+    char str[20];
+    CodecID id;
+} CodecTags;
+
+extern "C" {
+extern const AVCodecTag ff_codec_bmp_tags[];
+extern const CodecTags ff_mkv_codec_tags[];
+extern const AVCodecTag ff_codec_movvideo_tags[];
+extern const AVCodecTag ff_codec_wav_tags[];
+}
+
+
 extern bool GlobalUseUTF8Paths;
+
+
 
 FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const char *Message) : _ErrorType(ErrorType), _SubType(SubType), _Message(Message) {
 }
@@ -102,6 +115,26 @@ void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo) {
 
 		if (ErrorInfo->BufferSize > 0)
 			ErrorInfo->Buffer[0] = 0;
+	}
+}
+
+FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT) {
+	switch (TT) {
+		case TT_VIDEO: return FFMS_TYPE_VIDEO; break;
+		case TT_AUDIO: return FFMS_TYPE_AUDIO; break;
+		case TT_SUB: return FFMS_TYPE_SUBTITLE; break;
+		default: return FFMS_TYPE_UNKNOWN;
+	}
+}
+
+const char *GetLAVCSampleFormatName(AVSampleFormat s) {
+	switch (s) {
+		case AV_SAMPLE_FMT_U8:	return "8-bit unsigned integer";
+		case AV_SAMPLE_FMT_S16:	return "16-bit signed integer";
+		case AV_SAMPLE_FMT_S32:	return "32-bit signed integer";
+		case AV_SAMPLE_FMT_FLT:	return "Single-precision floating point";
+		case AV_SAMPLE_FMT_DBL:	return "Double-precision floating point";
+		default:				return "Unknown";
 	}
 }
 
@@ -252,6 +285,64 @@ void vtCopy(VARIANT& vt,void *dest) {
 }
 
 #endif
+
+CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC, unsigned int BitsPerSample) {
+/* Look up native codecs */
+	for(int i = 0; ff_mkv_codec_tags[i].id != CODEC_ID_NONE; i++){
+		if(!strncmp(ff_mkv_codec_tags[i].str, Codec,
+			strlen(ff_mkv_codec_tags[i].str))) {
+
+				// Uncompressed and exotic format fixup
+				// This list is incomplete
+				CodecID CID = ff_mkv_codec_tags[i].id;
+				switch (CID) {
+					case CODEC_ID_PCM_S16LE:
+						switch (BitsPerSample) {
+							case 8: CID = CODEC_ID_PCM_S8; break;
+							case 16: CID = CODEC_ID_PCM_S16LE; break;
+							case 24: CID = CODEC_ID_PCM_S24LE; break;
+							case 32: CID = CODEC_ID_PCM_S32LE; break;
+						}
+						break;
+					case CODEC_ID_PCM_S16BE:
+						switch (BitsPerSample) {
+							case 8: CID = CODEC_ID_PCM_S8; break;
+							case 16: CID = CODEC_ID_PCM_S16BE; break;
+							case 24: CID = CODEC_ID_PCM_S24BE; break;
+							case 32: CID = CODEC_ID_PCM_S32BE; break;
+						}
+						break;
+					default:
+						break;
+				}
+
+				return CID;
+			}
+	}
+
+/* Video codecs for "avi in mkv" mode */
+	const AVCodecTag *const tags[] = { ff_codec_bmp_tags, 0 };
+
+	if (!strcmp(Codec, "V_MS/VFW/FOURCC")) {
+		FFMS_BITMAPINFOHEADER *b = reinterpret_cast<FFMS_BITMAPINFOHEADER *>(CodecPrivate);
+		return av_codec_get_id(tags, b->biCompression);
+	}
+
+	if (!strcmp(Codec, "V_FOURCC")) {
+		return av_codec_get_id(tags, FourCC);
+	}
+
+// FIXME
+/* Audio codecs for "acm in mkv" mode */
+		//#include "Mmreg.h"
+		//((WAVEFORMATEX *)TI->CodecPrivate)->wFormatTag
+
+/* Fixup for uncompressed video formats */
+
+/* Fixup for uncompressed audio formats */
+
+	return CODEC_ID_NONE;
+}
 
 void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext) {
 	CodecContext->extradata = static_cast<uint8_t *>(TI->CodecPrivate);
@@ -545,3 +636,6 @@ void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
 			"Couldn't find stream information");
 	}
 }
+
+
+

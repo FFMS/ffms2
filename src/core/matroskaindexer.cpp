@@ -19,9 +19,8 @@
 //  THE SOFTWARE.
 
 #include "indexing.h"
-
-#include "codectype.h"
 #include "matroskaparser.h"
+
 
 
 FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename) : FFMS_Indexer(Filename) {
