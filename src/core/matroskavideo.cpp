@@ -23,7 +23,7 @@
 
 
 void FFMatroskaVideo::Free(bool CloseCodec) {
-	delete TCC;
+	TCC.reset();
 	if (MC.ST.fp) {
 		mkv_Close(MF);
 	}
@@ -36,7 +36,6 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	FFMS_Index &Index, int Threads)
 : FFMS_VideoSource(SourceFile, Index, Track, Threads)
 , MF(0)
-, TCC(0)
 , Res(FFSourceResources<FFMS_VideoSource>(this))
 , PacketNumber(0)
 {
@@ -62,7 +61,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	TI = mkv_GetTrackInfo(MF, VideoTrack);
 
 	if (TI->CompEnabled)
-		TCC = new TrackCompressionContext(MF, TI, VideoTrack);
+		TCC.reset(new TrackCompressionContext(MF, TI, VideoTrack));
 
 	CodecContext = avcodec_alloc_context3(NULL);
 #if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52,111,0)
@@ -133,11 +132,11 @@ void FFMatroskaVideo::DecodeNextFrame() {
 
 	while (PacketNumber < Frames.size()) {
 		// The additional indirection is because the packets are stored in
-		// presentation order and not decoding order, this is unnoticable
+		// presentation order and not decoding order, this is unnoticeable
 		// in the other sources where less is done manually
 		const TFrameInfo &FI = Frames[Frames[PacketNumber].OriginalPos];
 		FrameSize = FI.FrameSize;
-		ReadFrame(FI.FilePos, FrameSize, TCC, MC);
+		ReadFrame(FI.FilePos, FrameSize, TCC.get(), MC);
 
 		Packet.data = MC.Buffer;
 		Packet.size = FrameSize;

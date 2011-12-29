@@ -30,16 +30,16 @@ extern "C" {
 #endif // FFMS_USE_POSTPROC
 }
 
-// must be included after ffmpeg headers
-#include "ffmscompat.h"
-
-#include <vector>
 #include <algorithm>
+#include <memory>
 #include <sstream>
+#include <vector>
+
+#include "ffms.h"
+#include "ffmscompat.h"
 #include "indexing.h"
 #include "utils.h"
 #include "videoutils.h"
-#include "ffms.h"
 
 #ifdef HAALISOURCE
 #	define WIN32_LEAN_AND_MEAN
@@ -124,7 +124,7 @@ class FFMatroskaVideo : public FFMS_VideoSource {
 private:
 	MatroskaFile *MF;
 	MatroskaReaderContext MC;
-	TrackCompressionContext *TCC;
+	std::auto_ptr<TrackCompressionContext> TCC;
 	char ErrorMessage[256];
 	FFSourceResources<FFMS_VideoSource> Res;
 	size_t PacketNumber;
