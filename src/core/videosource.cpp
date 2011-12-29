@@ -362,3 +362,42 @@ void FFMS_VideoSource::ResetOutputFormat() {
 
 	OutputFrame(DecodeFrame);
 }
+
+void FFMS_VideoSource::SetVideoProperties() {
+	VP.RFFDenominator = CodecContext->time_base.num;
+	VP.RFFNumerator = CodecContext->time_base.den;
+	if (CodecContext->codec_id == CODEC_ID_H264) {
+		if (VP.RFFNumerator & 1)
+			VP.RFFDenominator *= 2;
+		else
+			VP.RFFNumerator /= 2;
+	}
+	VP.NumFrames = Frames.size();
+	VP.TopFieldFirst = DecodeFrame->top_field_first;
+	VP.ColorSpace = CodecContext->colorspace;
+	VP.ColorRange = CodecContext->color_range;
+	// these pixfmt's are deprecated but still used
+	if (
+		CodecContext->pix_fmt == PIX_FMT_YUVJ420P
+		|| CodecContext->pix_fmt == PIX_FMT_YUVJ422P
+		|| CodecContext->pix_fmt == PIX_FMT_YUVJ444P
+		)
+		VP.ColorRange = AVCOL_RANGE_JPEG;
+
+
+	VP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+	VP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+
+	if (CodecContext->width <= 0 || CodecContext->height <= 0)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+		"Codec returned zero size video");
+
+	// attempt to correct framerate to the proper NTSC fraction, if applicable
+	CorrectNTSCRationalFramerate(&VP.FPSNumerator, &VP.FPSDenominator);
+	// correct the timebase, if necessary
+	CorrectTimebase(&VP, &Frames.TB);
+
+	// Set AR variables
+	VP.SARNum = CodecContext->sample_aspect_ratio.num;
+	VP.SARDen = CodecContext->sample_aspect_ratio.den;
+}

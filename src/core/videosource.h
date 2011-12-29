@@ -92,6 +92,7 @@ protected:
 	void ReAdjustOutputFormat();
 	FFMS_Frame *OutputFrame(AVFrame *Frame);
 	virtual void Free(bool CloseCodec) = 0;
+	void SetVideoProperties();
 public:
 	virtual ~FFMS_VideoSource();
 	const FFMS_VideoProperties& GetVideoProperties() { return VP; }
