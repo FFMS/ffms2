@@ -54,10 +54,10 @@ FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename, AVFormatContext *Form
 		Codec[i] = avcodec_find_decoder(FormatContext->streams[i]->codec->codec_id);
 	}
 
-	av_close_input_file(FormatContext);
+	avformat_close_input(&FormatContext);
 }
 catch (...) {
-	av_close_input_file(FormatContext);
+	avformat_close_input(&FormatContext);
 	throw;
 }
 

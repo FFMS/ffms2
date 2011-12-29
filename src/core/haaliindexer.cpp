@@ -59,7 +59,7 @@ FFHaaliIndexer::FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode, AV
 	}
 }
 catch (...) {
-	av_close_input_file(FormatContext);
+	avformat_close_input(&FormatContext);
 	throw;
 }
 
@@ -177,7 +177,7 @@ int FFHaaliIndexer::GetNumberOfTracks() {
 }
 
 FFHaaliIndexer::~FFHaaliIndexer() {
-	av_close_input_file(FormatContext);
+	avformat_close_input(&FormatContext);
 }
 
 FFMS_TrackType FFHaaliIndexer::GetTrackType(int Track) {
