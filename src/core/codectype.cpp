@@ -268,6 +268,9 @@ static const AVCodecTag codec_bmp_tags[] = {
 #endif
 	{ CODEC_ID_R210,         MKTAG('r', '2', '1', '0') },
 	{ CODEC_ID_V210,         MKTAG('v', '2', '1', '0') },
+#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >=, 53, 28, 0, 53, 44, 0)
+	{ CODEC_ID_V410,         MKTAG('v', '2', '1', '0') },
+#endif
 	{ CODEC_ID_INDEO3,       MKTAG('I', 'V', '3', '1') },
 	{ CODEC_ID_INDEO3,       MKTAG('I', 'V', '3', '2') },
 	{ CODEC_ID_INDEO4,       MKTAG('I', 'V', '4', '1') },
@@ -364,6 +367,15 @@ static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'R', 'G') },
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'Y', '0') },
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'Y', '2') },
+#endif
+#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >=, 53, 19, 0, 53, 32, 0)
+	{ CODEC_ID_VBLE,         MKTAG('V', 'B', 'L', 'E') },
+#endif
+#if defined(FFMS_USE_FFMPEG_COMPAT) && (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(53, 43, 0))
+	{ CODEC_ID_ESCAPE130,    MKTAG('E', '1', '3', '0') },
+#endif
+#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >=, 53, 28, 0, 53, 43, 0)
+	{ CODEC_ID_DXTORY,       MKTAG('x', 't', 'o', 'r') },
 #endif
 	{ CODEC_ID_NONE,         0 }
 };
