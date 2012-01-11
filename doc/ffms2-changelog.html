@@ -20,10 +20,13 @@ FFmpegSource2 Changelog
 <li>Make it possible to open single-frame videos without explicitly setting seekmode to -1 for you weird people who want to open images with ffms (Plorkyeran)</li>
 <li>Fixed bug where indicies would sometimes be incorrectly considered valid (TheRyuu)</li>
 <li>Add support for recent versions of libav/ffmpeg built as shared libraries (Plorkyeran, TheRyuu, Kovensky)</li>
-<li>When possible, non-API symbols are no longer exported (Daemon404)</li>
+<li>When possible, non-API symbols are no longer exported (Daemon404, TheFluff)</li>
 <li>Deprecate postproc support. Libav and FFmpeg will probably kill it at some point in the future and it's really not very useful.</li>
 <li>Fix the pkg-config version on OS X (Plorkyeran).</li>
-<li>General bitrot fixes to deal with changes in Libav/FFmpeg</li>
+<li>Fixed a bug that could cause the <tt>FFmpegSource2()</tt> Avisynth function to not use UTF8 filenames even when told to do so. (pandv2)</li>
+<li>Fixed a few minor memory leaks. (Plorkyeran)</li>
+<li>Adjusting audio delay relative to the first video track should now work properly again (was broken in 2.16). (Plorkyeran)</li>
+<li>General bitrot fixes to deal with changes in Libav/FFmpeg (everyone)</li>
 <li>Bump minimum required version of FFmpeg to 0.6.</li>
 </ul>
 </li>
