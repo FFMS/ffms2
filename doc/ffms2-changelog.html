@@ -12,16 +12,16 @@ FFmpegSource2 Changelog
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
 <li>2.17<ul>
-<li>Reworked colormatrix and color range handling a bit, which fixed a bug that could cause FFMS2 to always output TV range even if the input was fullrange. (TheFluff)</li>
+<li>Reworked color matrix and color range handling a bit, which fixed a bug that could cause FFMS2 to always output TV range even if the input was full range. (TheFluff)</li>
 <li>The autotools build system can now create debug builds properly. (Daemon404)</li>
 <li>Deprecated parts of the API will now cause compiler warnings when you use them. (TheFluff)</li>
 <li>Added a <tt>FFMS_GetVersion</tt> function to the API (lets library users get the version number at runtime) and exposed it in Avisynth as <tt>FFGetVersion</tt>. (TheRyuu, TheFluff)</li>
 <li>Added a variable prefix option to the Avisynth functions. Its primary purpose is to get subsequent calls to source functions from overwriting variables from earlier calls. (TheFluff)</li>
 <li>Make it possible to open single-frame videos without explicitly setting seekmode to -1 for you weird people who want to open images with ffms (Plorkyeran)</li>
-<li>Fixed bug where indicies would sometimes be incorrectly considered valid (TheRyuu)</li>
-<li>Add support for recent versions of libav/ffmpeg built as shared libraries (Plorkyeran, TheRyuu, Kovensky)</li>
+<li>Fixed bug where indices would sometimes be incorrectly considered valid (TheRyuu)</li>
+<li>Add support for recent versions of Libav/FFmpeg built as shared libraries (Plorkyeran, TheRyuu, Kovensky)</li>
 <li>When possible, non-API symbols are no longer exported (Daemon404, TheFluff)</li>
-<li>Deprecate postproc support. Libav and FFmpeg will probably kill it at some point in the future and it's really not very useful.</li>
+<li>Deprecate postprocessing support. Libav and FFmpeg are planning on removing it at some point in the near future and it's really not very useful.</li>
 <li>Fix the pkg-config version on OS X (Plorkyeran).</li>
 <li>Fixed a bug that could cause the <tt>FFmpegSource2()</tt> Avisynth function to not use UTF8 filenames even when told to do so. (pandv2)</li>
 <li>Fixed a few minor memory leaks. (Plorkyeran)</li>
