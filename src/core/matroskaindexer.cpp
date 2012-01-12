@@ -72,10 +72,10 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 	TrackIndices->Decoder = FFMS_SOURCE_MATROSKA;
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++) {
+		if (!Codec[i])
+			continue;
 		TrackInfo *TI = mkv_GetTrackInfo(MF, i);
 		TrackIndices->push_back(FFMS_Track(mkv_TruncFloat(mkv_GetTrackInfo(MF, i)->TimecodeScale), 1000000, HaaliTrackTypeToFFTrackType(mkv_GetTrackInfo(MF, i)->Type), Codec[i]->id));
-
-		if (!Codec[i]) continue;
 
 		AVCodecContext *CodecContext = avcodec_alloc_context3(NULL);
 		InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);
