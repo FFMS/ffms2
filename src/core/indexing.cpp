@@ -526,6 +526,12 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Dem
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Can't open '") + Filename + "'");
 
+	if (avformat_find_stream_info(FormatContext,NULL) < 0) {
+		avformat_close_input(&FormatContext);
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			"Couldn't find stream information");
+	}
+
 	// Demuxer was not forced, probe for the best one to use
 	if (Demuxer == FFMS_SOURCE_DEFAULT) {
 		// Do matroska indexing instead?

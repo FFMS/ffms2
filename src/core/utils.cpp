@@ -332,13 +332,8 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag,
 			CodecContext->channels = pV.uintVal;
 	}
 
-	pV.Clear();
-	if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
-		char CodecStr[2048];
-		wcstombs(CodecStr, pV.bstrVal, 2000);
+	CodecContext->codec = avcodec_find_decoder(CI);
 
-		CodecContext->codec = avcodec_find_decoder(CI);
-	}
 	return CodecContext;
 }
 
