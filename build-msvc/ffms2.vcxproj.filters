@@ -63,6 +63,9 @@
     <ClCompile Include="..\src\core\ffms.cpp">
       <Filter>API</Filter>
     </ClCompile>
+	<ClCompile Include="..\src\core\codectype.cpp">
+	  <Filter>Utils</Filter>
+	</ClCompile>
     <ClCompile Include="..\src\core\matroskaparser.c">
       <Filter>Utils</Filter>
     </ClCompile>
@@ -116,6 +119,9 @@
     <ClInclude Include="..\src\core\coparser.h">
       <Filter>Utils</Filter>
     </ClInclude>
+	<ClInclude Include="..\src\core\codectype.h">
+	  <Filter>Utils</Filter>
+	</ClInclude>
     <ClInclude Include="..\include\ffmscompat.h">
       <Filter>Utils</Filter>
     </ClInclude>

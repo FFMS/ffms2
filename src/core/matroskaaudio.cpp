@@ -19,6 +19,7 @@
 //  THE SOFTWARE.
 
 #include "audiosource.h"
+#include "codectype.h"
 #include <cassert>
 
 FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode)
@@ -44,7 +45,7 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &
 	CodecContext.reset(avcodec_alloc_context3(NULL), DeleteMatroskaCodecContext);
 	assert(CodecContext);
 
-	AVCodec *Codec = avcodec_find_decoder(Frames.TCI);
+	AVCodec *Codec = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate, 0, TI->AV.Audio.BitDepth));
 	if (!Codec) {
 		mkv_Close(MF);
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC, "Audio codec not found");

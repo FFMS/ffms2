@@ -27,6 +27,12 @@ extern "C" {
 
 FFLAVFIndexer::FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContext) : FFMS_Indexer(Filename) {
 	this->FormatContext = FormatContext;
+
+	if (avformat_find_stream_info(FormatContext,NULL) < 0) {
+		avformat_close_input(&FormatContext);
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			"Couldn't find stream information");
+	}
 }
 
 FFLAVFIndexer::~FFLAVFIndexer() {
@@ -43,7 +49,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 	for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {
 		TrackIndices->push_back(FFMS_Track((int64_t)FormatContext->streams[i]->time_base.num * 1000,
 			FormatContext->streams[i]->time_base.den,
-			static_cast<FFMS_TrackType>(FormatContext->streams[i]->codec->codec_type), FormatContext->streams[i]->codec->codec_id));
+			static_cast<FFMS_TrackType>(FormatContext->streams[i]->codec->codec_type)));
 
 		if (FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
 			AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codec->codec_id);

@@ -84,7 +84,6 @@ struct FFMS_Track : public std::vector<TFrameInfo> {
 public:
 	FFMS_TrackType TT;
 	FFMS_TrackTimeBase TB;
-	CodecID TCI;
 	bool UseDTS;
 
 	int FindClosestVideoKeyFrame(int Frame);
@@ -93,7 +92,7 @@ public:
 	void WriteTimecodes(const char *TimecodeFile);
 
 	FFMS_Track();
-	FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, CodecID TCI, bool UseDTS = false);
+	FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false);
 };
 
 struct FFMS_Index : public std::vector<FFMS_Track> {
@@ -175,7 +174,7 @@ private:
 	MatroskaReaderContext MC;
 	AVCodec *Codec[32];
 public:
-	FFMatroskaIndexer(const char *Filename, AVFormatContext *FormatContext);
+	FFMatroskaIndexer(const char *Filename);
 	~FFMatroskaIndexer();
 	FFMS_Index *DoIndexing();
 	int GetNumberOfTracks();
@@ -197,8 +196,7 @@ private:
 	int64_t Duration;
 	AVFormatContext *FormatContext;
 public:
-	FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode, AVFormatContext *FormatContext);
-	~FFHaaliIndexer();
+	FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode);
 	FFMS_Index *DoIndexing();
 	int GetNumberOfTracks();
 	FFMS_TrackType GetTrackType(int Track);

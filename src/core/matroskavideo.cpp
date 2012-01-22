@@ -20,7 +20,7 @@
 
 #include "videosource.h"
 
-
+#include "codectype.h"
 
 void FFMatroskaVideo::Free(bool CloseCodec) {
 	TCC.reset();
@@ -71,7 +71,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 		CodecContext->thread_count = 1;
 #endif
 
-	Codec = avcodec_find_decoder(Frames.TCI);
+	Codec = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate));
 	if (Codec == NULL)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Video codec not found");

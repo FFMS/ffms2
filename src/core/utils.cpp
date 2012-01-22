@@ -21,7 +21,10 @@
 #include <string.h>
 #include <errno.h>
 #include <algorithm>
+
 #include "utils.h"
+
+#include "codectype.h"
 #include "indexing.h"
 
 #ifdef _WIN32
@@ -98,26 +101,6 @@ void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo) {
 
 		if (ErrorInfo->BufferSize > 0)
 			ErrorInfo->Buffer[0] = 0;
-	}
-}
-
-FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT) {
-	switch (TT) {
-		case TT_VIDEO: return FFMS_TYPE_VIDEO; break;
-		case TT_AUDIO: return FFMS_TYPE_AUDIO; break;
-		case TT_SUB: return FFMS_TYPE_SUBTITLE; break;
-		default: return FFMS_TYPE_UNKNOWN;
-	}
-}
-
-const char *GetLAVCSampleFormatName(AVSampleFormat s) {
-	switch (s) {
-		case AV_SAMPLE_FMT_U8:	return "8-bit unsigned integer";
-		case AV_SAMPLE_FMT_S16:	return "16-bit signed integer";
-		case AV_SAMPLE_FMT_S32:	return "32-bit signed integer";
-		case AV_SAMPLE_FMT_FLT:	return "Single-precision floating point";
-		case AV_SAMPLE_FMT_DBL:	return "Double-precision floating point";
-		default:				return "Unknown";
 	}
 }
 
@@ -312,7 +295,7 @@ void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *
 
 #ifdef HAALISOURCE
 
-FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag, CodecID CI) {
+FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag) {
 	CComVariant pV;
 	if (FAILED(pBag->Read(L"Type", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
 		return FFCodecContext();
@@ -321,6 +304,7 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag,
 
 	FFCodecContext CodecContext(avcodec_alloc_context3(NULL), DeleteHaaliCodecContext);
 
+	unsigned int FourCC = 0;
 	if (TT == TT_VIDEO) {
 		pV.Clear();
 		if (SUCCEEDED(pBag->Read(L"Video.PixelWidth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
@@ -329,6 +313,10 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag,
 		pV.Clear();
 		if (SUCCEEDED(pBag->Read(L"Video.PixelHeight", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
 			CodecContext->coded_height = pV.uintVal;
+
+		pV.Clear();
+		if (SUCCEEDED(pBag->Read(L"FOURCC", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+			FourCC = pV.uintVal;
 
 		pV.Clear();
 		if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
@@ -358,8 +346,13 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag,
 			CodecContext->channels = pV.uintVal;
 	}
 
-	CodecContext->codec = avcodec_find_decoder(CI);
+	pV.Clear();
+	if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
+		char CodecStr[2048];
+		wcstombs(CodecStr, pV.bstrVal, 2000);
 
+		CodecContext->codec = avcodec_find_decoder(MatroskaToFFCodecID(CodecStr, CodecContext->extradata, FourCC, CodecContext->bits_per_coded_sample));
+	}
 	return CodecContext;
 }
 
@@ -558,6 +551,3 @@ void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
 			"Couldn't find stream information");
 	}
 }
-
-
-

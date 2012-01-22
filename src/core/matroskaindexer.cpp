@@ -19,13 +19,12 @@
 //  THE SOFTWARE.
 
 #include "indexing.h"
+
+#include "codectype.h"
 #include "matroskaparser.h"
 
 
-
-FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename, AVFormatContext *FormatContext) try
-: FFMS_Indexer(Filename)
-{
+FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename) : FFMS_Indexer(Filename) {
 	char ErrorMessage[256];
 
 	for (int i = 0; i < 32; i++) {
@@ -50,14 +49,9 @@ FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename, AVFormatContext *Form
 	}
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++) {
-		Codec[i] = avcodec_find_decoder(FormatContext->streams[i]->codec->codec_id);
+		TrackInfo *TI = mkv_GetTrackInfo(MF, i);
+		Codec[i] = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate, 0, TI->AV.Audio.BitDepth));
 	}
-
-	avformat_close_input(&FormatContext);
-}
-catch (...) {
-	avformat_close_input(&FormatContext);
-	throw;
 }
 
 FFMatroskaIndexer::~FFMatroskaIndexer() {
@@ -72,10 +66,10 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 	TrackIndices->Decoder = FFMS_SOURCE_MATROSKA;
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++) {
-		if (!Codec[i])
-			continue;
 		TrackInfo *TI = mkv_GetTrackInfo(MF, i);
-		TrackIndices->push_back(FFMS_Track(mkv_TruncFloat(mkv_GetTrackInfo(MF, i)->TimecodeScale), 1000000, HaaliTrackTypeToFFTrackType(mkv_GetTrackInfo(MF, i)->Type), Codec[i]->id));
+		TrackIndices->push_back(FFMS_Track(mkv_TruncFloat(mkv_GetTrackInfo(MF, i)->TimecodeScale), 1000000, HaaliTrackTypeToFFTrackType(mkv_GetTrackInfo(MF, i)->Type)));
+
+		if (!Codec[i]) continue;
 
 		AVCodecContext *CodecContext = avcodec_alloc_context3(NULL);
 		InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);

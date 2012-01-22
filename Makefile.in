@@ -88,7 +88,7 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 src_core_libffms2_la_DEPENDENCIES =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_src_core_libffms2_la_OBJECTS = src/core/audiosource.lo \
-	src/core/ffms.lo src/core/haaliaudio.lo \
+	src/core/codectype.lo src/core/ffms.lo src/core/haaliaudio.lo \
 	src/core/haaliindexer.lo src/core/haalivideo.lo \
 	src/core/indexing.lo src/core/lavfaudio.lo \
 	src/core/lavfindexer.lo src/core/lavfvideo.lo \
@@ -293,6 +293,8 @@ src_core_libffms2_la_LIBADD = @LIBAV_LIBS@ @ZLIB_LDFLAGS@ -lz @LTUNDEF@
 src_core_libffms2_la_SOURCES = \
 	src/core/audiosource.h \
 	src/core/audiosource.cpp \
+	src/core/codectype.h \
+	src/core/codectype.cpp \
 	src/core/coparser.h \
 	src/core/ffms.cpp \
 	src/core/guids.h \
@@ -425,6 +427,8 @@ src/core/$(DEPDIR)/$(am__dirstamp):
 	@: > src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/audiosource.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
+src/core/codectype.lo: src/core/$(am__dirstamp) \
+	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/ffms.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/haaliaudio.lo: src/core/$(am__dirstamp) \
@@ -522,6 +526,8 @@ mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f src/core/audiosource.$(OBJEXT)
 	-rm -f src/core/audiosource.lo
+	-rm -f src/core/codectype.$(OBJEXT)
+	-rm -f src/core/codectype.lo
 	-rm -f src/core/ffms.$(OBJEXT)
 	-rm -f src/core/ffms.lo
 	-rm -f src/core/haaliaudio.$(OBJEXT)
@@ -564,6 +570,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/audiosource.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/codectype.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/ffms.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/haaliaudio.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/haaliindexer.Plo@am__quote@
