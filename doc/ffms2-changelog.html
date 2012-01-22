@@ -27,6 +27,7 @@ FFmpegSource2 Changelog
 <li>Fixed a few minor memory leaks. (Plorkyeran)</li>
 <li>Adjusting audio delay relative to the first video track should now work properly again (was broken in 2.16). (Plorkyeran)</li>
 <li>General bitrot fixes to deal with changes in Libav/FFmpeg (everyone)</li>
+<li>Corrected handling of codec private data when using a non-libavformat parser. Fixes decoding of FFV1 and UTVideo in MKV, among other things. (TheFluff)</li>
 <li>Bump minimum required version of FFmpeg to 0.6.</li>
 </ul>
 </li>
