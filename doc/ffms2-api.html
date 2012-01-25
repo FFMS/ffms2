@@ -30,7 +30,7 @@ FFMS2 does not mux or encode anything. FFMS2 does not give you fine control over
 <ul><li>As new as possible. If it's older than version 0.6 it will mean definite failure.</li>
 <li>On Win32 you should REALLY, REALLY make sure to have a good compile of the pthreads library.</li>
 <li>Further recommended configuration options: <tt>--disable-debug --disable-muxers --disable-encoders --disable-filters --disable-hwaccels --disable-network --disable-devices --enable-runtime-cpudetect</tt> (runtime cpudetect in particular is a good idea if you are planning on distributing the library; not disabling debug results in a gigantic dll).</li>
-<li>If you want to use the postprocessing filter functionality (i.e. <tt>FFMS_SetPP()</tt>) you need to compile FFmpeg with libpostproc (pass <tt>--enable-gpl --enable-postproc</tt> to its configure). Note that this will make the FFMS2 binary GPL licensed.</li>
+<li>If you want to use the postprocessing filter functionality (i.e. <tt>FFMS_SetPP()</tt>) you need to compile FFmpeg with libpostproc (pass <tt>--enable-gpl --enable-postproc</tt> to its configure). Note that this will make the FFMS2 binary GPL licensed. Note that libpostproc support is deprecated and will go away some time in the future.</li>
 </ul>
 </li>
 <li><b><a href="http://www.zlib.net/">zlib</a></b></li>
@@ -40,10 +40,10 @@ Compiling the library itself is fairly straightforward. For the basics, just add
 </p>
 <h3>Windows-specific compilation notes</h3>
 <p>
-If you're compiling the library on Windows, it is suggested that you use the Microsoft Visual Studio 2008 solution file from SVN. Any version of MSVC2008 and MSVC2010 should work for compiling it, including the free Express Edition (but if you use that you must undefine HAALISOURCE or find a copy of the ATL libraries). The project file in question assumes that you have compiled FFmpeg with MinGW (guides on how to do that are easy to find) and want to link FFMS2 with it statically (linking it dynamically is possible but not recommended since it usually leads to DLL hell). Add your mingw/include and mingw/lib folders to MSVC's respective global directory settings (Tools menu -&gt; Options -&gt; Projects and Solutions -&gt; VC++ Directories) and you should be good to go.
+If you're compiling the library on Windows, it is suggested that you use the Microsoft Visual Studio 2008 solution file from SVN. Any version of MSVC2008 and MSVC2010 should work for compiling it, including the free Express Edition (but if you use that you must undefine HAALISOURCE or find a copy of the ATL libraries). The project file in question assumes that you have compiled Libav with MinGW (guides on how to do that are easy to find) and want to link FFMS2 with it statically (linking it dynamically is possible but not recommended since it usually leads to DLL hell). If you're using FFmpeg (as opposed to Libav), uncomment #define FFMS_USE_FFMPEG_COMPAT in ffmscompat.h, as this is not always automatically detected. Add your mingw/include and mingw/lib folders to MSVC's respective global directory settings (Tools menu -&gt; Options -&gt; Projects and Solutions -&gt; VC++ Directories) and you should be good to go.
 </p>
 <p>
-If you're targeting x64 from msvc just keep in mind that this method of building will probably take a little extra effort to get a working libav compile to link against.  As far as I know libav will have to be cross compiled from linux (haven't found any native mingw compilers that output the symbols correctly), there is a guide <b><a href="http://ffmpeg.arrozcru.org/wiki/index.php?title=Building_64-bit_static_libraries">here</a></b>.  Follow it all the way up to the compiling ffmpeg part and you can throw in the extra configure flags as defined above (also you'll <b>NEED</b> --extra-cflags="-D_SYSCRT" in order to get it to link correctly in msvc).  If you want pthreads support I recommend using something like <b><a href="https://github.com/TheRyuu/pw32threads">this pthread wrapper</a></b> for w32threads otherwise more linking trouble awaits you.  The rest is just like targeting 32bit.  Just add the appropriate directories to the VC directories (probably taken from /usr/local/x86_64-w64-mingw32 in this case).
+Targetting x64 from msvc requires a little extra work. You'll need a fairly recent mingw, and a libav which has w32threads, as x64 pthreads is a linking nightmare. Building libav for x64 is much like for 32-bit, except with the relevant prefix information (which will be along the lines of --prefix=/mingw/x86_64-w64-mingw32/ --cross-prefix=x86_64-w64-mingw32- --arch=x86_64 --target-os=mingw32), and --extra-cflags="-D_SYSCRT" is <b>required</b> for the end result to be linkable from msvc. Note that you'll probably need to add /usr/local/x86_64-w64-mingw32/... to MSVC's directories rather than the usual paths.
 </p>
 <p>
 If you're using anything else, you're on your own. It's possible to build the library using MinGW; there is an avisynth plugin available that uses the avisynth_c interface originally developed to target 64-bit avisynth (it is available in <tt>branches/c_plugin</tt> in svn). If you're rolling your own MSVC solution file, remember that you need to <tt>#define FFMS_EXPORTS</tt> somewhere when compiling the library. You may also <tt>#define HAALISOURCE</tt> if you want to make the library able to open MPEG TS/PS and OGM files using Haali's DirectShow splitter (if you do not define it, those files will be opened with libavformat instead, and that usually doesn't work out all that well). Note that if you do so, opening those files will fail unless the user has the <a href="http://haali.cs.msu.ru/mkv/">Haali Media Splitter</a> DirectShow filter installed. Both those defines are enabled by default in the solution file in SVN.
@@ -364,6 +364,7 @@ Resets the output format for the given <tt>FFMS_VideoSource</tt> object so that 
 </p>
 
 <h3>FFMS_SetPP - sets postprocessing options</h3>
+<h5 class="deprecated">DEPRECATED</h5>
 <pre>int FFMS_SetPP(FFMS_VideoSource *V, const char *PP, FFMS_ErrorInfo *ErrorInfo)</pre>
 <p>
 Sets the postprocessing filter chain that will be applied to frames retrieved from the given <tt>FFMS_VideoSource</tt> object by all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt> until the next call to <tt>FFMS_SetPP</tt> or <tt>FFMS_ResetPP</tt>. The filter chain is described by a text string; see the PP string format section below for details.
@@ -379,6 +380,7 @@ See above.</p>
 </p>
 
 <h3>FFMS_ResetPP - resets postprocessing options</h3>
+<h5 class="deprecated">DEPRECATED</h5>
 <pre>void FFMS_ResetPP(FFMS_VideoSource *V)</pre>
 <p>
 Resets the postprocessing filter chain that will be applied to frames retrieved from the given <tt>FFMS_VideoSource</tt> object by all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt> until the next call to <tt>FFMS_SetPP</tt> or <tt>FFMS_ResetPP</tt> so that no postprocessing will be applied. Is equivalent to <tt>FFMS_SetPP(VideoSource, NULL, ErrorInfo)</tt> but is more efficient.
@@ -661,6 +663,8 @@ The following public data structures may be of interest.
     int InterlacedFrame;
     int TopFieldFirst;
     char PictType;
+    int ColorSpace;
+    int ColorRange;
 } FFMS_Frame;</pre>
 <p>A struct representing a video frame. The fields are:</p>
 <ul>
@@ -668,13 +672,15 @@ The following public data structures may be of interest.
 <li><b><tt>int Linesize[4]</tt></b> - An array of integers representing the length of each scan line in each of the four picture planes, in bytes. In alternative terminology, this is the "pitch" of the plane. Usually, the total size in bytes of picture plane <tt>i</tt> is <tt>FFMS_Frame-&gt;Linesize[i] * FFMS_VideoProperties-&gt;Height</tt>, but do note that some pixel formats (most notably YV12) has vertical chroma subsampling, and then the U/V planes may be of a different height than the primary plane.</li>
 <li><b><tt>int EncodedWidth; int EncodedHeight</tt></b> - The original resolution of the frame (in pixels), as encoded in the compressed file, before any scaling was applied. Note that must not necessarily be the same for all frames in a stream.</li>
 <li><b><tt>int EncodedPixelFormat</tt></b> - The original pixel format of the frame, as encoded in the compressed file.</li>
-<li><b><tt>int ScaledWidth; int ScaledHeight;</tt></b> - The output resolution of the frame (in pixels), i.e. the resolution of what is actually stored in the <tt>Data</tt> field. Same as <tt>FFMS_VideoProperties->Width/Height</tt>, but unlike that struct, this one gets updated automatically when you call <tt>FFMS_GetFrame</tt>, so you don't have to call <tt>FFMS_GetVideoProperties</tt> all the time to see if someone changed the output format while you weren't looking.</li>
+<li><b><tt>int ScaledWidth; int ScaledHeight;</tt></b> - The output resolution of the frame (in pixels), i.e. the resolution of what is actually stored in the <tt>Data</tt> field. Same as <tt>FFMS_VideoProperties-&gt;Width/Height</tt>, but unlike that struct, this one gets updated automatically when you call <tt>FFMS_GetFrame</tt>, so you don't have to call <tt>FFMS_GetVideoProperties</tt> all the time to see if someone changed the output format while you weren't looking.</li>
 <li><b><tt>int ConvertedPixelFormat</tt></b> - The output pixel format of the frame, i.e. the pixel format of what is actually stored in the <tt>Data</tt> field.</li>
 <li><b><tt>int KeyFrame</tt></b> - Nonzero if the frame is a keyframe, 0 otherwise.</li>
-<li><b><tt>int RepeatPict</tt></b> - An integer repesenting the RFF flag for this frame; i.e. the frame shall be displayed for <tt>1+RepeatPict</tt> time units, where the time units are expressed in the special RFF timebase available in <tt>FFMS_VideoProperties->RFFDenominator</tt> and <tt>FFMS_VideoProperties->RFFNumerator</tt>. Note that if you actually end up using this, you need to ignore the usual timestamps (calculated via the <tt>FFMS_TrackTimeBase</tt> and the frame PTS) since they are fundamentally incompatible with RFF flags.</li>
+<li><b><tt>int RepeatPict</tt></b> - An integer repesenting the RFF flag for this frame; i.e. the frame shall be displayed for <tt>1+RepeatPict</tt> time units, where the time units are expressed in the special RFF timebase available in <tt>FFMS_VideoProperties-&gt;RFFDenominator</tt> and <tt>FFMS_VideoProperties-&gt;RFFNumerator</tt>. Note that if you actually end up using this, you need to ignore the usual timestamps (calculated via the <tt>FFMS_TrackTimeBase</tt> and the frame PTS) since they are fundamentally incompatible with RFF flags.</li>
 <li><b><tt>int InterlacedFrame</tt></b> - Nonzero if the frame was coded as interlaced, zero otherwise.</li>
 <li><b><tt>int TopFieldFirst</tt></b> - Nonzero if the frame has the top field first, zero if it has the bottom field first. Only relevant if <tt>InterlacedFrame</tt> is nonzero.</li>
 <li><b><tt>char PictType</tt></b> - A single character denoting coding type (I/B/P etc) of the compressed frame. See the Constants and Preprocessor Definitions section for more information about what the different letters mean.</li>
+<li><b><tt>int ColorSpace</tt></b> - Identifies the YUV color coefficients used in the frame. Same as in the MPEG-2 specs; see the <tt>FFMS_ColorSpaces</tt> enum.</li>
+<li><b><tt>int ColorRange</tt></b> - Identifies the luma range of the frame. See the <tt>FFMS_ColorRanges</tt> enum.</li>
 </ul>
 
 <h3>FFMS_TrackTimeBase</h3>
@@ -713,8 +719,8 @@ A struct representing the basic time unit of a track, as a rational number where
     int CropLeft;
     int CropRight;
     int TopFieldFirst;
-    int ColorSpace;
-    int ColorRange;
+    int ColorSpace; <span class="deprecated">[DEPRECATED]</span>
+    int ColorRange; <span class="deprecated">[DEPRECATED]</span>
     double FirstTime;
     double LastTime;
 } FFMS_VideoProperties;</pre>
@@ -726,8 +732,8 @@ A struct representing the basic time unit of a track, as a rational number where
 <li><b><tt>int SARNum; int SARDen;</tt></b> - The sample aspect ratio of the video frames, as a rational number where <tt>SARNum</tt> is the numerator and <tt>SARDen</tt> is the denominator. Note that this is a metadata setting that you are free to ignore, but if you want the proper display aspect ratio with anamorphic material, you should honor it. On the other hand, there are situations (like when encoding) where you should probably ignore it because the user expects it to be ignored.</li>
 <li><b><tt>int CropTop; int CropBottom; int CropLeft; int CropRight;</tt></b> - The number of pixels in each direction you should crop the frame before displaying it. Note that like the SAR, this is a metadata setting and you are free to ignore it, but if you want things to display 100% correctly you should honor it.</li>
 <li><b><tt>int TopFieldFirst</tt></b> - Nonzero if the stream has the top field first, zero if it has the bottom field first.</li>
-<li><b><tt>int ColorSpace</tt></b> - Identifies the YUV color coefficients used in the stream. Same as in the MPEG-2 specs; see the <tt>FFMS_ColorSpaces</tt> enum.</li>
-<li><b><tt>int ColorRange</tt></b> - Identifies the luma range of the stream. See the <tt>FFMS_ColorRanges</tt> enum.</li>
+<li><b><tt>int ColorSpace</tt></b> - Identifies the YUV color coefficients used in the stream. Same as in the MPEG-2 specs; see the <tt>FFMS_ColorSpaces</tt> enum. The ColorSpace property in FFMS_Frame should be instead of this, as this can vary between frames.</li>
+<li><b><tt>int ColorRange</tt></b> - Identifies the luma range of the stream. See the <tt>FFMS_ColorRanges</tt> enum. The ColorRange property in FFMS_Frame should be instead of this, as this can vary between frames.</li>
 <li><b><tt>double FirstTime; double LastTime;</tt></b> - The first and last timestamp of the stream respectively, in milliseconds. Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.</li>
 </ul>
 

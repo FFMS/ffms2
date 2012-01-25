@@ -20,11 +20,10 @@
 
 #include "videosource.h"
 
-
+#include "codectype.h"
 
 void FFMatroskaVideo::Free(bool CloseCodec) {
-	if (TCC)
-		delete TCC;
+	TCC.reset();
 	if (MC.ST.fp) {
 		mkv_Close(MF);
 	}
@@ -35,12 +34,13 @@ void FFMatroskaVideo::Free(bool CloseCodec) {
 
 FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	FFMS_Index &Index, int Threads)
-	: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track, Threads) {
-
+: FFMS_VideoSource(SourceFile, Index, Track, Threads)
+, MF(0)
+, Res(FFSourceResources<FFMS_VideoSource>(this))
+, PacketNumber(0)
+{
 	AVCodec *Codec = NULL;
 	TrackInfo *TI = NULL;
-	TCC = NULL;
-	PacketNumber = 0;
 
 	MC.ST.fp = ffms_fopen(SourceFile, "rb");
 	if (MC.ST.fp == NULL) {
@@ -61,10 +61,10 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	TI = mkv_GetTrackInfo(MF, VideoTrack);
 
 	if (TI->CompEnabled)
-		TCC = new TrackCompressionContext(MF, TI, VideoTrack);
+		TCC.reset(new TrackCompressionContext(MF, TI, VideoTrack));
 
 	CodecContext = avcodec_alloc_context3(NULL);
-#if LIBAVCODEC_VERSION_MAJOR >= 53 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR >= 112)
+#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52,111,0)
 	CodecContext->thread_count = DecodingThreads;
 #else
 	if (avcodec_thread_init(CodecContext, DecodingThreads))
@@ -89,44 +89,16 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 
 	VP.FPSDenominator = 1;
 	VP.FPSNumerator = 30;
-	VP.RFFDenominator = CodecContext->time_base.num;
-	VP.RFFNumerator = CodecContext->time_base.den;
-	if (CodecContext->codec_id == CODEC_ID_H264) {
-		if (VP.RFFNumerator & 1)
-			VP.RFFDenominator *= 2;
-		else
-			VP.RFFNumerator /= 2;
-	}
-	VP.NumFrames = Frames.size();
-	VP.TopFieldFirst = DecodeFrame->top_field_first;
-	VP.ColorSpace = CodecContext->colorspace;
-	VP.ColorRange = CodecContext->color_range;
-	// these pixfmt's are deprecated but still used
-	if (
-		CodecContext->pix_fmt == PIX_FMT_YUVJ420P
-		|| CodecContext->pix_fmt == PIX_FMT_YUVJ422P
-		|| CodecContext->pix_fmt == PIX_FMT_YUVJ444P
-	)
-		VP.ColorRange = AVCOL_RANGE_JPEG;
-
-	VP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
-	VP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
-
-	if (CodecContext->width <= 0 || CodecContext->height <= 0)
-		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-			"Codec returned zero size video");
 
 	// Calculate the average framerate
 	if (Frames.size() >= 2) {
 		double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
-		VP.FPSDenominator = (unsigned int)(PTSDiff * mkv_TruncFloat(TI->TimecodeScale) / (double)1000 / (double)(VP.NumFrames - 1) + 0.5);
+		VP.FPSDenominator = (unsigned int)(PTSDiff * mkv_TruncFloat(TI->TimecodeScale) / (double)1000 / (double)(Frames.size() - 1) + 0.5);
 		VP.FPSNumerator = 1000000;
 	}
 
-	// attempt to correct framerate to the proper NTSC fraction, if applicable
-	CorrectNTSCRationalFramerate(&VP.FPSNumerator, &VP.FPSDenominator);
-	// correct the timebase, if necessary
-	CorrectTimebase(&VP, &Frames.TB);
+	// Set the video properties from the codec context
+	SetVideoProperties();
 
 	// Output the already decoded frame so it isn't wasted
 	OutputFrame(DecodeFrame);
@@ -150,7 +122,7 @@ void FFMatroskaVideo::DecodeNextFrame() {
 	unsigned int FrameSize;
 
 	if (InitialDecode == -1) {
-		if (DelayCounter > CodecContext->has_b_frames) {
+		if (DelayCounter > FFMS_CALCULATE_DELAY) {
 			DelayCounter--;
 			goto Done;
 		} else {
@@ -160,11 +132,11 @@ void FFMatroskaVideo::DecodeNextFrame() {
 
 	while (PacketNumber < Frames.size()) {
 		// The additional indirection is because the packets are stored in
-		// presentation order and not decoding order, this is unnoticable
+		// presentation order and not decoding order, this is unnoticeable
 		// in the other sources where less is done manually
 		const TFrameInfo &FI = Frames[Frames[PacketNumber].OriginalPos];
 		FrameSize = FI.FrameSize;
-		ReadFrame(FI.FilePos, FrameSize, TCC, MC);
+		ReadFrame(FI.FilePos, FrameSize, TCC.get(), MC);
 
 		Packet.data = MC.Buffer;
 		Packet.size = FrameSize;
@@ -179,7 +151,7 @@ void FFMatroskaVideo::DecodeNextFrame() {
 
 		if (!FrameFinished)
 			DelayCounter++;
-		if (DelayCounter > CodecContext->has_b_frames && !InitialDecode)
+		if (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode)
 			goto Done;
 
 		if (FrameFinished)
@@ -187,7 +159,7 @@ void FFMatroskaVideo::DecodeNextFrame() {
 	}
 
 	// Flush the last frames
-	if (CodecContext->has_b_frames) {
+	if (FFMS_CALCULATE_DELAY) {
 		AVPacket NullPacket;
 		InitNullPacket(NullPacket);
 		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
@@ -217,7 +189,7 @@ FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
 	}
 
 	do {
-		if (CurrentFrame+CodecContext->has_b_frames >= n)
+		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;

@@ -29,14 +29,14 @@ FFLAVFIndexer::FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContex
 	this->FormatContext = FormatContext;
 
 	if (avformat_find_stream_info(FormatContext,NULL) < 0) {
-		av_close_input_file(FormatContext);
+		avformat_close_input(&FormatContext);
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			"Couldn't find stream information");
 	}
 }
 
 FFLAVFIndexer::~FFLAVFIndexer() {
-	av_close_input_file(FormatContext);
+	avformat_close_input(&FormatContext);
 }
 
 FFMS_Index *FFLAVFIndexer::DoIndexing() {
@@ -90,11 +90,16 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 	std::vector<int64_t> LastValidTS;
 	LastValidTS.resize(FormatContext->nb_streams, ffms_av_nopts_value);
 
+#if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(52,106,0))
+	int64_t filesize = FormatContext->file_size;
+#else
+	int64_t filesize = avio_size(FormatContext->pb);
+#endif
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
 		// Update progress
 		// FormatContext->pb can apparently be NULL when opening images.
 		if (IC && FormatContext->pb) {
-			if ((*IC)(FormatContext->pb->pos, FormatContext->file_size, ICPrivate))
+			if ((*IC)(FormatContext->pb->pos, filesize, ICPrivate))
 				throw FFMS_Exception(FFMS_ERROR_CANCELLED, FFMS_ERROR_USER,
 					"Cancelled by user");
 		}

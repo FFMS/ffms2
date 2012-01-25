@@ -12,19 +12,31 @@ FFmpegSource2 Changelog
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
 <li>2.17<ul>
-<li>Reworked colormatrix and color range handling a bit, which fixed a bug that could cause FFMS2 to always output TV range even if the input was fullrange. (TheFluff)</li>
+<li>Reworked color matrix and color range handling a bit, which fixed a bug that could cause FFMS2 to always output TV range even if the input was full range. (TheFluff)</li>
 <li>The autotools build system can now create debug builds properly. (Daemon404)</li>
 <li>Deprecated parts of the API will now cause compiler warnings when you use them. (TheFluff)</li>
 <li>Added a <tt>FFMS_GetVersion</tt> function to the API (lets library users get the version number at runtime) and exposed it in Avisynth as <tt>FFGetVersion</tt>. (TheRyuu, TheFluff)</li>
 <li>Added a variable prefix option to the Avisynth functions. Its primary purpose is to get subsequent calls to source functions from overwriting variables from earlier calls. (TheFluff)</li>
+<li>Make it possible to open single-frame videos without explicitly setting seekmode to -1 for you weird people who want to open images with ffms (Plorkyeran)</li>
+<li>Fixed bug where indices would sometimes be incorrectly considered valid (TheRyuu)</li>
+<li>Add support for recent versions of Libav/FFmpeg built as shared libraries (Plorkyeran, TheRyuu, Kovensky)</li>
+<li>When possible, non-API symbols are no longer exported (Daemon404, TheFluff)</li>
+<li>Deprecate postprocessing support. Libav and FFmpeg are planning on removing it at some point in the near future and it's really not very useful.</li>
+<li>Fix the pkg-config version on OS X (Plorkyeran).</li>
+<li>Fixed a bug that could cause the <tt>FFmpegSource2()</tt> Avisynth function to not use UTF8 filenames even when told to do so. (pandv2)</li>
+<li>Fixed a few minor memory leaks. (Plorkyeran)</li>
+<li>Adjusting audio delay relative to the first video track should now work properly again (was broken in 2.16). (Plorkyeran)</li>
+<li>General bitrot fixes to deal with changes in Libav/FFmpeg (everyone)</li>
+<li>Corrected handling of codec private data when using a non-libavformat parser. Fixes decoding of FFV1 and UTVideo in MKV, among other things. (TheFluff)</li>
+<li>Bump minimum required version of FFmpeg to 0.6.</li>
 </ul>
 </li>
 <li>2.16<ul>
-<li>Reimplemented output colorspace selection, this should fix all issues with the avisynth plugin when opening yuv420p10 or yuv444 material plus several other less common cases. (Myrsloik)</li>
+<li>Reimplemented output colorspace selection, this should fix all issues with the Avisynth plugin when opening yuv420p10 or yuv444 material plus several other less common cases. (Myrsloik)</li>
 <li>Added <tt>FFMS_SetOutputFormatV2</tt> to the API. This function allows you to specify PixelFormats &gt;= 64 for use as output. (Myrsloik)</li>
-<li>Fixed a serious bug that could cause crashes and completely useless index files with h264 in matroska. (Myrsloik)</li>
-<li>Automatically detect number of decoding threads.  The avisynth video source funtion already did this, now moved so the api can use it as well. (TheRyuu)</li> 
-<li>Re-add the ability to target x64 with msvc since it's a bit more sane now. (TheRyuu)</li>
+<li>Fixed a serious bug that could cause crashes and completely useless index files with h264 in Matroska. (Myrsloik)</li>
+<li>Automatically detect number of decoding threads.  The Avisynth video source funtion already did this, now moved so the API can use it as well. (TheRyuu)</li> 
+<li>Re-add the ability to target x64 with MSVC, since it's a bit more sane now. (TheRyuu)</li>
 <li>Fixed a bug that could cause crashes when reading audio if FFMS2 was compiled with GCC. (Myrsloik)</li>
 <li>ffmsindex will no longer crash if it cannot open the file given to it for indexing. (TheFluff)</li>
 <li>FFMS2 will no longer crash if the video decoder feeds it an empty frame (can sometimes happen when using lots of decoder threads); you'll get a nice error message instead. (TheFluff)</li>

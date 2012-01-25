@@ -194,6 +194,7 @@ private:
 	FFMS_TrackType TrackType[32];
 	CComQIPtr<IPropertyBag> PropertyBags[32];
 	int64_t Duration;
+	AVFormatContext *FormatContext;
 public:
 	FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode);
 	FFMS_Index *DoIndexing();

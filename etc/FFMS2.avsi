@@ -28,7 +28,7 @@ function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", 
 	varprefix	= default(varprefix, "")
 	
 	((cache == true) && (atrack <= -2)) ? ffindex(source=source, cachefile=cachefile, \
-		indexmask=0, overwrite=overwrite) : (cache == true) ? ffindex(source=source, \
+		indexmask=0, overwrite=overwrite, utf8=utf8) : (cache == true) ? ffindex(source=source, \
 		cachefile=cachefile, indexmask=-1, overwrite=overwrite, utf8=utf8) : nop
 	
 	v = ffvideosource(source=source, track=vtrack, cache=cache, cachefile=cachefile, \

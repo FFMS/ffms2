@@ -22,11 +22,12 @@
 
 #include "indexing.h"
 
-
+#include "codectype.h"
 
 FFHaaliIndexer::FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode) : FFMS_Indexer(Filename) {
 	this->SourceMode = SourceMode;
 	Duration = 0;
+
 	for (int i = 0; i < 32; i++) {
 		TrackType[i] = FFMS_TYPE_UNKNOWN;
 	}

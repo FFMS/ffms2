@@ -61,7 +61,7 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Could not open video codec");
 
-#if LIBAVCODEC_VERSION_MAJOR >= 53 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR >= 112)
+#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52,111,0)
 	CodecContext->thread_count = DecodingThreads;
 #else
 	if (avcodec_thread_init(CodecContext, DecodingThreads))
@@ -79,44 +79,16 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 
 	VP.FPSDenominator = 1;
 	VP.FPSNumerator = 30;
-	VP.RFFDenominator = CodecContext->time_base.num;
-	VP.RFFNumerator = CodecContext->time_base.den;
-	if (CodecContext->codec_id == CODEC_ID_H264) {
-		if (VP.RFFNumerator & 1)
-			VP.RFFDenominator *= 2;
-		else
-			VP.RFFNumerator /= 2;
-	}
-	VP.NumFrames = Frames.size();
-	VP.TopFieldFirst = DecodeFrame->top_field_first;
-	VP.ColorSpace = CodecContext->colorspace;
-	VP.ColorRange = CodecContext->color_range;
-	// these pixfmt's are deprecated but still used
-	if (
-		CodecContext->pix_fmt == PIX_FMT_YUVJ420P
-		|| CodecContext->pix_fmt == PIX_FMT_YUVJ422P
-		|| CodecContext->pix_fmt == PIX_FMT_YUVJ444P
-	)
-		VP.ColorRange = AVCOL_RANGE_JPEG;
-
-	VP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
-	VP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
-
-	if (CodecContext->width <= 0 || CodecContext->height <= 0)
-		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-			"Codec returned zero size video");
 
 	// Calculate the average framerate
 	if (Frames.size() >= 2) {
 		double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
-		VP.FPSDenominator = (unsigned int)(PTSDiff  / (double)1000 / (double)(VP.NumFrames - 1) + 0.5);
+		VP.FPSDenominator = (unsigned int)(PTSDiff  / (double)1000 / (double)(Frames.size() - 1) + 0.5);
 		VP.FPSNumerator = 1000000;
 	}
 
-	// attempt to correct framerate to the proper NTSC fraction, if applicable
-	CorrectNTSCRationalFramerate(&VP.FPSNumerator, &VP.FPSDenominator);
-	// correct the timebase, if necessary
-	CorrectTimebase(&VP, &Frames.TB);
+	// Set the video properties from the codec context
+	SetVideoProperties();
 
 	// Output the already decoded frame so it isn't wasted
 	OutputFrame(DecodeFrame);
@@ -139,7 +111,7 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 	InitNullPacket(Packet);
 
 	if (InitialDecode == -1) {
-		if (DelayCounter > CodecContext->has_b_frames) {
+		if (DelayCounter > FFMS_CALCULATE_DELAY) {
 			DelayCounter--;
 			goto Done;
 		} else {
@@ -184,7 +156,7 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 
 			if (!FrameFinished)
 				DelayCounter++;
-			if (DelayCounter > CodecContext->has_b_frames && !InitialDecode)
+			if (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode)
 				goto Done;
 
 			if (FrameFinished)
@@ -193,7 +165,7 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 	}
 
 	// Flush the last frames
-	if (CodecContext->has_b_frames) {
+	if (FFMS_CALCULATE_DELAY) {
 		AVPacket NullPacket;
 		InitNullPacket(NullPacket);
 		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
@@ -227,7 +199,7 @@ ReSeek:
 
 	do {
 		int64_t StartTime;
-		if (CurrentFrame+CodecContext->has_b_frames >= n)
+		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;

@@ -21,7 +21,10 @@
 #include <string.h>
 #include <errno.h>
 #include <algorithm>
+
 #include "utils.h"
+
+#include "codectype.h"
 #include "indexing.h"
 
 #ifdef _WIN32
@@ -34,29 +37,12 @@ extern "C" {
 }
 #endif // _WIN32
 
-
-// Export the array but not its data type... fun...
-typedef struct CodecTags{
-    char str[20];
-    CodecID id;
-} CodecTags;
-
-extern "C" {
-extern const AVCodecTag ff_codec_bmp_tags[];
-extern const CodecTags ff_mkv_codec_tags[];
-extern const AVCodecTag ff_codec_movvideo_tags[];
-extern const AVCodecTag ff_codec_wav_tags[];
-}
-
-
 extern bool GlobalUseUTF8Paths;
 
-
-
-FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const char *Message) : _ErrorType(ErrorType), _SubType(SubType), _Message(Message) {
+FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const char *Message) : _Message(Message), _ErrorType(ErrorType), _SubType(SubType) {
 }
 
-FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const std::string &Message) : _ErrorType(ErrorType), _SubType(SubType), _Message(Message) {
+FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const std::string &Message) : _Message(Message), _ErrorType(ErrorType), _SubType(SubType) {
 }
 
 FFMS_Exception::~FFMS_Exception() throw () {
@@ -115,26 +101,6 @@ void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo) {
 
 		if (ErrorInfo->BufferSize > 0)
 			ErrorInfo->Buffer[0] = 0;
-	}
-}
-
-FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT) {
-	switch (TT) {
-		case TT_VIDEO: return FFMS_TYPE_VIDEO; break;
-		case TT_AUDIO: return FFMS_TYPE_AUDIO; break;
-		case TT_SUB: return FFMS_TYPE_SUBTITLE; break;
-		default: return FFMS_TYPE_UNKNOWN;
-	}
-}
-
-const char *GetLAVCSampleFormatName(AVSampleFormat s) {
-	switch (s) {
-		case AV_SAMPLE_FMT_U8:	return "8-bit unsigned integer";
-		case AV_SAMPLE_FMT_S16:	return "16-bit signed integer";
-		case AV_SAMPLE_FMT_S32:	return "32-bit signed integer";
-		case AV_SAMPLE_FMT_FLT:	return "Single-precision floating point";
-		case AV_SAMPLE_FMT_DBL:	return "Double-precision floating point";
-		default:				return "Unknown";
 	}
 }
 
@@ -286,67 +252,36 @@ void vtCopy(VARIANT& vt,void *dest) {
 
 #endif
 
-CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC, unsigned int BitsPerSample) {
-/* Look up native codecs */
-	for(int i = 0; ff_mkv_codec_tags[i].id != CODEC_ID_NONE; i++){
-		if(!strncmp(ff_mkv_codec_tags[i].str, Codec,
-			strlen(ff_mkv_codec_tags[i].str))) {
-
-				// Uncompressed and exotic format fixup
-				// This list is incomplete
-				CodecID CID = ff_mkv_codec_tags[i].id;
-				switch (CID) {
-					case CODEC_ID_PCM_S16LE:
-						switch (BitsPerSample) {
-							case 8: CID = CODEC_ID_PCM_S8; break;
-							case 16: CID = CODEC_ID_PCM_S16LE; break;
-							case 24: CID = CODEC_ID_PCM_S24LE; break;
-							case 32: CID = CODEC_ID_PCM_S32LE; break;
-						}
-						break;
-					case CODEC_ID_PCM_S16BE:
-						switch (BitsPerSample) {
-							case 8: CID = CODEC_ID_PCM_S8; break;
-							case 16: CID = CODEC_ID_PCM_S16BE; break;
-							case 24: CID = CODEC_ID_PCM_S24BE; break;
-							case 32: CID = CODEC_ID_PCM_S32BE; break;
-						}
-						break;
-					default:
-						break;
-				}
-
-				return CID;
-			}
-	}
-
-/* Video codecs for "avi in mkv" mode */
-	const AVCodecTag *const tags[] = { ff_codec_bmp_tags, 0 };
-
-	if (!strcmp(Codec, "V_MS/VFW/FOURCC")) {
-		FFMS_BITMAPINFOHEADER *b = reinterpret_cast<FFMS_BITMAPINFOHEADER *>(CodecPrivate);
-		return av_codec_get_id(tags, b->biCompression);
-	}
-
-	if (!strcmp(Codec, "V_FOURCC")) {
-		return av_codec_get_id(tags, FourCC);
-	}
-
-// FIXME
-/* Audio codecs for "acm in mkv" mode */
-		//#include "Mmreg.h"
-		//((WAVEFORMATEX *)TI->CodecPrivate)->wFormatTag
-
-/* Fixup for uncompressed video formats */
-
-/* Fixup for uncompressed audio formats */
-
-	return CODEC_ID_NONE;
-}
-
 void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext) {
-	CodecContext->extradata = static_cast<uint8_t *>(TI->CodecPrivate);
-	CodecContext->extradata_size = TI->CodecPrivateSize;
+	uint8_t *PrivateDataSrc = static_cast<uint8_t *>(TI->CodecPrivate);
+	size_t PrivateDataSize = TI->CodecPrivateSize;
+	size_t BIHSize = sizeof(FFMS_BITMAPINFOHEADER); // 40 bytes
+	if (!strncmp(TI->CodecID, "V_MS/VFW/FOURCC", 15) && PrivateDataSize >= BIHSize) {
+		// For some reason UTVideo requires CodecContext->codec_tag (i.e. the FourCC) to be set.
+		// Fine, it can't hurt to set it, so let's go find it.
+		// In a V_MS/VFW/FOURCC track, the codecprivate starts with a BITMAPINFOHEADER. If you treat that struct
+		// as an array of uint32_t, the biCompression member (that's the FourCC) can be found at offset 4.
+		// Therefore the following derp.
+		CodecContext->codec_tag = reinterpret_cast<uint32_t *>(PrivateDataSrc)[4];
+
+		// Now skip copying the BITMAPINFOHEADER into the extradata, because lavc doesn't expect it to be there.
+		if (PrivateDataSize <= BIHSize) {
+			PrivateDataSrc = NULL;
+			PrivateDataSize = 0;
+		}
+		else {
+			PrivateDataSrc += BIHSize;
+			PrivateDataSize -= BIHSize;
+		}
+	}
+	// I think you might need to do some special handling for A_MS/ACM extradata too,
+	// but I don't think anyone actually uses that.
+
+	if (PrivateDataSrc && PrivateDataSize > 0) {
+		CodecContext->extradata = static_cast<uint8_t *>(av_mallocz(PrivateDataSize + FF_INPUT_BUFFER_PADDING_SIZE));
+		CodecContext->extradata_size = PrivateDataSize;
+		memcpy(CodecContext->extradata, PrivateDataSrc, PrivateDataSize);
+	}
 
 	if (TI->Type == TT_VIDEO) {
 		CodecContext->coded_width = TI->AV.Video.PixelWidth;
@@ -383,38 +318,18 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag)
 		if (SUCCEEDED(pBag->Read(L"FOURCC", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
 			FourCC = pV.uintVal;
 
-		FFMS_BITMAPINFOHEADER bih;
-		memset(&bih, 0, sizeof bih);
-		if (FourCC) {
-			// Reconstruct the missing codec private part for VC1
-			bih.biSize = sizeof bih;
-			bih.biCompression = FourCC;
-			bih.biBitCount = 24;
-			bih.biPlanes = 1;
-			bih.biHeight = CodecContext->coded_height;
-		}
-
 		pV.Clear();
 		if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
-			bih.biSize += vtSize(pV);
-			CodecContext->extradata = static_cast<uint8_t*>(av_malloc(bih.biSize));
-			// prepend BITMAPINFOHEADER if there's anything interesting in it (i.e. we're decoding VC1)
-			if (FourCC)
-				memcpy(CodecContext->extradata, &bih, sizeof bih);
-			vtCopy(pV, CodecContext->extradata + (FourCC ? sizeof bih : 0));
+			CodecContext->extradata_size = vtSize(pV);
+			CodecContext->extradata = static_cast<uint8_t*>(av_mallocz(CodecContext->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE));
+			vtCopy(pV, CodecContext->extradata);
 		}
-		// use the BITMAPINFOHEADER only. not sure if this is correct or if it's ever going to be used...
-		else {
-			CodecContext->extradata = static_cast<uint8_t*>(av_malloc(bih.biSize));
-			memcpy(CodecContext->extradata, &bih, sizeof bih);
-		}
-		CodecContext->extradata_size = bih.biSize;
 	}
 	else if (TT == TT_AUDIO) {
 		pV.Clear();
 		if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
 			CodecContext->extradata_size = vtSize(pV);
-			CodecContext->extradata = static_cast<uint8_t*>(av_malloc(CodecContext->extradata_size));
+			CodecContext->extradata = static_cast<uint8_t*>(av_mallocz(CodecContext->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE));
 			vtCopy(pV, CodecContext->extradata);
 		}
 
@@ -630,12 +545,9 @@ void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
 			std::string("Couldn't open '") + SourceFile + "'");
 
 	if (avformat_find_stream_info(FormatContext,NULL) < 0) {
-		av_close_input_file(FormatContext);
+		avformat_close_input(&FormatContext);
 		FormatContext = NULL;
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			"Couldn't find stream information");
 	}
 }
-
-
-

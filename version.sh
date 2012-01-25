@@ -1,7 +1,7 @@
 #! /bin/sh
 
 strip_echo () {
-    echo -n $(echo -n "$@" | tr -d '\n')
+    printf '%s' "$(echo "$@" | tr -d '\n')"
 }
 
 echo_maybe () {

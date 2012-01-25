@@ -19,12 +19,14 @@
 //  THE SOFTWARE.
 
 #include "indexing.h"
-#include "matroskaparser.h"
 
+#include "codectype.h"
+#include "matroskaparser.h"
 
 
 FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename) : FFMS_Indexer(Filename) {
 	char ErrorMessage[256];
+
 	for (int i = 0; i < 32; i++) {
 		Codec[i] = NULL;
 	}
@@ -118,7 +120,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 		unsigned char TrackType = mkv_GetTrackInfo(MF, Track)->Type;
 
 		TrackCompressionContext *TCC = NULL;
-		if (VideoContexts[Track].Parser || TrackType == TT_AUDIO && (IndexMask & (1 << Track))) {
+		if (VideoContexts[Track].Parser || (TrackType == TT_AUDIO && (IndexMask & (1 << Track)))) {
 			if (TrackType == TT_VIDEO)
 				TCC = VideoContexts[Track].TCC;
 			else

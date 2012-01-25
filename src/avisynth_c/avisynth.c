@@ -139,7 +139,7 @@ static AVS_Value AVSC_CC create_FFVideoSource( AVS_ScriptEnvironment *env, AVS_V
     int height = as_int( as_elt( args, 12 ), 0 );
     const char *resizer = as_string( as_elt( args, 13 ), "BICUBIC" );
     const char *csp_name = as_string( as_elt( args, 14 ), "" );
-    const char *var_prefix = as_string( as_elt( args, 16), "" );
+    const char *var_prefix = as_string( as_elt( args, 16 ), "" );
 
     if( fps_den < 1 )
         return avs_new_value_error( "FFVideoSource: FPS denominator needs to be 1 or higher" );

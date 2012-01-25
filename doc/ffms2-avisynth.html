@@ -192,7 +192,7 @@ Opens video. Will invoke indexing of all video tracks (but no audio tracks) if n
 <dt>int fpsnum = -1, int fpsden = 1</dt>
 <dd>Forces a given (constant) framerate, expressed as a rational number where <tt>fpsnum</tt> is the numerator and <tt>fpsden</tt> is the denominator. Used for VFR to CFR conversion, as it will make <tt>FFVideoSource</tt> drop or duplicate frames to convert VFR to CFR if <tt>fpsnum</tt> is greater than 0. Setting <tt>fpsnum</tt> to a number less than or equal to zero means no frames will be dropped or duplicated.</dd>
 
-<dt>string pp = ""</dt>
+<dt>string pp = "" <span class="deprecated">[DEPRECATED]</span></dt>
 <dd>Sets a chain of postprocessing filters, expressed as a string (see the "PP string format" section below). Mostly useful to do quantizer-based deblocking/deringing, but can also do simple deinterlacing and a few other odd things.</dd>
 
 <dt>int threads = -1</dt>
@@ -269,7 +269,7 @@ Opens audio. Invokes indexing of all tracks if no valid index file is found, or 
 <pre>
 FFmpegSource2(string source, int vtrack = -1, int atrack = -2, bool cache = true,
     string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1,
-    string pp, int threads = -1, string timecodes = "", int seekmode = 1,
+    string pp = "", int threads = -1, string timecodes = "", int seekmode = 1,
     bool overwrite = false, int width = -1, int height = -1,
     string resizer = "BICUBIC", string colorspace = "", int rffmode = 0,
     int adjustdelay = -1, bool utf8 = false, string varprefix = "")
@@ -287,9 +287,10 @@ FFImageSource(string source, int width = -1, int height = -1,
 <p><strong>Note:</strong> this function is provided by <tt>FFMS2.avsi</tt> and is not available unless that script has been imported or autoloaded.</p>
 
 
-<h3>FFPP</h3>
+<h3>FFPP <span class="deprecated">[DEPRECATED]</span></h3>
 <pre>FFPP(clip, string pp)</pre>
 <p>A postprocessing filter. See the <tt>pp</tt> argument to <tt>FFVideoSource</tt> and the "PP string format" section below. In general, using <tt>FFVideoSource</tt>'s <tt>pp</tt> argument instead of this function is recommended (if possible), since if it's used there it has access to video quantizers and can adapt better to the video, particularly when doing deblocking/deringing.</p>
+<p>Postprocessing support is deprecated and will be removed in a future version of FFMS2.</p>
 
 
 <h3>SWScale</h3>

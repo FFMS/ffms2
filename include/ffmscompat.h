@@ -21,6 +21,24 @@
 #ifndef FFMSCOMPAT_H
 #define	FFMSCOMPAT_H
 
+// Defaults to libav compatibility, uncomment (when building with msvc) to force ffmpeg compatibility.
+//#define FFMS_USE_FFMPEG_COMPAT
+
+// Attempt to auto-detect whether or not we are using ffmpeg.  Newer versions of ffmpeg have their micro versions 100+
+#if LIBAVFORMAT_VERSION_MICRO > 99 || LIBAVUTIL_VERSION_MICRO > 99 || LIBAVCODEC_VERSION_MICRO > 99 || LIBSWSCALE_VERSION_MICRO > 99
+#	ifndef FFMS_USE_FFMPEG_COMPAT
+#		define FFMS_USE_FFMPEG_COMPAT
+#	endif
+#endif
+
+// Helper to handle checking for different versions in libav and ffmpeg
+// First version is required libav versio, second is required ffmpeg version
+#ifdef FFMS_USE_FFMPEG_COMPAT
+#  define VERSION_CHECK(LIB, cmp, u1, u2, u3, major, minor, micro) ((LIB) cmp (AV_VERSION_INT(major, minor, micro)))
+#else
+#  define VERSION_CHECK(LIB, cmp, major, minor, micro, u1, u2, u3) ((LIB) cmp (AV_VERSION_INT(major, minor, micro)))
+#endif
+
 #ifdef _WIN32
 #	define snprintf _snprintf
 #	ifdef __MINGW32__
@@ -40,6 +58,9 @@
 #	if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(53,3,0))
 #		define avformat_find_stream_info(c,o) av_find_stream_info(c)
 #	endif
+#	if VERSION_CHECK(LIBAVFORMAT_VERSION_INT, <, 53, 17, 0, 53, 25, 0)
+#		define avformat_close_input(c) av_close_input_file(*c)
+#	endif
 #endif
 
 #ifdef LIBAVCODEC_VERSION_INT
@@ -57,6 +78,11 @@
 #	if (LIBAVCODEC_VERSION_INT) < (AV_VERSION_INT(53,6,0))
 #		define avcodec_open2(a,c,o) avcodec_open(a,c)
 #		define avcodec_alloc_context3(c) avcodec_alloc_context()
+#	endif
+#	if VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 53, 22, 0, 53, 31, 0)
+#		define FFMS_CALCULATE_DELAY (CodecContext->has_b_frames)
+#	else
+#		define FFMS_CALCULATE_DELAY (CodecContext->has_b_frames + (CodecContext->thread_count - 1))
 #	endif
 #endif
 

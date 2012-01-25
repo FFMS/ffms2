@@ -25,17 +25,16 @@
 void FFLAVFVideo::Free(bool CloseCodec) {
 	if (CloseCodec)
 		avcodec_close(CodecContext);
-	av_close_input_file(FormatContext);
+	avformat_close_input(&FormatContext);
 }
 
 FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	int Threads, int SeekMode)
-: Res(FFSourceResources<FFMS_VideoSource>(this))
-, FFMS_VideoSource(SourceFile, Index, Track, Threads)
-, SeekMode(SeekMode)
+: FFMS_VideoSource(SourceFile, Index, Track, Threads)
 , FormatContext(NULL)
+, SeekMode(SeekMode)
+, Res(FFSourceResources<FFMS_VideoSource>(this))
 {
-
 	AVCodec *Codec = NULL;
 
 	LAVFOpenFile(SourceFile, FormatContext);
@@ -45,7 +44,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 			"Video track is unseekable");
 
 	CodecContext = FormatContext->streams[VideoTrack]->codec;
-#if LIBAVCODEC_VERSION_MAJOR >= 53 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR >= 112)
+#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52,111,0)
 	CodecContext->thread_count = DecodingThreads;
 #else
 	if (avcodec_thread_init(CodecContext, DecodingThreads))
@@ -70,33 +69,6 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	//VP.image_type = VideoInfo::IT_TFF;
 	VP.FPSDenominator = FormatContext->streams[VideoTrack]->time_base.num;
 	VP.FPSNumerator = FormatContext->streams[VideoTrack]->time_base.den;
-	VP.RFFDenominator = CodecContext->time_base.num;
-	VP.RFFNumerator = CodecContext->time_base.den;
-	if (CodecContext->codec_id == CODEC_ID_H264) {
-		if (VP.RFFNumerator & 1)
-			VP.RFFDenominator *= 2;
-		else
-			VP.RFFNumerator /= 2;
-	}
-	VP.NumFrames = Frames.size();
-	VP.TopFieldFirst = DecodeFrame->top_field_first;
-	VP.ColorSpace = CodecContext->colorspace;
-	VP.ColorRange = CodecContext->color_range;
-	// these pixfmt's are deprecated but still used
-	if (
-		CodecContext->pix_fmt == PIX_FMT_YUVJ420P
-		|| CodecContext->pix_fmt == PIX_FMT_YUVJ422P
-		|| CodecContext->pix_fmt == PIX_FMT_YUVJ444P
-	)
-		VP.ColorRange = AVCOL_RANGE_JPEG;
-
-
-	VP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
-	VP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
-
-	if (CodecContext->width <= 0 || CodecContext->height <= 0)
-		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-			"Codec returned zero size video");
 
 	// sanity check framerate
 	if (VP.FPSDenominator > VP.FPSNumerator || VP.FPSDenominator <= 0 || VP.FPSNumerator <= 0) {
@@ -109,22 +81,16 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 		double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
 		double TD = (double)(Frames.TB.Den);
 		double TN = (double)(Frames.TB.Num);
-		VP.FPSDenominator = (unsigned int)(((double)1000000) / (double)((VP.NumFrames - 1) / ((PTSDiff * TN/TD) / (double)1000)));
+		VP.FPSDenominator = (unsigned int)(((double)1000000) / (double)((Frames.size() - 1) / ((PTSDiff * TN/TD) / (double)1000)));
 		VP.FPSNumerator = 1000000;
 	}
 
-	// attempt to correct framerate to the proper NTSC fraction, if applicable
-	CorrectNTSCRationalFramerate(&VP.FPSNumerator, &VP.FPSDenominator);
-	// correct the timebase, if necessary
-	CorrectTimebase(&VP, &Frames.TB);
+	// Set the video properties from the codec context
+	SetVideoProperties();
 
 	// Cannot "output" to PPFrame without doing all other initialization
 	// This is the additional mess required for seekmode=-1 to work in a reasonable way
 	OutputFrame(DecodeFrame);
-
-	// Set AR variables
-	VP.SARNum = CodecContext->sample_aspect_ratio.num;
-	VP.SARDen = CodecContext->sample_aspect_ratio.den;
 }
 
 void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
@@ -134,7 +100,7 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 	*AStartTime = -1;
 
 	if (InitialDecode == -1) {
-		if (DelayCounter > CodecContext->has_b_frames) {
+		if (DelayCounter > FFMS_CALCULATE_DELAY) {
 			DelayCounter--;
 			goto Done;
 		} else {
@@ -155,7 +121,7 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 
 			if (!FrameFinished)
 				DelayCounter++;
-			if (DelayCounter > CodecContext->has_b_frames && !InitialDecode) {
+			if (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode) {
 				av_free_packet(&Packet);
 				goto Done;
 			}
@@ -168,7 +134,7 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 	}
 
 	// Flush the last frames
-	if (CodecContext->has_b_frames) {
+	if (FFMS_CALCULATE_DELAY) {
 		AVPacket NullPacket;
 		InitNullPacket(NullPacket);
 		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
@@ -223,7 +189,7 @@ ReSeek:
 
 	do {
 		int64_t StartTime;
-		if (CurrentFrame+CodecContext->has_b_frames >= n)
+		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;

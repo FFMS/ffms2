@@ -133,7 +133,7 @@ die() {
     exit 1
 }
 
-rm -f config.h config.mak config.log x264.pc conftest*
+rm -f config.h config.mak config.log ffms.pc conftest*
 
 prefix='/usr/local'
 exec_prefix='${prefix}'
@@ -341,8 +341,19 @@ if [ -z "$FFMPEG_LIBS" -a -z "$FFMPEG_CFLAGS" ]; then
         cc_check "" $lib && FFMPEG_LIBS="$FFMPEG_LIBS $lib"
     done
 fi
-if ! cc_check libavformat/avformat.h "$FFMPEG_CFLAGS $FFMPEG_LIBS" "avcodec_decode_video2( 0, 0, 0, 0 );" ; then
-    die "unable to link against ffmpeg"
+
+echo "checking whether linking with FFmpeg or Libav... "
+ffmpegORlibav="Libav"
+if cpp_check libavcodec/avcodec.h "$FFMPEG_CFLAGS $FFMPEG_LIBS" "LIBAVCODEC_VERSION_MICRO >= 100" ||
+   (cpp_check libavcodec/avcodec.h "$FFMPEG_CFLAGS $FFMPEG_LIBS" "LIBAVCODEC_VERSION_INT < AV_VERSION_INT(53, 47, 100)" &&
+    cc_check libavcodec/avcodec.h "$FFMPEG_CFLAGS $FFMPEG_LIBS" "int test = CODEC_ID_G2M;") ; then
+    ffmpegORlibav="FFmpeg"
+    CPPFLAGS="$CPPFLAGS -DFFMS_USE_FFMPEG_COMPAT"
+fi
+
+if ! cc_check libavformat/avformat.h "$FFMPEG_CFLAGS $FFMPEG_LIBS" "avcodec_decode_video2( 0, 0, 0, 0 );" ||
+   ! cc_check libswscale/swscale.h "$FFMPEG_CFLAGS $FFMPEG_LIBS" "swscale_version();" ; then
+    die "unable to link against $ffmpegORlibav"
 fi
 
 # check for optional libpostproc
@@ -388,7 +399,6 @@ if [ "$debug" != "yes" -a "$gprof" != "yes" ]; then
     CXXFLAGS="$CXXFLAGS -s -fomit-frame-pointer"
     LDFLAGS="$LDFLAGS -s"
 fi
-
 if [ "$debug" = "yes" ]; then
     CFLAGS="-O1 -g $CFLAGS"
     CXXFLAGS="-O1 -g $CXXFLAGS"
