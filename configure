@@ -133,7 +133,7 @@ die() {
     exit 1
 }
 
-rm -f config.h config.mak config.log ffms.pc conftest*
+rm -f config.h config.mak config.log ffms.pc version.rc.h conftest*
 
 prefix='/usr/local'
 exec_prefix='${prefix}'
@@ -156,6 +156,7 @@ LDFLAGS="$LDFLAGS"
 SOFLAGS="$SOFLAGS"
 HAVE_GETOPT_LONG=1
 cross_prefix=""
+version_rc="no"
 
 EXE=""
 
@@ -235,6 +236,7 @@ CXX="${CXX-${cross_prefix}g++}"
 AR="${AR-${cross_prefix}ar}"
 RANLIB="${RANLIB-${cross_prefix}ranlib}"
 STRIP="${STRIP-${cross_prefix}strip}"
+RC=""
 
 if [ -z "$host" -a -z "$cross_prefix" ]; then    
     host=`./config.guess`
@@ -414,6 +416,34 @@ rm -f conftest*
 version=`./version.sh`
 API=$(echo $version | cut -f 1 -d '.')
 
+if [ "$shared" = "yes" -a "$SYS" = "MINGW" ] ; then
+    version_rc="yes"
+    RC="${cross_prefix}windres"
+
+    # now generate the rc file header
+    ffms_name="FFmpegSource"
+    [ "$avs" = "yes" ] && ffms_name="$ffms_name Avisynth C Plugin" || ffms_name="$ffms_name for Windows"
+    cpp_check "" "" "defined(_WIN64)" && ffms_name="$ffms_name x64"
+    ffms_name="$ffms_name\0"
+
+    ffms_version=$(echo $version | sed -e 's/\./,/g')
+    version_digits=$(echo $ffms_version | sed -e 's/,/ /g' | wc -w)
+    # if digits are missing, add them now
+    while [ "$version_digits" -lt 4 ]; do
+        ffms_version="${ffms_version},0"
+        version_digits=`expr $version_digits + 1`
+    done
+    [ "$avs" = "yes" ] && ffms_file="ffms${API}.dll" || ffms_file="libffms-${API}.dll"
+    
+    cat > version.rc.h << EOF
+#define FFMS_NAME "${ffms_name}\0"
+#define FFMS_VERSION $ffms_version
+#define FFMS_VERSION_STRING "${ffms_version}\0"
+#define FFMS_DESCRIPTION "${ffms_name}\0"
+#define FFMS_FILE "${ffms_file}\0"
+EOF
+fi
+
 cat > config.mak << EOF
 prefix=$prefix
 exec_prefix=$exec_prefix
@@ -436,6 +466,8 @@ AVISYNTH=$avs
 SOFLAGS_USER=$SOFLAGS
 SYS=$SYS
 FFMS_USE_POSTPROC=$postproc
+RC=$RC
+VERSION_RC=$version_rc
 EOF
 
 if [ "$shared" = "yes" ]; then

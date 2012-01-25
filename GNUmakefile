@@ -30,6 +30,10 @@ CORE_O = $(CORE_C:%.c=%.o) $(CORE_CXX:%.cpp=%.o)
 IDX_O = $(IDX_CXX:%.cpp=%.o)
 SO_O = $(SO_C:%.c=%.o)
 
+ifeq ($(VERSION_RC), yes)
+SO_O += version.o
+endif
+
 INDEX_LINK=libffms.a
 ifneq ($(SONAME),)
 INDEX_LINK=$(SONAME)
@@ -37,6 +41,10 @@ endif
 ifneq ($(IMPLIBNAME),)
 INDEX_LINK=$(IMPLIBNAME)
 endif
+
+version.o: version.rc.h
+%.o: %.rc
+	$(RC) --include-dir=. -o $@ $<
 
 default: $(DEP) ffmsindex$(EXE)
 
