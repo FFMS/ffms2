@@ -1,5 +1,5 @@
 #include <winver.h>
-#include <version.rc.h>
+#include <ffmsdll.rc.h>
 
 VS_VERSION_INFO VERSIONINFO
   FILEVERSION    FFMS_VERSION

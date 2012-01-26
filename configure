@@ -133,7 +133,7 @@ die() {
     exit 1
 }
 
-rm -f config.h config.mak config.log ffms.pc version.rc.h conftest*
+rm -f config.h config.mak config.log ffms.pc ffmsdll.rc.h ffmsindexexe.rc.h conftest*
 
 prefix='/usr/local'
 exec_prefix='${prefix}'
@@ -156,7 +156,6 @@ LDFLAGS="$LDFLAGS"
 SOFLAGS="$SOFLAGS"
 HAVE_GETOPT_LONG=1
 cross_prefix=""
-version_rc="no"
 
 EXE=""
 
@@ -409,22 +408,13 @@ else
     CXXFLAGS="-O3 $CXXFLAGS"
 fi
 
-rm -f conftest*
-
 # generate config files
 
 version=`./version.sh`
 API=$(echo $version | cut -f 1 -d '.')
 
-if [ "$shared" = "yes" -a "$SYS" = "MINGW" ] ; then
-    version_rc="yes"
+if [ "$SYS" = "MINGW" ] ; then
     RC="${cross_prefix}windres"
-
-    # now generate the rc file header
-    ffms_name="FFmpegSource"
-    [ "$avs" = "yes" ] && ffms_name="$ffms_name Avisynth C Plugin" || ffms_name="$ffms_name for Windows"
-    cpp_check "" "" "defined(_WIN64)" && ffms_name="$ffms_name x64"
-    ffms_name="$ffms_name\0"
 
     ffms_version=$(echo $version | sed -e 's/\./,/g')
     version_digits=$(echo $ffms_version | sed -e 's/,/ /g' | wc -w)
@@ -433,16 +423,37 @@ if [ "$shared" = "yes" -a "$SYS" = "MINGW" ] ; then
         ffms_version="${ffms_version},0"
         version_digits=`expr $version_digits + 1`
     done
-    [ "$avs" = "yes" ] && ffms_file="ffms${API}.dll" || ffms_file="libffms-${API}.dll"
+
+    ffms_name="FFmpegSource Index"
+    cpp_check "" "" "defined(_WIN64)" && ffms_name="$ffms_name x64"
+
+    cat > ffmsindexexe.rc.h << EOF
+#define FFMS_NAME "${ffms_name}\0"
+#define FFMS_VERSION $ffms_version
+#define FFMS_VERSION_STRING "${ffms_version}\0"
+#define FFMS_DESCRIPTION "${ffms_name}\0"
+EOF
+
+    if [ "$shared" = "yes" ] ; then   
+
+        # now generate the rc file header
+        ffms_name="FFmpegSource"
+        [ "$avs" = "yes" ] && ffms_name="$ffms_name Avisynth C Plugin" || ffms_name="$ffms_name for Windows"
+        cpp_check "" "" "defined(_WIN64)" && ffms_name="$ffms_name x64"
     
-    cat > version.rc.h << EOF
+        [ "$avs" = "yes" ] && ffms_file="ffms${API}.dll" || ffms_file="libffms-${API}.dll"
+
+        cat > ffmsdll.rc.h << EOF
 #define FFMS_NAME "${ffms_name}\0"
 #define FFMS_VERSION $ffms_version
 #define FFMS_VERSION_STRING "${ffms_version}\0"
 #define FFMS_DESCRIPTION "${ffms_name}\0"
 #define FFMS_FILE "${ffms_file}\0"
 EOF
+    fi
 fi
+
+rm -f conftest*
 
 cat > config.mak << EOF
 prefix=$prefix
@@ -467,7 +478,6 @@ SOFLAGS_USER=$SOFLAGS
 SYS=$SYS
 FFMS_USE_POSTPROC=$postproc
 RC=$RC
-VERSION_RC=$version_rc
 EOF
 
 if [ "$shared" = "yes" ]; then
