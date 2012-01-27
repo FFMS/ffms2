@@ -135,7 +135,7 @@ AC_DEFUN([TEST_LIBAV],
             #include <libavcodec/avcodec.h>
             #include <libswscale/swscale.h>
             ]],[[
-                avcodec_init();
+                av_register_all();
                 swscale_version();
                 #ifdef FFMS_USE_FFMPEG_COMPAT
                 int bogus = CODEC_ID_G2M;
