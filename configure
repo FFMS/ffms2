@@ -15716,7 +15716,7 @@ int
 main ()
 {
 
-                av_register_all();
+                avcodec_register_all();
                 swscale_version();
                 #ifdef FFMS_USE_FFMPEG_COMPAT
                 int bogus = CODEC_ID_G2M;
@@ -15759,7 +15759,7 @@ int
 main ()
 {
 
-                av_register_all();
+                avcodec_register_all();
                 swscale_version();
                 #ifdef FFMS_USE_FFMPEG_COMPAT
                 int bogus = CODEC_ID_G2M;
@@ -15790,7 +15790,7 @@ int
 main ()
 {
 
-                av_register_all();
+                avcodec_register_all();
                 swscale_version();
                 #ifdef FFMS_USE_FFMPEG_COMPAT
                 int bogus = CODEC_ID_G2M;
