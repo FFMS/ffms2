@@ -461,7 +461,7 @@ AVS_Value FFVideoSource_create( AVS_ScriptEnvironment *env, const char *src, int
     ffms_avs_sprintf2( buf, sizeof(buf), "%sFFCROP_BOTTOM", var_prefix );
     ffms_avs_lib->avs_set_var( env, buf, avs_new_value_int( vidp->CropBottom ) );
 
-    ffms_avs_lib->avs_set_var( env, "FFVAR_PREFIX", avs_new_value_string( var_prefix ) );
+    ffms_avs_lib->avs_set_global_var( env, "FFVAR_PREFIX", avs_new_value_string( var_prefix ) );
 
     filter->var_name_vfr_time = ffms_avs_sprintf( "%sFFVFR_TIME", var_prefix );
     filter->var_name_pict_type = ffms_avs_sprintf( "%sFFPICT_TYPE", var_prefix );

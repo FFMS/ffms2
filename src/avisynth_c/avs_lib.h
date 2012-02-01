@@ -44,6 +44,7 @@ typedef struct
     AVSC_DECLARE_FUNC( avs_release_video_frame );
     AVSC_DECLARE_FUNC( avs_set_to_clip );
     AVSC_DECLARE_FUNC( avs_set_var );
+    AVSC_DECLARE_FUNC( avs_set_global_var );
     AVSC_DECLARE_FUNC( avs_take_clip );
 
     AVS_ScriptEnvironment *env; /* the actual script environment */

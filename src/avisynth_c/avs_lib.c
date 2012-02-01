@@ -58,6 +58,7 @@ int ffms_load_avs_lib( AVS_ScriptEnvironment *env )
     LOAD_AVS_FUNC( avs_release_video_frame );
     LOAD_AVS_FUNC( avs_set_to_clip );
     LOAD_AVS_FUNC( avs_set_var );
+    LOAD_AVS_FUNC( avs_set_global_var );
     LOAD_AVS_FUNC( avs_take_clip );
 
     ffms_avs_lib->env = env;
