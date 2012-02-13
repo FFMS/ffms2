@@ -342,11 +342,20 @@ The playback aspect ratio specified by the container. <tt>FFSAR_NUM</tt> and <tt
 <dd>The on-playback cropping specified by the container.</dd>
 
 <dt>FFCOLOR_SPACE</dt>
-<dd>The output colorimetry. Matches the values used by <tt>ColorMatrix()</tt> as input.</dd>
+<dd>The colorimetry the input claims to be using. Only meaningful for YUV inputs. The source for this variable is a metadata flag that can arbitrarily be set or manipulated at will by incompetent users or buggy programs without changing the actual video content, so blindly trusting its correctness is not recommended.<br />
+The value is exported as a cryptic numerical constant that matches the values in the MPEG-2 specification. You can find the gory details in the FFMS2 API documentation, but the important ones are:
+<ul>
+<li><b>0:</b> RGB (usually indicates the stream isn't actually YUV, but RGB flagged as YUV)</li>
+<li><b>1:</b> ITU-R Rec.709</li>
+<li><b>2:</b> Unknown or unspecified</li>
+<li><b>5 and 6:</b> ITU-R Rec.601</li>
+</ul>
+</dd>
 
 <dt>FFCOLOR_RANGE</dt>
 <dd>
-The color range used by the output.
+The color range the input video claims to be using. Much like FFCOLOR_SPACE, the source for this variable is a metadata flag that can freely be set to arbitrary values, so trusting it blindly might not be a good idea.<br />
+Note that using SWScale() or the width/height/colorspace parameters to FFVideoSource may under some circumstances change the output color range.
 <ul>
 <li><b>0:</b> Unknown/unspecified</li>
 <li><b>1:</b> Limited range (usually 16-235)</li>
