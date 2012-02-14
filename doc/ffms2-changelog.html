@@ -11,6 +11,12 @@ FFmpegSource2 Changelog
 <div class="maincontent">
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
+<li>2.18<ul>
+<li>ffmsindex can now output keyframe numbers to a file while indexing. (Plorkyeran)</li>
+<li>configure now defaults to building a shared library, except when building MinGW/Cygwin, since you usually want static for those. (Plorkyeran)</li>
+</ul>
+</li>
+
 <li>2.17<ul>
 <li>Reworked color matrix and color range handling a bit, which fixed a bug that could cause FFMS2 to always output TV range even if the input was full range. (TheFluff)</li>
 <li>The autotools build system can now create debug builds properly. (Daemon404)</li>
@@ -31,6 +37,7 @@ FFmpegSource2 Changelog
 <li>Bump minimum required version of FFmpeg to 0.6.</li>
 </ul>
 </li>
+
 <li>2.16<ul>
 <li>Reimplemented output colorspace selection, this should fix all issues with the Avisynth plugin when opening yuv420p10 or yuv444 material plus several other less common cases. (Myrsloik)</li>
 <li>Added <tt>FFMS_SetOutputFormatV2</tt> to the API. This function allows you to specify PixelFormats &gt;= 64 for use as output. (Myrsloik)</li>
