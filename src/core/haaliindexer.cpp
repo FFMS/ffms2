@@ -125,8 +125,13 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 		}
 
 		unsigned int Track = pMMF->GetTrack();
-		pMMF->GetPointer(&TempPacket.data);
+
+		// copy data into aligned and padded buffer
 		TempPacket.size = pMMF->GetActualDataLength();
+		TempPacket.data = static_cast<uint8_t *>(av_mallocz(TempPacket.size + FF_INPUT_BUFFER_PADDING_SIZE));
+		BYTE *TempData;
+		pMMF->GetPointer(&TempData);
+		memcpy(TempPacket.data, TempData, TempPacket.size);
 
 		if (TrackType[Track] == FFMS_TYPE_VIDEO) {
 			uint8_t *OB;
@@ -151,8 +156,8 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(Ts, RepeatPict, pMMF->IsSyncPoint() == S_OK));
 
 			// if TempPacket.data points at data not originally attained by Haali, then it was allocated by ffmpeg and needs to be av_free()'d
-			if (TempPacket.data != OriginalData)
-				av_free(TempPacket.data);
+			//if (TempPacket.data != OriginalData)
+			av_free(TempPacket.data);
 		} else if (TrackType[Track] == FFMS_TYPE_AUDIO && (IndexMask & (1 << Track))) {
 			TempPacket.flags = pMMF->IsSyncPoint() == S_OK ? AV_PKT_FLAG_KEY : 0;
 
