@@ -33,7 +33,17 @@ fi
 AM_CONFIG_HEADER([src/config/config.h])
 AC_PROG_CC
 AC_PROG_CXX
-LT_INIT([static disable-shared])
+
+AC_CANONICAL_HOST
+AS_CASE([$host],
+        [*mingw* | *cygwin*], [
+            AC_ENABLE_STATIC
+            AC_DISABLE_SHARED
+         ], [
+            AC_ENABLE_SHARED
+            AC_DISABLE_STATIC])
+
+AC_PROG_LIBTOOL
 
 if echo "$host" | $GREP "cygwin" >/dev/null 2>&1 && test "$enable_shared" = "yes"; then
     AC_MSG_ERROR([Shared build is broken on cygwin.
