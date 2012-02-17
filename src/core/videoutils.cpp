@@ -197,7 +197,7 @@ static BCSType GuessCSType(PixelFormat p) {
 	const char *n = av_get_pix_fmt_name(p);
 	if (strstr(n, "gray") || strstr(n, "mono") || strstr(n, "y400a"))
 		return cGRAY;
-	if (strstr(n, "rgb") || strstr(n, "bgr") || strstr(n, "pal8"))
+	if (strstr(n, "rgb") || strstr(n, "bgr") || strstr(n, "gbr") || strstr(n, "pal8"))
 		return cRGB;
 	if (strstr(n, "yuv") || strstr(n, "yv") || strstr(n, "nv12") || strstr(n, "nv21"))
 		return cYUV;
