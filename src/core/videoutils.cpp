@@ -67,7 +67,7 @@ int64_t GetSWSCPUFlags() {
 	return Flags;
 }
 
-SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, int DstH, PixelFormat DstFormat, int64_t Flags, int ColorSpace, int ColorRange) {
+SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, PixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags) {
 	Flags |= SWS_FULL_CHR_H_INT | SWS_FULL_CHR_H_INP;
 #if LIBSWSCALE_VERSION_INT < AV_VERSION_INT(0, 12, 0)
 	return sws_getContext(SrcW, SrcH, SrcFormat, DstW, DstH, DstFormat, Flags, 0, 0, 0);
@@ -75,24 +75,24 @@ SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, i
 	SwsContext *Context = sws_alloc_context();
 	if (!Context) return 0;
 
-	// The intention here is to never change the color range.
-	int Range; // 0 = limited range, 1 = full range
-	if (ColorRange == AVCOL_RANGE_JPEG)
-		Range = 1;
-	else // explicit limited range, or unspecified
-		Range = 0;
+	// 0 = limited range, 1 = full range
+	int SrcRange = SrcColorRange == AVCOL_RANGE_JPEG;
+	int DstRange = DstColorRange == AVCOL_RANGE_JPEG;
 
 	av_set_int(Context, "sws_flags", Flags);
 	av_set_int(Context, "srcw",       SrcW);
 	av_set_int(Context, "srch",       SrcH);
 	av_set_int(Context, "dstw",       DstW);
 	av_set_int(Context, "dsth",       DstH);
-	av_set_int(Context, "src_range",  Range);
-	av_set_int(Context, "dst_range",  Range);
+	av_set_int(Context, "src_range",  SrcRange);
+	av_set_int(Context, "dst_range",  DstRange);
 	av_set_int(Context, "src_format", SrcFormat);
 	av_set_int(Context, "dst_format", DstFormat);
 
-	sws_setColorspaceDetails(Context, sws_getCoefficients(ColorSpace), Range, sws_getCoefficients(ColorSpace), Range, 0, 1<<16, 1<<16);
+	sws_setColorspaceDetails(Context,
+		sws_getCoefficients(SrcColorSpace), SrcRange,
+		sws_getCoefficients(DstColorSpace), DstRange,
+		0, 1<<16, 1<<16);
 
 	if(sws_init_context(Context, 0, 0) < 0){
 		sws_freeContext(Context);
@@ -123,11 +123,11 @@ int GetPPCPUFlags() {
 }
 
 
-int GetSwsAssumedColorSpace(int W, int H) {
+AVColorSpace GetAssumedColorSpace(int W, int H) {
 	if (W > 1024 || H >= 600)
-		return SWS_CS_ITU709;
+		return AVCOL_SPC_BT709;
 	else
-		return SWS_CS_DEFAULT;
+		return AVCOL_SPC_BT470BG;
 }
 
 

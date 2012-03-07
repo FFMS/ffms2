@@ -61,16 +61,25 @@ private:
 	pp_mode *PPMode;
 #endif // FFMS_USE_POSTPROC
 	SwsContext *SWS;
+
 	int LastFrameHeight;
 	int LastFrameWidth;
 	PixelFormat LastFramePixelFormat;
+
 	int TargetHeight;
 	int TargetWidth;
 	std::vector<PixelFormat> TargetPixelFormats;
 	int TargetResizer;
+
 	PixelFormat OutputFormat;
 	AVColorRange OutputColorRange;
 	AVColorSpace OutputColorSpace;
+
+	bool InputFormatOverridden;
+	PixelFormat InputFormat;
+	AVColorRange InputColorRange;
+	AVColorSpace InputColorSpace;
+
 	AVPicture PPFrame;
 	AVPicture SWSFrame;
 protected:
@@ -81,7 +90,7 @@ protected:
 	FFMS_Index &Index;
 	FFMS_Track Frames;
 	int VideoTrack;
-	int	CurrentFrame;
+	int CurrentFrame;
 	int DelayCounter;
 	int InitialDecode;
 	int DecodingThreads;
@@ -104,6 +113,8 @@ public:
 	void ResetPP();
 	void SetOutputFormat(const PixelFormat *TargetFormats, int Width, int Height, int Resizer);
 	void ResetOutputFormat();
+	void SetInputFormat(int ColorSpace, int ColorRange, PixelFormat Format);
+	void ResetInputFormat();
 };
 
 class FFLAVFVideo : public FFMS_VideoSource {

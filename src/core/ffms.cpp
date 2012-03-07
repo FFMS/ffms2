@@ -244,6 +244,20 @@ FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V) {
 	V->ResetOutputFormat();
 }
 
+FFMS_API(int) FFMS_SetInputFormatV(FFMS_VideoSource *V, int ColorSpace, int ColorRange, int Format, FFMS_ErrorInfo *ErrorInfo) {
+	ClearErrorInfo(ErrorInfo);
+	try {
+		V->SetInputFormat(ColorSpace, ColorRange, static_cast<PixelFormat>(Format));
+	} catch (FFMS_Exception &e) {
+		return e.CopyOut(ErrorInfo);
+	}
+	return FFMS_ERROR_SUCCESS;
+}
+
+FFMS_API(void) FFMS_ResetInputFormatV(FFMS_VideoSource *V) {
+	V->ResetInputFormat();
+}
+
 FFMS_API(int) FFMS_SetPP(FFMS_VideoSource *V, const char *PP, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {

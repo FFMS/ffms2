@@ -39,9 +39,9 @@ extern "C" {
 
 // swscale and pp-related functions
 int64_t GetSWSCPUFlags();
-SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, int DstH, PixelFormat DstFormat, int64_t Flags, int ColorSpace = SWS_CS_DEFAULT, int ColorRange = -1);
+SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, PixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags);
 int GetPPCPUFlags();
-int GetSwsAssumedColorSpace(int Width, int Height);
+AVColorSpace GetAssumedColorSpace(int Width, int Height);
 
 // timebase-related functions
 void CorrectNTSCRationalFramerate(int *Num, int *Den);

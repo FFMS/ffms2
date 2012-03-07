@@ -136,8 +136,15 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	if (LastFrameWidth != CodecContext->width || LastFrameHeight != CodecContext->height || LastFramePixelFormat != CodecContext->pix_fmt) {
 		ReAdjustPP(CodecContext->pix_fmt, CodecContext->width, CodecContext->height);
 
-		if (TargetHeight > 0 && TargetWidth > 0 && !TargetPixelFormats.empty())
+		if (TargetHeight > 0 && TargetWidth > 0 && !TargetPixelFormats.empty()) {
+			if (!InputFormatOverridden) {
+				InputFormat = PIX_FMT_NONE;
+				InputColorSpace = AVCOL_SPC_UNSPECIFIED;
+				InputColorRange = AVCOL_RANGE_UNSPECIFIED;
+			}
+
 			ReAdjustOutputFormat();
+		}
 	}
 
 #ifdef FFMS_USE_POSTPROC
@@ -229,15 +236,24 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 	DelayCounter = 0;
 	InitialDecode = 1;
 	CodecContext = NULL;
+
 	LastFrameHeight = -1;
 	LastFrameWidth = -1;
 	LastFramePixelFormat = PIX_FMT_NONE;
+
 	TargetHeight = -1;
 	TargetWidth = -1;
 	TargetResizer = 0;
+
 	OutputFormat = PIX_FMT_NONE;
 	OutputColorSpace = AVCOL_SPC_UNSPECIFIED;
 	OutputColorRange = AVCOL_RANGE_UNSPECIFIED;
+
+	InputFormatOverridden = false;
+	InputFormat = PIX_FMT_NONE;
+	InputColorSpace = AVCOL_SPC_UNSPECIFIED;
+	InputColorRange = AVCOL_RANGE_UNSPECIFIED;
+
 	if (Threads < 1)
 		DecodingThreads = GetNumberOfLogicalCPUs();
 	else
@@ -278,21 +294,7 @@ FFMS_Frame *FFMS_VideoSource::GetFrameByTime(double Time) {
 	return GetFrame(Frame);
 }
 
-void FFMS_VideoSource::SetOutputFormat(const PixelFormat *TargetFormats, int Width, int Height, int Resizer) {
-	TargetWidth = Width;
-	TargetHeight = Height;
-	TargetResizer = Resizer;
-	TargetPixelFormats.clear();
-	while (*TargetFormats != PIX_FMT_NONE) {
-		TargetPixelFormats.push_back(*TargetFormats);
-		TargetFormats++;
-	}
-	ReAdjustOutputFormat();
-	OutputFrame(DecodeFrame);
-}
-
-static int handle_jpeg(PixelFormat *format)
-{
+static AVColorRange handle_jpeg(PixelFormat *format) {
 	switch (*format) {
 		case PIX_FMT_YUVJ420P: *format = PIX_FMT_YUV420P; return AVCOL_RANGE_JPEG;
 		case PIX_FMT_YUVJ422P: *format = PIX_FMT_YUV422P; return AVCOL_RANGE_JPEG;
@@ -302,13 +304,59 @@ static int handle_jpeg(PixelFormat *format)
 	}
 }
 
+void FFMS_VideoSource::SetOutputFormat(const PixelFormat *TargetFormats, int Width, int Height, int Resizer) {
+	TargetWidth = Width;
+	TargetHeight = Height;
+	TargetResizer = Resizer;
+	TargetPixelFormats.clear();
+	while (*TargetFormats != PIX_FMT_NONE)
+		TargetPixelFormats.push_back(*TargetFormats++);
+	OutputFormat = PIX_FMT_NONE;
+
+	ReAdjustOutputFormat();
+	OutputFrame(DecodeFrame);
+}
+
+void FFMS_VideoSource::SetInputFormat(int ColorSpace, int ColorRange, PixelFormat Format) {
+	InputFormatOverridden = true;
+
+	if (Format != PIX_FMT_NONE)
+		InputFormat = Format;
+	if (ColorRange != AVCOL_RANGE_UNSPECIFIED)
+		InputColorRange = (AVColorRange)ColorRange;
+	if (ColorSpace != AVCOL_SPC_UNSPECIFIED)
+		InputColorSpace = (AVColorSpace)ColorSpace;
+
+	if (TargetPixelFormats.size()) {
+		ReAdjustOutputFormat();
+		OutputFrame(DecodeFrame);
+	}
+}
+
 void FFMS_VideoSource::ReAdjustOutputFormat() {
 	if (SWS) {
 		sws_freeContext(SWS);
 		SWS = NULL;
 	}
 
-	OutputFormat = FindBestPixelFormat(TargetPixelFormats, CodecContext->pix_fmt);
+	if (InputFormat == PIX_FMT_NONE)
+		InputFormat = CodecContext->pix_fmt;
+
+	AVColorRange RangeFromFormat = handle_jpeg(&InputFormat);
+
+	if (InputColorRange == AVCOL_RANGE_UNSPECIFIED)
+		InputColorRange = RangeFromFormat;
+	if (InputColorRange == AVCOL_RANGE_UNSPECIFIED)
+		InputColorRange = CodecContext->color_range;
+	if (InputColorRange == AVCOL_RANGE_UNSPECIFIED)
+		InputColorRange = AVCOL_RANGE_MPEG;
+
+	if (InputColorSpace == AVCOL_SPC_UNSPECIFIED)
+		InputColorSpace = CodecContext->colorspace;
+	if (InputColorSpace == AVCOL_SPC_UNSPECIFIED)
+		InputColorSpace = GetAssumedColorSpace(CodecContext->width, CodecContext->height);
+
+	OutputFormat = FindBestPixelFormat(TargetPixelFormats, InputFormat);
 
 	if (OutputFormat == PIX_FMT_NONE) {
 		ResetOutputFormat();
@@ -316,29 +364,28 @@ void FFMS_VideoSource::ReAdjustOutputFormat() {
 			"No suitable output format found");
 	}
 
-	PixelFormat InputFormat = CodecContext->pix_fmt;
-	int ColorRange = handle_jpeg(&InputFormat);
-	if (ColorRange == AVCOL_RANGE_UNSPECIFIED) {
-		if (CodecContext->color_range == AVCOL_RANGE_UNSPECIFIED) {
-			OutputColorRange = AVCOL_RANGE_UNSPECIFIED;
-			ColorRange = AVCOL_RANGE_MPEG; // assumption
-		}
-		else {
-			OutputColorRange = CodecContext->color_range;
-			ColorRange = CodecContext->color_range;
-		}
-	}
+	OutputColorRange = handle_jpeg(&OutputFormat);
+	if (OutputColorRange == AVCOL_RANGE_UNSPECIFIED)
+		OutputColorRange = CodecContext->color_range;
+	if (OutputColorRange == AVCOL_RANGE_UNSPECIFIED)
+		OutputColorRange = InputColorRange;
 
-	if (InputFormat != OutputFormat || TargetWidth != CodecContext->width || TargetHeight != CodecContext->height) {
-		int ColorSpace = CodecContext->colorspace;
-		if (ColorSpace == AVCOL_SPC_UNSPECIFIED) {
-			ColorSpace = GetSwsAssumedColorSpace(CodecContext->width, CodecContext->height);
-			OutputColorSpace = (AVColorSpace)ColorSpace;
-		}
+	OutputColorSpace = CodecContext->colorspace;
+	if (OutputColorSpace == AVCOL_SPC_UNSPECIFIED)
+		OutputColorSpace = InputColorSpace;
 
-		SWS = GetSwsContext(CodecContext->width, CodecContext->height, CodecContext->pix_fmt, TargetWidth, TargetHeight,
-			OutputFormat, GetSWSCPUFlags() | TargetResizer, ColorSpace, ColorRange);
-		if (SWS == NULL) {
+	if (InputFormat != OutputFormat ||
+		TargetWidth != CodecContext->width ||
+		TargetHeight != CodecContext->height ||
+		InputColorSpace != OutputColorSpace ||
+		InputColorRange != OutputColorRange)
+	{
+		SWS = GetSwsContext(
+			CodecContext->width, CodecContext->height, InputFormat, InputColorSpace, InputColorRange,
+			TargetWidth, TargetHeight, OutputFormat, OutputColorSpace, OutputColorRange,
+			GetSWSCPUFlags() | TargetResizer);
+
+		if (!SWS) {
 			ResetOutputFormat();
 			throw FFMS_Exception(FFMS_ERROR_SCALING, FFMS_ERROR_INVALID_ARGUMENT,
 				"Failed to allocate SWScale context");
@@ -358,8 +405,21 @@ void FFMS_VideoSource::ResetOutputFormat() {
 	TargetWidth = -1;
 	TargetHeight = -1;
 	TargetPixelFormats.clear();
-	OutputFormat = PIX_FMT_NONE;
 
+	OutputFormat = PIX_FMT_NONE;
+	OutputColorSpace = AVCOL_SPC_UNSPECIFIED;
+	OutputColorRange = AVCOL_RANGE_UNSPECIFIED;
+
+	OutputFrame(DecodeFrame);
+}
+
+void FFMS_VideoSource::ResetInputFormat() {
+	InputFormatOverridden = false;
+	InputFormat = PIX_FMT_NONE;
+	InputColorSpace = AVCOL_SPC_UNSPECIFIED;
+	InputColorRange = AVCOL_RANGE_UNSPECIFIED;
+
+	ReAdjustOutputFormat();
 	OutputFrame(DecodeFrame);
 }
 

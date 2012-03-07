@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (17 << 16) | (0 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (17 << 16) | (1 << 8) | 0)
 
 #include <stdint.h>
 
@@ -312,6 +312,8 @@ FFMS_API(int) FFMS_GetAudio(FFMS_AudioSource *A, void *Buf, int64_t Start, int64
 FFMS_DEPRECATED_API(int) FFMS_SetOutputFormatV(FFMS_VideoSource *V, int64_t TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_SetOutputFormatV2(FFMS_VideoSource *V, const int *TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo); /* Introduced in FFMS_VERSION ((2 << 24) | (15 << 16) | (3 << 8) | 0) */
 FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V);
+FFMS_API(int) FFMS_SetInputFormatV(FFMS_VideoSource *V, int ColorSpace, int ColorRange, int Format, FFMS_ErrorInfo *ErrorInfo); /* Introduced in FFMS_VERSION ((2 << 24) | (17 << 16) | (1 << 8) | 0) */
+FFMS_API(void) FFMS_ResetInputFormatV(FFMS_VideoSource *V);
 FFMS_DEPRECATED_API(int) FFMS_SetPP(FFMS_VideoSource *V, const char *PP, FFMS_ErrorInfo *ErrorInfo);
 FFMS_DEPRECATED_API(void) FFMS_ResetPP(FFMS_VideoSource *V);
 FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index);

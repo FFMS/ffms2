@@ -67,9 +67,9 @@ FFPP::FFPP(PClip AChild, const char *PP, IScriptEnvironment *Env) : GenericVideo
 	} else if (vi.IsYUY2()) {
 		Flags |= PP_FORMAT_422;
 		SWSTo422P = GetSwsContext(vi.width, vi.height, PIX_FMT_YUYV422, vi.width, vi.height, PIX_FMT_YUV422P, Flags | SWS_BICUBIC,
-						GetSwsAssumedColorSpace(vi.width, vi.height));
+						GetAssumedColorSpace(vi.width, vi.height));
 		SWSFrom422P = GetSwsContext(vi.width, vi.height, PIX_FMT_YUV422P, vi.width, vi.height, PIX_FMT_YUYV422, Flags | SWS_BICUBIC,
-						GetSwsAssumedColorSpace(vi.width, vi.height));
+						GetAssumedColorSpace(vi.width, vi.height));
 		avpicture_alloc(&InputPicture, PIX_FMT_YUV422P, vi.width, vi.height);
 		avpicture_alloc(&OutputPicture, PIX_FMT_YUV422P, vi.width, vi.height);
 	} else {

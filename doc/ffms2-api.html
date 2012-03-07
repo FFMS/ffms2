@@ -363,6 +363,31 @@ See above.</p>
 Resets the output format for the given <tt>FFMS_VideoSource</tt> object so that no conversion takes place. Note that the results of this function may vary wildly, particularly if the video changes resolution mid-stream. If you call it, you'd better call <tt>FFMS_GetFrame</tt> afterwards and examine the properties to see what you actually ended up with.
 </p>
 
+<h3>FFMS_SetInputFormatV - override the source format for video frames</h3>
+<pre>int FFMS_SetInputFormatV(FFMS_VideoSource *V, int ColorSpace, int ColorRange, int PixelFormat,
+    FFMS_ErrorInfo *ErrorInfo)</pre>
+<p>Override the source colorspace passed to SWScale for conversions and resizing for all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt>, until next time you call <tt>FFMS_SetInputFormatV</tt> or <tt>FFMS_ResetInputFormatV</tt>. You can change the input format at any time without having to reinitialize the <tt>FFMS_VideoSource</tt> object or anything else. This is intended primarily for compatibility with programs which use the wrong YUV colorspace when converting to or from RGB, but can also be useful for files which have incorrect colorspace flags. Values passed are not checked for sanity; if you wish you may tell FFMS2 to pretend that a RGB files is actually YUV using this function, but doing so is unlikely to have useful results. This function only has an effect if the output format is also set with <tt>FFMS_SetOutputFormatV2</tt>. Added in version 2.17.1.0.
+</p>
+<h4>Arguments</h4>
+<p><b><tt>FFMS_VideoSource *V</tt></b><br />
+A pointer to the <tt>FFMS_VideoSource</tt> object that represents the video stream you want to change the input format for.</p>
+<p><b><tt>int ColorSpace</tt></b><br />
+The desired input colorspace, or FFMS_CS_UNSPECIFIED to leave it unchanged.</p>
+<p><b><tt>int ColorRange</tt></b><br />
+The desired input colorrange, or FFMS_CR_UNSPECIFIED to leave it unchanged.</p>
+<p><b><tt>int PixelFormat</tt></b><br />
+The desired input pixel format; see <tt>FFMS_GetPixFmt</tt>. <tt>FFMS_GetPixFmt("")</tt> will leave the pixel format unchanged.</p>
+<p><b><tt>FFMS_ErrorInfo *ErrorInfo</tt></b><br />
+See above.</p>
+<h4>Return values</h4>
+<p>Returns 0 on success. Returns non-0 and sets <tt>ErrorMsg</tt> on failure.</p>
+
+<h3>FFMS_ResetInputFormatV - resets the video input format</h3>
+<pre>void FFMS_ResetInputFormatV(FFMS_VideoSource *V)</pre>
+<p>
+Resets the input format for the given <tt>FFMS_VideoSource</tt> object to the values specified in the source file.
+</p>
+
 <h3>FFMS_SetPP - sets postprocessing options</h3>
 <h5 class="deprecated">DEPRECATED</h5>
 <pre>int FFMS_SetPP(FFMS_VideoSource *V, const char *PP, FFMS_ErrorInfo *ErrorInfo)</pre>
