@@ -123,7 +123,7 @@ private:
 	int SeekMode;
 	FFSourceResources<FFMS_VideoSource> Res;
 
-	void DecodeNextFrame(int64_t *PTS);
+	void DecodeNextFrame(int64_t *PTS, int64_t *Pos);
 protected:
 	void Free(bool CloseCodec);
 public:

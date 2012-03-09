@@ -85,14 +85,16 @@ public:
 	FFMS_TrackType TT;
 	FFMS_TrackTimeBase TB;
 	bool UseDTS;
+	bool HasTS;
 
 	int FindClosestVideoKeyFrame(int Frame);
 	int FrameFromPTS(int64_t PTS);
+	int FrameFromPos(int64_t Pos);
 	int ClosestFrameFromPTS(int64_t PTS);
 	void WriteTimecodes(const char *TimecodeFile);
 
 	FFMS_Track();
-	FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false);
+	FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false, bool HasTS = true);
 };
 
 struct FFMS_Index : public std::vector<FFMS_Track> {

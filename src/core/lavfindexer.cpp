@@ -87,8 +87,8 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 
 	AVPacket Packet;
 	InitNullPacket(Packet);
-	std::vector<int64_t> LastValidTS;
-	LastValidTS.resize(FormatContext->nb_streams, ffms_av_nopts_value);
+	std::vector<int64_t> LastValidTS(FormatContext->nb_streams, ffms_av_nopts_value);
+	std::vector<int> LastDuration(FormatContext->nb_streams, 0);
 
 #if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(52,106,0))
 	int64_t filesize = FormatContext->file_size;
@@ -113,9 +113,20 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 		ReadTS(Packet, LastValidTS[Track], (*TrackIndices)[Track].UseDTS);
 
 		if (FormatContext->streams[Track]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-			if (LastValidTS[Track] == ffms_av_nopts_value)
-				throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
-				"Invalid initial pts and dts");
+			int64_t PTS = LastValidTS[Track];
+			if (PTS == ffms_av_nopts_value) {
+				if (Packet.duration == 0)
+					throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
+						"Invalid initial pts, dts, and duration");
+
+				if ((*TrackIndices)[Track].empty())
+					PTS = 0;
+				else
+					PTS = (*TrackIndices)[Track].back().PTS + LastDuration[Track];
+
+				(*TrackIndices)[Track].HasTS = false;
+				LastDuration[Track] = Packet.duration;
+			}
 
 			int RepeatPict = -1;
 
@@ -126,7 +137,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 				RepeatPict = VideoContexts[Track].Parser->repeat_pict;
 			}
 
-			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(LastValidTS[Track], RepeatPict, KeyFrame, Packet.pos));
+			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(PTS, RepeatPict, KeyFrame, Packet.pos));
 		}
 		else if (FormatContext->streams[Track]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
 			int64_t StartSample = AudioContexts[Track].CurrentSample;

@@ -63,8 +63,8 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	Res.CloseCodec(true);
 
 	// Always try to decode a frame to make sure all required parameters are known
-	int64_t Dummy;
-	DecodeNextFrame(&Dummy);
+	int64_t DummyPTS, DummyPos;
+	DecodeNextFrame(&DummyPTS, &DummyPos);
 
 	//VP.image_type = VideoInfo::IT_TFF;
 	VP.FPSDenominator = FormatContext->streams[VideoTrack]->time_base.num;
@@ -93,7 +93,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	OutputFrame(DecodeFrame);
 }
 
-void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
+void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime, int64_t *Pos) {
 	AVPacket Packet;
 	InitNullPacket(Packet);
 	int FrameFinished = 0;
@@ -109,13 +109,16 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 	}
 
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
-        if (Packet.stream_index == VideoTrack) {
+		if (Packet.stream_index == VideoTrack) {
 			if (*AStartTime < 0) {
 				if (Frames.UseDTS)
 					*AStartTime = Packet.dts;
 				else
 					*AStartTime = Packet.pts;
 			}
+
+			if (*Pos < 0)
+				*Pos = Packet.pos;
 
 			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
 
@@ -125,9 +128,9 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
 				av_free_packet(&Packet);
 				goto Done;
 			}
-        }
+		}
 
-        av_free_packet(&Packet);
+		av_free_packet(&Packet);
 
 		if (FrameFinished)
 			goto Done;
@@ -188,15 +191,31 @@ ReSeek:
 	}
 
 	do {
-		int64_t StartTime;
 		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;
-		DecodeNextFrame(&StartTime);
+
+		int64_t StartTime = ffms_av_nopts_value, FilePos = -1;
+		DecodeNextFrame(&StartTime, &FilePos);
 
 		if (HasSeeked) {
 			HasSeeked = false;
+
+			if (StartTime == ffms_av_nopts_value && !Frames.HasTS) {
+				if (FilePos >= 0) {
+					CurrentFrame = Frames.FrameFromPos(FilePos);
+					if (CurrentFrame >= 0)
+						goto SkipReSeek;
+				}
+				// If the track doesn't have timestamps or file positions then
+				// just trust that we got to the right place, since we have no
+				// way to tell where we are
+				else {
+					CurrentFrame = n;
+					goto SkipReSeek;
+				}
+			}
 
 			// Is the seek destination time known? Does it belong to a frame?
 			if (StartTime < 0 || (CurrentFrame = Frames.FrameFromPTS(StartTime)) < 0) {
@@ -221,6 +240,7 @@ ReSeek:
 			}
 		}
 
+SkipReSeek:
 		CurrentFrame++;
 	} while (CurrentFrame <= n);
 

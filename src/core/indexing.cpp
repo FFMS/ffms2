@@ -89,6 +89,7 @@ struct TrackHeader {
 	int64_t Num;
 	int64_t Den;
 	uint32_t UseDTS;
+	uint32_t HasTS;
 };
 
 
@@ -172,6 +173,13 @@ int FFMS_Track::FrameFromPTS(int64_t PTS) {
 	return -1;
 }
 
+int FFMS_Track::FrameFromPos(int64_t Pos) {
+	for (int i = 0; i < static_cast<int>(size()); i++)
+		if (at(i).FilePos == Pos)
+			return i;
+	return -1;
+}
+
 static bool PTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
 	return FI1.PTS < FI2.PTS;
 }
@@ -201,13 +209,15 @@ FFMS_Track::FFMS_Track() {
 	this->TB.Num = 0;
 	this->TB.Den = 0;
 	this->UseDTS = false;
+	this->HasTS = true;
 }
 
-FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS) {
+FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS, bool HasTS) {
 	this->TT = TT;
 	this->TB.Num = Num;
 	this->TB.Den = Den;
 	this->UseDTS = UseDTS;
+	this->HasTS = HasTS;
 }
 
 void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]) {
@@ -360,6 +370,7 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 		TH.Num = ctrack.TB.Num;;
 		TH.Den = ctrack.TB.Den;
 		TH.UseDTS = ctrack.UseDTS;
+		TH.HasTS = ctrack.HasTS;
 
 		FFMS_Track temptrack;
 		temptrack.resize(TH.Frames);
@@ -460,7 +471,7 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 		for (unsigned int i = 0; i < IH.Tracks; i++) {
 			TrackHeader TH;
 			z_inf(&Index, &stream, &in, CHUNK, &TH, sizeof(TrackHeader));
-			push_back(FFMS_Track(TH.Num, TH.Den, static_cast<FFMS_TrackType>(TH.TT), TH.UseDTS != 0));
+			push_back(FFMS_Track(TH.Num, TH.Den, static_cast<FFMS_TrackType>(TH.TT), TH.UseDTS != 0, TH.HasTS != 0));
 			FFMS_Track &ctrack = at(i);
 
 			if (TH.Frames) {
