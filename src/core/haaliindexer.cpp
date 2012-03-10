@@ -24,6 +24,9 @@
 
 #include "codectype.h"
 
+#include <limits>
+#undef max
+
 FFHaaliIndexer::FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode) : FFMS_Indexer(Filename) {
 	this->SourceMode = SourceMode;
 	Duration = 0;
@@ -102,6 +105,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 	AVPacket TempPacket;
 	InitNullPacket(TempPacket);
 	REFERENCE_TIME Ts, Te;
+	REFERENCE_TIME MinTs = std::numeric_limits<REFERENCE_TIME>::max();
 
 	for (;;) {
 		CComPtr<IMMFrame> pMMF;
@@ -112,8 +116,9 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 
 		if (IC) {
 			if (Duration > 0) {
+				if (Ts < MinTs) MinTs = Ts;
 				if (SUCCEEDED(hr)) {
-					if ((*IC)(Ts, Duration, ICPrivate))
+					if ((*IC)(Ts - MinTs, Duration, ICPrivate))
 						throw FFMS_Exception(FFMS_ERROR_CANCELLED, FFMS_ERROR_USER,
 							"Cancelled by user");
 				}
