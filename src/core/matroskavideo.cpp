@@ -185,7 +185,7 @@ FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
 		InitialDecode = 1;
 		PacketNumber = ClosestKF;
 		CurrentFrame = ClosestKF;
-		avcodec_flush_buffers(CodecContext);
+		FlushBuffers(CodecContext);
 	}
 
 	do {

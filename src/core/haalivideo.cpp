@@ -191,7 +191,7 @@ FFMS_Frame *FFHaaliVideo::GetFrame(int n) {
 	if (n < CurrentFrame || Frames.FindClosestVideoKeyFrame(n) > CurrentFrame + 10) {
 ReSeek:
 		pMMC->Seek(Frames[n + SeekOffset].PTS, MMSF_PREV_KF);
-		avcodec_flush_buffers(CodecContext);
+		FlushBuffers(CodecContext);
 		DelayCounter = 0;
 		InitialDecode = 1;
 		HasSeeked = true;

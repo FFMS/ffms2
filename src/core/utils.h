@@ -224,5 +224,6 @@ CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceM
 #endif // HAALISOURCE
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
 
+void FlushBuffers(AVCodecContext *CodecContext);
 
 #endif

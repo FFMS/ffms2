@@ -167,7 +167,7 @@ FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
 		if (SeekMode == 0) {
 			if (n < CurrentFrame) {
 				av_seek_frame(FormatContext, VideoTrack, Frames[0].PTS, AVSEEK_FLAG_BACKWARD);
-				avcodec_flush_buffers(CodecContext);
+				FlushBuffers(CodecContext);
 				CurrentFrame = 0;
 				DelayCounter = 0;
 				InitialDecode = 1;
@@ -179,7 +179,7 @@ ReSeek:
 				av_seek_frame(FormatContext, VideoTrack,
 					(SeekMode == 3) ? Frames[n].PTS : Frames[ClosestKF + SeekOffset].PTS,
 					AVSEEK_FLAG_BACKWARD);
-				avcodec_flush_buffers(CodecContext);
+				FlushBuffers(CodecContext);
 				HasSeeked = true;
 				DelayCounter = 0;
 				InitialDecode = 1;
