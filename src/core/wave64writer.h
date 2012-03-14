@@ -48,7 +48,6 @@ private:
 	int32_t Channels;
 	uint32_t SamplesPerSec;
 	uint64_t BytesWritten;
-	uint32_t HeaderSize;
 	bool IsFloat;
 
 	void WriteHeader(bool Initial, bool IsFloat);

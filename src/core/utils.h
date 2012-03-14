@@ -54,6 +54,10 @@ extern "C" {
 #	include "guids.h"
 #endif
 
+#ifdef __MINGW32__
+#include <ext/stdio_filebuf.h>
+#endif
+
 #define FFMS_GET_VECTOR_PTR(v) (((v).size() ? &(v)[0] : NULL))
 
 const int64_t ffms_av_nopts_value = static_cast<int64_t>(1) << 63;
@@ -163,9 +167,13 @@ public:
 	}
 };
 
-class ffms_fstream : public std::fstream {
+struct ffms_fstream : public std::fstream {
+#ifdef __MINGW32__
+private:
+	__gnu_cxx::stdio_filebuf<char> filebuf;
 public:
-	void open(const char *filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out);
+	bool is_open() const { return filebuf.is_open(); }
+#endif
 	ffms_fstream(const char *filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out);
 };
 

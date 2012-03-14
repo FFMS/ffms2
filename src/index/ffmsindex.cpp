@@ -280,8 +280,20 @@ static void DoIndexing () {
 }
 
 
-#if defined(_WIN32) && !defined(__MINGW32__)
+#ifdef _WIN32
+#ifdef __MINGW32__
+// mingw doesn't support wmain
+extern int _CRT_glob;
+extern "C" void __wgetmainargs(int*, wchar_t***, wchar_t***, int, int*);
+int main() {
+	int argc;
+	wchar_t **_argv;
+	wchar_t **env;
+	int si = 0;
+	__wgetmainargs(&argc, &_argv, &env, _CRT_glob, &si);
+#else
 int wmain(int argc, wchar_t *_argv[]) {
+#endif
 	char **argv = (char**)malloc(argc*sizeof(char*));
 	for (int i=0; i<argc; i++) {
 		int len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, NULL, 0, NULL, NULL);
@@ -320,11 +332,7 @@ int main(int argc, char *argv[]) {
 	}
 #endif /* _WIN32 */
 
-#if defined(_WIN32) && !defined(__MINGW32__)
 	FFMS_Init(0, 1);
-#else
-	FFMS_Init(0, 0);
-#endif
 
 	switch (Verbose) {
 		case 0: FFMS_SetLogLevel(AV_LOG_QUIET); break;
