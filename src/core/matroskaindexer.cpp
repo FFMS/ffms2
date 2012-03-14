@@ -132,16 +132,13 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 		}
 
 		if (TrackType == TT_VIDEO) {
-			uint8_t *OB = NULL;
-			int OBSize = 0;
+			TempPacket.pts = TempPacket.dts = TempPacket.pos = ffms_av_nopts_value;
+
 			int RepeatPict = -1;
+			int FrameType = 0;
+			ParseVideoPacket(VideoContexts[Track], TempPacket, &RepeatPict, &FrameType);
 
-			if (VideoContexts[Track].Parser) {
-				av_parser_parse2(VideoContexts[Track].Parser, VideoContexts[Track].CodecContext, &OB, &OBSize, TempPacket.data, TempPacket.size, ffms_av_nopts_value, ffms_av_nopts_value, ffms_av_nopts_value);
-				RepeatPict = VideoContexts[Track].Parser->repeat_pict;
-			}
-
-			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(StartTime, RepeatPict, (FrameFlags & FRAME_KF) != 0, FilePos, CompressedFrameSize));
+			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(StartTime, RepeatPict, (FrameFlags & FRAME_KF) != 0, FrameType, FilePos, CompressedFrameSize));
 		} else if (TrackType == TT_AUDIO && (IndexMask & (1 << Track))) {
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
 			int64_t SampleCount = IndexAudioPacket(Track, &TempPacket, AudioContexts[Track], *TrackIndices);

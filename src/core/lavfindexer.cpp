@@ -129,15 +129,10 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			}
 
 			int RepeatPict = -1;
+			int FrameType = 0;
+			ParseVideoPacket(VideoContexts[Track], Packet, &RepeatPict, &FrameType);
 
-			if (VideoContexts[Track].Parser) {
-				uint8_t *OB;
-				int OBSize;
-				av_parser_parse2(VideoContexts[Track].Parser, VideoContexts[Track].CodecContext, &OB, &OBSize, Packet.data, Packet.size, Packet.pts, Packet.dts, Packet.pos);
-				RepeatPict = VideoContexts[Track].Parser->repeat_pict;
-			}
-
-			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(PTS, RepeatPict, KeyFrame, Packet.pos));
+			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(PTS, RepeatPict, KeyFrame, FrameType, Packet.pos));
 		}
 		else if (FormatContext->streams[Track]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
 			int64_t StartSample = AudioContexts[Track].CurrentSample;

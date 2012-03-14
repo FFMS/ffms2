@@ -72,12 +72,13 @@ public:
 	int64_t FilePos;
 	unsigned int FrameSize;
 	size_t OriginalPos;
+	int FrameType;
 
-	TFrameInfo();
-	static TFrameInfo VideoFrameInfo(int64_t PTS, int RepeatPict, bool KeyFrame, int64_t FilePos = 0, unsigned int FrameSize = 0);
+	TFrameInfo() { }
+	static TFrameInfo VideoFrameInfo(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, unsigned int FrameSize = 0);
 	static TFrameInfo AudioFrameInfo(int64_t PTS, int64_t SampleStart, int64_t SampleCount, bool KeyFrame, int64_t FilePos = 0, unsigned int FrameSize = 0);
 private:
-	TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize);
+	TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize, int FrameType);
 };
 
 struct FFMS_Track : public std::vector<TFrameInfo> {
@@ -92,6 +93,8 @@ public:
 	int FrameFromPos(int64_t Pos);
 	int ClosestFrameFromPTS(int64_t PTS);
 	void WriteTimecodes(const char *TimecodeFile);
+
+	void MaybeReorderFrames();
 
 	FFMS_Track();
 	FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false, bool HasTS = true);
@@ -139,6 +142,8 @@ protected:
 	void WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track, int DBSize);
 	void CheckAudioProperties(int Track, AVCodecContext *Context);
 	int64_t IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices);
+	void ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType);
+
 public:
 	static FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer = FFMS_SOURCE_DEFAULT);
 	FFMS_Indexer(const char *Filename);

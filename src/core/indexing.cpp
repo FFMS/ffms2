@@ -131,26 +131,25 @@ SharedAudioContext::~SharedAudioContext() {
 	delete TCC;
 }
 
-TFrameInfo::TFrameInfo() {
-}
-
-TFrameInfo::TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
+TFrameInfo::TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize, int FrameType)
+: SampleStart(SampleStart)
+, SampleCount(SampleCount)
+, FilePos(FilePos)
+, FrameSize(FrameSize)
+, OriginalPos(0)
+, FrameType(FrameType)
+{
 	this->PTS = PTS;
 	this->RepeatPict = RepeatPict;
 	this->KeyFrame = KeyFrame;
-	this->SampleStart = SampleStart;
-	this->SampleCount = SampleCount;
-	this->FilePos = FilePos;
-	this->FrameSize = FrameSize;
-	this->OriginalPos = 0;
 }
 
-TFrameInfo TFrameInfo::VideoFrameInfo(int64_t PTS, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
-	return TFrameInfo(PTS, 0, 0, RepeatPict, KeyFrame, FilePos, FrameSize);
+TFrameInfo TFrameInfo::VideoFrameInfo(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, unsigned int FrameSize) {
+	return TFrameInfo(PTS, 0, 0, RepeatPict, KeyFrame, FilePos, FrameSize, FrameType);
 }
 
 TFrameInfo TFrameInfo::AudioFrameInfo(int64_t PTS, int64_t SampleStart, int64_t SampleCount, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
-	return TFrameInfo(PTS, SampleStart, static_cast<unsigned int>(SampleCount), 0, KeyFrame, FilePos, FrameSize);
+	return TFrameInfo(PTS, SampleStart, static_cast<unsigned int>(SampleCount), 0, KeyFrame, FilePos, FrameSize, 0);
 }
 
 void FFMS_Track::WriteTimecodes(const char *TimecodeFile) {
@@ -202,6 +201,38 @@ int FFMS_Track::FindClosestVideoKeyFrame(int Frame) {
 	for (; Frame > 0 && !at(Frame).KeyFrame; Frame--) ;
 	for (; Frame > 0 && !at(at(Frame).OriginalPos).KeyFrame; Frame--) ;
 	return Frame;
+}
+
+void FFMS_Track::MaybeReorderFrames() {
+	// First check if we need to do anything
+	bool has_b_frames = false;
+	for (size_t i = 1; i < size(); ++i) {
+		// If the timestamps are already out of order, then they actually are
+		// presentation timestamps and we don't need to do anything
+		if (at(i).PTS < at(i - 1).PTS)
+			return;
+
+		if (at(i).FrameType == AV_PICTURE_TYPE_B) {
+			has_b_frames = true;
+
+			// Reordering files with multiple b-frames is currently not
+			// supported
+			if (at(i - 1).FrameType == AV_PICTURE_TYPE_B)
+				return;
+		}
+	}
+
+	// Don't need to do anything if there are no b-frames as presentation order
+	// equals decoding order
+	if (!has_b_frames)
+		return;
+
+	// Swap the presentation time stamps of each b-frame with that of the frame
+	// before it
+	for (size_t i = 1; i < size(); ++i) {
+		if (at(i).FrameType == AV_PICTURE_TYPE_B)
+			std::swap(at(i).PTS, at(i - 1).PTS);
+	}
 }
 
 FFMS_Track::FFMS_Track() {
@@ -279,6 +310,8 @@ int FFMS_Index::Release() {
 
 void FFMS_Index::Sort() {
 	for (FFMS_Index::iterator Cur = begin(); Cur != end(); ++Cur) {
+		// With some formats (such as Vorbis) a bad final packet results in a
+		// frame with PTS 0, which we don't want to sort to the beginning
 		if (Cur->size() > 2 && Cur->front().PTS >= Cur->back().PTS) Cur->pop_back();
 
 		for (size_t i = 0; i < Cur->size(); i++)
@@ -286,6 +319,8 @@ void FFMS_Index::Sort() {
 
 		if (Cur->TT != FFMS_TYPE_VIDEO)
 			continue;
+
+		Cur->MaybeReorderFrames();
 
 		std::sort(Cur->begin(), Cur->end(), PTSComparison);
 
@@ -693,5 +728,20 @@ void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
 			<< " Sample format: " << GetLAVCSampleFormatName((AVSampleFormat)it->second.SampleFormat) << " -> "
 			<< GetLAVCSampleFormatName(Context->sample_fmt);
 		throw FFMS_Exception(FFMS_ERROR_UNSUPPORTED, FFMS_ERROR_DECODING, buf.str());
+	}
+}
+
+void FFMS_Indexer::ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType) {
+	if (VideoContext.Parser) {
+		uint8_t *OB;
+		int OBSize;
+		av_parser_parse2(VideoContext.Parser,
+			VideoContext.CodecContext,
+			&OB, &OBSize,
+			pkt.data, pkt.size,
+			pkt.pts, pkt.dts, pkt.pos);
+
+		*RepeatPict = VideoContext.Parser->repeat_pict;
+		*FrameType = VideoContext.Parser->pict_type;
 	}
 }

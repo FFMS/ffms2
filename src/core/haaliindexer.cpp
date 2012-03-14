@@ -139,11 +139,6 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 		memcpy(TempPacket.data, TempData, TempPacket.size);
 
 		if (TrackType[Track] == FFMS_TYPE_VIDEO) {
-			uint8_t *OB;
-			int OBSize;
-			int RepeatPict = -1;
-			uint8_t *OriginalData = TempPacket.data;
-
 			if (VideoContexts[Track].BitStreamFilter) {
 				AVBitStreamFilterContext *bsf = VideoContexts[Track].BitStreamFilter;
 				while (bsf) {
@@ -153,12 +148,13 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 				}
 			}
 
-			if (VideoContexts[Track].Parser) {
-				av_parser_parse2(VideoContexts[Track].Parser, VideoContexts[Track].CodecContext, &OB, &OBSize, TempPacket.data, TempPacket.size, ffms_av_nopts_value, ffms_av_nopts_value, ffms_av_nopts_value);
-				RepeatPict = VideoContexts[Track].Parser->repeat_pict;
-			}
+			TempPacket.pts = TempPacket.dts = TempPacket.pos = ffms_av_nopts_value;
 
-			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(Ts, RepeatPict, pMMF->IsSyncPoint() == S_OK));
+			int RepeatPict = -1;
+			int FrameType = 0;
+			ParseVideoPacket(VideoContexts[Track], TempPacket, &RepeatPict, &FrameType);
+
+			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(Ts, RepeatPict, pMMF->IsSyncPoint() == S_OK, FrameType));
 
 			av_free(TempPacket.data);
 		} else if (TrackType[Track] == FFMS_TYPE_AUDIO && (IndexMask & (1 << Track))) {
