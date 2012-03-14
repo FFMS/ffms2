@@ -375,7 +375,7 @@ static std::wstring char_to_wstring(const char *s, unsigned int cp) {
 	if (MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1 , &tmp[0], len) <= 0)
 		return ret;
 
-	ret.assign(tmp.data());
+	ret.assign(&tmp[0]);
 	return ret;
 }
 
