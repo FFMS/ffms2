@@ -124,11 +124,11 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 		if (pMMC->ReadFrame(NULL, &pMMF) != S_OK)
 			break;
 
-		REFERENCE_TIME  Ts, Te;
-		if (*AFirstStartTime < 0 && SUCCEEDED(pMMF->GetTime(&Ts, &Te)))
-			*AFirstStartTime = Ts;
-
 		if (pMMF->GetTrack() == VideoTrack) {
+			REFERENCE_TIME  Ts, Te;
+			if (*AFirstStartTime < 0 && SUCCEEDED(pMMF->GetTime(&Ts, &Te)))
+				*AFirstStartTime = Ts;
+
 			BYTE *Data = NULL;
 			if (FAILED(pMMF->GetPointer(&Data)))
 				goto Error;
@@ -198,7 +198,7 @@ ReSeek:
 	}
 
 	do {
-		int64_t StartTime;
+		int64_t StartTime = -1;
 		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
