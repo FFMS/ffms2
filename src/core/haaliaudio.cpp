@@ -26,7 +26,6 @@ FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index,
 : FFMS_AudioSource(SourceFile, Index, Track) {
 	pMMC = HaaliOpenFile(SourceFile, SourceMode);
 
-	int CodecPrivateSize = 0;
 	CComPtr<IEnumUnknown> pEU;
 	if (!SUCCEEDED(pMMC->EnumTracks(&pEU)))
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
