@@ -933,16 +933,6 @@ static void readLangCC(MatroskaFile *mf, ulonglong len, char lcc[4]) {
 #define	STRGETA(f,v,len)  STRGETF(f,v,len,myalloca)
 #define	STRGETM(f,v,len)  STRGETF(f,v,len,f->cache->memalloc)
 
-static int  IsWritingApp(MatroskaFile *mf,const char *str) {
-  const char  *cp = mf->Seg.WritingApp;
-  if (!cp)
-    return 0;
-
-  while (*str && *str++==*cp++) ;
-
-  return !*str;
-}
-
 static void parseEBML(MatroskaFile *mf,ulonglong toplen) {
   ulonglong v;
   char	    buf[32];
