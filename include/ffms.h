@@ -49,14 +49,19 @@
 #endif
 
 // compiler-specific deprecation attributes
-#if defined(__GNUC__) && (__GNUC__ >= 4)
-#	define FFMS_DEPRECATED __attribute__((deprecated))
-#elif defined(_MSC_VER)
-#	define FFMS_DEPRECATED __declspec(deprecated)
-#else
-#	define FFMS_DEPRECATED
+#ifndef FFMS_EXPORTS
+#	if defined(__GNUC__) && (__GNUC__ >= 4)
+#		define FFMS_DEPRECATED __attribute__((deprecated))
+#	elif defined(_MSC_VER)
+#		define FFMS_DEPRECATED __declspec(deprecated)
+#	endif
 #endif
 
+#ifndef FFMS_DEPRECATED
+// Define as empty if the compilter doesn't support deplcation attributes or
+// if we're building FFMS2 itself
+#	define FFMS_DEPRECATED
+#endif
 
 // And now for some symbol hide-and-seek...
 #if defined(_MSC_VER) // MSVC

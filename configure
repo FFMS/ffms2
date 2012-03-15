@@ -15968,7 +15968,7 @@ else
     bsymbolic=no
 fi
 CFLAGS="$_CFLAGS -std=c99"
-CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64"
+CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 -DFFMS_EXPORTS"
 LIBS="$_LIBS"
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $bsymbolic" >&5
 $as_echo "$bsymbolic" >&6; }
