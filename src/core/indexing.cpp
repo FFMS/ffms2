@@ -661,7 +661,7 @@ void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 		try {
 			AudioContext.W64Writer =
 				new Wave64Writer(WN.c_str(),
-					av_get_bits_per_sample_fmt(AudioContext.CodecContext->sample_fmt),
+					av_get_bytes_per_sample(AudioContext.CodecContext->sample_fmt),
 					AudioContext.CodecContext->channels,
 					AudioContext.CodecContext->sample_rate,
 					(AudioContext.CodecContext->sample_fmt == AV_SAMPLE_FMT_FLT) || (AudioContext.CodecContext->sample_fmt == AV_SAMPLE_FMT_DBL));
@@ -699,7 +699,7 @@ int64_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioC
 		CheckAudioProperties(Track, CodecContext);
 
 		if (dbsize > 0)
-			Context.CurrentSample += (dbsize * 8) / (av_get_bits_per_sample_fmt(CodecContext->sample_fmt) * CodecContext->channels);
+			Context.CurrentSample += dbsize / (av_get_bytes_per_sample(CodecContext->sample_fmt) * CodecContext->channels);
 
 		if (DumpMask & (1 << Track))
 			WriteAudio(Context, &TrackIndices, Track, dbsize);

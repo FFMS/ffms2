@@ -44,9 +44,9 @@ static const uint8_t Guiddata[16]={
 	0x64, 0x61, 0x74, 0x61, 0xF3, 0xAC, 0xD3, 0x11, 0x8C, 0xD1, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A
 };
 
-Wave64Writer::Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat)
+Wave64Writer::Wave64Writer(const char *Filename, uint16_t BytesPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat)
 : WavFile(Filename, std::ios::out | std::ios::binary | std::ios::trunc)
-, BitsPerSample(BitsPerSample)
+, BytesPerSample(BytesPerSample)
 , Channels(Channels)
 , SamplesPerSec(SamplesPerSec)
 , BytesWritten(0)
@@ -70,9 +70,9 @@ void Wave64Writer::WriteHeader(bool Initial, bool IsFloat) {
 		WFEX.wFormatTag = WAVE_FORMAT_PCM;
 	WFEX.nChannels = Channels;
 	WFEX.nSamplesPerSec = SamplesPerSec;
-	WFEX.nAvgBytesPerSec = (BitsPerSample * Channels * SamplesPerSec) / 8;
-	WFEX.nBlockAlign = (BitsPerSample * Channels) / 8;
-	WFEX.wBitsPerSample = BitsPerSample;
+	WFEX.nAvgBytesPerSec = BytesPerSample * Channels * SamplesPerSec;
+	WFEX.nBlockAlign = BytesPerSample * Channels;
+	WFEX.wBitsPerSample = BytesPerSample * 8;
 	WFEX.cbSize = 0;
 
 	uint64_t Header[14];

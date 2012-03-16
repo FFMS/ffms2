@@ -93,6 +93,9 @@
 #	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(51, 2, 0))
 #		define av_get_pix_fmt_name avcodec_get_pix_fmt_name
 #	endif
+#	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(51, 4, 0))
+#		define av_get_bytes_per_sample(a) (av_get_bits_per_sample_fmt(a) / 8)
+#	endif
 #endif
 
 #endif // FFMSCOMPAT_H
