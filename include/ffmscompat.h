@@ -96,6 +96,9 @@
 #	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(51, 4, 0))
 #		define av_get_bytes_per_sample(a) (av_get_bits_per_sample_fmt(a) / 8)
 #	endif
+#	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(51, 12, 0))
+#		define av_set_opt_int(o,n,v,s) av_set_int(o,n,v)
+#	endif
 #endif
 
 #endif // FFMSCOMPAT_H
