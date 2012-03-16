@@ -406,6 +406,7 @@ size_t ffms_mbstowcs(wchar_t *wcstr, const char *mbstr, size_t max) {
 #endif
 }
 
+#ifdef __MINGW32__
 static int open_flags(std::ios::openmode mode) {
 	int flags = 0;
 	if ((mode & std::ios::in) && (mode & std::ios::out))
@@ -420,6 +421,7 @@ static int open_flags(std::ios::openmode mode) {
 #endif
 	return flags;
 }
+#endif
 
 // ffms_fstream stuff
 ffms_fstream::ffms_fstream(const char *filename, std::ios_base::openmode mode)
