@@ -12,6 +12,7 @@ echo "  --enable-gprof           adds -pg, doesn't strip"
 echo "  --enable-pic             build position-independent code"
 echo "  --enable-shared          build libffms2.so"
 echo "  --enable-postproc        build with postproc support (requires libpostproc)"
+echo "  --optlevel=olev          GCC optimization level [0-3, s, fast] (0)"
 echo "  --extra-cppflags=EFLAGS  add EFLAGS to CPPFLAGS"
 echo "  --extra-cflags=ECFLAGS   add ECFLAGS to CFLAGS"
 echo "  --extra-cxxflags=EFLAGS  add EFLAGS to CXXFLAGS"
@@ -155,6 +156,7 @@ CXXFLAGS="$CXXFLAGS -Wall -D__STDC_CONSTANT_MACROS"
 LDFLAGS="$LDFLAGS"
 SOFLAGS="$SOFLAGS"
 HAVE_GETOPT_LONG=1
+olev="0"
 cross_prefix=""
 
 EXE=""
@@ -184,6 +186,9 @@ for opt do
             ;;
         --enable-postproc)
             postproc="yes"
+            ;;
+        --optlevel=*)
+            olev="$optarg"
             ;;
         --extra-cppflags=*)
             CPPFLAGS="$CPPFLAGS ${opt#--extra-cppflags=}"
@@ -401,12 +406,20 @@ if [ "$debug" != "yes" -a "$gprof" != "yes" ]; then
     LDFLAGS="$LDFLAGS -s"
 fi
 if [ "$debug" = "yes" ]; then
-    CFLAGS="-O1 -g $CFLAGS"
-    CXXFLAGS="-O1 -g $CXXFLAGS"
-else
-    CFLAGS="-O3 $CFLAGS"
-    CXXFLAGS="-O3 $CXXFLAGS"
+    CFLAGS="$CFLAGS -g"
+    CXXFLAGS="$CXXFLAGS -g"
+    olev="0"
+		      test "x$?" != "x0" && pkg_failed=yes
 fi
+
+if [ "$optlevel" != "no" -a "$olev" = "0" ] ; then
+    CFLAGS="$CFLAGS"
+    CXXFLAGS="$CXXFLAGS"
+else
+    CFLAGS="-O$olev $CFLAGS"
+    CXXFLAGS="-O$olev $CXXFLAGS"
+fi
+
 
 # generate config files
 
@@ -527,6 +540,7 @@ gprof:      $gprof
 PIC:        $pic
 postproc:   $postproc
 shared:     $shared
+optlevel:   $olev
 EOF
 
 echo >> config.log
