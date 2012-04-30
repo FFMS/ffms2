@@ -96,6 +96,7 @@ typedef struct AVCodecTag {
 	unsigned int tag;
 } AVCodecTag;
 
+#if VERSION_CHECK(LIBAVFORMAT_VERSION_INT, <, 54, 1, 0, 54, 1, 100)
 static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_H264,         MKTAG('H', '2', '6', '4') },
 	{ CODEC_ID_H264,         MKTAG('h', '2', '6', '4') },
@@ -380,6 +381,11 @@ static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_NONE,         0 }
 };
 
+static const AVCodecTag *avformat_get_riff_video_tags() {
+	return codec_bmp_tags;
+}
+#endif
+
 FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT) {
 	switch (TT) {
 		case TT_VIDEO: return FFMS_TYPE_VIDEO; break;
@@ -435,7 +441,7 @@ CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC
 	}
 
 	/* Video codecs for "avi in mkv" mode */
-	const AVCodecTag *const tags[] = { codec_bmp_tags, 0 };
+	const AVCodecTag *const tags[] = { avformat_get_riff_video_tags(), 0 };
 
 	if (!strcmp(Codec, "V_MS/VFW/FOURCC")) {
 		FFMS_BITMAPINFOHEADER *b = reinterpret_cast<FFMS_BITMAPINFOHEADER *>(CodecPrivate);
