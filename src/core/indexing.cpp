@@ -239,11 +239,18 @@ void FFMS_Track::WriteTimecodes(const char *TimecodeFile) {
 		Timecodes << std::fixed << ((Frames[i].PTS * TB.Num) / (double)TB.Den) << "\n";
 }
 
+static bool PTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
+	return FI1.PTS < FI2.PTS;
+}
+
 int FFMS_Track::FrameFromPTS(int64_t PTS) {
-	for (size_t i = 0; i < size(); i++)
-		if (Frames[i].PTS == PTS)
-			return i;
-	return -1;
+	TFrameInfo F;
+	F.PTS = PTS;
+
+	iterator Pos = std::lower_bound(begin(), end(), F, PTSComparison);
+	if (Pos == end() || Pos->PTS != PTS)
+		return -1;
+	return std::distance(begin(), Pos);
 }
 
 int FFMS_Track::FrameFromPos(int64_t Pos) {
@@ -251,10 +258,6 @@ int FFMS_Track::FrameFromPos(int64_t Pos) {
 		if (Frames[i].FilePos == Pos)
 			return i;
 	return -1;
-}
-
-static bool PTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
-	return FI1.PTS < FI2.PTS;
 }
 
 int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) {
