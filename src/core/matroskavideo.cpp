@@ -119,8 +119,6 @@ void FFMatroskaVideo::DecodeNextFrame() {
 	AVPacket Packet;
 	InitNullPacket(Packet);
 
-	unsigned int FrameSize;
-
 	if (InitialDecode == -1) {
 		if (DelayCounter > FFMS_CALCULATE_DELAY) {
 			DelayCounter--;
@@ -135,15 +133,12 @@ void FFMatroskaVideo::DecodeNextFrame() {
 		// presentation order and not decoding order, this is unnoticeable
 		// in the other sources where less is done manually
 		const TFrameInfo &FI = Frames[Frames[PacketNumber].OriginalPos];
-		FrameSize = FI.FrameSize;
+		unsigned int FrameSize = FI.FrameSize;
 		ReadFrame(FI.FilePos, FrameSize, TCC.get(), MC);
 
 		Packet.data = MC.Buffer;
 		Packet.size = FrameSize;
-		if (FI.KeyFrame)
-			Packet.flags = AV_PKT_FLAG_KEY;
-		else
-			Packet.flags = 0;
+		Packet.flags = FI.KeyFrame ? AV_PKT_FLAG_KEY : 0;
 
 		PacketNumber++;
 
