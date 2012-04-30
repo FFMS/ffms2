@@ -181,6 +181,7 @@ Done:
 
 FFMS_Frame *FFHaaliVideo::GetFrame(int n) {
 	GetFrameCheck(n);
+	n = Frames.RealFrameNumber(n);
 
 	if (LastFrameNum == n)
 		return &LocalFrame;

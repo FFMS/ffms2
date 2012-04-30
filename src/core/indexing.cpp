@@ -26,7 +26,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
-
+#include <numeric>
 
 extern "C" {
 #include <libavutil/avutil.h>
@@ -91,6 +91,7 @@ struct TrackHeader {
 	int64_t Den;
 	uint32_t UseDTS;
 	uint32_t HasTS;
+	uint32_t NumInvisible;
 };
 
 struct zipped_file {
@@ -217,7 +218,10 @@ TFrameInfo::TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCoun
 	this->KeyFrame = KeyFrame;
 }
 
-void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, unsigned int FrameSize) {
+void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, unsigned int FrameSize, bool Invisible) {
+	if (Invisible)
+		InvisibleFrames.push_back(Frames.size() - InvisibleFrames.size());
+
 	Frames.push_back(TFrameInfo(PTS, 0, 0, RepeatPict, KeyFrame, FilePos, FrameSize, FrameType));
 }
 
@@ -226,7 +230,7 @@ void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t SampleStart, int64_t SampleC
 		Frames.push_back(TFrameInfo(PTS, SampleStart, static_cast<unsigned int>(SampleCount), 0, KeyFrame, FilePos, FrameSize, 0));
 }
 
-void FFMS_Track::WriteTimecodes(const char *TimecodeFile) {
+void FFMS_Track::WriteTimecodes(const char *TimecodeFile) const {
 	ffms_fstream Timecodes(TimecodeFile, std::ios::out | std::ios::trunc);
 
 	if (!Timecodes.is_open())
@@ -243,7 +247,7 @@ static bool PTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
 	return FI1.PTS < FI2.PTS;
 }
 
-int FFMS_Track::FrameFromPTS(int64_t PTS) {
+int FFMS_Track::FrameFromPTS(int64_t PTS) const {
 	TFrameInfo F;
 	F.PTS = PTS;
 
@@ -253,14 +257,14 @@ int FFMS_Track::FrameFromPTS(int64_t PTS) {
 	return std::distance(begin(), Pos);
 }
 
-int FFMS_Track::FrameFromPos(int64_t Pos) {
+int FFMS_Track::FrameFromPos(int64_t Pos) const {
 	for (size_t i = 0; i < size(); i++)
 		if (Frames[i].FilePos == Pos)
 			return i;
 	return -1;
 }
 
-int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) {
+int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) const {
 	TFrameInfo F;
 	F.PTS = PTS;
 
@@ -273,11 +277,21 @@ int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) {
 	return Frame - 1;
 }
 
-int FFMS_Track::FindClosestVideoKeyFrame(int Frame) {
+int FFMS_Track::FindClosestVideoKeyFrame(int Frame) const {
 	Frame = FFMIN(FFMAX(Frame, 0), static_cast<int>(size()) - 1);
 	for (; Frame > 0 && !Frames[Frame].KeyFrame; Frame--) ;
 	for (; Frame > 0 && !Frames[Frames[Frame].OriginalPos].KeyFrame; Frame--) ;
 	return Frame;
+}
+
+int FFMS_Track::RealFrameNumber(int Frame) const {
+	return Frame + distance(
+		InvisibleFrames.begin(),
+		upper_bound(InvisibleFrames.begin(), InvisibleFrames.end(), Frame));
+}
+
+int FFMS_Track::VisibleFrameCount() const {
+	return Frames.size() - InvisibleFrames.size();
 }
 
 void FFMS_Track::MaybeReorderFrames() {
@@ -338,8 +352,8 @@ void FFMS_Track::SortByPTS() {
 		Frames[ReorderTemp[i]].OriginalPos = i;
 }
 
-void FFMS_Track::Write(zipped_file *stream) {
-	TrackHeader TH = { TT, size(), TB.Num, TB.Den, UseDTS, HasTS };
+void FFMS_Track::Write(zipped_file *stream) const {
+	TrackHeader TH = { TT, size(), TB.Num, TB.Den, UseDTS, HasTS, InvisibleFrames.size() };
 	stream->write(TH);
 
 	if (empty()) return;
@@ -351,6 +365,14 @@ void FFMS_Track::Write(zipped_file *stream) {
 		temp.OriginalPos -= Frames[i - 1].OriginalPos;
 		temp.PTS -= Frames[i - 1].PTS;
 		temp.SampleStart -= Frames[i - 1].SampleStart;
+		stream->write(temp);
+	}
+
+	if (InvisibleFrames.empty()) return;
+
+	stream->write(InvisibleFrames[0]);
+	for (size_t i = 1; i < InvisibleFrames.size(); ++i) {
+		int temp = InvisibleFrames[i] - InvisibleFrames[i - 1];
 		stream->write(temp);
 	}
 }
@@ -392,6 +414,11 @@ FFMS_Track::FFMS_Track(zipped_file &Stream) {
 			Frames[i].SampleStart = Frames[i].SampleStart + Frames[i - 1].SampleStart;
 		}
 	}
+
+	InvisibleFrames.resize(TH.NumInvisible);
+	for (size_t i = 0; i < TH.NumInvisible; ++i)
+		Stream.read(&InvisibleFrames[i]);
+	partial_sum(InvisibleFrames.begin(), InvisibleFrames.end(), InvisibleFrames.begin());
 }
 
 void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]) {

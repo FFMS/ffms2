@@ -132,7 +132,8 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			int FrameType = 0;
 			ParseVideoPacket(VideoContexts[Track], Packet, &RepeatPict, &FrameType);
 
-			(*TrackIndices)[Track].AddVideoFrame(PTS, RepeatPict, KeyFrame, FrameType, Packet.pos);
+			(*TrackIndices)[Track].AddVideoFrame(PTS, RepeatPict, KeyFrame,
+				FrameType, Packet.pos, 0, VideoContexts[Track].Parser->duration < 0);
 		}
 		else if (FormatContext->streams[Track]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
 			int64_t StartSample = AudioContexts[Track].CurrentSample;

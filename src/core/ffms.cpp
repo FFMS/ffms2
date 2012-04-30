@@ -302,7 +302,7 @@ FFMS_API(int) FFMS_GetFirstTrackOfType(FFMS_Index *Index, int TrackType, FFMS_Er
 FFMS_API(int) FFMS_GetFirstIndexedTrackOfType(FFMS_Index *Index, int TrackType, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	for (int i = 0; i < static_cast<int>(Index->size()); i++)
-		if ((*Index)[i].TT == TrackType && (*Index)[i].size() > 0)
+		if ((*Index)[i].TT == TrackType && !(*Index)[i].empty())
 			return i;
 	try {
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_NOT_AVAILABLE,
@@ -334,7 +334,7 @@ FFMS_API(const char *) FFMS_GetCodecNameI(FFMS_Indexer *Indexer, int Track) {
 }
 
 FFMS_API(int) FFMS_GetNumFrames(FFMS_Track *T) {
-	return T->size();
+	return T->VisibleFrameCount();
 }
 
 FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFMS_Track *T, int Frame) {

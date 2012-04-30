@@ -154,7 +154,9 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 			int FrameType = 0;
 			ParseVideoPacket(VideoContexts[Track], TempPacket, &RepeatPict, &FrameType);
 
-			(*TrackIndices)[Track].AddVideoFrame(Ts, RepeatPict, pMMF->IsSyncPoint() == S_OK, FrameType);
+			(*TrackIndices)[Track].AddVideoFrame(Ts, RepeatPict,
+				pMMF->IsSyncPoint() == S_OK, FrameType, 0, 0,
+				VideoContexts[Track].Parser->duration < 0);
 
 			av_free(TempPacket.data);
 		} else if (TrackType[Track] == FFMS_TYPE_AUDIO && (IndexMask & (1 << Track))) {

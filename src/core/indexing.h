@@ -81,6 +81,7 @@ struct FFMS_Track {
 private:
 	typedef std::vector<TFrameInfo> frame_vec;
 	frame_vec Frames;
+	std::vector<int> InvisibleFrames;
 
 	void MaybeReorderFrames();
 
@@ -90,18 +91,20 @@ public:
 	bool UseDTS;
 	bool HasTS;
 
-	void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, unsigned int FrameSize = 0);
+	void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, unsigned int FrameSize = 0, bool Invisible = false);
 	void AddAudioFrame(int64_t PTS, int64_t SampleStart, int64_t SampleCount, bool KeyFrame, int64_t FilePos = 0, unsigned int FrameSize = 0);
 
 	void SortByPTS();
 
-	int FindClosestVideoKeyFrame(int Frame);
-	int FrameFromPTS(int64_t PTS);
-	int FrameFromPos(int64_t Pos);
-	int ClosestFrameFromPTS(int64_t PTS);
+	int FindClosestVideoKeyFrame(int Frame) const;
+	int FrameFromPTS(int64_t PTS) const;
+	int FrameFromPos(int64_t Pos) const;
+	int ClosestFrameFromPTS(int64_t PTS) const;
+	int RealFrameNumber(int Frame) const;
+	int VisibleFrameCount() const;
 
-	void WriteTimecodes(const char *TimecodeFile);
-	void Write(zipped_file *Stream);
+	void WriteTimecodes(const char *TimecodeFile) const;
+	void Write(zipped_file *Stream) const;
 
 	typedef frame_vec::allocator_type allocator_type;
 	typedef frame_vec::size_type size_type;
@@ -112,7 +115,8 @@ public:
 	typedef frame_vec::const_iterator iterator;
 	typedef frame_vec::const_reverse_iterator reverse_iterator;
 
-	void clear() { Frames.clear(); }
+	void clear() { Frames.clear(); InvisibleFrames.clear(); }
+
 	bool empty() const { return Frames.empty(); }
 	size_type size() const { return Frames.size(); }
 	reference operator[](size_type pos) const { return Frames[pos]; }

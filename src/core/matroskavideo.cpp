@@ -170,6 +170,7 @@ Done:
 
 FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
 	GetFrameCheck(n);
+	n = Frames.RealFrameNumber(n);
 
 	if (LastFrameNum == n)
 		return &LocalFrame;

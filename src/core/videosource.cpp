@@ -214,7 +214,7 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Not a video track");
 
-	if (Index[Track].size() == 0)
+	if (Index[Track].empty())
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Video track contains no frames");
 
@@ -432,7 +432,7 @@ void FFMS_VideoSource::SetVideoProperties() {
 		else
 			VP.RFFNumerator /= 2;
 	}
-	VP.NumFrames = Frames.size();
+	VP.NumFrames = Frames.VisibleFrameCount();
 	VP.TopFieldFirst = DecodeFrame->top_field_first;
 	VP.ColorSpace = CodecContext->colorspace;
 	VP.ColorRange = CodecContext->color_range;

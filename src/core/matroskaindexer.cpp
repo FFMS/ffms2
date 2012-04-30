@@ -138,7 +138,9 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 			int FrameType = 0;
 			ParseVideoPacket(VideoContexts[Track], TempPacket, &RepeatPict, &FrameType);
 
-			(*TrackIndices)[Track].AddVideoFrame(StartTime, RepeatPict, (FrameFlags & FRAME_KF) != 0, FrameType, FilePos, CompressedFrameSize);
+			(*TrackIndices)[Track].AddVideoFrame(StartTime, RepeatPict,
+				(FrameFlags & FRAME_KF) != 0, FrameType, FilePos,
+				CompressedFrameSize, VideoContexts[Track].Parser->duration < 0);
 		} else if (TrackType == TT_AUDIO && (IndexMask & (1 << Track))) {
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
 			int64_t SampleCount = IndexAudioPacket(Track, &TempPacket, AudioContexts[Track], *TrackIndices);
