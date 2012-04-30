@@ -286,3 +286,24 @@ PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelForma
 
 	return Loss.Format;
 }
+
+namespace {
+int parse_vp8(AVCodecParserContext *s,
+	AVCodecContext *avctx,
+	const uint8_t **poutbuf, int *poutbuf_size,
+	const uint8_t *buf, int buf_size)
+{
+	s->pict_type = (buf[0] & 0x01) ? AV_PICTURE_TYPE_P : AV_PICTURE_TYPE_I;
+	s->duration = (buf[0] & 0x10) ? 1 : -1;
+
+	*poutbuf = buf;
+	*poutbuf_size = buf_size;
+	return buf_size;
+}
+
+AVCodecParser ffms_vp8_parser = { { CODEC_ID_VP8 }, 0, NULL, parse_vp8, NULL };
+}
+
+void RegisterCustomParsers() {
+	av_register_codec_parser(&ffms_vp8_parser);
+}

@@ -80,6 +80,7 @@ void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl)
 FFMS_API(void) FFMS_Init(int CPUFeatures, int UseUTF8Paths) {
 	if (!FFmpegInited) {
 		av_register_all();
+		RegisterCustomParsers();
 #ifdef _WIN32
 		if (UseUTF8Paths) {
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(53,0,3)

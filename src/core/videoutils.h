@@ -49,3 +49,5 @@ void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase);
 
 // our implementation of avcodec_find_best_pix_fmt()
 PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelFormat Src);
+
+void RegisterCustomParsers();
