@@ -172,7 +172,7 @@ protected:
 	void WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track, int DBSize);
 	void CheckAudioProperties(int Track, AVCodecContext *Context);
 	int64_t IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices);
-	void ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType);
+	void ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType, bool *Invisible);
 
 public:
 	static FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer = FFMS_SOURCE_DEFAULT);

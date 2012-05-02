@@ -785,7 +785,7 @@ void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
 	}
 }
 
-void FFMS_Indexer::ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType) {
+void FFMS_Indexer::ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType, bool *Invisible) {
 	if (VideoContext.Parser) {
 		uint8_t *OB;
 		int OBSize;
@@ -797,5 +797,6 @@ void FFMS_Indexer::ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &
 
 		*RepeatPict = VideoContext.Parser->repeat_pict;
 		*FrameType = VideoContext.Parser->pict_type;
+		*Invisible = VideoContext.Parser->duration < 0;
 	}
 }
