@@ -131,7 +131,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			int RepeatPict = -1;
 			int FrameType = 0;
 			bool Invisible = false;
-			(VideoContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible);
+			ParseVideoPacket(VideoContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible);
 
 			(*TrackIndices)[Track].AddVideoFrame(PTS, RepeatPict, KeyFrame,
 				FrameType, Packet.pos, 0, Invisible);
