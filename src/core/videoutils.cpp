@@ -294,7 +294,7 @@ int parse_vp8(AVCodecParserContext *s,
 	const uint8_t *buf, int buf_size)
 {
 	s->pict_type = (buf[0] & 0x01) ? AV_PICTURE_TYPE_P : AV_PICTURE_TYPE_I;
-	s->duration = (buf[0] & 0x10) ? 1 : -1;
+	s->repeat_pict = (buf[0] & 0x10) ? 0 : -1;
 
 	*poutbuf = buf;
 	*poutbuf_size = buf_size;

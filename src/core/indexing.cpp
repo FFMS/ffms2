@@ -797,6 +797,6 @@ void FFMS_Indexer::ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &
 
 		*RepeatPict = VideoContext.Parser->repeat_pict;
 		*FrameType = VideoContext.Parser->pict_type;
-		*Invisible = VideoContext.Parser->duration < 0;
+		*Invisible = VideoContext.Parser->repeat_pict < 0;
 	}
 }
