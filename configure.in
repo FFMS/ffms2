@@ -2,7 +2,8 @@ AC_PREREQ([2.58])
 AC_INIT([ffms2],[esyscmd([sh version.sh])])
 AC_CONFIG_SRCDIR([src/core/ffms.cpp])
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([subdir-objects])
+AM_INIT_AUTOMAKE([1.11 subdir-objects])
+AM_SILENT_RULES([yes])
 AM_MAINTAINER_MODE([disable])
 
 AC_MSG_CHECKING([if debug build is enabled])
@@ -194,10 +195,7 @@ if echo "$host" | $GREP "mingw" >/dev/null 2>&1; then
 fi
 AC_SUBST([LTUNDEF])
 
-SHAVE_INIT([shave], [enable])
 AC_CONFIG_FILES([
-shave/shave
-shave/shave-libtool
 Makefile
 ffms2.pc
 ])
