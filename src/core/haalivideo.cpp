@@ -96,12 +96,19 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	// Set AR variables
 	CComVariant pV;
 
+	USHORT Num = 0, Den = 0;
+
 	pV.Clear();
 	if (SUCCEEDED(pBag->Read(L"Video.DisplayWidth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-		VP.SARNum  = pV.uiVal;
+		Num = pV.uiVal;
 	pV.Clear();
 	if (SUCCEEDED(pBag->Read(L"Video.DisplayHeight", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-		VP.SARDen = pV.uiVal;
+		Den = pV.uiVal;
+
+	if (Num && Den) {
+		VP.SARNum = LocalFrame.EncodedHeight * Num;
+		VP.SARDen = LocalFrame.EncodedWidth * Den;
+	}
 }
 
 void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
