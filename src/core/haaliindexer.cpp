@@ -72,6 +72,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 	TrackIndices->Decoder = FFMS_SOURCE_HAALIMPEG;
 	if (SourceMode == FFMS_SOURCE_HAALIOGG)
 		TrackIndices->Decoder = FFMS_SOURCE_HAALIOGG;
+	TrackIndices->ErrorHandling = ErrorHandling;
 
 	for (int i = 0; i < NumTracks; i++) {
 		TrackIndices->push_back(FFMS_Track(1, 1000000, TrackType[i]));

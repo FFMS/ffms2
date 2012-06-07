@@ -45,6 +45,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 
 	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest));
 	TrackIndices->Decoder = FFMS_SOURCE_LAVF;
+	TrackIndices->ErrorHandling = ErrorHandling;
 
 	for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {
 		TrackIndices->push_back(FFMS_Track((int64_t)FormatContext->streams[i]->time_base.num * 1000,

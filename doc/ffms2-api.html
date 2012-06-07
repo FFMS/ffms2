@@ -428,6 +428,12 @@ Checks which source module (libavformat, Haali's Matroska parsing library, or Ha
 Does the same thing as <tt>FFMS_GetSourceType</tt>, but takes an indexer instead of an index.
 </p>
 
+<h3>FFMS_GetErrorHandling - gets which error handling mode was used when creating the given index</h3>
+<pre>int FFMS_GetErrorHandling(FFMS_Index *Index)</pre>
+<p>
+Returns the value of the ErrorHandling parameter which was passed to FFMS_DoIndexing or FFMS_MakeIndex.
+</p>
+
 <h3>FFMS_GetFirstTrackOfType - gets the track number of the first track of a given type</h3>
 <pre>int FFMS_GetFirstTrackOfType(FFMS_Index *Index, int TrackType, FFMS_ErrorInfo *ErrorInfo)</pre>
 <p>Finds the first track of the given <tt>FFMS_TrackType</tt> in the given <tt>FFMS_Index</tt> and returns its track number, suitable for use as an argument to <tt>FFMS_CreateVideoSource</tt> or <tt>FFMS_CreateAudioSource</tt>, as well as to some other functions.

@@ -64,6 +64,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 
 	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest));
 	TrackIndices->Decoder = FFMS_SOURCE_MATROSKA;
+	TrackIndices->ErrorHandling = ErrorHandling;
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++) {
 		TrackInfo *TI = mkv_GetTrackInfo(MF, i);

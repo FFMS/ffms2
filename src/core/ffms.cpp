@@ -284,6 +284,10 @@ FFMS_API(int) FFMS_GetSourceType(FFMS_Index *Index) {
 	return Index->Decoder;
 }
 
+FFMS_API(FFMS_IndexErrorHandling) FFMS_GetErrorHandling(FFMS_Index *Index) {
+	return static_cast<FFMS_IndexErrorHandling>(Index->ErrorHandling);
+}
+
 FFMS_API(int) FFMS_GetFirstTrackOfType(FFMS_Index *Index, int TrackType, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	for (int i = 0; i < static_cast<int>(Index->size()); i++)

@@ -75,6 +75,7 @@ struct IndexHeader {
 	uint32_t Arch;
 	uint32_t Tracks;
 	uint32_t Decoder;
+	uint32_t ErrorHandling;
 	uint32_t LAVUVersion;
 	uint32_t LAVFVersion;
 	uint32_t LAVCVersion;
@@ -510,6 +511,7 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 	IH.Arch = ARCH;
 	IH.Tracks = size();
 	IH.Decoder = Decoder;
+	IH.ErrorHandling = ErrorHandling;
 	IH.LAVUVersion = avutil_version();
 	IH.LAVFVersion = avformat_version();
 	IH.LAVCVersion = avcodec_version();
@@ -567,6 +569,7 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_NOT_AVAILABLE,
 			"The source which this index was created with is not available");
 
+	ErrorHandling = IH.ErrorHandling;
 	Decoder = IH.Decoder;
 	Filesize = IH.FileSize;
 	memcpy(Digest, IH.FileSignature, sizeof(Digest));

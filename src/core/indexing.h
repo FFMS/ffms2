@@ -140,6 +140,7 @@ public:
 	int Release();
 
 	int Decoder;
+	int ErrorHandling;
 	int64_t Filesize;
 	uint8_t Digest[20];
 
