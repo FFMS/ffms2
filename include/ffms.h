@@ -98,7 +98,7 @@ typedef struct FFMS_Indexer FFMS_Indexer;
 typedef struct FFMS_Index FFMS_Index;
 typedef struct FFMS_Track FFMS_Track;
 
-enum FFMS_Errors {
+typedef enum FFMS_Errors {
 	// No error
 	FFMS_ERROR_SUCCESS = 0,
 
@@ -127,58 +127,58 @@ enum FFMS_Errors {
 	FFMS_ERROR_NOT_AVAILABLE,		// requested mode or operation unavailable in this binary
 	FFMS_ERROR_FILE_MISMATCH,		// provided index does not match the file
 	FFMS_ERROR_USER					// problem exists between keyboard and chair
-};
+} FFMS_Errors;
 
-enum FFMS_Sources {
+typedef enum FFMS_Sources {
 	FFMS_SOURCE_DEFAULT		= 0x00,
 	FFMS_SOURCE_LAVF		= 0x01,
 	FFMS_SOURCE_MATROSKA	= 0x02,
 	FFMS_SOURCE_HAALIMPEG	= 0x04,
 	FFMS_SOURCE_HAALIOGG	= 0x08
-};
+} FFMS_Sources;
 
-enum FFMS_CPUFeatures {
+typedef enum FFMS_CPUFeatures {
 	FFMS_CPU_CAPS_MMX		= 0x01,
 	FFMS_CPU_CAPS_MMX2		= 0x02,
 	FFMS_CPU_CAPS_3DNOW		= 0x04,
 	FFMS_CPU_CAPS_ALTIVEC	= 0x08,
 	FFMS_CPU_CAPS_BFIN		= 0x10,
 	FFMS_CPU_CAPS_SSE2		= 0x20
-};
+} FFMS_CPUFeatures;
 
-enum FFMS_SeekMode {
+typedef enum FFMS_SeekMode {
 	FFMS_SEEK_LINEAR_NO_RW	= -1,
 	FFMS_SEEK_LINEAR		= 0,
 	FFMS_SEEK_NORMAL		= 1,
 	FFMS_SEEK_UNSAFE		= 2,
 	FFMS_SEEK_AGGRESSIVE	= 3
-};
+} FFMS_SeekMode;
 
-enum FFMS_IndexErrorHandling {
+typedef enum FFMS_IndexErrorHandling {
 	FFMS_IEH_ABORT = 0,
 	FFMS_IEH_CLEAR_TRACK = 1,
 	FFMS_IEH_STOP_TRACK = 2,
 	FFMS_IEH_IGNORE = 3
-};
+} FFMS_IndexErrorHandling;
 
-enum FFMS_TrackType {
+typedef enum FFMS_TrackType {
 	FFMS_TYPE_UNKNOWN = -1,
 	FFMS_TYPE_VIDEO,
 	FFMS_TYPE_AUDIO,
 	FFMS_TYPE_DATA,
 	FFMS_TYPE_SUBTITLE,
 	FFMS_TYPE_ATTACHMENT
-};
+} FFMS_TrackType;
 
-enum FFMS_SampleFormat {
+typedef enum FFMS_SampleFormat {
 	FFMS_FMT_U8 = 0,
 	FFMS_FMT_S16,
 	FFMS_FMT_S32,
 	FFMS_FMT_FLT,
 	FFMS_FMT_DBL
-};
+} FFMS_SampleFormat;
 
-enum FFMS_AudioChannel {
+typedef enum FFMS_AudioChannel {
 	FFMS_CH_FRONT_LEFT				= 0x00000001,
 	FFMS_CH_FRONT_RIGHT				= 0x00000002,
 	FFMS_CH_FRONT_CENTER			= 0x00000004,
@@ -199,9 +199,9 @@ enum FFMS_AudioChannel {
 	FFMS_CH_TOP_BACK_RIGHT			= 0x00020000,
 	FFMS_CH_STEREO_LEFT				= 0x20000000,
 	FFMS_CH_STEREO_RIGHT			= 0x40000000
-};
+} FFMS_AudioChannel;
 
-enum FFMS_Resizers {
+typedef enum FFMS_Resizers {
 	FFMS_RESIZER_FAST_BILINEAR	= 0x0001,
 	FFMS_RESIZER_BILINEAR		= 0x0002,
 	FFMS_RESIZER_BICUBIC		= 0x0004,
@@ -213,15 +213,15 @@ enum FFMS_Resizers {
 	FFMS_RESIZER_SINC			= 0x0100,
 	FFMS_RESIZER_LANCZOS		= 0x0200,
 	FFMS_RESIZER_SPLINE			= 0x0400
-};
+} FFMS_Resizers;
 
-enum FFMS_AudioDelayModes {
+typedef enum FFMS_AudioDelayModes {
 	FFMS_DELAY_NO_SHIFT				= -3,
 	FFMS_DELAY_TIME_ZERO			= -2,
 	FFMS_DELAY_FIRST_VIDEO_TRACK	= -1
-};
+} FFMS_AudioDelayModes;
 
-enum FFMS_ColorSpaces {
+typedef enum FFMS_ColorSpaces {
 	FFMS_CS_RGB			= 0,
 	FFMS_CS_BT709		= 1,
 	FFMS_CS_UNSPECIFIED	= 2,
@@ -229,13 +229,13 @@ enum FFMS_ColorSpaces {
 	FFMS_CS_BT470BG		= 5,
 	FFMS_CS_SMPTE170M	= 6,
 	FFMS_CS_SMPTE240M	= 7,
-};
+} FFMS_ColorSpaces;
 
-enum FFMS_ColorRanges {
+typedef enum FFMS_ColorRanges {
 	FFMS_CR_UNSPECIFIED = 0,
 	FFMS_CR_MPEG		= 1, // 219*2^(n-8), i.e. 16-235 with 8-bit samples
 	FFMS_CR_JPEG		= 2, // 2^n-1, or "fullrange"
-};
+} FFMS_ColorRanges;
 
 typedef struct FFMS_Frame {
 	uint8_t *Data[4];
