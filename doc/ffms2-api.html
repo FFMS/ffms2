@@ -617,7 +617,7 @@ The chosen demuxer gets used for both indexing and decoding later on. Only force
 <pre>FFMS_Index *FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask,
 	TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate,
 	FFMS_ErrorInfo *ErrorInfo)</pre>
-<p>Does the exact same thing as <tt>FFMS_MakeIndex</tt>, but takes an indexer object instead of a source filename. Return values and arguments are identical to <tt>FFMS_MakeIndex</tt>; see that function for details. See the Indexing and You section for more details about indexing. Note that calling this function destroys the <tt>FFMS_Indexer</tt> object and frees the memory allocated by <tt>FFMS_CreateIndexer</tt>.</p>
+<p>Does the exact same thing as <tt>FFMS_MakeIndex</tt>, but takes an indexer object instead of a source filename. Return values and arguments are identical to <tt>FFMS_MakeIndex</tt>; see that function for details. See the Indexing and You section for more details about indexing. Note that calling this function destroys the <tt>FFMS_Indexer</tt> object and frees the memory allocated by <tt>FFMS_CreateIndexer</tt> (even if indexing fails for any reason).</p>
 
 <h3>FFMS_CancelIndexing - destroys the given indexer object</h3>
 <pre>void FFMS_CancelIndexing(FFMS_Indexer *Indexer)</pre>
