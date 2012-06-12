@@ -175,6 +175,7 @@ FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
 	if (LastFrameNum == n)
 		return &LocalFrame;
 
+	bool HasSeeked = false;
 	int ClosestKF = Frames.FindClosestVideoKeyFrame(n);
 	if (CurrentFrame > n || ClosestKF > CurrentFrame + 10) {
 		DelayCounter = 0;
@@ -182,15 +183,17 @@ FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
 		PacketNumber = ClosestKF;
 		CurrentFrame = ClosestKF;
 		FlushBuffers(CodecContext);
+		HasSeeked = true;
 	}
 
 	do {
-		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n)
+		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n || HasSeeked)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;
 		DecodeNextFrame();
 		CurrentFrame++;
+		HasSeeked = false;
 	} while (CurrentFrame <= n);
 
 	LastFrameNum = n;

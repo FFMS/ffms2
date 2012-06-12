@@ -207,7 +207,7 @@ ReSeek:
 
 	do {
 		int64_t StartTime = -1;
-		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n)
+		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n || HasSeeked)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;

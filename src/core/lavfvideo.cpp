@@ -199,7 +199,7 @@ FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
 			Seek = false;
 		}
 
-		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n)
+		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n || HasSeeked)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;
