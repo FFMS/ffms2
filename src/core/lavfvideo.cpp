@@ -143,27 +143,19 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime, int64_t *Pos) {
 		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
 	}
 
-	if (!FrameFinished)
-		goto Error;
-
-Error:
 Done:
 	if (InitialDecode == 1) InitialDecode = -1;
 }
 
-FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
-	GetFrameCheck(n);
-	n = Frames.RealFrameNumber(n);
-
-	if (LastFrameNum == n)
-		return &LocalFrame;
-
-	bool HasSeeked = false;
-	int SeekOffset = 0;
-
-	int ClosestKF = 0;
+bool FFLAVFVideo::SeekTo(int n, int SeekOffset) {
 	if (SeekMode >= 0) {
-		ClosestKF = Frames.FindClosestVideoKeyFrame(n);
+		int TargetFrame = n + SeekOffset;
+		if (TargetFrame < 0)
+			throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_UNKNOWN,
+			"Frame accurate seeking is not possible in this file");
+
+		if (SeekMode < 3)
+			TargetFrame = Frames.FindClosestVideoKeyFrame(TargetFrame);
 
 		if (SeekMode == 0) {
 			if (n < CurrentFrame) {
@@ -175,23 +167,38 @@ FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
 			}
 		} else {
 			// 10 frames is used as a margin to prevent excessive seeking since the predicted best keyframe isn't always selected by avformat
-			if (n < CurrentFrame || ClosestKF > CurrentFrame + 10 || (SeekMode == 3 && n > CurrentFrame + 10)) {
-ReSeek:
-				av_seek_frame(FormatContext, VideoTrack,
-					(SeekMode == 3) ? Frames[n].PTS : Frames[ClosestKF + SeekOffset].PTS,
-					AVSEEK_FLAG_BACKWARD);
+			if (n < CurrentFrame || TargetFrame > CurrentFrame + 10 || (SeekMode == 3 && n > CurrentFrame + 10)) {
+				av_seek_frame(FormatContext, VideoTrack, Frames[TargetFrame].PTS, AVSEEK_FLAG_BACKWARD);
 				FlushBuffers(CodecContext);
-				HasSeeked = true;
 				DelayCounter = 0;
 				InitialDecode = 1;
+				return true;
 			}
 		}
 	} else if (n < CurrentFrame) {
 		throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_INVALID_ARGUMENT,
 			"Non-linear access attempted");
 	}
+	return false;
+}
+
+FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
+	GetFrameCheck(n);
+	n = Frames.RealFrameNumber(n);
+
+	if (LastFrameNum == n)
+		return &LocalFrame;
+
+	int SeekOffset = 0;
+	bool Seek = true;
 
 	do {
+		bool HasSeeked = false;
+		if (Seek) {
+			HasSeeked = SeekTo(n, SeekOffset);
+			Seek = false;
+		}
+
 		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
@@ -200,50 +207,37 @@ ReSeek:
 		int64_t StartTime = ffms_av_nopts_value, FilePos = -1;
 		DecodeNextFrame(&StartTime, &FilePos);
 
-		if (HasSeeked) {
-			HasSeeked = false;
+		if (!HasSeeked)
+			continue;
 
-			if (StartTime == ffms_av_nopts_value && !Frames.HasTS) {
-				if (FilePos >= 0) {
-					CurrentFrame = Frames.FrameFromPos(FilePos);
-					if (CurrentFrame >= 0)
-						goto SkipReSeek;
-				}
-				// If the track doesn't have timestamps or file positions then
-				// just trust that we got to the right place, since we have no
-				// way to tell where we are
-				else {
-					CurrentFrame = n;
-					goto SkipReSeek;
-				}
+		if (StartTime == ffms_av_nopts_value && !Frames.HasTS) {
+			if (FilePos >= 0) {
+				CurrentFrame = Frames.FrameFromPos(FilePos);
+				if (CurrentFrame >= 0)
+					continue;
 			}
-
-			// Is the seek destination time known? Does it belong to a frame?
-			if (StartTime < 0 || (CurrentFrame = Frames.FrameFromPTS(StartTime)) < 0) {
-				switch (SeekMode) {
-					case 1:
-						// No idea where we are so go back a bit further
-						if (ClosestKF + SeekOffset == 0)
-							throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_UNKNOWN,
-								"Frame accurate seeking is not possible in this file");
-
-
-						SeekOffset -= FFMIN(10, ClosestKF + SeekOffset);
-						goto ReSeek;
-					case 2:
-					case 3:
-						CurrentFrame = Frames.ClosestFrameFromPTS(StartTime);
-						break;
-					default:
-						throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_UNKNOWN,
-							"Failed assertion");
-				}
+			// If the track doesn't have timestamps or file positions then
+			// just trust that we got to the right place, since we have no
+			// way to tell where we are
+			else {
+				CurrentFrame = n;
+				continue;
 			}
 		}
 
-SkipReSeek:
-		CurrentFrame++;
-	} while (CurrentFrame <= n);
+		CurrentFrame = Frames.FrameFromPTS(StartTime);
+
+		// Is the seek destination time known? Does it belong to a frame?
+		if (CurrentFrame < 0) {
+			if (SeekMode == 1 || StartTime < 0) {
+				// No idea where we are so go back a bit further
+				SeekOffset -= 10;
+				Seek = true;
+			}
+			else
+				CurrentFrame = Frames.ClosestFrameFromPTS(StartTime);
+		}
+	} while (++CurrentFrame <= n);
 
 	LastFrameNum = n;
 	return OutputFrame(DecodeFrame);

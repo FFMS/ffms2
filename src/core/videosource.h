@@ -124,6 +124,7 @@ private:
 	FFSourceResources<FFMS_VideoSource> Res;
 
 	void DecodeNextFrame(int64_t *PTS, int64_t *Pos);
+	bool SeekTo(int n, int SeekOffset);
 protected:
 	void Free(bool CloseCodec);
 public:
