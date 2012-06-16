@@ -119,7 +119,7 @@ int main (...) {
 	
 	/* Get the first frame for examination so we know what we're getting. This is required
 	because resolution and colorspace is a per frame property and NOT global for the video. */
-	const FFMS_Frame *propframe = FFMS_GetFrame(videosource, 0, errinfo);
+	const FFMS_Frame *propframe = FFMS_GetFrame(videosource, 0, &amp;errinfo);
 
 	/* Now you may want to do something with the info; particularly interesting values are:
 	propframe-&gt;EncodedWidth; (frame width in pixels)
@@ -137,10 +137,10 @@ int main (...) {
 	
 	/* A -1 terminated list of the acceptable output formats. */
 	int pixfmts[2];
-	pixfmt[0] = FFMS_GetPixFmt("bgra");
-	pixfmt[1] = -1;
+	pixfmts[0] = FFMS_GetPixFmt("bgra");
+	pixfmts[1] = -1;
 	
-	if (FFMS_SetOutputFormatV2(videosource, pixfmt, propframe-&gt;EncodedWidth, propframe-&gt;EncodedHeight, FFMS_RESIZER_BICUBIC, &amp;errinfo)) {
+	if (FFMS_SetOutputFormatV2(videosource, pixfmts, propframe-&gt;EncodedWidth, propframe-&gt;EncodedHeight, FFMS_RESIZER_BICUBIC, &amp;errinfo)) {
 		/* handle error */
 	}
 
