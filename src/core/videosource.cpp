@@ -463,3 +463,36 @@ void FFMS_VideoSource::SetVideoProperties() {
 	VP.SARNum = CodecContext->sample_aspect_ratio.num;
 	VP.SARDen = CodecContext->sample_aspect_ratio.den;
 }
+
+bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
+	int FrameFinished = 0;
+	std::swap(DecodeFrame, LastDecodedFrame);
+	avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, Packet);
+	if (!FrameFinished)
+		std::swap(DecodeFrame, LastDecodedFrame);
+
+	if (!FrameFinished)
+		DelayCounter++;
+
+	if (FrameFinished && InitialDecode == 1)
+		InitialDecode = -1;
+
+	return FrameFinished || (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode);
+}
+
+void FFMS_VideoSource::FlushFinalFrames() {
+	AVPacket Packet;
+	InitNullPacket(Packet);
+	DecodePacket(&Packet);
+}
+
+bool FFMS_VideoSource::HasPendingDelayedFrames() {
+	if (InitialDecode == -1) {
+		if (DelayCounter > FFMS_CALCULATE_DELAY) {
+			--DelayCounter;
+			return true;
+		}
+		InitialDecode = 0;
+	}
+	return false;
+}

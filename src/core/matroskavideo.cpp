@@ -115,18 +115,10 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 }
 
 void FFMatroskaVideo::DecodeNextFrame() {
-	int FrameFinished = 0;
+	if (HasPendingDelayedFrames()) return;
+
 	AVPacket Packet;
 	InitNullPacket(Packet);
-
-	if (InitialDecode == -1) {
-		if (DelayCounter > FFMS_CALCULATE_DELAY) {
-			DelayCounter--;
-			goto Done;
-		} else {
-			InitialDecode = 0;
-		}
-	}
 
 	while (PacketNumber < Frames.size()) {
 		// The additional indirection is because the packets are stored in
@@ -142,33 +134,11 @@ void FFMatroskaVideo::DecodeNextFrame() {
 
 		PacketNumber++;
 
-		std::swap(DecodeFrame, LastDecodedFrame);
-		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
-		if (!FrameFinished)
-			std::swap(DecodeFrame, LastDecodedFrame);
-
-		if (!FrameFinished)
-			DelayCounter++;
-		if (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode)
-			goto Done;
-
-		if (FrameFinished)
-			goto Done;
+		if (DecodePacket(&Packet))
+			return;
 	}
 
-	// Flush the last frames
-	if (FFMS_CALCULATE_DELAY) {
-		AVPacket NullPacket;
-		InitNullPacket(NullPacket);
-		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
-	}
-
-	if (!FrameFinished)
-		goto Error;
-
-Error:
-Done:
-	if (InitialDecode == 1) InitialDecode = -1;
+	FlushFinalFrames();
 }
 
 FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {

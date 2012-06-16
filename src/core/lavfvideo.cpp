@@ -94,60 +94,30 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 }
 
 void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime, int64_t *Pos) {
+	*AStartTime = -1;
+	if (HasPendingDelayedFrames()) return;
+
 	AVPacket Packet;
 	InitNullPacket(Packet);
-	int FrameFinished = 0;
-	*AStartTime = -1;
-
-	if (InitialDecode == -1) {
-		if (DelayCounter > FFMS_CALCULATE_DELAY) {
-			DelayCounter--;
-			goto Done;
-		} else {
-			InitialDecode = 0;
-		}
-	}
 
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
-		if (Packet.stream_index == VideoTrack) {
-			if (*AStartTime < 0) {
-				if (Frames.UseDTS)
-					*AStartTime = Packet.dts;
-				else
-					*AStartTime = Packet.pts;
-			}
-
-			if (*Pos < 0)
-				*Pos = Packet.pos;
-
-			std::swap(DecodeFrame, LastDecodedFrame);
-			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
-			if (!FrameFinished)
-				std::swap(DecodeFrame, LastDecodedFrame);
-
-			if (!FrameFinished)
-				DelayCounter++;
-			if (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode) {
-				av_free_packet(&Packet);
-				goto Done;
-			}
+		if (Packet.stream_index != VideoTrack) {
+			av_free_packet(&Packet);
+			continue;
 		}
 
+		if (*AStartTime < 0)
+			*AStartTime = Frames.UseDTS ? Packet.dts : Packet.pts;
+
+		if (*Pos < 0)
+			*Pos = Packet.pos;
+
+		bool FrameFinished = DecodePacket(&Packet);
 		av_free_packet(&Packet);
-
-		if (FrameFinished)
-			goto Done;
+		if (FrameFinished) return;
 	}
 
-	// Flush the last frames
-	if (FFMS_CALCULATE_DELAY) {
-		AVPacket NullPacket;
-		InitNullPacket(NullPacket);
-		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
-	}
-
-Done:
-	if (InitialDecode == 1) InitialDecode = -1;
+	FlushFinalFrames();
 }
 
 bool FFLAVFVideo::SeekTo(int n, int SeekOffset) {

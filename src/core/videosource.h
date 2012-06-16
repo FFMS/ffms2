@@ -103,6 +103,9 @@ protected:
 	FFMS_Frame *OutputFrame(AVFrame *Frame);
 	virtual void Free(bool CloseCodec) = 0;
 	void SetVideoProperties();
+	bool DecodePacket(AVPacket *Packet);
+	void FlushFinalFrames();
+	bool HasPendingDelayedFrames();
 public:
 	virtual ~FFMS_VideoSource();
 	const FFMS_VideoProperties& GetVideoProperties() { return VP; }
@@ -143,6 +146,7 @@ private:
 	size_t PacketNumber;
 
 	void DecodeNextFrame();
+
 protected:
 	void Free(bool CloseCodec);
 public:

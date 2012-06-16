@@ -112,81 +112,48 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 }
 
 void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
-	int FrameFinished = 0;
 	*AFirstStartTime = -1;
+	if (HasPendingDelayedFrames()) return;
+
 	AVPacket Packet;
 	InitNullPacket(Packet);
-
-	if (InitialDecode == -1) {
-		if (DelayCounter > FFMS_CALCULATE_DELAY) {
-			DelayCounter--;
-			goto Done;
-		} else {
-			InitialDecode = 0;
-		}
-	}
 
 	for (;;) {
 		CComPtr<IMMFrame> pMMF;
 		if (pMMC->ReadFrame(NULL, &pMMF) != S_OK)
 			break;
 
-		if (pMMF->GetTrack() == VideoTrack) {
-			REFERENCE_TIME  Ts, Te;
-			if (*AFirstStartTime < 0 && SUCCEEDED(pMMF->GetTime(&Ts, &Te)))
-				*AFirstStartTime = Ts;
+		if (pMMF->GetTrack() != VideoTrack)
+			continue;
 
-			BYTE *Data = NULL;
-			if (FAILED(pMMF->GetPointer(&Data)))
-				goto Error;
+		REFERENCE_TIME  Ts, Te;
+		if (*AFirstStartTime < 0 && SUCCEEDED(pMMF->GetTime(&Ts, &Te)))
+			*AFirstStartTime = Ts;
 
-			// align input data
-			Packet.size = pMMF->GetActualDataLength();
-			Packet.data = static_cast<uint8_t *>(av_mallocz(Packet.size + FF_INPUT_BUFFER_PADDING_SIZE));
-			memcpy(Packet.data, Data, Packet.size);
+		BYTE *Data = NULL;
+		if (FAILED(pMMF->GetPointer(&Data)))
+			goto Error;
 
-			if (pMMF->IsSyncPoint() == S_OK)
-				Packet.flags = AV_PKT_FLAG_KEY;
-			else
-				Packet.flags = 0;
+		// align input data
+		Packet.size = pMMF->GetActualDataLength();
+		Packet.data = static_cast<uint8_t *>(av_mallocz(Packet.size + FF_INPUT_BUFFER_PADDING_SIZE));
+		memcpy(Packet.data, Data, Packet.size);
+		Packet.flags = pMMF->IsSyncPoint() == S_OK ? AV_PKT_FLAG_KEY : 0;
 
-			AVBitStreamFilterContext *bsf = BitStreamFilter;
-			while (bsf) {
-				av_bitstream_filter_filter(bsf, CodecContext, NULL, &Packet.data,
-					&Packet.size, Data, Packet.size, Packet.flags & AV_PKT_FLAG_KEY);
-				bsf = bsf->next;
-			}
-
-			std::swap(DecodeFrame, LastDecodedFrame);
-			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
-			if (!FrameFinished)
-				std::swap(DecodeFrame, LastDecodedFrame);
-
-			av_free(Packet.data);
-
-			if (!FrameFinished)
-				DelayCounter++;
-			if (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode)
-				goto Done;
-
-			if (FrameFinished)
-				goto Done;
+		AVBitStreamFilterContext *bsf = BitStreamFilter;
+		while (bsf) {
+			av_bitstream_filter_filter(bsf, CodecContext, NULL, &Packet.data,
+				&Packet.size, Data, Packet.size, Packet.flags & AV_PKT_FLAG_KEY);
+			bsf = bsf->next;
 		}
+
+		bool FrameFinished = DecodePacket(&Packet);
+		av_free(Packet.data);
+		if (FrameFinished)
+			return;
 	}
 
-	// Flush the last frames
-	if (FFMS_CALCULATE_DELAY) {
-		AVPacket NullPacket;
-		InitNullPacket(NullPacket);
-		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
-	}
-
-	if (!FrameFinished)
-		goto Error;
-
-Error:
-Done:
-	if (InitialDecode == 1) InitialDecode = -1;
+	FlushFinalFrames();
 }
 
 FFMS_Frame *FFHaaliVideo::GetFrame(int n) {
