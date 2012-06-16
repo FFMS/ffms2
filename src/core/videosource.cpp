@@ -477,6 +477,19 @@ bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
 	if (FrameFinished && InitialDecode == 1)
 		InitialDecode = -1;
 
+	// The second half of this is to handle the fact that FrameFinished is not
+	// an entirely accurate name. In some cases, a frame can be fully decoded,
+	// but still not have any picture data. Some examples of things which cause
+	// this are xvid NVOPs and (at the time of writing), ffmpeg's h264 b-frame
+	// reordering logic (but seemingly not libav's). The API doesn't distinguish
+	// between "no picture data because it needs more packets" and "no picture
+	// data because the frame was dropped", so we try to calculate the maximum
+	// number of packets we should need to feed into the decoder to get frames,
+	// and assume we're in the latter case if we go over that number.
+	//
+	// I suspect this logic actually returns the wrong end of the dropped
+	// sequence in some cases, but it probably doesn't matter with the sort of
+	// situations where it's actually used.
 	return FrameFinished || (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode);
 }
 
