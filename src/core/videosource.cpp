@@ -259,6 +259,7 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 	else
 		DecodingThreads = Threads;
 	DecodeFrame = avcodec_alloc_frame();
+	LastDecodedFrame = avcodec_alloc_frame();
 
 	// Dummy allocations so the unallocated case doesn't have to be handled later
 #ifdef FFMS_USE_POSTPROC
@@ -285,6 +286,7 @@ FFMS_VideoSource::~FFMS_VideoSource() {
 
 	avpicture_free(&SWSFrame);
 	av_freep(&DecodeFrame);
+	av_freep(&LastDecodedFrame);
 
 	Index.Release();
 }

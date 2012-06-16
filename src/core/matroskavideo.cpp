@@ -142,7 +142,10 @@ void FFMatroskaVideo::DecodeNextFrame() {
 
 		PacketNumber++;
 
+		std::swap(DecodeFrame, LastDecodedFrame);
 		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
+		if (!FrameFinished)
+			std::swap(DecodeFrame, LastDecodedFrame);
 
 		if (!FrameFinished)
 			DelayCounter++;

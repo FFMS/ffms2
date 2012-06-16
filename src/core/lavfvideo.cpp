@@ -120,7 +120,10 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime, int64_t *Pos) {
 			if (*Pos < 0)
 				*Pos = Packet.pos;
 
+			std::swap(DecodeFrame, LastDecodedFrame);
 			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
+			if (!FrameFinished)
+				std::swap(DecodeFrame, LastDecodedFrame);
 
 			if (!FrameFinished)
 				DelayCounter++;

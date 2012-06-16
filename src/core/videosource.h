@@ -86,6 +86,7 @@ protected:
 	FFMS_VideoProperties VP;
 	FFMS_Frame LocalFrame;
 	AVFrame *DecodeFrame;
+	AVFrame *LastDecodedFrame;
 	int LastFrameNum;
 	FFMS_Index &Index;
 	FFMS_Track Frames;

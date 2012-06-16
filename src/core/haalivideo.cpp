@@ -157,7 +157,10 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 				bsf = bsf->next;
 			}
 
+			std::swap(DecodeFrame, LastDecodedFrame);
 			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
+			if (!FrameFinished)
+				std::swap(DecodeFrame, LastDecodedFrame);
 
 			av_free(Packet.data);
 
