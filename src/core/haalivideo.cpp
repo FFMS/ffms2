@@ -132,7 +132,7 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 
 		BYTE *Data = NULL;
 		if (FAILED(pMMF->GetPointer(&Data)))
-			goto Error;
+			return;
 
 		// align input data
 		Packet.size = pMMF->GetActualDataLength();
