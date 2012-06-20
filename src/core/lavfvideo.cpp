@@ -88,6 +88,12 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	// Set the video properties from the codec context
 	SetVideoProperties();
 
+	// Set the SAR from the container if the codec SAR is invalid
+	if (VP.SARNum <= 0 || VP.SARDen <= 0) {
+		VP.SARNum = FormatContext->streams[VideoTrack]->sample_aspect_ratio.num;
+		VP.SARDen = FormatContext->streams[VideoTrack]->sample_aspect_ratio.den;
+	}
+
 	// Cannot "output" to PPFrame without doing all other initialization
 	// This is the additional mess required for seekmode=-1 to work in a reasonable way
 	OutputFrame(DecodeFrame);
