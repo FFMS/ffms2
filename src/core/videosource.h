@@ -82,6 +82,9 @@ private:
 
 	AVPicture PPFrame;
 	AVPicture SWSFrame;
+
+	void DetectInputFormat();
+
 protected:
 	FFMS_VideoProperties VP;
 	FFMS_Frame LocalFrame;

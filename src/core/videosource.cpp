@@ -235,7 +235,6 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 	CurrentFrame = 1;
 	DelayCounter = 0;
 	InitialDecode = 1;
-	CodecContext = NULL;
 
 	LastFrameHeight = -1;
 	LastFrameWidth = -1;
@@ -253,7 +252,6 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 	InputFormat = PIX_FMT_NONE;
 	InputColorSpace = AVCOL_SPC_UNSPECIFIED;
 	InputColorRange = AVCOL_RANGE_UNSPECIFIED;
-
 	if (Threads < 1)
 		DecodingThreads = GetNumberOfLogicalCPUs();
 	else
@@ -335,12 +333,7 @@ void FFMS_VideoSource::SetInputFormat(int ColorSpace, int ColorRange, PixelForma
 	}
 }
 
-void FFMS_VideoSource::ReAdjustOutputFormat() {
-	if (SWS) {
-		sws_freeContext(SWS);
-		SWS = NULL;
-	}
-
+void FFMS_VideoSource::DetectInputFormat() {
 	if (InputFormat == PIX_FMT_NONE)
 		InputFormat = CodecContext->pix_fmt;
 
@@ -357,9 +350,17 @@ void FFMS_VideoSource::ReAdjustOutputFormat() {
 		InputColorSpace = CodecContext->colorspace;
 	if (InputColorSpace == AVCOL_SPC_UNSPECIFIED)
 		InputColorSpace = GetAssumedColorSpace(CodecContext->width, CodecContext->height);
+}
+
+void FFMS_VideoSource::ReAdjustOutputFormat() {
+	if (SWS) {
+		sws_freeContext(SWS);
+		SWS = NULL;
+	}
+
+	DetectInputFormat();
 
 	OutputFormat = FindBestPixelFormat(TargetPixelFormats, InputFormat);
-
 	if (OutputFormat == PIX_FMT_NONE) {
 		ResetOutputFormat();
 		throw FFMS_Exception(FFMS_ERROR_SCALING, FFMS_ERROR_INVALID_ARGUMENT,
@@ -462,6 +463,13 @@ void FFMS_VideoSource::SetVideoProperties() {
 	// Set AR variables
 	VP.SARNum = CodecContext->sample_aspect_ratio.num;
 	VP.SARDen = CodecContext->sample_aspect_ratio.den;
+
+	// Set input and output formats now that we have a CodecContext
+	DetectInputFormat();
+
+	OutputFormat = InputFormat;
+	OutputColorSpace = InputColorSpace;
+	OutputColorRange = InputColorRange;
 }
 
 bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
