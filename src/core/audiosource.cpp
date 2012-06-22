@@ -118,7 +118,7 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Audio delay compensation must be relative to a video track");
 
-	double AdjustRelative = 0;
+	int64_t Delay = 0;
 	if (DelayMode != FFMS_DELAY_TIME_ZERO) {
 		if (DelayMode == FFMS_DELAY_FIRST_VIDEO_TRACK) {
 			for (size_t i = 0; i < Index.size(); ++i) {
@@ -131,11 +131,18 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 
 		if (DelayMode >= 0) {
 			const FFMS_Track &VTrack = Index[DelayMode];
-			AdjustRelative = VTrack[0].PTS * VTrack.TB.Num / (double)VTrack.TB.Den;
+			Delay = -(VTrack[0].PTS * VTrack.TB.Num * AP.SampleRate / (VTrack.TB.Den * 1000));
 		}
 	}
 
-	Delay = static_cast<int64_t>((Frames[0].PTS * Frames.TB.Num / (double)Frames.TB.Den - AdjustRelative) * AP.SampleRate / 1000. + .5);
+	if (Frames.HasTS) {
+		int i = 0;
+		while (Frames[i].PTS == ffms_av_nopts_value) ++i;
+		Delay += Frames[i].PTS * Frames.TB.Num * AP.SampleRate / (Frames.TB.Den * 1000);
+		for (; i >= 0; --i)
+			Delay -= Frames[i].SampleCount;
+	}
+
 	AP.NumSamples += Delay;
 }
 
