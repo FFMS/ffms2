@@ -228,13 +228,13 @@ typedef enum FFMS_ColorSpaces {
 	FFMS_CS_FCC			= 4,
 	FFMS_CS_BT470BG		= 5,
 	FFMS_CS_SMPTE170M	= 6,
-	FFMS_CS_SMPTE240M	= 7,
+	FFMS_CS_SMPTE240M	= 7
 } FFMS_ColorSpaces;
 
 typedef enum FFMS_ColorRanges {
 	FFMS_CR_UNSPECIFIED = 0,
 	FFMS_CR_MPEG		= 1, // 219*2^(n-8), i.e. 16-235 with 8-bit samples
-	FFMS_CR_JPEG		= 2, // 2^n-1, or "fullrange"
+	FFMS_CR_JPEG		= 2 // 2^n-1, or "fullrange"
 } FFMS_ColorRanges;
 
 typedef struct FFMS_Frame {
