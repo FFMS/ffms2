@@ -81,6 +81,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 					"Could not open audio codec");
 
 			AudioContexts[i].CodecContext = AudioCodecContext;
+			(*TrackIndices)[i].HasTS = false;
 		} else {
 			IndexMask &= ~(1 << i);
 		}
@@ -138,6 +139,12 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 				FrameType, Packet.pos, 0, Invisible);
 		}
 		else if (FormatContext->streams[Track]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+			// For video seeking timestamps are used only if all packets have
+			// timestamps, while for audio they're used if any have timestamps,
+			// as it's pretty common for only some packets to have timestamps
+			if (LastValidTS[Track] != ffms_av_nopts_value)
+				(*TrackIndices)[Track].HasTS = true;
+
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
 			int64_t SampleCount = IndexAudioPacket(Track, &Packet, AudioContexts[Track], *TrackIndices);
 

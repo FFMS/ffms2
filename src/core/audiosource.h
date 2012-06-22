@@ -126,6 +126,8 @@ class FFLAVFAudio : public FFMS_AudioSource {
 	void FreePacket(AVPacket *);
 	void Seek();
 
+	int64_t FrameTS(size_t Packet) const;
+
 public:
 	FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
 	~FFLAVFAudio();
