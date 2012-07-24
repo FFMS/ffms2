@@ -240,8 +240,10 @@ void FFMS_Track::WriteTimecodes(const char *TimecodeFile) const {
 
 	Timecodes << "# timecode format v2\n";
 
-	for (size_t i = 0; i < size(); ++i)
-		Timecodes << std::fixed << ((Frames[i].PTS * TB.Num) / (double)TB.Den) << "\n";
+	for (size_t i = 0; i < size(); ++i) {
+		if (!binary_search(InvisibleFrames.begin(), InvisibleFrames.end(), i))
+			Timecodes << std::fixed << ((Frames[i].PTS * TB.Num) / (double)TB.Den) << "\n";
+	}
 }
 
 static bool PTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
