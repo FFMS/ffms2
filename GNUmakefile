@@ -4,6 +4,11 @@ include config.mak
 
 all: default
 
+ifndef V
+$(foreach VAR,CC CXX AR RANLIB RC,\
+    $(eval override $(VAR) = @printf " %s\t%s\n" $(VAR) "$$@"; $($(VAR))))
+endif
+
 CORE_C   = src/core/matroskaparser.c src/core/stdiostream.c
 
 CORE_CXX = src/core/audiosource.cpp src/core/ffms.cpp src/core/haaliaudio.cpp src/core/haaliindexer.cpp \
@@ -62,10 +67,17 @@ $(SONAME): .depend $(CORE_O) $(SO_O)
 ffmsindex$(EXE): $(IDX_O) libffms.a $(SONAME)
 	$(CXX) -o $@ $(IDX_O) $(INDEX_LINK) $(LDFLAGS)
 
+define \n
+
+
+endef
+
 .depend: config.mak
 	@rm -f .depend
-	@$(foreach SRC, $(CORE_C), $(CC) $(CPPFLAGS) $(CFLAGS) $(SRC) -MT $(SRC:%.c=%.o) -MM -g0 1>> .depend;)
-	@$(foreach SRC, $(CORE_CXX) $(IDX_CXX), $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SRC) -MT $(SRC:%.cpp=%.o) -MM -g0 1>> .depend;)
+	@$(foreach SRC_C, $(CORE_C), \
+            $(PLC) $(CPPFLAGS) $(CFLAGS) $(SRC_C) -MT $(SRC_C:%.c=%.o) -MM -g0 1>> .depend;${\n})
+	@$(foreach SRC_CXX, $(CORE_CXX) $(IDX_CXX), \
+            $(PLPL) $(CPPFLAGS) $(CXXFLAGS) $(SRC_CXX) -MT $(SRC_CXX:%.cpp=%.o) -MM -g0 1>> .depend;${\n})
 
 config.mak:
 	./configure
@@ -84,7 +96,7 @@ install: ffmsindex$(EXE) $(SONAME)
 	install -m 644 libffms.a $(DESTDIR)$(libdir)
 	install -m 644 ffms.pc $(DESTDIR)$(libdir)/pkgconfig
 	install ffmsindex$(EXE) $(DESTDIR)$(bindir)
-	$(RANLIB) $(DESTDIR)$(libdir)/libffms.a
+	$(RANLIBX) $(DESTDIR)$(libdir)/libffms.a
 ifeq ($(SYS),MINGW)
 	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(bindir))
 else
