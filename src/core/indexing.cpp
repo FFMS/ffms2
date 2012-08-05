@@ -356,7 +356,7 @@ void FFMS_Track::SortByPTS() {
 }
 
 void FFMS_Track::Write(zipped_file *stream) const {
-	TrackHeader TH = { TT, size(), TB.Num, TB.Den, UseDTS, HasTS, InvisibleFrames.size() };
+	TrackHeader TH = { (uint32_t)TT, (uint32_t)size(), TB.Num, TB.Den, UseDTS, HasTS, (uint32_t)InvisibleFrames.size() };
 	stream->write(TH);
 
 	if (empty()) return;
