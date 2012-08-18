@@ -329,6 +329,21 @@ void FFMS_Track::MaybeReorderFrames() {
 	}
 }
 
+void FFMS_Track::MaybeHideFrames() {
+	bool prev_valid_pos = Frames[0].FilePos >= 0;
+	for (size_t i = 1; i < size(); ++i) {
+		bool valid_pos = Frames[i].FilePos >= 0;
+		if (valid_pos == prev_valid_pos)
+			return;
+		prev_valid_pos = valid_pos;
+	}
+
+	for (size_t i = 0; i < size(); ++i) {
+		if (Frames[i].FilePos < 0)
+			InvisibleFrames.push_back(i - InvisibleFrames.size());
+	}
+}
+
 void FFMS_Track::SortByPTS() {
 	// With some formats (such as Vorbis) a bad final packet results in a
 	// frame with PTS 0, which we don't want to sort to the beginning
@@ -338,7 +353,7 @@ void FFMS_Track::SortByPTS() {
 	for (size_t i = 0; i < size(); i++)
 		Frames[i].OriginalPos = i;
 
-	if (TT != FFMS_TYPE_VIDEO)
+	if (TT != FFMS_TYPE_VIDEO || size() < 2)
 		return;
 
 	MaybeReorderFrames();
@@ -353,6 +368,8 @@ void FFMS_Track::SortByPTS() {
 
 	for (size_t i = 0; i < size(); i++)
 		Frames[ReorderTemp[i]].OriginalPos = i;
+
+	MaybeHideFrames();
 }
 
 void FFMS_Track::Write(zipped_file *stream) const {

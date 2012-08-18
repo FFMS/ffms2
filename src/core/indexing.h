@@ -84,6 +84,7 @@ private:
 	std::vector<int> InvisibleFrames;
 
 	void MaybeReorderFrames();
+	void MaybeHideFrames();
 
 public:
 	FFMS_TrackType TT;
