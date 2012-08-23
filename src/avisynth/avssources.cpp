@@ -20,6 +20,7 @@
 
 #include "avssources.h"
 #include "avsutils.h"
+#include <libavutil/common.h>
 #include <cmath>
 
 

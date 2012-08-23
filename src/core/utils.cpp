@@ -566,7 +566,7 @@ void FlushBuffers(AVCodecContext *CodecContext) {
 		// If the codec doesn't have flush(), it might not need it... or it
 		// might need it and just not implement it as in the case of VC-1, so
 		// close and reopen the codec
-		AVCodec *codec = CodecContext->codec;
+		const AVCodec *codec = CodecContext->codec;
 		avcodec_close(CodecContext);
 		avcodec_open2(CodecContext, codec, 0);
 	}

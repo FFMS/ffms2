@@ -83,7 +83,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 		if (!CodecContext->codec)
 			throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED, "Codec not found");
 
-		AVCodec *Codec = NULL;
+		const AVCodec *Codec = NULL;
 		std::swap(Codec, CodecContext->codec);
 		if (avcodec_open2(CodecContext, Codec, NULL) < 0)
 			throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,

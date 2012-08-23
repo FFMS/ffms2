@@ -42,7 +42,7 @@ FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index,
 
 	CodecContext = InitializeCodecContextFromHaaliInfo(pBag);
 
-	AVCodec *Codec = NULL;
+	const AVCodec *Codec = NULL;
 	std::swap(Codec, CodecContext->codec);
 	if (avcodec_open2(CodecContext, Codec, NULL) < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
