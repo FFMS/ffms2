@@ -274,9 +274,11 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 			}
 
 			// Decode everything between the last keyframe and the block we want
+			if (PacketNumber >= Frames.size())
+				throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_CODEC, "Seeking is severely broken");
 			while (CurrentSample + Decoded <= Start && PacketNumber < Frames.size())
 				DecodeNextBlock();
-			if (CurrentSample > Start || PacketNumber >= Frames.size())
+			if (CurrentSample > Start)
 				throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_CODEC, "Seeking is severely broken");
 
 			CacheBlock(it, CurrentSample, Decoded, &DecodingBuffer[0]);
