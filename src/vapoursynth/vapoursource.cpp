@@ -96,63 +96,67 @@ void __stdcall VSVideoSource::Init(VSMap *in, VSMap *out, void **instanceData, V
 
 const VSFrameRef *__stdcall VSVideoSource::GetFrame(int n, int activationReason, void **instanceData, void **frameData, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi) {
 	VSVideoSource *vs = (VSVideoSource *)*instanceData;
-	if (vs->VI.numFrames && n >= vs->VI.numFrames)
-		n = vs->VI.numFrames - 1;
+	if (activationReason == arInitial) {
+		if (vs->VI.numFrames && n >= vs->VI.numFrames)
+			n = vs->VI.numFrames - 1;
 
-	char ErrorMsg[1024];
-	FFMS_ErrorInfo E;
-	E.Buffer = ErrorMsg;
-	E.BufferSize = sizeof(ErrorMsg);
-	std::string buf = "Source: ";
+		char ErrorMsg[1024];
+		FFMS_ErrorInfo E;
+		E.Buffer = ErrorMsg;
+		E.BufferSize = sizeof(ErrorMsg);
+		std::string buf = "Source: ";
 
-	VSFrameRef *Dst = vsapi->newVideoFrame(vs->VI.format, vs->VI.width, vs->VI.height, NULL, core);
+		VSFrameRef *Dst = vsapi->newVideoFrame(vs->VI.format, vs->VI.width, vs->VI.height, NULL, core);
 
-	if (vs->RFFMode > 0) {
-		const FFMS_Frame *Frame = FFMS_GetFrame(vs->V, FFMIN(vs->FieldList[n].Top, vs->FieldList[n].Bottom), &E);
-		if (Frame == NULL) {
-			buf += E.Buffer;
-			vsapi->setFilterError(buf.c_str(), frameCtx);
-			return NULL;
-		}
-		if (vs->FieldList[n].Top == vs->FieldList[n].Bottom) {
-			OutputFrame(Frame, Dst, vsapi, core);
-		} else {
-			int FirstField = FFMIN(vs->FieldList[n].Top, vs->FieldList[n].Bottom) == vs->FieldList[n].Bottom;
-			OutputField(Frame, Dst, FirstField, vsapi, core);
-			Frame = FFMS_GetFrame(vs->V, FFMAX(vs->FieldList[n].Top, vs->FieldList[n].Bottom), &E);
+		if (vs->RFFMode > 0) {
+			const FFMS_Frame *Frame = FFMS_GetFrame(vs->V, FFMIN(vs->FieldList[n].Top, vs->FieldList[n].Bottom), &E);
 			if (Frame == NULL) {
 				buf += E.Buffer;
 				vsapi->setFilterError(buf.c_str(), frameCtx);
 				return NULL;
 			}
-			OutputField(Frame, Dst, !FirstField, vsapi, core);
-		}
-	} else {
-		const FFMS_Frame *Frame;
-
-		if (vs->FPSNum > 0 && vs->FPSDen > 0) {
-			Frame = FFMS_GetFrameByTime(vs->V, FFMS_GetVideoProperties(vs->V)->FirstTime +
-				(double)(n * (int64_t)vs->FPSDen) / vs->FPSNum, &E);
+			if (vs->FieldList[n].Top == vs->FieldList[n].Bottom) {
+				OutputFrame(Frame, Dst, vsapi, core);
+			} else {
+				int FirstField = FFMIN(vs->FieldList[n].Top, vs->FieldList[n].Bottom) == vs->FieldList[n].Bottom;
+				OutputField(Frame, Dst, FirstField, vsapi, core);
+				Frame = FFMS_GetFrame(vs->V, FFMAX(vs->FieldList[n].Top, vs->FieldList[n].Bottom), &E);
+				if (Frame == NULL) {
+					buf += E.Buffer;
+					vsapi->setFilterError(buf.c_str(), frameCtx);
+					return NULL;
+				}
+				OutputField(Frame, Dst, !FirstField, vsapi, core);
+			}
 		} else {
-			Frame = FFMS_GetFrame(vs->V, n, &E);
-			FFMS_Track *T = FFMS_GetTrackFromVideo(vs->V);
-			const FFMS_TrackTimeBase *TB = FFMS_GetTimeBase(T);
-			// fixme
-			//Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), static_cast<int>(FFMS_GetFrameInfo(T, n)->PTS * static_cast<double>(TB->Num) / TB->Den));
+			const FFMS_Frame *Frame;
+
+			if (vs->FPSNum > 0 && vs->FPSDen > 0) {
+				Frame = FFMS_GetFrameByTime(vs->V, FFMS_GetVideoProperties(vs->V)->FirstTime +
+					(double)(n * (int64_t)vs->FPSDen) / vs->FPSNum, &E);
+			} else {
+				Frame = FFMS_GetFrame(vs->V, n, &E);
+				FFMS_Track *T = FFMS_GetTrackFromVideo(vs->V);
+				const FFMS_TrackTimeBase *TB = FFMS_GetTimeBase(T);
+				// fixme
+				//Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), static_cast<int>(FFMS_GetFrameInfo(T, n)->PTS * static_cast<double>(TB->Num) / TB->Den));
+			}
+
+			if (Frame == NULL) {
+				buf += E.Buffer;
+				vsapi->setFilterError(buf.c_str(), frameCtx);
+				return NULL;
+			}
+
+			//fixme
+			//Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>(Frame->PictType));
+			OutputFrame(Frame, Dst, vsapi, core);
 		}
 
-		if (Frame == NULL) {
-			buf += E.Buffer;
-			vsapi->setFilterError(buf.c_str(), frameCtx);
-			return NULL;
-		}
-
-		//fixme
-		//Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>(Frame->PictType));
-		OutputFrame(Frame, Dst, vsapi, core);
+		return Dst;
 	}
 
-	return Dst;
+	return NULL;
 }
 
 void __stdcall VSVideoSource::Free(void *instanceData, VSCore *core, const VSAPI *vsapi) {
