@@ -410,7 +410,7 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 void VSVideoSource::OutputFrame(const FFMS_Frame *Frame, VSFrameRef *Dst, const VSAPI *vsapi, VSCore *core) {
 	const VSFormat *fi = vsapi->getFrameFormat(Dst);
 	for (int i = 0; i < fi->numPlanes; i++) {
-		BitBlt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[0], Frame->Linesize[0], vsapi->getFrameWidth(Dst, i) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, i));
+		BitBlt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i], vsapi->getFrameWidth(Dst, i) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, i));
 	}
 
 	// fixme, flip packed rgb?
