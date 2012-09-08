@@ -38,7 +38,8 @@ private:
 	int FPSDen;
 	int RFFMode;
 	std::vector<FrameFields> FieldList;
-	const char *VarPrefix;
+	int SARNum;
+	int SARDen;
 
 	void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 		const char *ResizerName, int ConvertToFormat, const VSAPI *vsapi, VSCore *core);

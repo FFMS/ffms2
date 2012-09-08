@@ -107,7 +107,9 @@ const VSFrameRef *__stdcall VSVideoSource::GetFrame(int n, int activationReason,
 		std::string buf = "Source: ";
 
 		VSFrameRef *Dst = vsapi->newVideoFrame(vs->VI.format, vs->VI.width, vs->VI.height, NULL, core);
+		VSMap *Props = vsapi->getFramePropsRW(Dst);
 
+		// fixme, set some frame properties in rffmode if anyone complains
 		if (vs->RFFMode > 0) {
 			const FFMS_Frame *Frame = FFMS_GetFrame(vs->V, FFMIN(vs->FieldList[n].Top, vs->FieldList[n].Bottom), &E);
 			if (Frame == NULL) {
@@ -134,12 +136,19 @@ const VSFrameRef *__stdcall VSVideoSource::GetFrame(int n, int activationReason,
 			if (vs->FPSNum > 0 && vs->FPSDen > 0) {
 				Frame = FFMS_GetFrameByTime(vs->V, FFMS_GetVideoProperties(vs->V)->FirstTime +
 					(double)(n * (int64_t)vs->FPSDen) / vs->FPSNum, &E);
+				vsapi->propSetInt(Props, "_DurationNum", vs->FPSDen, 0);
+				vsapi->propSetInt(Props, "_DurationDen", vs->FPSNum, 0);
 			} else {
 				Frame = FFMS_GetFrame(vs->V, n, &E);
 				FFMS_Track *T = FFMS_GetTrackFromVideo(vs->V);
 				const FFMS_TrackTimeBase *TB = FFMS_GetTimeBase(T);
-				// fixme
-				//Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), static_cast<int>(FFMS_GetFrameInfo(T, n)->PTS * static_cast<double>(TB->Num) / TB->Den));
+				int64_t num;
+				if (n + 1 < vs->VI.numFrames)
+					num = FFMS_GetFrameInfo(T, n + 1)->PTS - FFMS_GetFrameInfo(T, n)->PTS;
+				else // simply use the second to last frame's duration for the last one, should be good enough
+					num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
+				vsapi->propSetInt(Props, "_DurationNum", TB->Num * num, 0);
+				vsapi->propSetInt(Props, "_DurationDen", TB->Den, 0);
 			}
 
 			if (Frame == NULL) {
@@ -148,8 +157,16 @@ const VSFrameRef *__stdcall VSVideoSource::GetFrame(int n, int activationReason,
 				return NULL;
 			}
 
-			//fixme
-			//Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>(Frame->PictType));
+			// Set AR variables
+			if (vs->SARNum > 0 && vs->SARDen > 0) {
+				vsapi->propSetInt(Props, "_SARNum", vs->SARNum, 0);
+				vsapi->propSetInt(Props, "_SARDen", vs->SARDen, 0);
+			}
+
+			vsapi->propSetInt(Props, "_ColorSpace", Frame->ColorSpace, 0);
+			vsapi->propSetInt(Props, "_ColorRange", Frame->ColorRange, 0);
+			vsapi->propSetData(Props, "_PictType", &Frame->PictType, 1, 0);
+
 			OutputFrame(Frame, Dst, vsapi, core);
 		}
 
@@ -167,13 +184,10 @@ void __stdcall VSVideoSource::Free(void *instanceData, VSCore *core, const VSAPI
 VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
-		int Format, const VSAPI *vsapi, VSCore *core) {
+		int Format, const VSAPI *vsapi, VSCore *core)
+		: FPSNum(FPSNum), FPSDen(FPSDen), RFFMode(RFFMode) {
 
 	memset(&VI, 0, sizeof(VI));
-	this->FPSNum = FPSNum;
-	this->FPSDen = FPSDen;
-	this->RFFMode = RFFMode;
-	this->VarPrefix = VarPrefix;
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
@@ -296,19 +310,8 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
 		}
 	}
 
-	/*
-	// Set AR variables
-	Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFSAR_NUM"), VP->SARNum);
-	Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFSAR_DEN"), VP->SARDen);
-	if (VP->SARNum > 0 && VP->SARDen > 0)
-		Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFSAR"), VP->SARNum / (double)VP->SARDen);
-
-	// Set crop variables
-	Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCROP_LEFT"), VP->CropLeft);
-	Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCROP_RIGHT"), VP->CropRight);
-	Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCROP_TOP"), VP->CropTop);
-	Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCROP_BOTTOM"), VP->CropBottom);
-	*/
+	SARNum = VP->SARNum;
+	SARDen = VP->SARDen;
 }
 
 void __stdcall Init(VSMap *in, VSMap *out, void **instanceData, VSNode *node, VSCore *core, const VSAPI *vsapi) {
@@ -393,15 +396,10 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	if (RFFMode > 0 && 	TargetPixelFormat != pfNone)
 		throw std::exception("Source: Only the default output colorspace can be used in RFF mode");
 
-	// set color information variables fixme, frame attribute
-	//vsapi->propSetInt
-	//Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCOLOR_SPACE"), F->ColorSpace);
-	//Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCOLOR_RANGE"), F->ColorRange);
-
 	VI.width = F->ScaledWidth;
 	VI.height = F->ScaledHeight;
 
-	// fixme? Crop to obey avisynth's even width/height requirements
+	// fixme? Crop to obey sane even width/height requirements
 
 	// fixme, should be an error condition
 	if (RFFMode > 0) {
