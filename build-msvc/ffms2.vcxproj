@@ -210,6 +210,8 @@
     <ClCompile Include="..\src\core\videosource.cpp" />
     <ClCompile Include="..\src\core\videoutils.cpp" />
     <ClCompile Include="..\src\core\wave64writer.cpp" />
+    <ClCompile Include="..\src\vapoursynth\vapoursource.cpp" />
+    <ClCompile Include="..\src\vapoursynth\vapoursynth.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\ffms.h" />
@@ -231,6 +233,8 @@
     <ClInclude Include="..\src\core\videosource.h" />
     <ClInclude Include="..\src\core\videoutils.h" />
     <ClInclude Include="..\src\core\wave64writer.h" />
+    <ClInclude Include="..\src\vapoursynth\vapoursource.h" />
+    <ClInclude Include="..\src\vapoursynth\VapourSynth.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

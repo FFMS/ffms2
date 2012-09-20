@@ -22,6 +22,9 @@
     <Filter Include="Config">
       <UniqueIdentifier>{ac81097c-9043-43fa-a184-ea4c22091059}</UniqueIdentifier>
     </Filter>
+    <Filter Include="VapourSynth">
+      <UniqueIdentifier>{8a87437e-fe04-4b74-a917-f8c108247e3f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\core\audiosource.cpp">
@@ -99,6 +102,12 @@
     <ClCompile Include="..\src\core\videoutils.cpp">
       <Filter>Video</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\vapoursynth\vapoursource.cpp">
+      <Filter>VapourSynth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vapoursynth\vapoursynth.cpp">
+      <Filter>VapourSynth</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\core\audiosource.h">
@@ -157,6 +166,12 @@
     </ClInclude>
     <ClInclude Include="..\src\core\videoutils.h">
       <Filter>Video</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vapoursynth\vapoursource.h">
+      <Filter>VapourSynth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vapoursynth\VapourSynth.h">
+      <Filter>VapourSynth</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

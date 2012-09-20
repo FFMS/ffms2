@@ -522,6 +522,26 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="VapourSynth"
+			>
+			<File
+				RelativePath="..\src\vapoursynth\vapoursource.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\vapoursynth\vapoursource.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\vapoursynth\vapoursynth.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\vapoursynth\VapourSynth.h"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>
