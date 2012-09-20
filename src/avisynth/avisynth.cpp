@@ -22,7 +22,6 @@
 #include "ffms.h"
 #include "avssources.h"
 #include "ffswscale.h"
-#include "ffpp.h"
 #include "avsutils.h"
 
 static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
