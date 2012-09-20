@@ -104,33 +104,12 @@ SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColo
 
 }
 
-int GetPPCPUFlags() {
-	int Flags = 0;
-
-#ifdef FFMS_USE_POSTPROC
-// not exactly a pretty solution but it'll never get called anyway
-	if (CPUFeatures & FFMS_CPU_CAPS_MMX)
-		Flags |= PP_CPU_CAPS_MMX;
-	if (CPUFeatures & FFMS_CPU_CAPS_MMX2)
-		Flags |= PP_CPU_CAPS_MMX2;
-	if (CPUFeatures & FFMS_CPU_CAPS_3DNOW)
-		Flags |= PP_CPU_CAPS_3DNOW;
-	if (CPUFeatures & FFMS_CPU_CAPS_ALTIVEC)
-		Flags |= PP_CPU_CAPS_ALTIVEC;
-#endif // FFMS_USE_POSTPROC
-
-	return Flags;
-}
-
-
 AVColorSpace GetAssumedColorSpace(int W, int H) {
 	if (W > 1024 || H >= 600)
 		return AVCOL_SPC_BT709;
 	else
 		return AVCOL_SPC_BT470BG;
 }
-
-
 
 /***************************
 **

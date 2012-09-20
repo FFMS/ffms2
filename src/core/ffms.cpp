@@ -259,20 +259,6 @@ FFMS_API(void) FFMS_ResetInputFormatV(FFMS_VideoSource *V) {
 	V->ResetInputFormat();
 }
 
-FFMS_API(int) FFMS_SetPP(FFMS_VideoSource *V, const char *PP, FFMS_ErrorInfo *ErrorInfo) {
-	ClearErrorInfo(ErrorInfo);
-	try {
-		V->SetPP(PP);
-	} catch (FFMS_Exception &e) {
-		return e.CopyOut(ErrorInfo);
-	}
-	return FFMS_ERROR_SUCCESS;
-}
-
-FFMS_API(void) FFMS_ResetPP(FFMS_VideoSource *V) {
-	V->ResetPP();
-}
-
 FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {
 	assert(Index != NULL);
 	if (Index == NULL)

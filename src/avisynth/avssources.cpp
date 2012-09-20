@@ -26,7 +26,7 @@
 
 
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
-		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode, int RFFMode,
+		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 		const char *ConvertToFormatName, const char *VarPrefix, IScriptEnvironment* Env) {
 
@@ -44,11 +44,6 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 	V = FFMS_CreateVideoSource(SourceFile, Track, Index, Threads, SeekMode, &E);
 	if (!V)
 		Env->ThrowError("FFVideoSource: %s", E.Buffer);
-
-	if (PP && FFMS_SetPP(V, PP, &E)) {
-		FFMS_DestroyVideoSource(V);
-		Env->ThrowError("FFVideoSource: %s", E.Buffer);
-	}
 
 	try {
 		InitOutputFormat(ResizeToWidth, ResizeToHeight, ResizerName, ConvertToFormatName, Env);

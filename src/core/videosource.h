@@ -25,9 +25,6 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
-#ifdef FFMS_USE_POSTPROC
-#include <libpostproc/postprocess.h>
-#endif // FFMS_USE_POSTPROC
 }
 
 #include <algorithm>
@@ -56,10 +53,6 @@ extern "C" {
 struct FFMS_VideoSource {
 friend class FFSourceResources<FFMS_VideoSource>;
 private:
-#ifdef FFMS_USE_POSTPROC
-	pp_context *PPContext;
-	pp_mode *PPMode;
-#endif // FFMS_USE_POSTPROC
 	SwsContext *SWS;
 
 	int LastFrameHeight;
@@ -80,7 +73,6 @@ private:
 	AVColorRange InputColorRange;
 	AVColorSpace InputColorSpace;
 
-	AVPicture PPFrame;
 	AVPicture SWSFrame;
 
 	void DetectInputFormat();
@@ -101,7 +93,6 @@ protected:
 	AVCodecContext *CodecContext;
 
 	FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads);
-	void ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height);
 	void ReAdjustOutputFormat();
 	FFMS_Frame *OutputFrame(AVFrame *Frame);
 	virtual void Free(bool CloseCodec) = 0;
@@ -116,8 +107,6 @@ public:
 	virtual FFMS_Frame *GetFrame(int n) = 0;
 	void GetFrameCheck(int n);
 	FFMS_Frame *GetFrameByTime(double Time);
-	void SetPP(const char *PP);
-	void ResetPP();
 	void SetOutputFormat(const PixelFormat *TargetFormats, int Width, int Height, int Resizer);
 	void ResetOutputFormat();
 	void SetInputFormat(int ColorSpace, int ColorRange, PixelFormat Format);

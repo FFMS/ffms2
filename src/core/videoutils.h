@@ -25,9 +25,6 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
 #include <libavutil/pixdesc.h>
-#ifdef FFMS_USE_POSTPROC
-#include <libpostproc/postprocess.h>
-#endif // FFMS_USE_POSTPROC
 }
 // must be included after ffmpeg headers
 #include "ffmscompat.h"
@@ -40,7 +37,6 @@ extern "C" {
 // swscale and pp-related functions
 int64_t GetSWSCPUFlags();
 SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, PixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags);
-int GetPPCPUFlags();
 AVColorSpace GetAssumedColorSpace(int Width, int Height);
 
 // timebase-related functions

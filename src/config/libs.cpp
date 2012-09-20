@@ -44,13 +44,6 @@ extern "C" {
 #	pragma comment(lib, "libavcore.a")
 #endif
 
-
-#if defined(WITH_LIBPOSTPROC) && defined(FFMS_USE_POSTPROC)
-#pragma comment(lib, "libpostproc.a")
-#elif !defined(WITH_LIBPOSTPROC) && defined(FFMS_USE_POSTPROC)
-#error You told me to use libpostproc, but I can't find it. Check your library paths or undefine FFMS_USE_POSTPROC.
-#endif /*defined(WITH_LIBPOSTPROC) && defined(FFMS_USE_POSTPROC)*/
-
 #ifdef WITH_OPENCORE_AMR_NB
 #pragma comment(lib, "libopencore-amrnb.a")
 #endif // WITH_OPENCORE_AMR_NB

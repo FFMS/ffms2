@@ -45,7 +45,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="FFMS_WIN_DEBUG;FFMS_USE_POSTPROC;FFMS_EXPORTS;HAALISOURCE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS"
+				PreprocessorDefinitions="FFMS_WIN_DEBUG;FFMS_EXPORTS;HAALISOURCE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -117,7 +117,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="FFMS_WIN_DEBUG;FFMS_USE_POSTPROC;FFMS_EXPORTS;HAALISOURCE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS"
+				PreprocessorDefinitions="FFMS_WIN_DEBUG;FFMS_EXPORTS;HAALISOURCE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -190,7 +190,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				OmitFramePointers="true"
-				PreprocessorDefinitions="FFMS_EXPORTS;FFMS_USE_POSTPROC;HAALISOURCE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS"
+				PreprocessorDefinitions="FFMS_EXPORTS;HAALISOURCE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS"
 				RuntimeLibrary="0"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
@@ -267,7 +267,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				OmitFramePointers="true"
-				PreprocessorDefinitions="FFMS_EXPORTS;FFMS_USE_POSTPROC;HAALISOURCE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS"
+				PreprocessorDefinitions="FFMS_EXPORTS;HAALISOURCE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS"
 				RuntimeLibrary="0"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
@@ -416,10 +416,11 @@
 			<File
 				RelativePath="..\src\core\codectype.cpp"
 				>
-			</File>			<File
+			</File>
+			<File
 				RelativePath="..\src\core\codectype.h"
 				>
-			</File>			
+			</File>
 			<File
 				RelativePath="..\src\core\coparser.h"
 				>
@@ -498,14 +499,6 @@
 			</File>
 			<File
 				RelativePath="..\src\avisynth\avsutils.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\avisynth\ffpp.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\src\avisynth\ffpp.h"
 				>
 			</File>
 			<File

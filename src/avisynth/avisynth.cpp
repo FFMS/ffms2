@@ -107,16 +107,15 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	const char *CacheFile = Args[3].AsString("");
 	int FPSNum = Args[4].AsInt(-1);
 	int FPSDen = Args[5].AsInt(1);
-	const char *PP = Args[6].AsString("");
-	int Threads = Args[7].AsInt(-1);
-	const char *Timecodes = Args[8].AsString("");
-	int SeekMode = Args[9].AsInt(1);
-	int RFFMode = Args[10].AsInt(0);
-	int Width = Args[11].AsInt(0);
-	int Height = Args[12].AsInt(0);
-	const char *Resizer = Args[13].AsString("BICUBIC");
-	const char *ColorSpace = Args[14].AsString("");
-	const char *VarPrefix = Args[16].AsString("");
+	int Threads = Args[6].AsInt(-1);
+	const char *Timecodes = Args[7].AsString("");
+	int SeekMode = Args[8].AsInt(1);
+	int RFFMode = Args[9].AsInt(0);
+	int Width = Args[10].AsInt(0);
+	int Height = Args[11].AsInt(0);
+	const char *Resizer = Args[12].AsString("BICUBIC");
+	const char *ColorSpace = Args[13].AsString("");
+	const char *VarPrefix = Args[15].AsString("");
 
 	if (FPSDen < 1)
 		Env->ThrowError("FFVideoSource: FPS denominator needs to be 1 or higher");
@@ -181,13 +180,10 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 		}
 	}
 
-	if (!strcmp(PP, ""))
-		PP = NULL;
-
 	AvisynthVideoSource *Filter;
 
 	try {
-		Filter = new AvisynthVideoSource(Source, Track, Index, FPSNum, FPSDen, PP, Threads, SeekMode, RFFMode, Width, Height, Resizer, ColorSpace, VarPrefix, Env);
+		Filter = new AvisynthVideoSource(Source, Track, Index, FPSNum, FPSDen, Threads, SeekMode, RFFMode, Width, Height, Resizer, ColorSpace, VarPrefix, Env);
 	} catch (...) {
 		FFMS_DestroyIndex(Index);
 		throw;
@@ -294,12 +290,6 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	return Filter;
 }
 
-#ifdef FFMS_USE_POSTPROC
-static AVSValue __cdecl CreateFFPP(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	return new FFPP(Args[0].AsClip(), Args[1].AsString(""), Env);
-}
-#endif // FFMS_USE_POSTPROC
-
 static AVSValue __cdecl CreateSWScale(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	return new SWScale(Args[0].AsClip(), Args[1].AsInt(0), Args[2].AsInt(0), Args[3].AsString("BICUBIC"), Args[4].AsString(""), Env);
 }
@@ -320,11 +310,8 @@ static AVSValue __cdecl FFGetVersion(AVSValue Args, void* UserData, IScriptEnvir
 
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScriptEnvironment* Env) {
     Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b[demuxer]s", CreateFFIndex, 0);
-	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", CreateFFVideoSource, 0);
+	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", CreateFFVideoSource, 0);
 	Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b[varprefix]s", CreateFFAudioSource, 0);
-#ifdef FFMS_USE_POSTPROC
-	Env->AddFunction("FFPP", "c[pp]s", CreateFFPP, 0);
-#endif // FFMS_USE_POSTPROC
 	Env->AddFunction("SWScale", "c[width]i[height]i[resizer]s[colorspace]s", CreateSWScale, 0);
 	Env->AddFunction("FFGetLogLevel", "", FFGetLogLevel, 0);
 	Env->AddFunction("FFSetLogLevel", "i", FFSetLogLevel, 0);

@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (17 << 16) | (2 << 8) | 1)
+#define FFMS_VERSION ((2 << 24) | (17 << 16) | (3 << 8) | 0)
 
 #include <stdint.h>
 
@@ -319,8 +319,6 @@ FFMS_API(int) FFMS_SetOutputFormatV2(FFMS_VideoSource *V, const int *TargetForma
 FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V);
 FFMS_API(int) FFMS_SetInputFormatV(FFMS_VideoSource *V, int ColorSpace, int ColorRange, int Format, FFMS_ErrorInfo *ErrorInfo); /* Introduced in FFMS_VERSION ((2 << 24) | (17 << 16) | (1 << 8) | 0) */
 FFMS_API(void) FFMS_ResetInputFormatV(FFMS_VideoSource *V);
-FFMS_DEPRECATED_API(int) FFMS_SetPP(FFMS_VideoSource *V, const char *PP, FFMS_ErrorInfo *ErrorInfo);
-FFMS_DEPRECATED_API(void) FFMS_ResetPP(FFMS_VideoSource *V);
 FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index);
 FFMS_API(int) FFMS_GetSourceType(FFMS_Index *Index);
 FFMS_API(int) FFMS_GetSourceTypeI(FFMS_Indexer *Indexer);

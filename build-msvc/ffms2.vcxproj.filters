@@ -63,9 +63,9 @@
     <ClCompile Include="..\src\core\ffms.cpp">
       <Filter>API</Filter>
     </ClCompile>
-	<ClCompile Include="..\src\core\codectype.cpp">
-	  <Filter>Utils</Filter>
-	</ClCompile>
+    <ClCompile Include="..\src\core\codectype.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\core\matroskaparser.c">
       <Filter>Utils</Filter>
     </ClCompile>
@@ -88,9 +88,6 @@
       <Filter>Avisynth</Filter>
     </ClCompile>
     <ClCompile Include="..\src\avisynth\avsutils.cpp">
-      <Filter>Avisynth</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\avisynth\ffpp.cpp">
       <Filter>Avisynth</Filter>
     </ClCompile>
     <ClCompile Include="..\src\avisynth\ffswscale.cpp">
@@ -119,9 +116,9 @@
     <ClInclude Include="..\src\core\coparser.h">
       <Filter>Utils</Filter>
     </ClInclude>
-	<ClInclude Include="..\src\core\codectype.h">
-	  <Filter>Utils</Filter>
-	</ClInclude>
+    <ClInclude Include="..\src\core\codectype.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
     <ClInclude Include="..\include\ffmscompat.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -150,9 +147,6 @@
       <Filter>Avisynth</Filter>
     </ClInclude>
     <ClInclude Include="..\src\avisynth\avsutils.h">
-      <Filter>Avisynth</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\avisynth\ffpp.h">
       <Filter>Avisynth</Filter>
     </ClInclude>
     <ClInclude Include="..\src\avisynth\ffswscale.h">

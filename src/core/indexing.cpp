@@ -64,10 +64,6 @@ void av_sha_final(struct AVSHA* context, uint8_t *digest);
 extern bool HasHaaliMPEG;
 extern bool HasHaaliOGG;
 
-#ifndef FFMS_USE_POSTPROC
-unsigned postproc_version() { return 0; } // ugly workaround to avoid lots of ifdeffing
-#endif // FFMS_USE_POSTPROC
-
 namespace {
 struct IndexHeader {
 	uint32_t Id;
@@ -80,7 +76,6 @@ struct IndexHeader {
 	uint32_t LAVFVersion;
 	uint32_t LAVCVersion;
 	uint32_t LSWSVersion;
-	uint32_t LPPVersion;
 	int64_t FileSize;
 	uint8_t FileSignature[20];
 };
@@ -535,7 +530,6 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 	IH.LAVFVersion = avformat_version();
 	IH.LAVCVersion = avcodec_version();
 	IH.LSWSVersion = swscale_version();
-	IH.LPPVersion = postproc_version();
 	IH.FileSize = Filesize;
 	memcpy(IH.FileSignature, Digest, sizeof(Digest));
 
@@ -579,8 +573,7 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 			std::string("'") + IndexFile + "' was not made with this FFMS2 binary");
 
 	if (IH.LAVUVersion != avutil_version() || IH.LAVFVersion != avformat_version() ||
-		IH.LAVCVersion != avcodec_version() || IH.LSWSVersion != swscale_version() ||
-		IH.LPPVersion != postproc_version())
+		IH.LAVCVersion != avcodec_version() || IH.LSWSVersion != swscale_version())
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("A different FFmpeg build was used to create '") + IndexFile + "'");
 
