@@ -105,6 +105,15 @@ else
 endif
 	$(if $(IMPLIBNAME), install -m 644 $(IMPLIBNAME) $(DESTDIR)$(libdir))
 
+install-avs:
+	install -d $(DESTDIR)$(bindir)
+	install ffmsindex$(EXE) $(DESTDIR)$(bindir)
+ifeq ($(SYS),MINGW)
+	cp etc/* $(DESTDIR)$(bindir)
+	cp -R doc $(DESTDIR)$(bindir)
+	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(bindir))
+endif
+
 uninstall:
 	rm -f $(DESTDIR)$(includedir)/ffms.h $(DESTDIR)$(libdir)/libffms.a
 	rm -f $(DESTDIR)$(bindir)/ffmsindex$(EXE) $(DESTDIR)$(libdir)/pkgconfig/ffms.pc
