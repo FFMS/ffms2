@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2012 Fredrik Mellbin
+//  Copyright (c) 2012 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -27,24 +27,16 @@
 
 struct VSVideoSource {
 private:
-	struct FrameFields {
-		int Top;
-		int Bottom;
-	};
-
 	VSVideoInfo VI;
 	FFMS_VideoSource *V;
 	int FPSNum;
 	int FPSDen;
-	int RFFMode;
-	std::vector<FrameFields> FieldList;
 	int SARNum;
 	int SARDen;
 
 	void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 		const char *ResizerName, int ConvertToFormat, const VSAPI *vsapi, VSCore *core);
 	static void OutputFrame(const FFMS_Frame *Frame, VSFrameRef *Dst, const VSAPI *vsapi, VSCore *core);
-	static void OutputField(const FFMS_Frame *Frame, VSFrameRef *Dst, int Field, const VSAPI *vsapi, VSCore *core);
 public:
 
 	const VSVideoInfo *GetVI() { return &VI; }
@@ -54,9 +46,9 @@ public:
 		int Format, const VSAPI *vsapi, VSCore *core);
 	~VSVideoSource();
 
-	static void __stdcall Init(VSMap *in, VSMap *out, void **instanceData, VSNode *node, VSCore *core, const VSAPI *vsapi);
-	static const VSFrameRef *__stdcall GetFrame(int n, int activationReason, void **instanceData, void **frameData, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi);
-	static void __stdcall Free(void *instanceData, VSCore *core, const VSAPI *vsapi);
+	static void VS_CC Init(VSMap *in, VSMap *out, void **instanceData, VSNode *node, VSCore *core, const VSAPI *vsapi);
+	static const VSFrameRef *VS_CC GetFrame(int n, int activationReason, void **instanceData, void **frameData, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi);
+	static void VS_CC Free(void *instanceData, VSCore *core, const VSAPI *vsapi);
 };
 
 #endif

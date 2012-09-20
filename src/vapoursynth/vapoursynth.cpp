@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2012 Fredrik Mellbin
+//  Copyright (c) 2012 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 #include "ffms.h"
 #include "vapoursource.h"
 
-static void __stdcall CreateIndex(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi)  {
+static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi)  {
 	FFMS_Init(0,  1);
 
 	char ErrorMsg[1024];
@@ -105,7 +105,7 @@ static void __stdcall CreateIndex(const VSMap *in, VSMap *out, void *userData, V
 	}
 }
 
-static void __stdcall CreateSource(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi)  {
+static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi)  {
 	FFMS_Init(0,  1);
 
 	char ErrorMsg[1024];
@@ -244,26 +244,26 @@ static void __stdcall CreateSource(const VSMap *in, VSMap *out, void *userData, 
 	FFMS_DestroyIndex(Index);
 }
 
-static void __stdcall GetLogLevel(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
+static void VS_CC GetLogLevel(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
 	FFMS_SetLogLevel(vsapi->propGetInt(in, "level", 0, 0));
 }
 
-static void __stdcall SetLogLevel(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
+static void VS_CC SetLogLevel(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
 	FFMS_SetLogLevel(vsapi->propGetInt(in, "level", 0, 0));
 	vsapi->propSetInt(out, "level", FFMS_GetLogLevel(), 0);
 }
 
-static void __stdcall GetVersion(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
+static void VS_CC GetVersion(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
 	int Version = FFMS_GetVersion();
 	char buf[100];
 	sprintf(buf, "%d.%d.%d.%d", Version >> 24, (Version & 0xFF0000) >> 16, (Version & 0xFF00) >> 8, Version & 0xFF);
 	vsapi->propSetData(out, "Version", buf, 0, 0);
 }
 
-extern "C" __declspec(dllexport) void __stdcall VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin *plugin) {
+VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin *plugin) {
 	configFunc("com.vapoursynth.ffms2", "ffms2", "FFmpegSource 2 for VapourSynth", VAPOURSYNTH_API_VERSION, 1, plugin);
     registerFunc("Index", "source:data;cachefile:data:opt;indexmask:int:opt;dumpmask:int:opt;audiofile:data:opt;errorhandling:int:opt;overwrite:int:opt;demuxer:data:opt;", CreateIndex, NULL, plugin);
-	registerFunc("Source", "source:data;track:int:opt;cache:int:opt;cachefile:data:opt;fpsnum:int:opt;fpsden:int:opt;threads:int:opt;timecodes:data:opt;seekmode:int:opt;rffmode:int:opt;width:int:opt;height:int:opt;resizer:data:opt;format:int:opt;", CreateSource, NULL, plugin);
+	registerFunc("Source", "source:data;track:int:opt;cache:int:opt;cachefile:data:opt;fpsnum:int:opt;fpsden:int:opt;threads:int:opt;timecodes:data:opt;seekmode:int:opt;width:int:opt;height:int:opt;resizer:data:opt;format:int:opt;", CreateSource, NULL, plugin);
 	registerFunc("GetLogLevel", "", GetLogLevel, NULL, plugin);
 	registerFunc("SetLogLevel", "level:int;", SetLogLevel, NULL, plugin);
 	registerFunc("Version", "", GetVersion, NULL, plugin);
