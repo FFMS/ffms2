@@ -28,7 +28,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="call msvc_autoconf.bat"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -99,7 +99,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="call msvc_autoconf.bat"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -172,7 +172,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="call ./msvc_autoconf.bat"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -248,7 +248,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="call ./msvc_autoconf.bat"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
