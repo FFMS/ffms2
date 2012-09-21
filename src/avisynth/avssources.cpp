@@ -243,7 +243,7 @@ void AvisynthVideoSource::InitOutputFormat(
 	if (RFFMode > 0 && ResizeToHeight != F->EncodedHeight)
 		Env->ThrowError("FFVideoSource: Vertical scaling not allowed in RFF mode");
 
-	if (RFFMode > 0 && 	TargetPixelFormat != PIX_FMT_NV12)
+	if (RFFMode > 0 && TargetPixelFormat != PIX_FMT_NV21)
 		Env->ThrowError("FFVideoSource: Only the default output colorspace can be used in RFF mode");
 
 	// set color information variables
