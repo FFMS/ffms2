@@ -68,7 +68,7 @@ int64_t GetSWSCPUFlags() {
 }
 
 SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, PixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags) {
-	Flags |= SWS_FULL_CHR_H_INT | SWS_FULL_CHR_H_INP;
+	Flags |= SWS_FULL_CHR_H_INT | SWS_FULL_CHR_H_INP | SWS_ACCURATE_RND | SWS_BITEXACT;
 #if LIBSWSCALE_VERSION_INT < AV_VERSION_INT(0, 12, 0)
 	return sws_getContext(SrcW, SrcH, SrcFormat, DstW, DstH, DstFormat, Flags, 0, 0, 0);
 #else
