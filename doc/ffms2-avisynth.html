@@ -167,8 +167,8 @@ You should only use this parameter if you know exactly what you're doing and exa
 <pre>
 FFVideoSource(string source, int track = -1, bool cache = true,
     string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1,
-    string pp = "", int threads = -1, string timecodes = "", int seekmode = 1,
-    int rffmode = 0, int width = -1, int height = -1, string resizer = "BICUBIC",
+    int threads = -1, string timecodes = "", int seekmode = 1, int rffmode = 0,
+    int width = -1, int height = -1, string resizer = "BICUBIC",
     string colorspace = "", bool utf8 = false, string varprefix = "")
 </pre>
 <p>
@@ -191,9 +191,6 @@ Opens video. Will invoke indexing of all video tracks (but no audio tracks) if n
 
 <dt>int fpsnum = -1, int fpsden = 1</dt>
 <dd>Forces a given (constant) framerate, expressed as a rational number where <tt>fpsnum</tt> is the numerator and <tt>fpsden</tt> is the denominator. Used for VFR to CFR conversion, as it will make <tt>FFVideoSource</tt> drop or duplicate frames to convert VFR to CFR if <tt>fpsnum</tt> is greater than 0. Setting <tt>fpsnum</tt> to a number less than or equal to zero means no frames will be dropped or duplicated.</dd>
-
-<dt>string pp = "" <span class="deprecated">[DEPRECATED]</span></dt>
-<dd>Sets a chain of postprocessing filters, expressed as a string (see the "PP string format" section below). Mostly useful to do quantizer-based deblocking/deringing, but can also do simple deinterlacing and a few other odd things.</dd>
 
 <dt>int threads = -1</dt>
 <dd>The number of decoding threads to request from libavcodec. Setting it to less than or equal to zero means it defaults to the number of logical CPU's reported by Windows. Note that this setting might be completely ignored by libavcodec under a number of conditions; most commonly because a lot of decoders actually do not support multithreading. You may also have a libavcodec without threading support compiled in at all.</dd>
@@ -269,7 +266,7 @@ Opens audio. Invokes indexing of all tracks if no valid index file is found, or 
 <pre>
 FFmpegSource2(string source, int vtrack = -1, int atrack = -2, bool cache = true,
     string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1,
-    string pp = "", int threads = -1, string timecodes = "", int seekmode = 1,
+    int threads = -1, string timecodes = "", int seekmode = 1,
     bool overwrite = false, int width = -1, int height = -1,
     string resizer = "BICUBIC", string colorspace = "", int rffmode = 0,
     int adjustdelay = -1, bool utf8 = false, string varprefix = "")
@@ -285,12 +282,6 @@ FFImageSource(string source, int width = -1, int height = -1,
 </pre>
 <p>A convenience alias for <tt>FFVideoSource</tt>, with the options set optimally for using it as an image reader. Disables caching and seeking for maximum compatiblity.</p>
 <p><strong>Note:</strong> this function is provided by <tt>FFMS2.avsi</tt> and is not available unless that script has been imported or autoloaded.</p>
-
-
-<h3>FFPP <span class="deprecated">[DEPRECATED]</span></h3>
-<pre>FFPP(clip, string pp)</pre>
-<p>A postprocessing filter. See the <tt>pp</tt> argument to <tt>FFVideoSource</tt> and the "PP string format" section below. In general, using <tt>FFVideoSource</tt>'s <tt>pp</tt> argument instead of this function is recommended (if possible), since if it's used there it has access to video quantizers and can adapt better to the video, particularly when doing deblocking/deringing.</p>
-<p>Postprocessing support is deprecated and will be removed in a future version of FFMS2.</p>
 
 
 <h3>SWScale</h3>
@@ -390,51 +381,6 @@ b: FF_BI_TYPE (no good explanation available)
 
 </dl>
 </div>
-
-
-<h2>PP string format</h2>
-<pre>
-Available postprocessing filters:
-Filters                        Options
-short  long name       short   long option     Description
-*      *               a       autoq           CPU power dependent enabler
-                       c       chrom           chrominance filtering enabled
-                       y       nochrom         chrominance filtering disabled
-                       n       noluma          luma filtering disabled
-hb     hdeblock        (2 threshold)           horizontal deblocking filter
-       1. difference factor: default=32, higher -&gt; more deblocking
-       2. flatness threshold: default=39, lower -&gt; more deblocking
-                       the h &amp; v deblocking filters share these
-                       so you can't set different thresholds for h / v
-vb     vdeblock        (2 threshold)           vertical deblocking filter
-ha     hadeblock       (2 threshold)           horizontal deblocking filter
-va     vadeblock       (2 threshold)           vertical deblocking filter
-h1     x1hdeblock                              experimental h deblock filter 1
-v1     x1vdeblock                              experimental v deblock filter 1
-dr     dering                                  deringing filter
-al     autolevels                              automatic brightness / contrast
-f      fullyrange                              stretch luminance to (0..255)
-lb     linblenddeint                           linear blend deinterlacer
-li     linipoldeint                            linear interpolating deinterlace
-ci     cubicipoldeint                          cubic interpolating deinterlacer
-md     mediandeint                             median deinterlacer
-fd     ffmpegdeint                             ffmpeg deinterlacer
-l5     lowpass5                                FIR lowpass deinterlacer
-de     default                                 hb:a,vb:a,dr:a
-fa     fast                                    h1:a,v1:a,dr:a
-ac                                             ha:a:128:7,va:a,dr:a
-tn     tmpnoise        (3 threshold)           temporal noise reducer
-                     1. &lt;= 2. &lt;= 3.            larger -&gt; stronger filtering
-fq     forceQuant      &lt;quantizer&gt;             force quantizer
-Usage:
-&lt;filterName&gt;[:&lt;option&gt;[:&lt;option&gt;...]][[,|/][-]&lt;filterName&gt;[:&lt;option&gt;...]]...
-long form example:
-vdeblock:autoq/hdeblock:autoq/linblenddeint    default,-vdeblock
-short form example:
-vb:a/hb:a/lb                                   de,-vb
-more examples:
-tn:64:128:256
-</pre>
 
 </div>
 
