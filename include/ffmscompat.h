@@ -61,6 +61,9 @@
 #	if VERSION_CHECK(LIBAVFORMAT_VERSION_INT, <, 53, 17, 0, 53, 25, 0)
 #		define avformat_close_input(c) av_close_input_file(*c)
 #	endif
+#	if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(54,2,0))
+#		define AV_DISPOSITION_ATTACHED_PIC 0xBEEFFACE
+#	endif
 #endif
 
 #ifdef LIBAVCODEC_VERSION_INT

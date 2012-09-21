@@ -66,7 +66,11 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			VideoContexts[i].Parser = av_parser_init(FormatContext->streams[i]->codec->codec_id);
 			if (VideoContexts[i].Parser)
 				VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
-			IndexMask |= 1 << i;
+
+			if (FormatContext->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
+				IndexMask &= ~(1 << i);
+			else
+				IndexMask |= 1 << i;
 		}
 		else if (IndexMask & (1 << i) && FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
 			AVCodecContext *AudioCodecContext = FormatContext->streams[i]->codec;
