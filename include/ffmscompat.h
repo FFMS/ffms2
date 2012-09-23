@@ -39,7 +39,7 @@
 #  define VERSION_CHECK(LIB, cmp, major, minor, micro, u1, u2, u3) ((LIB) cmp (AV_VERSION_INT(major, minor, micro)))
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW64_VERSION_MAJOR)
 #	define snprintf _snprintf
 #	ifdef __MINGW32__
 #		define fseeko fseeko64
