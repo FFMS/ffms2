@@ -28,6 +28,7 @@ extern "C" {
 #include <libavutil/common.h>
 #include <libavutil/pixdesc.h>
 #include <libavcodec/avcodec.h>
+#include <libswscale/swscale.h>
 }
 
 typedef std::pair<int, int> IntPair;
