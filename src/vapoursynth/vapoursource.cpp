@@ -19,8 +19,9 @@
 //  THE SOFTWARE.
 
 #include "vapoursource.h"
-#include "../avisynth/avsutils.h"
 #include <cmath>
+#include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 extern "C" {
@@ -179,7 +180,7 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
 	if (!V) {
 		std::string buf = "Source: ";
 		buf += E.Buffer;
-		throw std::exception(buf.c_str());
+		throw std::runtime_error(buf);
 	}
 	try {
 		InitOutputFormat(ResizeToWidth, ResizeToHeight, ResizerName, Format, vsapi, core);
@@ -236,7 +237,7 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	if (!F) {
 		std::string buf = "Source: ";
 		buf += E.Buffer;
-		throw std::exception(buf.c_str());
+		throw std::runtime_error(buf);
 	}
 
 	std::vector<int> TargetFormats;
@@ -250,7 +251,7 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	if (ConvertToFormat != pfNone) {
 		TargetPixelFormat = formatConversion(ConvertToFormat, true, core, vsapi);
 		if (TargetPixelFormat == PIX_FMT_NONE)
-			throw std::exception("Source: Invalid output colorspace specified");
+			throw std::runtime_error(std::string("Source: Invalid output colorspace specified"));
 
 		TargetFormats.clear();
 		TargetFormats.push_back(TargetPixelFormat);
@@ -263,13 +264,17 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	if (ResizeToHeight <= 0)
 		ResizeToHeight = F->EncodedHeight;
 
+	/* fixme, ignore the resizer for now since nobody ever uses it
 	int Resizer = ResizerNameToSWSResizer(ResizerName);
 	if (Resizer == 0)
-		throw std::exception("Source: Invalid resizer name specified");
+		throw std::runtime_error(std::string("Source: Invalid resizer name specified"));
+	*/
+
+	int Resizer = SWS_BICUBIC;
 
 	if (FFMS_SetOutputFormatV2(V, &TargetFormats[0],
 		ResizeToWidth, ResizeToHeight, Resizer, &E))
-		throw std::exception("Source: No suitable output format found");
+		throw std::runtime_error(std::string("Source: No suitable output format found"));
 
 	F = FFMS_GetFrame(V, 0, &E);
 	TargetFormats.clear();
@@ -279,13 +284,13 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	// This trick is required to first get the "best" default format and then set only that format as the output
 	if (FFMS_SetOutputFormatV2(V, &TargetFormats[0],
 		ResizeToWidth, ResizeToHeight, Resizer, &E))
-		throw std::exception("Source: No suitable output format found");
+		throw std::runtime_error(std::string("Source: No suitable output format found"));
 
 	F = FFMS_GetFrame(V, 0, &E);
 
 	VI.format = vsapi->getFormatPreset(formatConversion(F->ConvertedPixelFormat, false, core, vsapi), core);
 	if (!VI.format)
-		throw std::exception("Source: No suitable output format found");
+		throw std::runtime_error(std::string("Source: No suitable output format found"));
 
 	VI.width = F->ScaledWidth;
 	VI.height = F->ScaledHeight;
@@ -295,10 +300,7 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 
 void VSVideoSource::OutputFrame(const FFMS_Frame *Frame, VSFrameRef *Dst, const VSAPI *vsapi, VSCore *core) {
 	const VSFormat *fi = vsapi->getFrameFormat(Dst);
-	for (int i = 0; i < fi->numPlanes; i++) {
-		BitBlt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i], vsapi->getFrameWidth(Dst, i) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, i));
-	}
-
-	// fixme, flip packed rgb?
-	//BitBlt(Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1), -Dst->GetPitch(), Frame->Data[0], Frame->Linesize[0], Dst->GetRowSize(), Dst->GetHeight());
+    for (int i = 0; i < fi->numPlanes; i++)
+        BitBlt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i],
+            vsapi->getFrameWidth(Dst, i) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, i));
 }

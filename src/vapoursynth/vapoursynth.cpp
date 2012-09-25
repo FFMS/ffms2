@@ -18,9 +18,16 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
+#include <cstdio>
+#include <cstring>
 #include <string>
 #include "ffms.h"
 #include "vapoursource.h"
+
+// assume windows is the only OS with a case insensitive filesystem
+#ifndef _WIN32
+#define _stricmp strcmp
+#endif
 
 static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi)  {
 	FFMS_Init(0,  1);

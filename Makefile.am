@@ -42,7 +42,11 @@ src_core_libffms2_la_SOURCES = \
 	src/core/videoutils.h \
 	src/core/videoutils.cpp \
 	src/core/wave64writer.h \
-	src/core/wave64writer.cpp
+	src/core/wave64writer.cpp \
+	src/vapoursynth/VapourSynth.h \
+	src/vapoursynth/vapoursource.h \
+	src/vapoursynth/vapoursource.cpp \
+	src/vapoursynth/vapoursynth.cpp
 
 include_HEADERS = $(top_srcdir)/include/ffms.h $(top_srcdir)/include/ffmscompat.h
 
