@@ -24,10 +24,6 @@
 #include <libswscale/swscale.h>
 #include <ffms.h>
 
-#ifdef FFMS_USE_POSTPROC
-#include <libpostproc/postprocess.h>
-#endif
-
 #if LIBSWSCALE_VERSION_INT >= AV_VERSION_INT(0, 12, 0)
 #define USE_AVOPT_SWSCALE 1
 #include <libavutil/opt.h>
@@ -50,14 +46,6 @@ int64_t avs_to_ff_cpu_flags( long avisynth_flags )
 int avs_to_pp_cpu_flags( long avisynth_flags )
 {
     int flags = 0;
-#ifdef FFMS_USE_POSTPROC
-    if( avisynth_flags & AVS_CPU_MMX )
-        flags |= PP_CPU_CAPS_MMX;
-    if( avisynth_flags & AVS_CPU_INTEGER_SSE )
-        flags |= PP_CPU_CAPS_MMX2;
-    if( avisynth_flags & AVS_CPU_3DNOW_EXT )
-        flags |= PP_CPU_CAPS_3DNOW;
-#endif // FFMS_USE_POSTPROC
     return flags;
 }
 

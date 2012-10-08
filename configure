@@ -11,7 +11,6 @@ echo "  --enable-debug           adds -g, doesn't strip"
 echo "  --enable-gprof           adds -pg, doesn't strip"
 echo "  --enable-pic             build position-independent code"
 echo "  --enable-shared          build libffms2.so"
-echo "  --enable-postproc        build with postproc support (requires libpostproc)"
 echo "  --optlevel=olev          GCC optimization level [0-3, s, fast] (0)"
 echo "  --extra-cppflags=EFLAGS  add EFLAGS to CPPFLAGS"
 echo "  --extra-cflags=ECFLAGS   add ECFLAGS to CFLAGS"
@@ -148,7 +147,6 @@ debug="no"
 gprof="no"
 pic="no"
 shared="no"
-postproc="no"
 
 CPPFLAGS="$CPPFLAGS -I. -Iinclude -D_FILE_OFFSET_BITS=64"
 CFLAGS="$CFLAGS -Wall"
@@ -183,9 +181,6 @@ for opt do
             ;;
         --enable-avs)
             avs="yes"
-            ;;
-        --enable-postproc)
-            postproc="yes"
             ;;
         --optlevel=*)
             olev="$optarg"
@@ -329,11 +324,6 @@ if ${cross_prefix}pkg-config --exists libavformat libavcodec libswscale libavuti
     FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavformat libavcodec libswscale libavutil libavresample)"
     FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libavformat libavcodec libswscale libavutil libavresample)"
 fi
-# optional libpostproc
-if [ "$postproc" = "yes" ] && ${cross_prefix}pkg-config --exist libpostproc 2>$DEVNULL; then
-    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libpostproc)"
-    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libpostproc)"
-fi
 # libavcore - for when ffmpeg decided to make this library out of nowhere and have a number of things depend on it
 if  ${cross_prefix}pkg-config --exist libavcore 2>$DEVNULL; then
     FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavcore)"
@@ -342,7 +332,6 @@ fi
 
 if [ -z "$FFMPEG_LIBS" -a -z "$FFMPEG_CFLAGS" ]; then
     FFMPEG_LIBS="-lavformat -lavcodec -lswscale -lavresample"
-    [ "$postproc" = "yes" ] && FFMPEG_LIBS="$FFMPEG_LIBS -lpostproc"
     for lib in -lavcore -lavutil -lm -lz -lbz2 -lpthread -lavifil32; do
         cc_check "" $lib && FFMPEG_LIBS="$FFMPEG_LIBS $lib"
     done
@@ -360,15 +349,6 @@ fi
 if ! cc_check libavformat/avformat.h "$FFMPEG_CFLAGS $FFMPEG_LIBS" "avcodec_decode_video2( 0, 0, 0, 0 );" ||
    ! cc_check libswscale/swscale.h "$FFMPEG_CFLAGS $FFMPEG_LIBS" "swscale_version();" ; then
     die "unable to link against $ffmpegORlibav"
-fi
-
-# check for optional libpostproc
-if [ "$postproc" = "yes" ]; then
-    if ! cc_check libpostproc/postprocess.h "$FFMPEG_CFLAGS $FFMPEG_LIBS" "pp_free_mode( 0 );" ; then
-        die "unable to link against libpostproc"
-    else
-        CPPFLAGS="$CPPFLAGS -DFFMS_USE_POSTPROC"
-    fi
 fi
 
 #find libz
@@ -492,7 +472,6 @@ DEVNULL=$DEVNULL
 AVISYNTH=$avs
 SOFLAGS_USER=$SOFLAGS
 SYS=$SYS
-FFMS_USE_POSTPROC=$postproc
 RC=$RC
 EOF
 
@@ -530,7 +509,7 @@ libdir=$libdir
 includedir=$includedir
 
 Description: The Fabulous FM Library
-Requires: libavformat libavcodec libswscale libpostproc libavutil libavresample
+Requires: libavformat libavcodec libswscale libavutil libavresample
 Version: $version
 Libs: -L$libdir -lffms -lz
 Cflags: -I$includedir
@@ -541,7 +520,6 @@ avs:        $avs
 debug:      $debug
 gprof:      $gprof
 PIC:        $pic
-postproc:   $postproc
 shared:     $shared
 optlevel:   $olev
 EOF

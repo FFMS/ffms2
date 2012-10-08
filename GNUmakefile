@@ -25,10 +25,6 @@ SO_C =
 ifeq ($(AVISYNTH), yes)
 SO_C += src/avisynth_c/avisynth.c src/avisynth_c/avs_lib.c src/avisynth_c/avs_utils.c src/avisynth_c/ff_audsource.c \
         src/avisynth_c/ff_swscale.c src/avisynth_c/ff_vidsource.c
-
-ifeq ($(FFMS_USE_POSTPROC), yes)
-SO_C += src/avisynth_c/ff_pp.c
-endif
 endif
 
 CORE_O = $(CORE_C:%.c=%.o) $(CORE_CXX:%.cpp=%.o)
