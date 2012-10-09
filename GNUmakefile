@@ -21,15 +21,21 @@ IDX_CXX = src/index/ffmsindex.cpp
 
 SO_C =
 
+SO_CXX =
+
 # Optional module sources
 ifeq ($(AVISYNTH), yes)
 SO_C += src/avisynth_c/avisynth.c src/avisynth_c/avs_lib.c src/avisynth_c/avs_utils.c src/avisynth_c/ff_audsource.c \
         src/avisynth_c/ff_swscale.c src/avisynth_c/ff_vidsource.c
 endif
 
+ifeq ($(VAPOURSYNTH),yes)
+SO_CXX += src/vapoursynth/vapoursynth.cpp src/vapoursynth/vapoursource.cpp
+endif
+
 CORE_O = $(CORE_C:%.c=%.o) $(CORE_CXX:%.cpp=%.o)
 IDX_O = $(IDX_CXX:%.cpp=%.o)
-SO_O = $(SO_C:%.c=%.o)
+SO_O = $(SO_C:%.c=%.o) $(SO_CXX:%.cpp=%.o)
 
 ifeq ($(SYS), MINGW)
 IDX_O += ffmsindexexe.o
@@ -57,7 +63,7 @@ libffms.a: .depend $(CORE_O)
 	$(AR) rc libffms.a $(CORE_O)
 	$(RANLIB) libffms.a
 
-$(SONAME): .depend $(CORE_O) $(SO_O)
+$(SONAME): .depend $(CORE_O) $(SO_O) $(SO_CXX)
 	$(CXX) -shared -o $@ $(CORE_O) $(SO_O) $(SOFLAGS) $(SOFLAGS_USER) $(LDFLAGS)
 
 ffmsindex$(EXE): $(IDX_O) libffms.a $(SONAME)

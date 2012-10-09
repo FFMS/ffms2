@@ -7,6 +7,7 @@ echo "available options:"
 echo ""
 echo "  --help                   print this message"
 echo "  --enable-avs             enables avisynth plugin support (windows only)"
+echo "  --enable-vapoursynth     enables vapoursynth plugin support"
 echo "  --enable-debug           adds -g, doesn't strip"
 echo "  --enable-gprof           adds -pg, doesn't strip"
 echo "  --enable-pic             build position-independent code"
@@ -143,6 +144,7 @@ includedir='${prefix}/include'
 DEVNULL='/dev/null'
 
 avs="no"
+vapoursynth="no"
 debug="no"
 gprof="no"
 pic="no"
@@ -181,6 +183,9 @@ for opt do
             ;;
         --enable-avs)
             avs="yes"
+            ;;
+        --enable-vapoursynth)
+            vapoursynth="yes"
             ;;
         --optlevel=*)
             olev="$optarg"
@@ -373,6 +378,13 @@ if [ "$avs" = "yes" -a "$shared" = "no" ] ; then
     avs="no"
 fi
 
+if [ "$vapoursynth" = "yes" -a "$shared" = "no" ] ; then
+    msg="vapoursynth support is invalid when not building a shared library"
+    echo $msg
+    log_msg "$msg"
+    vapoursynth="no"
+fi
+
 if [ "$pic" = "yes" ] ; then
     CFLAGS="$CFLAGS -fPIC"
     CXXFLAGS="$CXXFLAGS -fPIC"
@@ -470,6 +482,7 @@ STRIP=$STRIP
 EXE=$EXE
 DEVNULL=$DEVNULL
 AVISYNTH=$avs
+VAPOURSYNTH=$vapoursynth
 SOFLAGS_USER=$SOFLAGS
 SYS=$SYS
 RC=$RC
@@ -496,7 +509,7 @@ if [ "$shared" = "yes" ]; then
         echo 'SOFLAGS=-Wl,-h,$(SONAME)' >> config.mak
     else
         echo "SOSUFFIX=so" >> config.mak
-        echo "SONAME=ffms.so.$API" >> config.mak
+        echo "SONAME=libffms.so.$API" >> config.mak
         echo 'SOFLAGS=-Wl,-soname,$(SONAME)' >> config.mak
     fi
     echo 'default: $(SONAME)' >> config.mak
@@ -517,6 +530,7 @@ EOF
 
 cat > conftest.log <<EOF
 avs:        $avs
+vapoursynth:$vapoursynth
 debug:      $debug
 gprof:      $gprof
 PIC:        $pic
