@@ -491,7 +491,7 @@ EOF
 if [ "$shared" = "yes" ]; then
     if [ "$SYS" = "MINGW" ]; then
         # avisynth plugins have a generally different name than other things
-        if [ "$avs" = "yes" ] ; then
+        if [ "$avs" = "yes" -o "$vapoursynth" = "yes" ] ; then
             echo "SONAME=ffms${API}.dll" >> config.mak
             echo 'SOFLAGS=-Wl,--out-implib,$(IMPLIBNAME) -Wl,--enable-auto-image-base -Wl,--export-all-symbols' >> config.mak
         else
