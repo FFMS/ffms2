@@ -67,7 +67,7 @@ int64_t avs_to_sws_cpu_flags( long avisynth_flags )
     return flags;
 }
 
-enum PixelFormat csp_name_to_pix_fmt_25( const char *csp_name, enum PixelFormat def )
+enum AVPixelFormat csp_name_to_pix_fmt_25( const char *csp_name, enum AVPixelFormat def )
 {
     if( !csp_name || !strcmp( csp_name, "" ) )
         return def;
@@ -82,7 +82,7 @@ enum PixelFormat csp_name_to_pix_fmt_25( const char *csp_name, enum PixelFormat 
     return PIX_FMT_NONE;
 }
 
-enum PixelFormat csp_name_to_pix_fmt_26( const char *csp_name, enum PixelFormat def )
+enum AVPixelFormat csp_name_to_pix_fmt_26( const char *csp_name, enum AVPixelFormat def )
 {
     enum PixelFormat ret = csp_name_to_pix_fmt_25( csp_name, def );
     if( ret != PIX_FMT_NONE )
@@ -98,7 +98,7 @@ enum PixelFormat csp_name_to_pix_fmt_26( const char *csp_name, enum PixelFormat 
     return PIX_FMT_NONE;
 }
 
-enum PixelFormat vi_to_pix_fmt_25( const AVS_VideoInfo *vi )
+enum AVPixelFormat vi_to_pix_fmt_25( const AVS_VideoInfo *vi )
 {
     // so i can still use this entire function in the 2.6 version
     if( ffms_avs_lib->avs_is_yv12( vi ) )
@@ -113,7 +113,7 @@ enum PixelFormat vi_to_pix_fmt_25( const AVS_VideoInfo *vi )
         return PIX_FMT_NONE;
 }
 
-enum PixelFormat vi_to_pix_fmt_26( const AVS_VideoInfo *vi )
+enum AVPixelFormat vi_to_pix_fmt_26( const AVS_VideoInfo *vi )
 {
     enum PixelFormat ret = vi_to_pix_fmt_25( vi );
     if( ret != PIX_FMT_NONE )
