@@ -54,9 +54,10 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *userData, VSCor
 	const char *DemuxerStr = vsapi->propGetData(in, "demuxer", 0, &err);
 
 	std::string DefaultCache(Source);
-	DefaultCache.append(".ffindex");
-	if (!CacheFile && !strcmp(CacheFile, ""))
+	if (!CacheFile || !strcmp(CacheFile, "")) {
+		DefaultCache.append(".ffindex");
 		CacheFile = DefaultCache.c_str();
+	}
 
 	if (!AudioFile || !strcmp(AudioFile, "")) {
 		vsapi->setError(out, "Index: Specifying an empty audio filename is not allowed");
