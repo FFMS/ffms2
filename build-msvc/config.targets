@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Define stuff from the config -->
+  <ItemDefinitionGroup Condition="'$(BuiltWithGCC)'=='true'">
+    <ClCompile><PreprocessorDefinitions>WITH_GCC_LIBAV;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(OpencoreAmrNb)'=='true'">
+    <ClCompile><PreprocessorDefinitions>WITH_OPENCORE_AMR_NB;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(OpencoreAmrWb)'=='true'">
+    <ClCompile><PreprocessorDefinitions>WITH_OPENCORE_AMR_WB;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(WithPthread)'=='true'">
+    <ClCompile><PreprocessorDefinitions>WITH_PTHREAD_GC2;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(ForkName)'=='libav'">
+    <ClCompile><PreprocessorDefinitions>FFMS_USE_FFMPEG_COMPAT;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- Add property pages -->
+  <ItemGroup>
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)config.xml" />
+    <ProjectTools Include="FFmpegConfig" />
+  </ItemGroup>
+
+</Project>

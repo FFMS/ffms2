@@ -22,6 +22,15 @@
     <ProjectGuid>{AA137613-96A1-4388-8905-71345B4F8F87}</ProjectGuid>
     <RootNamespace>ffms2</RootNamespace>
   </PropertyGroup>
+  <!-- Config defaults -->
+  <!-- Has to be here and not in targets or the defaults don't get set in the UI -->
+  <PropertyGroup>
+    <BuiltWithGCC>false</BuiltWithGCC>
+    <OpencoreAmrNb>false</OpencoreAmrNb>
+    <OpencoreAmrWb>false</OpencoreAmrWb>
+    <WithPthread>false</WithPthread>
+    <ForkName>libav</ForkName>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -144,4 +153,7 @@
     <ClInclude Include="..\src\vapoursynth\VapourSynth.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="config.targets" />
+  </ImportGroup>
 </Project>
