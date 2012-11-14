@@ -264,7 +264,7 @@ static void VS_CC GetVersion(const VSMap *in, VSMap *out, void *userData, VSCore
 	int Version = FFMS_GetVersion();
 	char buf[100];
 	sprintf(buf, "%d.%d.%d.%d", Version >> 24, (Version & 0xFF0000) >> 16, (Version & 0xFF00) >> 8, Version & 0xFF);
-	vsapi->propSetData(out, "Version", buf, 0, 0);
+	vsapi->propSetData(out, "version", buf, 0, 0);
 }
 
 VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin *plugin) {

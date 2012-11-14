@@ -120,8 +120,8 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 		if (vs->FPSNum > 0 && vs->FPSDen > 0) {
 			Frame = FFMS_GetFrameByTime(vs->V, FFMS_GetVideoProperties(vs->V)->FirstTime +
 				(double)(n * (int64_t)vs->FPSDen) / vs->FPSNum, &E);
-			vsapi->propSetInt(Props, "_DurationNum", vs->FPSDen, 0);
-			vsapi->propSetInt(Props, "_DurationDen", vs->FPSNum, 0);
+			vsapi->propSetInt(Props, "_DurationNum", vs->FPSDen, paReplace);
+			vsapi->propSetInt(Props, "_DurationDen", vs->FPSNum, paReplace);
 		} else {
 			Frame = FFMS_GetFrame(vs->V, n, &E);
 			FFMS_Track *T = FFMS_GetTrackFromVideo(vs->V);
@@ -131,8 +131,8 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 				num = FFMS_GetFrameInfo(T, n + 1)->PTS - FFMS_GetFrameInfo(T, n)->PTS;
 			else // simply use the second to last frame's duration for the last one, should be good enough
 				num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
-			vsapi->propSetInt(Props, "_DurationNum", TB->Num * num, 0);
-			vsapi->propSetInt(Props, "_DurationDen", TB->Den, 0);
+			vsapi->propSetInt(Props, "_DurationNum", TB->Num * num, paReplace);
+			vsapi->propSetInt(Props, "_DurationDen", TB->Den, paReplace);
 		}
 
 		if (Frame == NULL) {
@@ -143,13 +143,16 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 
 		// Set AR variables
 		if (vs->SARNum > 0 && vs->SARDen > 0) {
-			vsapi->propSetInt(Props, "_SARNum", vs->SARNum, 0);
-			vsapi->propSetInt(Props, "_SARDen", vs->SARDen, 0);
+			vsapi->propSetInt(Props, "_SARNum", vs->SARNum, paReplace);
+			vsapi->propSetInt(Props, "_SARDen", vs->SARDen, paReplace);
 		}
 
-		vsapi->propSetInt(Props, "_ColorSpace", Frame->ColorSpace, 0);
-		vsapi->propSetInt(Props, "_ColorRange", Frame->ColorRange, 0);
-		vsapi->propSetData(Props, "_PictType", &Frame->PictType, 1, 0);
+		vsapi->propSetInt(Props, "_ColorSpace", Frame->ColorSpace, paReplace);
+        if (Frame->ColorRange == 1)
+            vsapi->propSetInt(Props, "_ColorRange", 1, paReplace);
+        else if (Frame->ColorRange == 2)
+            vsapi->propSetInt(Props, "_ColorRange", 0, paReplace);
+		vsapi->propSetData(Props, "_PictType", &Frame->PictType, 1, paReplace);
 
 		OutputFrame(Frame, Dst, vsapi, core);
 
