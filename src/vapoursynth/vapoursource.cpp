@@ -97,7 +97,7 @@ static int formatConversion(int id, bool toPixelFormat, VSCore *core, const VSAP
 
 void VS_CC VSVideoSource::Init(VSMap *in, VSMap *out, void **instanceData, VSNode *node, VSCore *core, const VSAPI *vsapi) {
 	VSVideoSource *vs = (VSVideoSource *)*instanceData;
-	vsapi->setVideoInfo(&vs->VI, node);
+	vsapi->setVideoInfo(&vs->VI, 1, node);
 }
 
 const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, void **instanceData, void **frameData, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi) {

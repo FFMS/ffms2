@@ -246,8 +246,7 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *userData, VSCo
 		return;
 	}
 
-	const VSNodeRef *node = vsapi->createFilter(in, out, "Source", VSVideoSource::Init, VSVideoSource::GetFrame, VSVideoSource::Free, fmSerial, 0,vs, core);
-	vsapi->propSetNode(out, "clip", node, 0);
+	vsapi->createFilter(in, out, "Source", VSVideoSource::Init, VSVideoSource::GetFrame, VSVideoSource::Free, fmSerial, 0,vs, core);
 
 	FFMS_DestroyIndex(Index);
 }
