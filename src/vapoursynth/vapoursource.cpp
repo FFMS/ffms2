@@ -214,16 +214,6 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
 	SARDen = VP->SARDen;
 }
 
-void VS_CC Init(VSMap *in, VSMap *out, void **instanceData, VSNode *node, VSCore *core, const VSAPI *vsapi) {
-	VSVideoSource *vs = (VSVideoSource *)*instanceData;
-	vsapi->setVideoInfo(vs->GetVI(), node);
-}
-
-void VS_CC Free(void *instanceData, VSCore *core, const VSAPI *vsapi) {
-	VSVideoSource *vs = (VSVideoSource *)instanceData;
-	delete vs;
-}
-
 VSVideoSource::~VSVideoSource() {
 	FFMS_DestroyVideoSource(V);
 }
