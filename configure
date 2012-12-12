@@ -15773,12 +15773,12 @@ if test -n "$LIBAV_CFLAGS"; then
     pkg_cv_LIBAV_CFLAGS="$LIBAV_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 \""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 ") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 \""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 ") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBAV_CFLAGS=`$PKG_CONFIG --cflags "libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 " 2>/dev/null`
+  pkg_cv_LIBAV_CFLAGS=`$PKG_CONFIG --cflags "libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 " 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -15790,12 +15790,12 @@ if test -n "$LIBAV_LIBS"; then
     pkg_cv_LIBAV_LIBS="$LIBAV_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 \""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 ") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 \""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 ") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBAV_LIBS=`$PKG_CONFIG --libs "libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 " 2>/dev/null`
+  pkg_cv_LIBAV_LIBS=`$PKG_CONFIG --libs "libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 " 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -15816,14 +15816,14 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBAV_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 " 2>&1`
+	        LIBAV_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 " 2>&1`
         else
-	        LIBAV_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 " 2>&1`
+	        LIBAV_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 " 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LIBAV_PKG_ERRORS" >&5
 
-	as_fn_error $? "Package requirements (libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 ) were not met:
+	as_fn_error $? "Package requirements (libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 ) were not met:
 
 $LIBAV_PKG_ERRORS
 
@@ -15949,6 +15949,43 @@ $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot link with $_lav_name
 See \`config.log' for more details" "$LINENO" 5; }
 fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether avformat_get_riff_video_tags is available" >&5
+$as_echo_n "checking whether avformat_get_riff_video_tags is available... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+              #include <libavformat/avformat.h>
+
+int
+main ()
+{
+
+              #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(54, 1, 0)
+              const struct AVCodecTag *tags = avformat_get_riff_video_tags();
+              (void)tags;
+              #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+
+$as_echo "#define RETARDED_LIBAV_RELEASE_BRANCH_WHICH_INTRODUCED_AVFORMAT_GET_RIFF_VIDEO_TAGS_AT_A_VERSION_NUMBER_WHICH_HAD_ALREADY_BEEN_USED 1" >>confdefs.h
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether -Wl,-Bsymbolic is needed" >&5
 $as_echo_n "checking whether -Wl,-Bsymbolic is needed... " >&6; }

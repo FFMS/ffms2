@@ -94,7 +94,7 @@ typedef struct AVCodecTag {
 	unsigned int tag;
 } AVCodecTag;
 
-#if VERSION_CHECK(LIBAVFORMAT_VERSION_INT, <, 54, 1, 0, 53, 32, 100)
+#if VERSION_CHECK(LIBAVFORMAT_VERSION_INT, <, 54, 1, 0, 53, 32, 100) && !defined(RETARDED_LIBAV_RELEASE_BRANCH_WHICH_INTRODUCED_AVFORMAT_GET_RIFF_VIDEO_TAGS_AT_A_VERSION_NUMBER_WHICH_HAD_ALREADY_BEEN_USED)
 static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_H264,         MKTAG('H', '2', '6', '4') },
 	{ CODEC_ID_H264,         MKTAG('h', '2', '6', '4') },

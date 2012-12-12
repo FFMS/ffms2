@@ -163,6 +163,24 @@ if test "$LIBAV_WORKS" = no; then
 AC_MSG_FAILURE([cannot link with $_lav_name])
 fi
 
+AC_MSG_CHECKING([whether avformat_get_riff_video_tags is available])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+              #include <libavformat/avformat.h>
+            ]],
+            [[
+              #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(54, 1, 0)
+              const struct AVCodecTag *tags = avformat_get_riff_video_tags();
+              (void)tags;
+              #endif
+            ]])],
+            [
+              AC_DEFINE([RETARDED_LIBAV_RELEASE_BRANCH_WHICH_INTRODUCED_AVFORMAT_GET_RIFF_VIDEO_TAGS_AT_A_VERSION_NUMBER_WHICH_HAD_ALREADY_BEEN_USED], [1], [ ])
+              AC_MSG_RESULT([yes])
+            ],
+            [
+              AC_MSG_RESULT([no])
+            ])
+
 AC_MSG_CHECKING([whether -Wl,-Bsymbolic is needed])
 if test "$enable_shared" = yes; then
     _LDFLAGS="$LDFLAGS"
