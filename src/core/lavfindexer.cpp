@@ -96,11 +96,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 	std::vector<int64_t> LastValidTS(FormatContext->nb_streams, ffms_av_nopts_value);
 	std::vector<int> LastDuration(FormatContext->nb_streams, 0);
 
-#if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(52,106,0))
-	int64_t filesize = FormatContext->file_size;
-#else
 	int64_t filesize = avio_size(FormatContext->pb);
-#endif
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
 		// Update progress
 		// FormatContext->pb can apparently be NULL when opening images.

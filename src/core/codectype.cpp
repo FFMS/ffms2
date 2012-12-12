@@ -59,9 +59,7 @@ static const CodecTags mkv_codec_tags[] = {
 	{"A_WAVPACK4"       , FFMS_ID(WAVPACK)},
 
 	{"S_TEXT/UTF8"      , FFMS_ID(TEXT)},
-#if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(52, 101, 0))
 	{"S_TEXT/UTF8"      , FFMS_ID(SRT)},
-#endif
 	{"S_TEXT/ASCII"     , FFMS_ID(TEXT)},
 	{"S_TEXT/ASS"       , FFMS_ID(SSA)},
 	{"S_TEXT/SSA"       , FFMS_ID(SSA)},
@@ -264,9 +262,7 @@ static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_RAWVIDEO,     MKTAG('Y', 'V', 'U', '9') },
 	{ CODEC_ID_RAWVIDEO,     MKTAG('a', 'u', 'v', '2') },
 	{ CODEC_ID_FRWU,         MKTAG('F', 'R', 'W', 'U') },
-#if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(52, 89, 0))
 	{ CODEC_ID_R10K,         MKTAG('R', '1', '0', 'k') },
-#endif
 	{ CODEC_ID_R210,         MKTAG('r', '2', '1', '0') },
 	{ CODEC_ID_V210,         MKTAG('v', '2', '1', '0') },
 #if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >=, 53, 28, 0, 53, 44, 0)
@@ -317,14 +313,10 @@ static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_QPEG,         MKTAG('Q', '1', '.', '0') },
 	{ CODEC_ID_QPEG,         MKTAG('Q', '1', '.', '1') },
 	{ CODEC_ID_WMV3,         MKTAG('W', 'M', 'V', '3') },
-#if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(53, 9, 0))
 	{ CODEC_ID_WMV3IMAGE,    MKTAG('W', 'M', 'V', 'P') },
-#endif
 	{ CODEC_ID_VC1,          MKTAG('W', 'V', 'C', '1') },
 	{ CODEC_ID_VC1,          MKTAG('W', 'M', 'V', 'A') },
-#if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(53, 9, 0))
 	{ CODEC_ID_VC1IMAGE,     MKTAG('W', 'V', 'P', '2') },
-#endif
 	{ CODEC_ID_LOCO,         MKTAG('L', 'O', 'C', 'O') },
 	{ CODEC_ID_WNV1,         MKTAG('W', 'N', 'V', '1') },
 	{ CODEC_ID_AASC,         MKTAG('A', 'A', 'S', 'C') },
@@ -363,15 +355,11 @@ static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_G2M,          MKTAG('G', '2', 'M', '4') },
 #endif
 	{ CODEC_ID_AMV,          MKTAG('A', 'M', 'V', 'F') },
-#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >, 53, 12, 2, 53, 20, 1)
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'R', 'A') },
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'R', 'G') },
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'Y', '0') },
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'Y', '2') },
-#endif
-#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >=, 53, 19, 0, 53, 32, 0)
 	{ CODEC_ID_VBLE,         MKTAG('V', 'B', 'L', 'E') },
-#endif
 #if defined(FFMS_USE_FFMPEG_COMPAT) && (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(53, 43, 0))
 	{ CODEC_ID_ESCAPE130,    MKTAG('E', '1', '3', '0') },
 #endif

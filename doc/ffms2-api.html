@@ -27,7 +27,7 @@ FFMS2 does not mux or encode anything. FFMS2 does not give you fine control over
 <p>FFMS2 has the following dependencies:</p>
 <ul>
 <li><b><a href="http://www.libav.org">Libav</a></b> (sure, you can use the <b><a href="http://www.ffmpeg.org">FFmpeg</a></b> branch too if you really want)
-<ul><li>As new as possible. If it's older than version 0.6 it will mean definite failure.</li>
+<ul><li>At least 0.8 for libav and 0.9 for FFmpeg</li>
 <li>On Win32 you should REALLY, REALLY make sure to have a good compile of the pthreads library.</li>
 <li>Further recommended configuration options: <tt>--disable-debug --disable-muxers --disable-encoders --disable-filters --disable-hwaccels --disable-network --disable-devices --enable-runtime-cpudetect</tt> (runtime cpudetect in particular is a good idea if you are planning on distributing the library; not disabling debug results in a gigantic dll).</li>
 </ul>

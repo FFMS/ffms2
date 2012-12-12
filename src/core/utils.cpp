@@ -449,56 +449,6 @@ ffms_fstream::ffms_fstream(const char *filename, std::ios_base::openmode mode)
 #endif // _WIN32
 }
 
-#ifdef _WIN32
-int ffms_wchar_open(const char *fname, int oflags, int pmode) {
-    std::wstring wfname = char_to_wstring(fname, CP_UTF8);
-    if (wfname.size())
-        return _wopen(wfname.c_str(), oflags, pmode);
-    return -1;
-}
-
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(53,0,3)
-static int ffms_lavf_file_open(URLContext *h, const char *filename, int flags) {
-    int access;
-    int fd;
-
-    av_strstart(filename, "file:", &filename);
-
-    if (flags & URL_RDWR) {
-        access = _O_CREAT | _O_TRUNC | _O_RDWR;
-    } else if (flags & URL_WRONLY) {
-        access = _O_CREAT | _O_TRUNC | _O_WRONLY;
-    } else {
-        access = _O_RDONLY;
-    }
-#ifdef _O_BINARY
-    access |= _O_BINARY;
-#endif
-    fd = ffms_wchar_open(filename, access, 0666);
-    if (fd == -1)
-        return AVERROR(ENOENT);
-    h->priv_data = (void *) (intptr_t) fd;
-    return 0;
-}
-
-// Hijack lavf's file protocol handler's open function and use our own instead.
-// Hack by nielsm.
-void ffms_patch_lavf_file_open() {
-	URLProtocol *proto = av_protocol_next(NULL);
-	while (proto != NULL) {
-		if (strcmp("file", proto->name) == 0) {
-			break;
-		}
-		proto = proto->next;
-	}
-	if (proto != NULL) {
-		proto->url_open = &ffms_lavf_file_open;
-	}
-}
-#endif
-
-#endif // _WIN32
-
 // End of filename hackery.
 
 
@@ -568,6 +518,7 @@ void FlushBuffers(AVCodecContext *CodecContext) {
 		// close and reopen the codec
 		const AVCodec *codec = CodecContext->codec;
 		avcodec_close(CodecContext);
-		avcodec_open2(CodecContext, codec, 0);
+		// Whether or not codec is const varies between versions
+		avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), 0);
 	}
 }

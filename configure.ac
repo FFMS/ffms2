@@ -108,7 +108,7 @@ PKG_PROG_PKG_CONFIG([0.22])
 pkgconfigdir="\$(libdir)/pkgconfig"
 AC_SUBST(pkgconfigdir)
 
-PKG_CHECK_MODULES(LIBAV, [libavformat >= 52.64.2 libavcodec >= 52.72.0 libswscale >= 0.7.0 libavutil >= 50.15.1 ])
+PKG_CHECK_MODULES(LIBAV, [libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 ])
 CPPFLAGS="$CPPFLAGS -D__STDC_CONSTANT_MACROS"
 AC_SUBST([LIBAV_CFLAGS])
 AC_SUBST([LIBAV_LIBS])

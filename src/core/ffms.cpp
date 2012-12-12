@@ -83,9 +83,6 @@ FFMS_API(void) FFMS_Init(int CPUFeatures, int UseUTF8Paths) {
 		RegisterCustomParsers();
 #ifdef _WIN32
 		if (UseUTF8Paths) {
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(53,0,3)
-			ffms_patch_lavf_file_open();
-#endif
 			GlobalUseUTF8Paths = true;
 		}
 		else {

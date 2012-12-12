@@ -61,12 +61,7 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Could not open video codec");
 
-#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52,111,0)
 	CodecContext->thread_count = DecodingThreads;
-#else
-	if (avcodec_thread_init(CodecContext, DecodingThreads))
-		CodecContext->thread_count = 1;
-#endif
 
 	if (CodecContext->codec->id == FFMS_ID(H264) && SourceMode == FFMS_SOURCE_HAALIMPEG)
 		BitStreamFilter = av_bitstream_filter_init("h264_mp4toannexb");

@@ -46,10 +46,6 @@ extern "C" {
 #pragma comment(lib, "libavformat.a")
 #pragma comment(lib, "libswscale.a")
 
-#if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(50,38,0))
-#	pragma comment(lib, "libavcore.a")
-#endif
-
 #ifdef WITH_OPENCORE_AMR_NB
 #ifdef WITH_GCC_LIBAV
 #pragma comment(lib, "libopencore-amrnb.a")

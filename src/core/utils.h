@@ -221,9 +221,6 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag)
 void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext);
 FILE *ffms_fopen(const char *filename, const char *mode);
 size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max);
-#if defined(_WIN32) && LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(53,0,3)
-void ffms_patch_lavf_file_open();
-#endif // _WIN32
 #ifdef HAALISOURCE
 CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceMode);
 #endif // HAALISOURCE

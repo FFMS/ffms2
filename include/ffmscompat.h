@@ -52,12 +52,6 @@
 
 // Compatibility with older/newer ffmpegs
 #ifdef LIBAVFORMAT_VERSION_INT
-#	if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(53,2,0))
-#		define avformat_open_input(c,s,f,o) av_open_input_file(c,s,f,0,o) // this works because the parameters/options are not used
-#	endif
-#	if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(53,3,0))
-#		define avformat_find_stream_info(c,o) av_find_stream_info(c)
-#	endif
 #	if VERSION_CHECK(LIBAVFORMAT_VERSION_INT, <, 53, 17, 0, 53, 25, 0)
 #		define avformat_close_input(c) av_close_input_file(*c)
 #	endif
@@ -67,26 +61,8 @@
 #endif
 
 #ifdef LIBAVCODEC_VERSION_INT
-#	if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(52,94,3)) // there are ~3 revisions where this will break but fixing that is :effort:
-#		undef SampleFormat
-#	else
-#		define AVSampleFormat SampleFormat
-#		define av_get_bits_per_sample_fmt av_get_bits_per_sample_format
-#		define AV_SAMPLE_FMT_U8		SAMPLE_FMT_U8
-#		define AV_SAMPLE_FMT_S16	SAMPLE_FMT_S16
-#		define AV_SAMPLE_FMT_S32	SAMPLE_FMT_S32
-#		define AV_SAMPLE_FMT_FLT	SAMPLE_FMT_FLT
-#		define AV_SAMPLE_FMT_DBL	SAMPLE_FMT_DBL
-#	endif
-#	if (LIBAVCODEC_VERSION_INT) < (AV_VERSION_INT(53,6,0))
-#		define avcodec_open2(a,c,o) avcodec_open(a,c)
-#		define avcodec_alloc_context3(c) avcodec_alloc_context()
-#	endif
-#	if VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 53, 22, 0, 53, 31, 0)
-#		define FFMS_CALCULATE_DELAY (CodecContext->has_b_frames)
-#	else
-#		define FFMS_CALCULATE_DELAY (CodecContext->has_b_frames + (CodecContext->thread_count - 1))
-#	endif
+#	undef SampleFormat
+#	define FFMS_CALCULATE_DELAY (CodecContext->has_b_frames + (CodecContext->thread_count - 1))
 #   if VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 54, 25, 0, 54, 51, 100)
 #       define FFMS_ID(x) (CODEC_ID_##x)
 #       define FFMS_CodecID CodecID
@@ -95,22 +71,6 @@
 #       define FFMS_CodecID AVCodecID
 #       undef CodecID
 #   endif
-#endif
-
-#ifdef LIBAVUTIL_VERSION_INT
-#	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(51, 1, 0))
-#		define av_get_picture_type_char av_get_pict_type_char
-#		define AV_PICTURE_TYPE_B FF_B_TYPE
-#	endif
-#	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(51, 2, 0))
-#		define av_get_pix_fmt_name avcodec_get_pix_fmt_name
-#	endif
-#	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(51, 4, 0))
-#		define av_get_bytes_per_sample(a) (av_get_bits_per_sample_fmt(a) / 8)
-#	endif
-#	if (LIBAVUTIL_VERSION_INT) < (AV_VERSION_INT(51, 12, 0))
-#		define av_set_opt_int(o,n,v,s) av_set_int(o,n,v)
-#	endif
 #endif
 
 #endif // FFMSCOMPAT_H
