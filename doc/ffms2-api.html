@@ -30,7 +30,6 @@ FFMS2 does not mux or encode anything. FFMS2 does not give you fine control over
 <ul><li>As new as possible. If it's older than version 0.6 it will mean definite failure.</li>
 <li>On Win32 you should REALLY, REALLY make sure to have a good compile of the pthreads library.</li>
 <li>Further recommended configuration options: <tt>--disable-debug --disable-muxers --disable-encoders --disable-filters --disable-hwaccels --disable-network --disable-devices --enable-runtime-cpudetect</tt> (runtime cpudetect in particular is a good idea if you are planning on distributing the library; not disabling debug results in a gigantic dll).</li>
-<li>If you want to use the postprocessing filter functionality (i.e. <tt>FFMS_SetPP()</tt>) you need to compile FFmpeg with libpostproc (pass <tt>--enable-gpl --enable-postproc</tt> to its configure). Note that this will make the FFMS2 binary GPL licensed. Note that libpostproc support is deprecated and will go away some time in the future.</li>
 </ul>
 </li>
 <li><b><a href="http://www.zlib.net/">zlib</a></b></li>
