@@ -252,7 +252,7 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *userData, VSCo
 }
 
 static void VS_CC GetLogLevel(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
-	FFMS_SetLogLevel((int)vsapi->propGetInt(in, "level", 0, 0));
+	vsapi->propSetInt(out, "level", FFMS_GetLogLevel(), 0);
 }
 
 static void VS_CC SetLogLevel(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
