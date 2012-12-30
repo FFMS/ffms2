@@ -158,8 +158,6 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 
 			(*TrackIndices)[Track].AddVideoFrame(Ts, RepeatPict,
 				pMMF->IsSyncPoint() == S_OK, FrameType, 0, 0, Invisible);
-
-			av_free(TempPacket.data);
 		} else if (TrackType[Track] == FFMS_TYPE_AUDIO && (IndexMask & (1 << Track))) {
 			TempPacket.flags = pMMF->IsSyncPoint() == S_OK ? AV_PKT_FLAG_KEY : 0;
 
@@ -168,6 +166,8 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 
 			(*TrackIndices)[Track].AddAudioFrame(Ts, StartSample, SampleCount, pMMF->IsSyncPoint() == S_OK);
 		}
+
+		av_free(TempPacket.data);
 	}
 
 	TrackIndices->Sort();
