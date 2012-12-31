@@ -138,6 +138,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 		BYTE *TempData;
 		pMMF->GetPointer(&TempData);
 		memcpy(TempPacket.data, TempData, TempPacket.size);
+		uint8_t *OriginalData = TempPacket.data;
 
 		if (TrackType[Track] == FFMS_TYPE_VIDEO) {
 			if (VideoContexts[Track].BitStreamFilter) {
@@ -158,6 +159,13 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 
 			(*TrackIndices)[Track].AddVideoFrame(Ts, RepeatPict,
 				pMMF->IsSyncPoint() == S_OK, FrameType, 0, 0, Invisible);
+
+			// av_bitstream_filter_filter() can, if it feels like it, reallocate the input buffer and change the pointer.
+			// If it does that, we need to free both the input buffer we allocated ourselves and the buffer lavc allocated.
+			if (TempPacket.data != OriginalData) {
+				av_free(TempPacket.data);
+				TempPacket.data = OriginalData;
+			}
 		} else if (TrackType[Track] == FFMS_TYPE_AUDIO && (IndexMask & (1 << Track))) {
 			TempPacket.flags = pMMF->IsSyncPoint() == S_OK ? AV_PKT_FLAG_KEY : 0;
 

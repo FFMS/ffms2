@@ -132,6 +132,7 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 		// align input data
 		Packet.size = pMMF->GetActualDataLength();
 		Packet.data = static_cast<uint8_t *>(av_mallocz(Packet.size + FF_INPUT_BUFFER_PADDING_SIZE));
+		uint8_t *OriginalData = Packet.data;
 		memcpy(Packet.data, Data, Packet.size);
 		Packet.flags = pMMF->IsSyncPoint() == S_OK ? AV_PKT_FLAG_KEY : 0;
 
@@ -143,7 +144,15 @@ void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
 		}
 
 		bool FrameFinished = DecodePacket(&Packet);
+
+		// av_bitstream_filter_filter() can, if it feels like it, reallocate the input buffer and change the pointer.
+		// If it does that, we need to free both the input buffer we allocated ourselves and the buffer lavc allocated.
+		if (Packet.data != OriginalData) {
+			av_free(Packet.data);
+			Packet.data = OriginalData;
+		}
 		av_free(Packet.data);
+
 		if (FrameFinished)
 			return;
 	}
