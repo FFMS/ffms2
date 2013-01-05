@@ -122,7 +122,7 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 	if (DelayMode != FFMS_DELAY_TIME_ZERO) {
 		if (DelayMode == FFMS_DELAY_FIRST_VIDEO_TRACK) {
 			for (size_t i = 0; i < Index.size(); ++i) {
-				if (Index[i].TT == FFMS_TYPE_VIDEO) {
+				if (Index[i].TT == FFMS_TYPE_VIDEO && !Index[i].empty()) {
 					DelayMode = i;
 					break;
 				}
