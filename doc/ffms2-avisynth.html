@@ -31,7 +31,7 @@ Donate if you like this software. Collecting weird clips from the internet and m
 <h2>Limitations</h2>
 <ul>
 <li>Requires <a href='http://haali.cs.msu.ru/mkv/'>Haali's Media Splitter</a> if you want to seek in OGM or MPEG PS/TS. Trying to do non-linear access in those containers without it will end in tears.</li>
-<li>Haali's splitter requires transport streams to be cut at packet boundaries. Use <a href='http://forum.doom9.org/showthread.php?t=125447'>TsRemux</a> to fix the stream before trying to open it.</li>
+<li>Haali's splitter requires transport streams to be cut at packet boundaries. Use <a href='http://forum.doom9.org/showthread.php?t=125447'>TsRemux</a> to fix the stream if you get an error message complaining about this.</li>
 <li>Because of LAVF's demuxer, most raw streams (such as elementary h264 and other mpeg video streams) will fail to work properly.</li>
 <li>FFAudioSource() will have to remake any index implicitly created by FFVideoSource() and therefore code like
 <pre>
@@ -104,9 +104,9 @@ Note that this function returns an integer, not a clip (since it doesn't open vi
 
 <dt>int indexmask = -1</dt>
 <dd>
-A binary mask representing what audio tracks should be indexed (all video tracks are always indexed; you have no choice in the matter). The mask is constructed by bitshifting 1 left by the track number; if multiple tracks are desired, bitwise OR each value so created together to get the full mask. In other words, the mask is a bit field where each bit is a track number (the least significant bit is track number 0). Since Avisynth doesn't have any bitwise operators at all, constructing the mask inside an Avisynth script is a rather annoying task.<br />
-Since the mask works like it does, and FFMS2 is designed to run on a machine that uses two's complement integers, -1 means index all tracks (the default) and 0 means index none.<br />
-Note that FFMS2's idea about what track has what number may be completely different from what any other application might think.
+A binary mask representing what audio tracks should be indexed (all video tracks are always indexed; you have no choice in the matter). The mask is constructed by bitshifting 1 left by the track number; if multiple tracks are desired, bitwise OR each value so created together to get the full mask. In other words, the mask is a bit field where each bit is a track number (the least significant bit is track number 0). Since Avisynth doesn't have any bitwise operators at all, constructing a mask for more than one track inside an Avisynth script is a rather annoying task; for a single track the mask is, naturally, 2 to the power of the track number minus 1 (i.e. if you want to index track 3, the mask is <tt>2^(3-1) = 4</tt>).<br />
+Since the mask works like it does, and FFMS2 is designed to run on a machine that uses two's complement integers, -1 (the default) means index all tracks and 0 means index none.<br />
+Note that FFMS2's idea about what track has what number may be completely different from what any other application might think, and that track numbering starts from 1.
 </dd>
 
 <dt>int dumpmask = 0</dt>
@@ -190,10 +190,10 @@ Opens video. Will invoke indexing of all video tracks (but no audio tracks) if n
 <dd>The filename of the index file (where the indexing data is saved). Defaults to <tt>sourcefilename.ffindex</tt>. Note that if you didn't change this parameter from its default value and <tt>FFVideoSource</tt> encounters an index file that doesn't seem to match the file it's trying to open, it will automatically reindex and then overwrite the old index file. On the other hand, if you <em>do</em> change it, <tt>FFVideoSource</tt> will assume you have your reasons and throw an error instead if the index doesn't match the file.</dd>
 
 <dt>int fpsnum = -1, int fpsden = 1</dt>
-<dd>Forces a given (constant) framerate, expressed as a rational number where <tt>fpsnum</tt> is the numerator and <tt>fpsden</tt> is the denominator. Used for VFR to CFR conversion, as it will make <tt>FFVideoSource</tt> drop or duplicate frames to convert VFR to CFR if <tt>fpsnum</tt> is greater than 0. Setting <tt>fpsnum</tt> to a number less than or equal to zero means no frames will be dropped or duplicated.</dd>
+<dd>Controls the framerate of the output; used for VFR to CFR conversions. If <tt>fpsnum</tt> is less than or equal to zero (the default), the output will contain the same frames that the input did, and the frame rate reported to Avisynth will be set based on the input clip's average frame duration. If <tt>fpsnum</tt> is greater than zero, <tt>FFVideoSource</tt> will force a constant frame rate, expressed as a rational number where <tt>fpsnum</tt> is the numerator and <tt>fpsden</tt> is the denominator. This may naturally cause <tt>FFVideoSource</tt> to drop or duplicate frames to achieve the desired frame rate, and the output is not guaranteed to have the same number of frames that the input did.</dd>
 
 <dt>int threads = -1</dt>
-<dd>The number of decoding threads to request from libavcodec. Setting it to less than or equal to zero means it defaults to the number of logical CPU's reported by Windows. Note that this setting might be completely ignored by libavcodec under a number of conditions; most commonly because a lot of decoders actually do not support multithreading. You may also have a libavcodec without threading support compiled in at all.</dd>
+<dd>The number of decoding threads to request from libavcodec. Setting it to less than or equal to zero means it defaults to the number of logical CPU's reported by Windows. Note that this setting might be completely ignored by libavcodec under a number of conditions; most commonly because a lot of decoders actually do not support multithreading.</dd>
 
 <dt>string timecodes = ""</dt>
 <dd>Filename to write Matroska v2 timecodes for the opened video track to. If the file exists, it will be truncated and overwritten. Set to the empty string to disable timecodes writing (this is the default).</dd>
@@ -202,7 +202,7 @@ Opens video. Will invoke indexing of all video tracks (but no audio tracks) if n
 <dd>Controls how seeking is done. Mostly useful for getting uncooperative files to work. Only has an effect on files opened with the libavformat demuxer; on other files the equivalent of mode 1 is always used. Valid modes are:
 <ul>
 <li><b>-1:</b> Linear access without rewind; i.e. will throw an error if each successive requested frame number isn't bigger than the last one. Only intended for opening images but might work on well with some obscure video format.</li>
-<li><b>0:</b> Linear access (i.e. if you request frame <tt>n</tt> without having requested frames 0 to <tt>n-1</tt> in order first, all frames from 0 to <tt>n</tt> will have to be decoded before <tt>n</tt> can be delivered). The definition of slow, but should make some formats "usable".</li>
+<li><b>0:</b> Linear access (i.e. if you request frame <tt>n</tt> without having requested all frames from 0 to <tt>n-1</tt> in order first, all frames from 0 to <tt>n</tt> will have to be decoded before <tt>n</tt> can be delivered). The definition of slow, but should make some formats "usable".</li>
 <li><b>1:</b> Safe normal. Bases seeking decisions on the keyframe positions reported by libavformat.</li>
 <li><b>2:</b> Unsafe normal. Same as mode 1, but no error will be thrown if the exact seek destination has to be guessed.</li>
 <li><b>3:</b> Aggressive. Seeks in the forward direction even if no closer keyframe is known to exist. Only useful for testing and containers where libavformat doesn't report keyframes properly.</li>
@@ -374,7 +374,7 @@ b: FF_BI_TYPE (no good explanation available)
 
 
 <dt>FFCHANNEL_LAYOUT</dt>
-<dd>The audio channel layout of the audio stream. This is exported as a very cryptic integer that is constructed in the same way as the <tt>dwChannelMask</tt> property of the Windows <tt>WAVEFORMATEXTENSIBLE</tt> struct. If you don't know what the <tt>WAVEFORMATEXTENSIBLE</tt> is or what the <tt>dwChannelMask</tt> does, don't worry about it.</dd>
+<dd>The audio channel layout of the audio stream. This is exported as a very cryptic integer that is constructed in the same way as the <tt>dwChannelMask</tt> property of the Windows <tt>WAVEFORMATEXTENSIBLE</tt> struct. If you don't know what a <tt>WAVEFORMATEXTENSIBLE</tt> is or what the <tt>dwChannelMask</tt> does, don't worry about it.</dd>
 
 <dt>FFVAR_PREFIX</dt>
 <dd>The variable prefix of the last called FFMS source function. Note that this is a global variable</dd>
