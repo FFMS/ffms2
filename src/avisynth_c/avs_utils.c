@@ -209,15 +209,15 @@ struct SwsContext *ffms_sws_get_context( int src_width, int src_height, int src_
     // 0 = limited range, 1 = full range
     int range = crange == FFMS_CR_JPEG;
 
-    av_set_int( ctx, "sws_flags", flags );
-    av_set_int( ctx, "srcw", src_width );
-    av_set_int( ctx, "srch", src_height );
-    av_set_int( ctx, "dstw", dst_width );
-    av_set_int( ctx, "dsth", dst_height );
-    av_set_int( ctx, "src_range", range );
-    av_set_int( ctx, "dst_range", range );
-    av_set_int( ctx, "src_format", src_pix_fmt );
-    av_set_int( ctx, "dst_format", dst_pix_fmt );
+    av_opt_set_int( ctx, "sws_flags", flags, 0 );
+    av_opt_set_int( ctx, "srcw", src_width, 0 );
+    av_opt_set_int( ctx, "srch", src_height, 0 );
+    av_opt_set_int( ctx, "dstw", dst_width, 0 );
+    av_opt_set_int( ctx, "dsth", dst_height, 0 );
+    av_opt_set_int( ctx, "src_range", range, 0 );
+    av_opt_set_int( ctx, "dst_range", range, 0 );
+    av_opt_set_int( ctx, "src_format", src_pix_fmt, 0 );
+    av_opt_set_int( ctx, "dst_format", dst_pix_fmt, 0 );
 
     sws_setColorspaceDetails( ctx, sws_getCoefficients( csp ), range, sws_getCoefficients( csp ), range, 0, 1<<16, 1<<16 );
     if( sws_init_context( ctx, NULL, NULL ) < 0 )
