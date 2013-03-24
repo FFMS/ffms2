@@ -26,6 +26,22 @@ FFmpegSource2 Changelog
 <li>Add support for formats with packet durations but no packet timestamps. (Plorkyeran)</li>
 <li>Fix corruption when seeking in VC-1 in MKV. (Plorkyeran)</li>
 <li>Fix bug that resulted in files opened with Haali's splitter sometimes always decoding from the beginning on every seek. (Plorkyeran)</li>
+<li>Add support for VP8. (Plorkyeran)</li>
+<li>Fix crash when indexing video formats with no parser. (Plorkyeran)</li>
+<li>Fix compilation errors with recent versions of libav/ffmpeg. (Plorkyeran)</li>
+<li>Fix NVOP handling with frame-based threading (aka zero-size frames with mp4 bug). (Plorkyeran)</li>
+<li>Add support for vc1image. (Plorkyeran)</li>
+<li>Use the container SAR when the codec SAR is unset when opening via lavf. (Plorkyeran)</li>
+<li>Actually set the ColorRange and ColorSpace of frames when nothing has been overridden. (Plorkyeran)</li>
+<li>Add support for files without timestamps to lavf audio. (Plorkyeran)</li>
+<li>Fix handling of audio delay with invalid inital timestamps. (Plorkyeran)</li>
+<li>Sort of partially fix interlaced H.264. (Plorkyeran)</li>
+<li>Fix errors when the client asks for audio past the end of the file. (Plorkyeran)</li>
+<li>Fix rounding error with MKV timestamps that resulted in things getting a FPS like 60001/1001. (TheRyuu)</li>
+<li>Bump required version to libav 0.8/FFmpeg 0.9. (Plorkyeran)</li>
+<li>Switch to avcodec_decode_audio4. (Plorkyeran)</li>
+<li>Add support for planar audio from lavc. (Plorkyeran)</li>
+<li>Add SetOutputFormatA for audio resampling/mixing using libavresample. (Plorkyeran)</li>
 </ul>
 </li>
 
