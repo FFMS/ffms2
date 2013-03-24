@@ -427,17 +427,23 @@ FFMS_Track::FFMS_Track(zipped_file &Stream) {
 	partial_sum(InvisibleFrames.begin(), InvisibleFrames.end(), InvisibleFrames.begin());
 }
 
+void ffms_free_sha(AVSHA **ctx) { av_freep(ctx); }
+
 void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]) {
 	FILE *SFile = ffms_fopen(Filename,"rb");
 	if (!SFile)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Failed to open '") + Filename + "' for hashing");
 
-	std::vector<uint8_t> FileBuffer(1024*1024);
+#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 51, 43, 0, 51, 75, 100)
+	unknown_size<AVSHA, av_sha_alloc, ffms_free_sha> ctx;
+#else
 	std::vector<uint8_t> ctxmem(av_sha_size);
 	AVSHA *ctx = (AVSHA*)(&ctxmem[0]);
+#endif
 	av_sha_init(ctx, 160);
 
+	std::vector<uint8_t> FileBuffer(1024*1024);
 	try {
 		size_t BytesRead = fread(&FileBuffer[0], 1, FileBuffer.size(), SFile);
 		if (ferror(SFile) && !feof(SFile))
