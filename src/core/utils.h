@@ -194,26 +194,6 @@ public:
 	ffms_fstream(const char *filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out);
 };
 
-template <typename T>
-class AlignedBuffer {
-	T *buf;
-
-public:
-	explicit AlignedBuffer(size_t n = 1) {
-		buf = (T*) av_malloc(sizeof(*buf) * n);
-		if (!buf) throw std::bad_alloc();
-	}
-
-	~AlignedBuffer() {
-		av_free(buf);
-		buf = 0;
-	}
-
-	const T &operator[] (size_t i) const { return buf[i]; }
-	T &operator[] (size_t i) { return buf[i]; }
-};
-
-
 class TrackCompressionContext {
 public:
 	CompressedStream *CS;

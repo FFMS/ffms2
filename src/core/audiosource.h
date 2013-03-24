@@ -54,9 +54,9 @@ private:
 		std::vector<uint8_t> Data;
 
 		AudioBlock(int64_t Start, int64_t Samples, uint8_t *SrcData, size_t SrcBytes)
-			: Start(Start)
-			, Samples(Samples)
-			, Data(SrcData, SrcData + SrcBytes)
+		: Start(Start)
+		, Samples(Samples)
+		, Data(SrcData, SrcData + SrcBytes)
 		{
 			static int64_t Now = 0;
 			Age = Now++;
@@ -74,11 +74,9 @@ private:
 	CacheIterator CacheNoDelete;
 	// bytes per sample * number of channels
 	size_t BytesPerSample;
-	// Number of samples stored in the decoding buffer
-	size_t Decoded;
 
-	// Insert a block into the cache
-	void CacheBlock(CacheIterator &pos, int64_t Start, size_t Samples, uint8_t *SrcData);
+	// Insert the current audio frame into the cache
+	void CacheBlock(CacheIterator pos);
 
 	// Called after seeking
 	virtual void Seek() { };
@@ -99,13 +97,13 @@ protected:
 	int SeekOffset;
 
 	// Buffer which audio is decoded into
-	AlignedBuffer<uint8_t> DecodingBuffer;
+	ScopedFrame DecodeFrame;
 	FFMS_Index &Index;
 	FFMS_Track Frames;
 	FFCodecContext CodecContext;
 	FFMS_AudioProperties AP;
 
-	void DecodeNextBlock();
+	void DecodeNextBlock(CacheIterator *cachePos = 0);
 	// Initialization which has to be done after the codec is opened
 	void Init(const FFMS_Index &Index, int DelayMode);
 

@@ -27,13 +27,11 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 : Delay(0)
 , MaxCacheBlocks(50)
 , BytesPerSample(0)
-, Decoded(0)
 , CurrentSample(-1)
 , PacketNumber(0)
 , CurrentFrame(NULL)
 , TrackNumber(Track)
 , SeekOffset(0)
-, DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10)
 , Index(Index)
 {
 	if (Track < 0 || Track >= static_cast<int>(Index.size()))
@@ -78,17 +76,19 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 		((Frames[0].PTS != ffms_av_nopts_value && Frames[PacketNumber].PTS == Frames[0].PTS) ||
 		 Cache.size() < 10)) {
 
-		// Vorbis in particular seems to like having 60+ packets at the start of the file with a PTS of 0,
-		// so we might need to expand the search range to account for that.
-		if (Cache.size() >= MaxCacheBlocks - 1) {
+		// Vorbis in particular seems to like having 60+ packets at the start
+		// of the file with a PTS of 0, so we might need to expand the search
+		// range to account for that.
+		// Expanding slightly before it's strictly needed to ensure there's a
+		// bit of space for an actual cache
+		if (Cache.size() >= MaxCacheBlocks - 5) {
 			 if (MaxCacheBlocks >= EXCESSIVE_CACHE_SIZE)
-				 throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED, "Exceeded the search range for an initial valid audio PTS");
+				throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
+					"Exceeded the search range for an initial valid audio PTS");
 			MaxCacheBlocks *= 2;
 		}
 
-		DecodeNextBlock();
-		if (Decoded)
-			CacheBlock(end, CurrentSample, Decoded, &DecodingBuffer[0]);
+		DecodeNextBlock(&end);
 	}
 	// Store the iterator to the last element of the cache which is used for
 	// correctness rather than speed, so that when looking for one to delete
@@ -146,8 +146,8 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 	AP.NumSamples += Delay;
 }
 
-void FFMS_AudioSource::CacheBlock(CacheIterator &pos, int64_t Start, size_t Samples, uint8_t *SrcData) {
-	Cache.insert(pos, AudioBlock(Start, Samples, SrcData, Samples * BytesPerSample));
+void FFMS_AudioSource::CacheBlock(CacheIterator pos) {
+	Cache.insert(pos, AudioBlock(CurrentSample, DecodeFrame->nb_samples, DecodeFrame->extended_data[0], DecodeFrame->nb_samples * BytesPerSample));
 
 	if (Cache.size() >= MaxCacheBlocks) {
 		// Kill the oldest one
@@ -162,45 +162,48 @@ void FFMS_AudioSource::CacheBlock(CacheIterator &pos, int64_t Start, size_t Samp
 	}
 }
 
-void FFMS_AudioSource::DecodeNextBlock() {
-	if (BytesPerSample == 0) BytesPerSample = av_get_bytes_per_sample(CodecContext->sample_fmt) * CodecContext->channels;
+void FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
+	if (BytesPerSample == 0)
+		BytesPerSample = av_get_bytes_per_sample(CodecContext->sample_fmt) * CodecContext->channels;
 
 	CurrentFrame = &Frames[PacketNumber];
 
 	AVPacket Packet;
 	if (!ReadPacket(&Packet))
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_UNKNOWN, "ReadPacket unexpectedly failed to read a packet");
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_UNKNOWN,
+			"ReadPacket unexpectedly failed to read a packet");
 
 	// ReadPacket may have changed the packet number
 	CurrentFrame = &Frames[PacketNumber];
 	CurrentSample = CurrentFrame->SampleStart;
-	++PacketNumber;
 
-	uint8_t *Buf = &DecodingBuffer[0];
+	bool GotSamples = false;
 	uint8_t *Data = Packet.data;
 	while (Packet.size > 0) {
-		int TempOutputBufSize = AVCODEC_MAX_AUDIO_FRAME_SIZE * 10 - (Buf - &DecodingBuffer[0]);
-		int Ret = avcodec_decode_audio3(CodecContext, (int16_t *)Buf, &TempOutputBufSize, &Packet);
+		DecodeFrame.reset();
+		int GotFrame = 0;
+		int Ret = avcodec_decode_audio4(CodecContext, DecodeFrame, &GotFrame, &Packet);
 
 		// Should only ever happen if the user chose to ignore decoding errors
 		// during indexing, so continue to just ignore decoding errors
 		if (Ret < 0) break;
 
-		if (Ret > 0) {
+		if (Ret > 0 && GotFrame) {
 			Packet.size -= Ret;
 			Packet.data += Ret;
-			Buf += TempOutputBufSize;
+			if (DecodeFrame->nb_samples > 0) {
+				GotSamples = true;
+				if (pos)
+					CacheBlock(*pos);
+			}
 		}
 	}
 	Packet.data = Data;
 	FreePacket(&Packet);
 
-	Decoded = (Buf - &DecodingBuffer[0]) / BytesPerSample;
-	if (Decoded == 0) {
-		// zero sample packets aren't included in the index so we didn't
-		// actually move to the next packet
-		--PacketNumber;
-	}
+	// Zero sample packets aren't included in the index
+	if (GotSamples)
+		++PacketNumber;
 }
 
 static bool SampleStartComp(const TFrameInfo &a, const TFrameInfo &b) {
@@ -253,10 +256,12 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 		}
 		// Decode another block
 		else {
+			CacheIterator cachePos = it; --cachePos;
+
 			if (Start < CurrentSample && SeekOffset == -1)
 				throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_CODEC, "Audio stream is not seekable");
 
-			if (SeekOffset >= 0 && (Start < CurrentSample || Start > CurrentSample + Decoded * 5)) {
+			if (SeekOffset >= 0 && (Start < CurrentSample || Start > CurrentSample + DecodeFrame->nb_samples * 5)) {
 				TFrameInfo f;
 				f.SampleStart = Start;
 				int NewPacketNumber = std::distance(Frames.begin(), std::lower_bound(Frames.begin(), Frames.end(), f, SampleStartComp));
@@ -266,32 +271,22 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 				// Only seek forward if it'll actually result in moving forward
 				if (Start < CurrentSample || static_cast<size_t>(NewPacketNumber) > PacketNumber) {
 					PacketNumber = NewPacketNumber;
-					Decoded = 0;
 					CurrentSample = -1;
+					DecodeFrame.reset();
 					avcodec_flush_buffers(CodecContext);
 					Seek();
 				}
 			}
 
-			// Decode everything between the last keyframe and the block we want
+			// Decode until we hit the block we want
 			if (PacketNumber >= Frames.size())
 				throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_CODEC, "Seeking is severely broken");
-			while (CurrentSample + Decoded <= Start && PacketNumber < Frames.size())
-				DecodeNextBlock();
+			while (CurrentSample + DecodeFrame->nb_samples <= Start && PacketNumber < Frames.size())
+				DecodeNextBlock(&it);
 			if (CurrentSample > Start)
 				throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_CODEC, "Seeking is severely broken");
 
-			CacheBlock(it, CurrentSample, Decoded, &DecodingBuffer[0]);
-
-			size_t FirstSample = static_cast<size_t>(Start - CurrentSample);
-			size_t Samples = static_cast<size_t>(Decoded - FirstSample);
-			size_t Bytes = FFMIN(Samples, static_cast<size_t>(Count)) * BytesPerSample;
-
-			memcpy(Dst, &DecodingBuffer[FirstSample * BytesPerSample], Bytes);
-
-			Start += Samples;
-			Count -= Samples;
-			Dst += Bytes;
+			it = cachePos;
 		}
 	}
 }
