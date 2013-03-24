@@ -108,6 +108,14 @@ void Wave64Writer::WriteHeader(bool Initial, bool IsFloat) {
 
 void Wave64Writer::WriteData(AVFrame const& Frame) {
 	uint64_t Length = Frame.nb_samples * BytesPerSample * Channels;
-	WavFile.write(reinterpret_cast<char *>(Frame.extended_data[0]), Length);
+	if (Channels > 1 && av_sample_fmt_is_planar(static_cast<AVSampleFormat>(Frame.format))) {
+		for (int32_t sample = 0; sample < Frame.nb_samples; ++sample) {
+			for (int32_t channel = 0; channel < Channels; ++channel)
+				WavFile.write(reinterpret_cast<char *>(&Frame.extended_data[channel][sample * BytesPerSample]), BytesPerSample);
+		}
+	}
+	else {
+		WavFile.write(reinterpret_cast<char *>(Frame.extended_data[0]), Length);
+	}
 	BytesWritten += Length;
 }
