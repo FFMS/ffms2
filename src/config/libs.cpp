@@ -45,6 +45,9 @@ extern "C" {
 #pragma comment(lib, "libavcodec.a")
 #pragma comment(lib, "libavformat.a")
 #pragma comment(lib, "libswscale.a")
+#ifdef WITH_AVRESAMPLE
+#pragma comment(lib, "libavresample.a")
+#endif
 
 #ifdef WITH_OPENCORE_AMR_NB
 #ifdef WITH_GCC_LIBAV

@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (17 << 16) | (3 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (17 << 16) | (4 << 8) | 0)
 
 #include <stdint.h>
 
@@ -113,6 +113,7 @@ typedef enum FFMS_Errors {
 	FFMS_ERROR_TRACK,				// track handling
 	FFMS_ERROR_WAVE_WRITER,			// WAVE64 file writer
 	FFMS_ERROR_CANCELLED,			// operation aborted
+	FFMS_ERROR_RESAMPLING,			// audio resampling (libavresample)
 
 	// Subtypes - what caused the error
 	FFMS_ERROR_UNKNOWN = 20,		// unknown error
@@ -237,6 +238,53 @@ typedef enum FFMS_ColorRanges {
 	FFMS_CR_JPEG		= 2 // 2^n-1, or "fullrange"
 } FFMS_ColorRanges;
 
+typedef enum FFMS_MixingCoefficientType {
+	FFMS_MIXING_COEFFICIENT_Q8  = 0,
+	FFMS_MIXING_COEFFICIENT_Q15 = 1,
+	FFMS_MIXING_COEFFICIENT_FLT = 2
+} FFMS_MixingCoefficientType;
+
+typedef enum FFMS_MatrixEncoding {
+	FFMS_MATRIX_ENCODING_NONE         = 0,
+	FFMS_MATRIX_ENCODING_DOBLY        = 1,
+	FFMS_MATRIX_ENCODING_PRO_LOGIC_II = 2
+} FFMS_MatrixEncoding;
+
+typedef enum FFMS_ResampleFilterType {
+	FFMS_RESAMPLE_FILTER_CUBIC  = 0,
+	FFMS_RESAMPLE_FILTER_SINC   = 1,
+	FFMS_RESAMPLE_FILTER_KAISER = 2
+} FFMS_ResampleFilterType;
+
+typedef enum FFMS_AudioDitherMethod {
+	FFMS_RESAMPLE_DITHER_NONE                    = 0,
+	FFMS_RESAMPLE_DITHER_RECTANGULAR             = 1,
+	FFMS_RESAMPLE_DITHER_TRIANGULAR              = 2,
+	FFMS_RESAMPLE_DITHER_TRIANGULAR_HIGHPASS     = 3,
+	FFMS_RESAMPLE_DITHER_TRIANGULAR_NOISESHAPING = 4
+} FFMS_AudioDitherMethod;
+
+typedef struct FFMS_ResampleOptions {
+	int64_t ChannelLayout;
+	FFMS_SampleFormat SampleFormat;
+	int SampleRate;
+	FFMS_MixingCoefficientType MixingCoefficientType;
+	double CenterMixLevel;
+	double SurroundMixLevel;
+	double LFEMixLevel;
+	int Normalize;
+	int ForceResample;
+	int ResampleFilterSize;
+	int ResamplePhaseShift;
+	int LinearInterpolation;
+	double CutoffFrequencyRatio;
+	FFMS_MatrixEncoding MatrixedStereoEncoding;
+	FFMS_ResampleFilterType FilterType;
+	int KaiserBeta;
+	FFMS_AudioDitherMethod DitherMethod;
+} FFMS_ResampleOptions;
+
+
 typedef struct FFMS_Frame {
 	uint8_t *Data[4];
 	int Linesize[4];
@@ -319,6 +367,9 @@ FFMS_API(int) FFMS_SetOutputFormatV2(FFMS_VideoSource *V, const int *TargetForma
 FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V);
 FFMS_API(int) FFMS_SetInputFormatV(FFMS_VideoSource *V, int ColorSpace, int ColorRange, int Format, FFMS_ErrorInfo *ErrorInfo); /* Introduced in FFMS_VERSION ((2 << 24) | (17 << 16) | (1 << 8) | 0) */
 FFMS_API(void) FFMS_ResetInputFormatV(FFMS_VideoSource *V);
+FFMS_API(FFMS_ResampleOptions *) FFMS_CreateResampleOptions(FFMS_AudioSource *A); /* Introduced in FFMS_VERSION ((2 << 24) | (15 << 16) | (4 << 8) | 0) */
+FFMS_API(int) FFMS_SetOutputFormatA(FFMS_AudioSource *A, const FFMS_ResampleOptions*options, FFMS_ErrorInfo *ErrorInfo); /* Introduced in FFMS_VERSION ((2 << 24) | (15 << 16) | (4 << 8) | 0) */
+FFMS_API(void) FFMS_DestroyResampleOptions(FFMS_ResampleOptions *options); /* Introduced in FFMS_VERSION ((2 << 24) | (15 << 16) | (4 << 8) | 0) */
 FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index);
 FFMS_API(int) FFMS_GetSourceType(FFMS_Index *Index);
 FFMS_API(int) FFMS_GetSourceTypeI(FFMS_Indexer *Indexer);

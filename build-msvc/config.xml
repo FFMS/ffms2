@@ -42,4 +42,10 @@
     Description="Was FFmpeg/libav built with pthreads rather than w32threads?"
     />
 
+  <BoolProperty
+    Name="WithAvResample"
+    DisplayName="Enable audio resampling"
+    Description="Requires libavresample 1.0.0 or newer"
+    />
+
 </Rule>

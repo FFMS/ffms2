@@ -256,6 +256,24 @@ FFMS_API(void) FFMS_ResetInputFormatV(FFMS_VideoSource *V) {
 	V->ResetInputFormat();
 }
 
+FFMS_API(FFMS_ResampleOptions *) FFMS_CreateResampleOptions(FFMS_AudioSource *A) {
+	return A->CreateResampleOptions();
+}
+
+FFMS_API(void) FFMS_DestroyResampleOptions(FFMS_ResampleOptions *options) {
+	delete options;
+}
+
+FFMS_API(int) FFMS_SetOutputFormatA(FFMS_AudioSource *A, const FFMS_ResampleOptions *options, FFMS_ErrorInfo *ErrorInfo) {
+	ClearErrorInfo(ErrorInfo);
+	try {
+		A->SetOutputFormat(options);
+	} catch (FFMS_Exception &e) {
+		return e.CopyOut(ErrorInfo);
+	}
+	return FFMS_ERROR_SUCCESS;
+}
+
 FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {
 	assert(Index != NULL);
 	if (Index == NULL)

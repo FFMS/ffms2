@@ -29,6 +29,7 @@
     <OpencoreAmrNb>false</OpencoreAmrNb>
     <OpencoreAmrWb>false</OpencoreAmrWb>
     <WithPthread>false</WithPthread>
+    <WithAvResample>true</WithAvResample>
     <ForkName>libav</ForkName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

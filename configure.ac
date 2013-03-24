@@ -181,6 +181,25 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
               AC_MSG_RESULT([no])
             ])
 
+AC_ARG_ENABLE(avresample,
+              AS_HELP_STRING([--enable-avresample],
+                             [use libavresample for audio resampling]))
+AS_IF([test x$enable_avresample != xno], [
+  PKG_CHECK_MODULES(AVRESAMPLE, [libavresample >= 1.0.0], [enable_avresample=yes], [
+    AS_IF([test x$enable_avresample = xyes],
+          [AC_MSG_ERROR([--enable-avresample was specified, but avresample 1.0.0+ could not be found.])])
+    enable_avresample=no
+  ])
+])
+
+AS_IF([test x$enable_avresample],
+      [libavresample="libavresample"
+       AC_DEFINE([WITH_AVRESAMPLE], [1], [Use avresample])])
+
+AC_SUBST([AVRESAMPLE_CFLAGS])
+AC_SUBST([AVRESAMPLE_LIBS])
+AC_SUBST([libavresample])
+
 AC_MSG_CHECKING([whether -Wl,-Bsymbolic is needed])
 if test "$enable_shared" = yes; then
     _LDFLAGS="$LDFLAGS"

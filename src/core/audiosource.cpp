@@ -23,10 +23,40 @@
 #include <algorithm>
 #include <cassert>
 
+namespace {
+
+	int64_t ChannelLayout;
+	FFMS_SampleFormat SampleFormat;
+	int SampleRate;
+#define MAPPER(m, n) OptionMapper<FFMS_ResampleOptions>(n, &FFMS_ResampleOptions::m)
+OptionMapper<FFMS_ResampleOptions> resample_options[] = {
+	MAPPER(ChannelLayout,          "out_channel_layout"),
+	MAPPER(SampleFormat,           "out_sample_fmt"),
+	MAPPER(SampleRate,             "out_sample_rate"),
+	MAPPER(MixingCoefficientType,  "mix_coeff_type"),
+	MAPPER(CenterMixLevel,         "center_mix_level"),
+	MAPPER(SurroundMixLevel,       "surround_mix_level"),
+	MAPPER(LFEMixLevel,            "lfe_mix_level"),
+	MAPPER(Normalize,              "normalize_mix_level"),
+	MAPPER(ForceResample,          "force_resampling"),
+	MAPPER(ResampleFilterSize,     "filter_size"),
+	MAPPER(ResamplePhaseShift,     "phase_shift"),
+	MAPPER(LinearInterpolation,    "linear_interp"),
+	MAPPER(CutoffFrequencyRatio,   "cutoff"),
+	MAPPER(MatrixedStereoEncoding, "matrix_encoding"),
+	MAPPER(FilterType,             "filter_type"),
+	MAPPER(KaiserBeta,             "kaiser_beta"),
+	MAPPER(DitherMethod,           "dither_method")
+};
+#undef MAPPER
+
+}
+
 FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track)
 : Delay(0)
 , MaxCacheBlocks(50)
 , BytesPerSample(0)
+, NeedsResample(false)
 , CurrentSample(-1)
 , PacketNumber(0)
 , CurrentFrame(NULL)
@@ -55,46 +85,14 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 	Index.AddRef();
 }
 
-
 #define EXCESSIVE_CACHE_SIZE 400
 
 void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
-	// The first packet after a seek is often decoded incorrectly, which
-	// makes it impossible to ever correctly seek back to the beginning, so
-	// store the first block now
-
-	// In addition, anything with the same PTS as the first packet can't be
-	// distinguished from the first packet and so can't be seeked to, so
-	// store those as well
-
-	// Some of LAVF's splitters don't like to seek to the beginning of the
-	// file (ts and?), so cache a few blocks even if PTSes are unique
-	// Packet 7 is the last packet I've had be unseekable to, so cache up to
-	// 10 for a bit of an extra buffer
-	CacheIterator end = Cache.end();
-	while (PacketNumber < Frames.size() &&
-		((Frames[0].PTS != ffms_av_nopts_value && Frames[PacketNumber].PTS == Frames[0].PTS) ||
-		 Cache.size() < 10)) {
-
-		// Vorbis in particular seems to like having 60+ packets at the start
-		// of the file with a PTS of 0, so we might need to expand the search
-		// range to account for that.
-		// Expanding slightly before it's strictly needed to ensure there's a
-		// bit of space for an actual cache
-		if (Cache.size() >= MaxCacheBlocks - 5) {
-			 if (MaxCacheBlocks >= EXCESSIVE_CACHE_SIZE)
-				throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
-					"Exceeded the search range for an initial valid audio PTS");
-			MaxCacheBlocks *= 2;
-		}
-
-		DecodeNextBlock(&end);
-	}
-	// Store the iterator to the last element of the cache which is used for
-	// correctness rather than speed, so that when looking for one to delete
-	// we know how much to skip
-	CacheNoDelete = Cache.end();
-	--CacheNoDelete;
+	// Decode the first packet to ensure all properties are initialized
+	// Don't cache it since it might be in the wrong format
+	// Instead, leave it in DecodeFrame and it'll get cached later
+	while (DecodeFrame->nb_samples == 0)
+		DecodeNextBlock();
 
 	// Read properties of the audio which may not be available until the first
 	// frame has been decoded
@@ -103,6 +101,11 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 	if (AP.SampleRate <= 0 || AP.BitsPerSample <= 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Codec returned zero size audio");
+
+	if (av_sample_fmt_is_planar(CodecContext->sample_fmt)) {
+		std::auto_ptr<FFMS_ResampleOptions> opt(CreateResampleOptions());
+		SetOutputFormat(opt.get());
+	}
 
 	if (DelayMode < FFMS_DELAY_NO_SHIFT)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
@@ -146,10 +149,118 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 	AP.NumSamples += Delay;
 }
 
-void FFMS_AudioSource::InsertInterleaved(CacheIterator pos) {
-	AudioBlock& block = *Cache.insert(pos, AudioBlock(CurrentSample, DecodeFrame->nb_samples));
+void FFMS_AudioSource::CacheBeginning() {
+	// Nothing to do if the cache is already populated
+	if (!Cache.empty()) return;
 
+	// The first frame is already decoded, so add it to the cache
+	CacheBlock(Cache.end());
+
+	// The first packet after a seek is often decoded incorrectly, which
+	// makes it impossible to ever correctly seek back to the beginning, so
+	// store the first block now
+
+	// In addition, anything with the same PTS as the first packet can't be
+	// distinguished from the first packet and so can't be seeked to, so
+	// store those as well
+
+	// Some of LAVF's splitters don't like to seek to the beginning of the
+	// file (ts and?), so cache a few blocks even if PTSes are unique
+	// Packet 7 is the last packet I've had be unseekable to, so cache up to
+	// 10 for a bit of an extra buffer
+	CacheIterator end = Cache.end();
+	while (PacketNumber < Frames.size() &&
+		((Frames[0].PTS != ffms_av_nopts_value && Frames[PacketNumber].PTS == Frames[0].PTS) ||
+		 Cache.size() < 10)) {
+
+		// Vorbis in particular seems to like having 60+ packets at the start
+		// of the file with a PTS of 0, so we might need to expand the search
+		// range to account for that.
+		// Expanding slightly before it's strictly needed to ensure there's a
+		// bit of space for an actual cache
+		if (Cache.size() >= MaxCacheBlocks - 5) {
+			 if (MaxCacheBlocks >= EXCESSIVE_CACHE_SIZE)
+				throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
+					"Exceeded the search range for an initial valid audio PTS");
+			MaxCacheBlocks *= 2;
+		}
+
+		DecodeNextBlock(&end);
+	}
+	// Store the iterator to the last element of the cache which is used for
+	// correctness rather than speed, so that when looking for one to delete
+	// we know how much to skip
+	CacheNoDelete = Cache.end();
+	--CacheNoDelete;
+}
+
+void FFMS_AudioSource::SetOutputFormat(const FFMS_ResampleOptions *opt) {
+	if (!Cache.empty())
+		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_USER,
+			"Cannot change the output format after audio decoding has begun");
+
+	BytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(opt->SampleFormat)) * av_get_channel_layout_nb_channels(opt->ChannelLayout);
+
+	NeedsResample =
+		opt->SampleFormat != (int)CodecContext->sample_fmt ||
+		opt->SampleRate != AP.SampleRate ||
+		opt->ChannelLayout != AP.ChannelLayout ||
+		opt->ForceResample;
+	if (!NeedsResample) return;
+
+	if (opt->SampleRate != AP.SampleRate)
+		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
+			"Sample rate changes are currently unsupported.");
+
+#ifdef WITH_AVRESAMPLE
+	if (opt->SampleRate != AP.SampleRate)
+		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
+			"Changing the audio sample rate is currently not supported");
+
+	std::auto_ptr<FFMS_ResampleOptions> oldOptions(ReadOptions(ResampleContext, resample_options));
+	SetOptions(opt, ResampleContext, resample_options);
+	av_opt_set_int(ResampleContext, "in_sample_rate", AP.SampleRate, 0);
+	av_opt_set_int(ResampleContext, "in_sample_fmt", CodecContext->sample_fmt, 0);
+	av_opt_set_int(ResampleContext, "in_channel_layout", AP.ChannelLayout, 0);
+
+	if (avresample_open(ResampleContext)) {
+		SetOptions(oldOptions.get(), ResampleContext, resample_options);
+		avresample_open(ResampleContext);
+		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
+			"Could not open avresample context");
+	}
+#else
+	if (opt->SampleFormat != AP.SampleFormat || opt->SampleRate != AP.SampleRate || opt->ChannelLayout != AP.ChannelLayout)
+		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
+			"FFMS was not built with resampling enabled. The only supported conversion is interleaving planar audio.");
+#endif
+}
+
+FFMS_ResampleOptions *FFMS_AudioSource::CreateResampleOptions() const {
+#ifdef WITH_AVRESAMPLE
+	FFMS_ResampleOptions *ret = ReadOptions(ResampleContext, resample_options);
+#else
+	FFMS_ResampleOptions *ret = new FFMS_ResampleOptions;
+	memset(ret, 0, sizeof(FFMS_ResampleOptions));
+#endif
+	ret->SampleRate = AP.SampleRate;
+	ret->SampleFormat = static_cast<FFMS_SampleFormat>(AP.SampleFormat);
+	ret->ChannelLayout = AP.ChannelLayout;
+	return ret;
+}
+
+void FFMS_AudioSource::ResampleAndCache(CacheIterator pos) {
+	AudioBlock& block = *Cache.insert(pos, AudioBlock(CurrentSample, DecodeFrame->nb_samples));
 	block.Data.reserve(DecodeFrame->nb_samples * BytesPerSample);
+
+#ifdef WITH_AVRESAMPLE
+	block.Data.resize(block.Data.capacity());
+
+	uint8_t *OutPlanes[1] = { static_cast<uint8_t *>(&block.Data[0]) };
+	avresample_convert(ResampleContext,
+		OutPlanes, block.Data.size(), DecodeFrame->nb_samples,
+		DecodeFrame->extended_data, DecodeFrame->nb_samples * av_get_bytes_per_sample(CodecContext->sample_fmt), DecodeFrame->nb_samples);
+#else
 	int width = av_get_bytes_per_sample(CodecContext->sample_fmt);
 	uint8_t **Data = DecodeFrame->extended_data;
 
@@ -157,11 +268,12 @@ void FFMS_AudioSource::InsertInterleaved(CacheIterator pos) {
 		for (int c = 0; c < CodecContext->channels; ++c)
 			block.Data.insert(block.Data.end(), &Data[c][s * width], &Data[c][(s + 1) * width]);
 	}
+#endif
 }
 
 void FFMS_AudioSource::CacheBlock(CacheIterator pos) {
-	if (CodecContext->channels > 1 && av_sample_fmt_is_planar(CodecContext->sample_fmt))
-		InsertInterleaved(pos);
+	if (NeedsResample)
+		ResampleAndCache(pos);
 	else
 		Cache.insert(pos, AudioBlock(CurrentSample, DecodeFrame->nb_samples, DecodeFrame->extended_data[0], DecodeFrame->nb_samples * BytesPerSample));
 
@@ -179,9 +291,6 @@ void FFMS_AudioSource::CacheBlock(CacheIterator pos) {
 }
 
 void FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
-	if (BytesPerSample == 0)
-		BytesPerSample = av_get_bytes_per_sample(CodecContext->sample_fmt) * CodecContext->channels;
-
 	CurrentFrame = &Frames[PacketNumber];
 
 	AVPacket Packet;
@@ -234,6 +343,8 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 	if (Start < 0 || Start + Count > AP.NumSamples || Count < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_INVALID_ARGUMENT,
 			"Out of bounds audio samples requested");
+
+	CacheBeginning();
 
 	uint8_t *Dst = static_cast<uint8_t*>(Buf);
 

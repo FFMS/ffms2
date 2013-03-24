@@ -46,7 +46,6 @@ extern "C" {
 #endif
 
 struct FFMS_AudioSource {
-private:
 	struct AudioBlock {
 		int64_t Age;
 		int64_t Start;
@@ -83,11 +82,17 @@ private:
 	// bytes per sample * number of channels
 	size_t BytesPerSample;
 
+	bool NeedsResample;
+	FFResampleContext ResampleContext;
+
 	// Insert the current audio frame into the cache
 	void CacheBlock(CacheIterator pos);
 
 	// Interleave the current audio frame and insert it into the cache
-	void InsertInterleaved(CacheIterator pos);
+	void ResampleAndCache(CacheIterator pos);
+
+	// Cache the unseekable beginning of the file once the output format is set
+	void CacheBeginning();
 
 	// Called after seeking
 	virtual void Seek() { };
@@ -125,6 +130,9 @@ public:
 	FFMS_Track *GetTrack() { return &Frames; }
 	const FFMS_AudioProperties& GetAudioProperties() const { return AP; }
 	void GetAudio(void *Buf, int64_t Start, int64_t Count);
+
+	FFMS_ResampleOptions *CreateResampleOptions() const;
+	void SetOutputFormat(const FFMS_ResampleOptions *opt);
 };
 
 class FFLAVFAudio : public FFMS_AudioSource {

@@ -17,6 +17,10 @@
     <ClCompile><PreprocessorDefinitions>WITH_PTHREAD_GC2;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
   </ItemDefinitionGroup>
 
+  <ItemDefinitionGroup Condition="'$(WithAvResample)'=='true'">
+    <ClCompile><PreprocessorDefinitions>WITH_AVRESAMPLE;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+  </ItemDefinitionGroup>
+
   <ItemDefinitionGroup Condition="'$(ForkName)'=='libav'">
     <ClCompile><PreprocessorDefinitions>FFMS_USE_FFMPEG_COMPAT;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
   </ItemDefinitionGroup>

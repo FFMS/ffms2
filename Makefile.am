@@ -9,7 +9,7 @@ dist_doc_DATA = doc/ffms2-api.html doc/ffms2-changelog.html doc/style.css
 INCLUDES = -I. -I$(top_srcdir)/include -I$(top_srcdir)/src/config @LIBAV_CFLAGS@ @ZLIB_CPPFLAGS@ -include config.h
 
 lib_LTLIBRARIES = src/core/libffms2.la
-src_core_libffms2_la_LIBADD = @LIBAV_LIBS@ @ZLIB_LDFLAGS@ -lz @LTUNDEF@
+src_core_libffms2_la_LIBADD = @LIBAV_LIBS@ @AVRESAMPLE_LIBS@ @ZLIB_LDFLAGS@ -lz @LTUNDEF@
 src_core_libffms2_la_SOURCES = \
 	src/core/audiosource.h \
 	src/core/audiosource.cpp \
