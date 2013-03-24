@@ -146,8 +146,24 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 	AP.NumSamples += Delay;
 }
 
+void FFMS_AudioSource::InsertInterleaved(CacheIterator pos) {
+	AudioBlock& block = *Cache.insert(pos, AudioBlock(CurrentSample, DecodeFrame->nb_samples));
+
+	block.Data.reserve(DecodeFrame->nb_samples * BytesPerSample);
+	int width = av_get_bytes_per_sample(CodecContext->sample_fmt);
+	uint8_t **Data = DecodeFrame->extended_data;
+
+	for (int s = 0; s < DecodeFrame->nb_samples; ++s) {
+		for (int c = 0; c < CodecContext->channels; ++c)
+			block.Data.insert(block.Data.end(), &Data[c][s * width], &Data[c][(s + 1) * width]);
+	}
+}
+
 void FFMS_AudioSource::CacheBlock(CacheIterator pos) {
-	Cache.insert(pos, AudioBlock(CurrentSample, DecodeFrame->nb_samples, DecodeFrame->extended_data[0], DecodeFrame->nb_samples * BytesPerSample));
+	if (CodecContext->channels > 1 && av_sample_fmt_is_planar(CodecContext->sample_fmt))
+		InsertInterleaved(pos);
+	else
+		Cache.insert(pos, AudioBlock(CurrentSample, DecodeFrame->nb_samples, DecodeFrame->extended_data[0], DecodeFrame->nb_samples * BytesPerSample));
 
 	if (Cache.size() >= MaxCacheBlocks) {
 		// Kill the oldest one

@@ -61,6 +61,14 @@ private:
 			static int64_t Now = 0;
 			Age = Now++;
 		}
+
+		AudioBlock(int64_t Start, int64_t Samples)
+		: Start(Start)
+		, Samples(Samples)
+		{
+			static int64_t Now = 0;
+			Age = Now++;
+		}
 	};
 	typedef std::list<AudioBlock>::iterator CacheIterator;
 
@@ -77,6 +85,9 @@ private:
 
 	// Insert the current audio frame into the cache
 	void CacheBlock(CacheIterator pos);
+
+	// Interleave the current audio frame and insert it into the cache
+	void InsertInterleaved(CacheIterator pos);
 
 	// Called after seeking
 	virtual void Seek() { };

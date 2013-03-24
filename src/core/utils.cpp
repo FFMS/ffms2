@@ -215,7 +215,7 @@ void InitNullPacket(AVPacket &pkt) {
 }
 
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
-	AP.SampleFormat = static_cast<FFMS_SampleFormat>(CTX->sample_fmt);
+	AP.SampleFormat = static_cast<FFMS_SampleFormat>(av_get_packed_sample_fmt(CTX->sample_fmt));
 	AP.BitsPerSample = av_get_bytes_per_sample(CTX->sample_fmt) * 8;
 	AP.Channels = CTX->channels;;
 	AP.ChannelLayout = CTX->channel_layout;
