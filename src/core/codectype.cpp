@@ -81,7 +81,9 @@ static const CodecTags mkv_codec_tags[] = {
 	{"V_REAL/RV20"      , FFMS_ID(RV20)},
 	{"V_REAL/RV30"      , FFMS_ID(RV30)},
 	{"V_REAL/RV40"      , FFMS_ID(RV40)},
+#if LIBAVCODEC_VERSION_MAJOR < 55
 	{"V_SNOW"           , FFMS_ID(SNOW)},
+#endif
 	{"V_THEORA"         , FFMS_ID(THEORA)},
 	{"V_UNCOMPRESSED"   , FFMS_ID(RAWVIDEO)},
 	{"V_VP8"            , FFMS_ID(VP8)},
