@@ -214,10 +214,32 @@ void InitNullPacket(AVPacket &pkt) {
 	pkt.size = 0;
 }
 
+extern "C" {
+#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 52, 2, 0, 52, 6, 100)
+#include <libavutil/channel_layout.h>
+#elif VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 51, 26, 0, 51, 45, 100)
+#include <libavutil/audioconvert.h>
+#else
+static int64_t av_get_default_channel_layout(int nb_channels) {
+	switch(nb_channels) {
+		case 1: return AV_CH_LAYOUT_MONO;
+		case 2: return AV_CH_LAYOUT_STEREO;
+		case 3: return AV_CH_LAYOUT_SURROUND;
+		case 4: return AV_CH_LAYOUT_QUAD;
+		case 5: return AV_CH_LAYOUT_5POINT0;
+		case 6: return AV_CH_LAYOUT_5POINT1;
+		case 7: return AV_CH_LAYOUT_6POINT1;
+		case 8: return AV_CH_LAYOUT_7POINT1;
+		default: return 0;
+	}
+}
+#endif
+}
+
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
 	AP.SampleFormat = static_cast<FFMS_SampleFormat>(av_get_packed_sample_fmt(CTX->sample_fmt));
 	AP.BitsPerSample = av_get_bytes_per_sample(CTX->sample_fmt) * 8;
-	AP.Channels = CTX->channels;;
+	AP.Channels = CTX->channels;
 	AP.ChannelLayout = CTX->channel_layout;
 	AP.SampleRate = CTX->sample_rate;
 	if (!Frames.empty()) {
@@ -225,6 +247,9 @@ void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
 		AP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 		AP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 	}
+
+	if (AP.ChannelLayout == 0)
+		AP.ChannelLayout = av_get_default_channel_layout(AP.Channels);
 }
 
 #ifdef HAALISOURCE
