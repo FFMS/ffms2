@@ -133,6 +133,26 @@ public:
 	}
 };
 
+class ScopedFrame {
+	AVFrame *frame;
+
+	ScopedFrame(ScopedFrame const&);
+	ScopedFrame& operator=(ScopedFrame const&);
+public:
+	operator AVFrame*() const { return frame; }
+	AVFrame *operator->() const { return frame; }
+
+	void reset() {
+		if (frame)
+			avcodec_get_frame_defaults(frame);
+		else
+			frame = avcodec_alloc_frame();
+	}
+
+	ScopedFrame() : frame(0) { }
+	~ScopedFrame() { if (frame) avcodec_free_frame(&frame); }
+};
+
 inline void DeleteHaaliCodecContext(AVCodecContext *CodecContext) {
 	av_freep(&CodecContext->extradata);
 	av_freep(&CodecContext);

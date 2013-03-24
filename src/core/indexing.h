@@ -155,7 +155,6 @@ public:
 };
 
 struct FFMS_Indexer {
-private:
 	std::map<int, FFMS_AudioProperties> LastAudioProperties;
 protected:
 	int IndexMask;
@@ -166,12 +165,12 @@ protected:
 	TAudioNameCallback ANC;
 	void *ANCPrivate;
 	std::string SourceFile;
-	AlignedBuffer<uint8_t> DecodingBuffer;
+	ScopedFrame DecodeFrame;
 
 	int64_t Filesize;
 	uint8_t Digest[20];
 
-	void WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track, int DBSize);
+	void WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track);
 	void CheckAudioProperties(int Track, AVCodecContext *Context);
 	int64_t IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices);
 	void ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType, bool *Invisible);

@@ -106,7 +106,8 @@ void Wave64Writer::WriteHeader(bool Initial, bool IsFloat) {
 		WavFile.seekp(CPos, std::ios::beg);
 }
 
-void Wave64Writer::WriteData(void *Data, std::streamsize Length) {
-	WavFile.write(reinterpret_cast<char *>(Data), Length);
+void Wave64Writer::WriteData(AVFrame const& Frame) {
+	uint64_t Length = Frame.nb_samples * BytesPerSample * Channels;
+	WavFile.write(reinterpret_cast<char *>(Frame.extended_data[0]), Length);
 	BytesWritten += Length;
 }

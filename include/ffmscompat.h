@@ -71,6 +71,9 @@
 #       define FFMS_CodecID AVCodecID
 #       undef CodecID
 #   endif
+#   if VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 54, 28, 0, 54, 59, 100)
+#       define avcodec_free_frame av_free
+#   endif
 #endif
 
 #endif // FFMSCOMPAT_H

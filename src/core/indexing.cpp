@@ -693,7 +693,6 @@ FFMS_Indexer::FFMS_Indexer(const char *Filename)
 , ANC(0)
 , ANCPrivate(0)
 , SourceFile(Filename)
-, DecodingBuffer(AVCODEC_MAX_AUDIO_FRAME_SIZE * 10)
 {
 	FFMS_Index::CalculateFileSignature(Filename, &Filesize, Digest);
 }
@@ -702,9 +701,9 @@ FFMS_Indexer::~FFMS_Indexer() {
 
 }
 
-void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track, int DBSize) {
+void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track) {
 	// Delay writer creation until after an audio frame has been decoded. This ensures that all parameters are known when writing the headers.
-	if (DBSize <= 0) return;
+	if (DecodeFrame->nb_samples) return;
 
 	if (!AudioContext.W64Writer) {
 		FFMS_AudioProperties AP;
@@ -731,7 +730,7 @@ void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 		}
 	}
 
-	AudioContext.W64Writer->WriteData(&DecodingBuffer[0], DBSize);
+	AudioContext.W64Writer->WriteData(*DecodeFrame);
 }
 
 int64_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices) {
@@ -739,8 +738,10 @@ int64_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioC
 	int64_t StartSample = Context.CurrentSample;
 	int Read = 0;
 	while (Packet->size > 0) {
-		int dbsize = AVCODEC_MAX_AUDIO_FRAME_SIZE*10;
-		int Ret = avcodec_decode_audio3(CodecContext, (int16_t *)&DecodingBuffer[0], &dbsize, Packet);
+		DecodeFrame.reset();
+
+		int GotFrame = 0;
+		int Ret = avcodec_decode_audio4(CodecContext, DecodeFrame, &GotFrame, Packet);
 		if (Ret < 0) {
 			if (ErrorHandling == FFMS_IEH_ABORT) {
 				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING, "Audio decoding error");
@@ -756,13 +757,14 @@ int64_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioC
 		Packet->data += Ret;
 		Read += Ret;
 
-		CheckAudioProperties(Track, CodecContext);
+		if (GotFrame) {
+			CheckAudioProperties(Track, CodecContext);
 
-		if (dbsize > 0)
-			Context.CurrentSample += dbsize / (av_get_bytes_per_sample(CodecContext->sample_fmt) * CodecContext->channels);
+			Context.CurrentSample += DecodeFrame->nb_samples;
 
-		if (DumpMask & (1 << Track))
-			WriteAudio(Context, &TrackIndices, Track, dbsize);
+			if (DumpMask & (1 << Track))
+				WriteAudio(Context, &TrackIndices, Track);
+		}
 	}
 	Packet->size += Read;
 	Packet->data -= Read;
