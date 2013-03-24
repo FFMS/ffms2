@@ -24,10 +24,6 @@
 #include <cassert>
 
 namespace {
-
-	int64_t ChannelLayout;
-	FFMS_SampleFormat SampleFormat;
-	int SampleRate;
 #define MAPPER(m, n) OptionMapper<FFMS_ResampleOptions>(n, &FFMS_ResampleOptions::m)
 OptionMapper<FFMS_ResampleOptions> resample_options[] = {
 	MAPPER(ChannelLayout,          "out_channel_layout"),
@@ -49,7 +45,6 @@ OptionMapper<FFMS_ResampleOptions> resample_options[] = {
 	MAPPER(DitherMethod,           "dither_method")
 };
 #undef MAPPER
-
 }
 
 FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track)
