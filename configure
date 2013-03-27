@@ -6,8 +6,8 @@ echo ""
 echo "available options:"
 echo ""
 echo "  --help                   print this message"
-echo "  --enable-avs             enables avisynth plugin support (windows only)"
-echo "  --enable-avx             enables avxsynth plugin support (linux and osx only)"
+echo "  --enable-avisynth        enables avisynth plugin support (windows only)"
+echo "  --enable-avxsynth        enables avxsynth plugin support (linux, osx only)"
 echo "  --enable-vapoursynth     enables vapoursynth plugin support"
 echo "  --enable-debug           adds -g, doesn't strip"
 echo "  --enable-gprof           adds -pg, doesn't strip"
@@ -183,13 +183,13 @@ for opt do
         --includedir=*)
             includedir="$optarg"
             ;;
-        --enable-avs)
+        --enable-avs|--enable-avisynth)
             avs="yes"
             ;;
-        --enable-avx)
+        --enable-avx|--enable-avxsynth)
             avx="yes"
             ;;
-        --enable-vapoursynth)
+        --enable-vs|--enable-vapoursynth)
             vapoursynth="yes"
             ;;
         --optlevel=*)
@@ -545,7 +545,7 @@ Cflags: -I$includedir
 EOF
 
 cat > conftest.log <<EOF
-avs:        $avs
+avisynth:   $avs
 avxsynth:   $avx
 vapoursynth:$vapoursynth
 debug:      $debug
