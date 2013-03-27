@@ -7,6 +7,7 @@ echo "available options:"
 echo ""
 echo "  --help                   print this message"
 echo "  --enable-avs             enables avisynth plugin support (windows only)"
+echo "  --enable-avx             enables avxsynth plugin support (linux and osx only)"
 echo "  --enable-vapoursynth     enables vapoursynth plugin support"
 echo "  --enable-debug           adds -g, doesn't strip"
 echo "  --enable-gprof           adds -pg, doesn't strip"
@@ -144,6 +145,7 @@ includedir='${prefix}/include'
 DEVNULL='/dev/null'
 
 avs="no"
+avx="no"
 vapoursynth="no"
 debug="no"
 gprof="no"
@@ -183,6 +185,9 @@ for opt do
             ;;
         --enable-avs)
             avs="yes"
+            ;;
+        --enable-avx)
+            avx="yes"
             ;;
         --enable-vapoursynth)
             vapoursynth="yes"
@@ -315,6 +320,19 @@ elif cc_check '' -std=c99 ; then
     CPPFLAGS="$CPPFLAGS -D_POSIX_C_SOURCE=200112L -D_BSD_SOURCE -U__STRICT_ANSI__"
 fi
 
+if [ "$avs" = "yes" -a "$SYS" != "MINGW" ] ; then
+    msg="avisynth support is invalid under non-MinGW environments"
+    echo $msg
+    log_msg "$msg"
+fi
+
+if [ "$avx" = "yes" -a "$SYS" = "MINGW" ] ; then
+    msg="avxsynth support is invalid on Windows"
+    echo $msg
+    log_msg "$msg"
+    avx="no"
+fi
+
 if cpp_check '' '' "defined(_WIN32)" ; then
     pic="no"
 else
@@ -371,18 +389,15 @@ LDFLAGS="$FFMPEG_LIBS $LDFLAGS"
 #    CXXFLAGS="-Wshadow $CXXFLAGS"
 #fi
 
-if [ "$avs" = "yes" -a "$shared" = "no" ] ; then
-    msg="avisynth support is invalid when not building a shared library"
-    echo $msg
-    log_msg "$msg"
-    avs="no"
+if [ "$avs" = "yes" -o "$avx" = "yes" -o "$vapoursynth" = "yes" ] ; then
+    if [ "$shared" = "no" ] ; then
+        msg="plugin support is invalid when not building a shared library"
+        echo $msg
+        log_msg "$msg"
+        avs="no"
+        avx="no"
+        vapoursynth="no"
 fi
-
-if [ "$vapoursynth" = "yes" -a "$shared" = "no" ] ; then
-    msg="vapoursynth support is invalid when not building a shared library"
-    echo $msg
-    log_msg "$msg"
-    vapoursynth="no"
 fi
 
 if [ "$pic" = "yes" ] ; then
@@ -482,6 +497,7 @@ STRIP=$STRIP
 EXE=$EXE
 DEVNULL=$DEVNULL
 AVISYNTH=$avs
+AVXSYNTH=$avx
 VAPOURSYNTH=$vapoursynth
 SOFLAGS_USER=$SOFLAGS
 SYS=$SYS
@@ -530,6 +546,7 @@ EOF
 
 cat > conftest.log <<EOF
 avs:        $avs
+avxsynth:   $avx
 vapoursynth:$vapoursynth
 debug:      $debug
 gprof:      $gprof
