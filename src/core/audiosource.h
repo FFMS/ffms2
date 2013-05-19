@@ -29,6 +29,9 @@ extern "C" {
 #include <vector>
 #include <list>
 #include <memory>
+
+#include "ffmscompat.h"
+
 #include "indexing.h"
 #include "utils.h"
 #include "ffms.h"
