@@ -31,7 +31,7 @@ if test -z "$CXXFLAGS"; then
     CXXFLAGS="$OPT_FLAGS"
 fi
 
-AM_CONFIG_HEADER([src/config/config.h])
+AC_CONFIG_HEADERS([src/config/config.h])
 AC_PROG_CC
 AC_PROG_CXX
 
@@ -192,7 +192,7 @@ AS_IF([test x$enable_avresample != xno], [
   ])
 ])
 
-AS_IF([test x$enable_avresample],
+AS_IF([test x$enable_avresample != xno],
       [libavresample="libavresample"
        AC_DEFINE([WITH_AVRESAMPLE], [1], [Use avresample])])
 
