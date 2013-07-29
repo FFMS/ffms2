@@ -312,7 +312,7 @@ See above.</p>
 
 <h3>FFMS_GetFrameByTime - retrieves a video frame at a given timestamp</h3>
 <pre>const FFMS_Frame *FFMS_GetFrameByTime(FFMS_VideoSource *V, double Time, FFMS_ErrorInfo *ErrorInfo)</pre>
-<p>Does the exact same thing as <tt>FFMS_GetFrame</tt> except instead of giving it a frame number you give it a timestamp in milliseconds, and it will retrieve the frame that starts closest to that timestamp. This function exists for the people who are too lazy to build and traverse a mapping between frame numbers and timestamps themselves. Note that it is measurably slower than <tt>FFMS_GetFrame</tt>.
+<p>Does the exact same thing as <tt>FFMS_GetFrame</tt> except instead of giving it a frame number you give it a timestamp in seconds, and it will retrieve the frame that starts closest to that timestamp. This function exists for the people who are too lazy to build and traverse a mapping between frame numbers and timestamps themselves.
 </p>
 
 <h3>FFMS_GetAudio - decodes a number of audio samples</h3>
