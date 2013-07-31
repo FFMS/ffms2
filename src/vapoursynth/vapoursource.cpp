@@ -73,7 +73,7 @@ static int formatConversion(int id, bool toPixelFormat, VSCore *core, const VSAP
 		const VSFormat *f = vsapi->getFormatPreset(id, core);
 		int npixfmt = GetNumPixFmts();
 		for (int i = 0; i < npixfmt; i++) {
-			const AVPixFmtDescriptor &desc = av_pix_fmt_descriptors[i];
+			const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat) i);
 			if (IsRealPlanar(desc)
 				&& GetColorFamily(desc) == f->colorFamily
 				&& desc.comp[0].depth_minus1 + 1 == f->bitsPerSample
@@ -84,14 +84,14 @@ static int formatConversion(int id, bool toPixelFormat, VSCore *core, const VSAP
 		return PIX_FMT_NONE;
 	} else {
 		int colorfamily = cmYUV;
-		if (av_pix_fmt_descriptors[id].nb_components == 1)
+		if (av_pix_fmt_desc_get((AVPixelFormat) id)->nb_components == 1)
 			colorfamily = cmGray;
-		else if (av_pix_fmt_descriptors[id].nb_components == 1)
+		else if (av_pix_fmt_desc_get((AVPixelFormat) id)->nb_components == 1)
 			colorfamily = cmRGB;
 		return vsapi->registerFormat(colorfamily, stInteger,
-			av_pix_fmt_descriptors[id].comp[0].depth_minus1 + 1,
-			av_pix_fmt_descriptors[id].log2_chroma_w,
-			av_pix_fmt_descriptors[id].log2_chroma_h, core)->id;
+			av_pix_fmt_desc_get((AVPixelFormat) id)->comp[0].depth_minus1 + 1,
+			av_pix_fmt_desc_get((AVPixelFormat) id)->log2_chroma_w,
+			av_pix_fmt_desc_get((AVPixelFormat) id)->log2_chroma_h, core)->id;
 	}
 }
 
@@ -237,7 +237,7 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	std::vector<int> TargetFormats;
 	int npixfmt = GetNumPixFmts();
 	for (int i = 0; i < npixfmt; i++)
-		if (IsRealPlanar(av_pix_fmt_descriptors[i]))
+		if (IsRealPlanar(*av_pix_fmt_desc_get((AVPixelFormat) i)))
 			TargetFormats.push_back(i);
 	TargetFormats.push_back(PIX_FMT_NONE);
 

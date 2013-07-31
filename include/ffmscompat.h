@@ -80,6 +80,17 @@ static void avcodec_free_frame(AVFrame **frame) { av_freep(frame); }
 #	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 51, 27, 0, 51, 46, 100)
 #		define av_get_packed_sample_fmt(fmt) (fmt < AV_SAMPLE_FMT_U8P ? fmt : fmt - (AV_SAMPLE_FMT_U8P - AV_SAMPLE_FMT_U8))
 #	endif
+#	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 51, 44, 0, 51, 76, 100)
+#		include <libavutil/pixdesc.h>
+
+static const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt) {
+	if (pix_fmt < 0 || pix_fmt >= AV_PIX_FMT_NB)
+		return NULL;
+
+	return &av_pix_fmt_descriptors[pix_fmt];
+}
+
+#	endif
 #endif
 
 #endif // FFMSCOMPAT_H

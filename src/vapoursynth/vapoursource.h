@@ -21,9 +21,14 @@
 #ifndef FFAVSSOURCES_H
 #define FFAVSSOURCES_H
 
+extern "C" {
+#include <libavutil/avutil.h>
+}
+
 #include <vector>
 #include "VapourSynth.h"
 #include "ffms.h"
+#include "ffmscompat.h"
 
 struct VSVideoSource {
 private:

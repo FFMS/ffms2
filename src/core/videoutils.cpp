@@ -157,7 +157,7 @@ enum BCSType {
 
 static BCSType GuessCSType(PixelFormat p) {
 	// guessing the colorspace type from the name is kinda hackish but libav doesn't export this kind of metadata
-	if (av_pix_fmt_descriptors[p].flags & PIX_FMT_HWACCEL)
+	if (av_pix_fmt_desc_get(p)->flags & PIX_FMT_HWACCEL)
 		return cUNUSABLE;
 	const char *n = av_get_pix_fmt_name(p);
 	if (strstr(n, "gray") || strstr(n, "mono") || strstr(n, "y400a"))
@@ -186,8 +186,8 @@ static int GetPseudoDepth(const AVPixFmtDescriptor &Desc) {
 }
 
 static LossAttributes CalculateLoss(PixelFormat Dst, PixelFormat Src) {
-	const AVPixFmtDescriptor &SrcDesc = av_pix_fmt_descriptors[Src];
-	const AVPixFmtDescriptor &DstDesc = av_pix_fmt_descriptors[Dst];
+	const AVPixFmtDescriptor &SrcDesc = *av_pix_fmt_desc_get(Src);
+	const AVPixFmtDescriptor &DstDesc = *av_pix_fmt_desc_get(Dst);
 	BCSType SrcCS = GuessCSType(Src);
 	BCSType DstCS = GuessCSType(Dst);
 
