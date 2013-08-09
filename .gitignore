@@ -1,0 +1,48 @@
+
+# /
+/testing
+/todo.txt
+/config.log
+/config.status
+/libtool
+/ffms2.pc
+/autom4te.cache
+/Makefile
+/.gitignore
+
+# /build-msvc/
+/build-msvc/*.suo
+/build-msvc/*.user
+/build-msvc/Debug
+/build-msvc/Release
+/build-msvc/ffms2.ncb
+/build-msvc/ffmsindex
+
+# /shave/
+/shave/shave
+/shave/shave-libtool
+
+# /src/
+/src/
+
+# /src/config/
+/src/config/config.h
+/src/config/config.h.in~
+/src/config/auto_config.h
+/src/config/stamp-h1
+
+# /src/core/
+/src/core/.deps
+/src/core/.libs
+/src/core/.dirstamp
+/src/core/*.o
+/src/core/*.lo
+/src/core/*.la
+
+# /src/index/
+/src/index/.deps
+/src/index/.libs
+/src/index/.dirstamp
+/src/index/*.o
+/src/index/*.exe
+/src/index/ffmsindex
