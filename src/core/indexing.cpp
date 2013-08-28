@@ -547,7 +547,7 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 			std::string("Failed to open '") + IndexFile + "' for reading");
 
 	Index.seekg(0, std::ios::end);
-	if (Index.tellg() == 0)
+	if (!Index.tellg())
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("'") + IndexFile + "' is not a valid index file");
 
