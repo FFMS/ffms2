@@ -97,10 +97,8 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Codec returned zero size audio");
 
-	if (av_sample_fmt_is_planar(CodecContext->sample_fmt)) {
-		std::auto_ptr<FFMS_ResampleOptions> opt(CreateResampleOptions());
-		SetOutputFormat(opt.get());
-	}
+	std::auto_ptr<FFMS_ResampleOptions> opt(CreateResampleOptions());
+	SetOutputFormat(opt.get());
 
 	if (DelayMode < FFMS_DELAY_NO_SHIFT)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
