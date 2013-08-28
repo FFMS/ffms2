@@ -546,6 +546,12 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Failed to open '") + IndexFile + "' for reading");
 
+	Index.seekg(0, std::ios::end);
+	if (Index.tellg() == 0)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("'") + IndexFile + "' is not a valid index file");
+
+	Index.seekg(0, std::ios::beg);
 	z_stream stream;
 	memset(&stream, 0, sizeof(z_stream));
 	if (inflateInit(&stream) != Z_OK)
