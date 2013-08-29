@@ -96,7 +96,7 @@ struct zipped_file {
 			if (!stream->avail_in) {
 				Index->read(reinterpret_cast<char *>(in_buffer), sizeof(in_buffer));
 				stream->next_in = in_buffer;
-				stream->avail_in = Index->gcount();
+				stream->avail_in = static_cast<uInt>(Index->gcount());
 			}
 
 			switch (inflate(stream, Z_SYNC_FLUSH)) {
@@ -276,7 +276,7 @@ int FFMS_Track::FindClosestVideoKeyFrame(int Frame) const {
 int FFMS_Track::RealFrameNumber(int Frame) const {
 	return Frame + distance(
 		InvisibleFrames.begin(),
-		upper_bound(InvisibleFrames.begin(), InvisibleFrames.end(), Frame));
+		upper_bound(InvisibleFrames.begin(), InvisibleFrames.end(), static_cast<size_t>(Frame)));
 }
 
 int FFMS_Track::VisibleFrameCount() const {
@@ -378,7 +378,7 @@ void FFMS_Track::Write(zipped_file *stream) const {
 
 	stream->write(InvisibleFrames[0]);
 	for (size_t i = 1; i < InvisibleFrames.size(); ++i) {
-		int temp = InvisibleFrames[i] - InvisibleFrames[i - 1];
+		size_t temp = InvisibleFrames[i] - InvisibleFrames[i - 1];
 		stream->write(temp);
 	}
 }

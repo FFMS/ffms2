@@ -81,7 +81,7 @@ struct FFMS_Track {
 private:
 	typedef std::vector<TFrameInfo> frame_vec;
 	frame_vec Frames;
-	std::vector<int> InvisibleFrames;
+	std::vector<size_t> InvisibleFrames;
 
 	void MaybeReorderFrames();
 	void MaybeHideFrames();
