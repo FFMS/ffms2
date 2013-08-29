@@ -89,7 +89,7 @@ struct FFMS_AudioSource {
 	FFResampleContext ResampleContext;
 
 	// Insert the current audio frame into the cache
-	void CacheBlock(CacheIterator pos);
+	void CacheBlock(CacheIterator &pos);
 
 	// Interleave the current audio frame and insert it into the cache
 	void ResampleAndCache(CacheIterator pos);

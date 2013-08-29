@@ -264,7 +264,7 @@ void FFMS_AudioSource::ResampleAndCache(CacheIterator pos) {
 #endif
 }
 
-void FFMS_AudioSource::CacheBlock(CacheIterator pos) {
+void FFMS_AudioSource::CacheBlock(CacheIterator &pos) {
 	if (NeedsResample)
 		ResampleAndCache(pos);
 	else
