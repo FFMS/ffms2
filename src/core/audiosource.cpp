@@ -192,23 +192,25 @@ void FFMS_AudioSource::SetOutputFormat(const FFMS_ResampleOptions *opt) {
 		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_USER,
 			"Cannot change the output format after audio decoding has begun");
 
-	BytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(opt->SampleFormat)) * av_get_channel_layout_nb_channels(opt->ChannelLayout);
+	if (opt->SampleRate != AP.SampleRate)
+		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
+			"Sample rate changes are currently unsupported.");
 
+#ifndef WITH_AVRESAMPLE
+	if (opt->SampleFormat != AP.SampleFormat || opt->SampleRate != AP.SampleRate || opt->ChannelLayout != AP.ChannelLayout)
+		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
+			"FFMS was not built with resampling enabled. The only supported conversion is interleaving planar audio.");
+#endif
+
+	BytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(opt->SampleFormat)) * av_get_channel_layout_nb_channels(opt->ChannelLayout);
 	NeedsResample =
 		opt->SampleFormat != (int)CodecContext->sample_fmt ||
 		opt->SampleRate != AP.SampleRate ||
 		opt->ChannelLayout != AP.ChannelLayout ||
 		opt->ForceResample;
-	if (!NeedsResample) return;
-
-	if (opt->SampleRate != AP.SampleRate)
-		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
-			"Sample rate changes are currently unsupported.");
 
 #ifdef WITH_AVRESAMPLE
-	if (opt->SampleRate != AP.SampleRate)
-		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
-			"Changing the audio sample rate is currently not supported");
+	if (!NeedsResample) return;
 
 	std::auto_ptr<FFMS_ResampleOptions> oldOptions(ReadOptions(ResampleContext, resample_options));
 	SetOptions(opt, ResampleContext, resample_options);
@@ -222,10 +224,6 @@ void FFMS_AudioSource::SetOutputFormat(const FFMS_ResampleOptions *opt) {
 		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
 			"Could not open avresample context");
 	}
-#else
-	if (opt->SampleFormat != AP.SampleFormat || opt->SampleRate != AP.SampleRate || opt->ChannelLayout != AP.ChannelLayout)
-		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
-			"FFMS was not built with resampling enabled. The only supported conversion is interleaving planar audio.");
 #endif
 }
 
