@@ -376,8 +376,6 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 		}
 		// Decode another block
 		else {
-			CacheIterator cachePos = it; --cachePos;
-
 			if (Start < CurrentSample && SeekOffset == -1)
 				throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_CODEC, "Audio stream is not seekable");
 
@@ -406,7 +404,8 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 			if (CurrentSample > Start)
 				throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_CODEC, "Seeking is severely broken");
 
-			it = cachePos;
+			// The block we want is now in the cache immediate before it
+			--it;
 		}
 	}
 }
