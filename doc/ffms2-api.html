@@ -72,10 +72,7 @@ int main (...) {
 	}
 #endif
 
-	/* Initialize the library itself.
-	The cpu caps are autodetected almost all places nowadays. Passing 0 should have close to no performance
-	impact with a recent FFmpeg. If you want you can pass something like
-	FFMS_CPU_CAPS_MMX | FFMS_CPU_CAPS_MMX2. */
+	/* Initialize the library itself. */
 	FFMS_Init(0, 0);
 
 	/* Index the source file. Note that this example does not index any audio tracks. */
@@ -225,7 +222,7 @@ if (com_inited)
 </pre>
 <h4>Arguments</h4>
 <p><b><tt>int CPUFeatures</tt></b><br />
-An integer representing what CPU instruction sets may be used by the parts of FFmpeg that have handwritten assembler but no runtime CPU detection, i.e. libpostproc (and libswscale in ancient times) and nothing else. (see <tt>FFMS_CPUFeatures</tt> in the Constants and Preprocessor Definitions section; binary OR the constants together if you want more than one). Pass 0 if you don't care; the performance hit won't be that big unless you do a lot of postprocessing.</p>
+This argument is no longer used and is left only for API/ABI compatibility.  Pass 0.
 <p><b><tt>int UseUTF8Paths</tt></b><br />
 Controls filename handling on Windows; on all other operating systems this parameter does nothing and should be ignored.<br />
 On Windows, setting this parameter to a true value will make FFMS assume that all filename strings passed to it are UTF-8 encoded; setting it to false will make it assume filenames are in the system default codepage for non-Unicode programs. Setting this to true is one of two known ways to make FFMS2 open files with filenames containing characters that are not expressible in said codepage; the other is using the short (DOS 8.3 notation) filename. You can use the Win32 API function <tt>WideCharToMultiByte()</tt> to convert your <tt>wchar_t*</tt> Unicode strings to UTF-8 in <tt>char*</tt>, if necessary.<br />
@@ -833,7 +830,7 @@ Identifies source modules.
     FFMS_CPU_CAPS_SSE2      = 0x20
 };</pre>
 <p>
-Used in <tt>FFMS_Init</tt> to indicate CPU instruction set capabilities. Should be self explanatory. For a lot of applications you can probably get away with simply passing 0 in the call to <tt>FFMS_Init</tt>.
+No longer used by anything in FFMS2. This enumeration will go away at some point in the future.
 </p>
 
 <h3>FFMS_SeekMode</h3>

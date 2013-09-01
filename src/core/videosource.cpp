@@ -260,7 +260,7 @@ void FFMS_VideoSource::ReAdjustOutputFormat() {
 		SWS = GetSwsContext(
 			CodecContext->width, CodecContext->height, InputFormat, InputColorSpace, InputColorRange,
 			TargetWidth, TargetHeight, OutputFormat, OutputColorSpace, OutputColorRange,
-			GetSWSCPUFlags() | TargetResizer);
+			TargetResizer);
 
 		if (!SWS) {
 			ResetOutputFormat();

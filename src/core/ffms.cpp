@@ -38,7 +38,6 @@ extern "C" {
 static bool FFmpegInited	= false;
 bool HasHaaliMPEG = false;
 bool HasHaaliOGG = false;
-int CPUFeatures = 0;
 bool GlobalUseUTF8Paths = false;
 
 
@@ -97,7 +96,6 @@ FFMS_API(void) FFMS_Init(int CPUFeatures, int UseUTF8Paths) {
 #else
 		av_log_set_level(AV_LOG_QUIET);
 #endif
-		::CPUFeatures = CPUFeatures;
 #ifdef HAALISOURCE
 		CComPtr<IMMContainer> pMMC;
 		HasHaaliMPEG = !FAILED(pMMC.CoCreateInstance(HAALI_MPEG_PARSER));

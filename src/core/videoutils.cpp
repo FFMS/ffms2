@@ -29,38 +29,6 @@ extern "C" {
 #include <libavutil/opt.h>
 }
 
-// hack
-extern int CPUFeatures;
-
-/***************************
-**
-** Functions related to initializing swscale and libpostproc contexts, etc.
-**
-***************************/
-
-int64_t GetSWSCPUFlags() {
-	int64_t Flags = 0;
-
-#ifdef SWS_CPU_CAPS_MMX
-	if (CPUFeatures & FFMS_CPU_CAPS_MMX)
-		Flags |= SWS_CPU_CAPS_MMX;
-	if (CPUFeatures & FFMS_CPU_CAPS_MMX2)
-		Flags |= SWS_CPU_CAPS_MMX2;
-	if (CPUFeatures & FFMS_CPU_CAPS_3DNOW)
-		Flags |= SWS_CPU_CAPS_3DNOW;
-	if (CPUFeatures & FFMS_CPU_CAPS_ALTIVEC)
-		Flags |= SWS_CPU_CAPS_ALTIVEC;
-	if (CPUFeatures & FFMS_CPU_CAPS_BFIN)
-		Flags |= SWS_CPU_CAPS_BFIN;
-#ifdef SWS_CPU_CAPS_SSE2
-	if (CPUFeatures & FFMS_CPU_CAPS_SSE2)
-		Flags |= SWS_CPU_CAPS_SSE2;
-#endif /* SWS_CPU_CAPS_SSE2 */
-#endif /* SWS_CPU_CAPS_MMX */
-
-	return Flags;
-}
-
 SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, PixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags) {
 	Flags |= SWS_FULL_CHR_H_INT | SWS_FULL_CHR_H_INP | SWS_ACCURATE_RND | SWS_BITEXACT;
 	SwsContext *Context = sws_alloc_context();
