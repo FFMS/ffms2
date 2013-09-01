@@ -17,6 +17,7 @@ FFmpegSource2 Changelog
 <li>Fix indexing on files with cover art. (TheRyuu)</li>
 <li>Add support for libav/ffmpeg built with msvc, this is the default on windows when building with msvc. (TheRyuu)</li>
 <li>Remove postproc support. (TheRyuu)</li>
+<li>Deprecate the CPUFeatures argument to FFMS_Init since postproc was the only thing still using it. (Plorkyeran)</li>
 <li>Added VapourSynth support. (Myrsloik)</li>
 <li>ffmsindex can now output keyframe numbers to a file while indexing. (Plorkyeran)</li>
 <li>configure now defaults to building a shared library, except when building MinGW/Cygwin, since you usually want static for those. (Plorkyeran)</li>
@@ -42,6 +43,7 @@ FFmpegSource2 Changelog
 <li>Switch to avcodec_decode_audio4. (Plorkyeran)</li>
 <li>Add support for planar audio from lavc. (Plorkyeran)</li>
 <li>Add SetOutputFormatA for audio resampling/mixing using libavresample. (Plorkyeran)</li>
+<li>Zero-length index files are now rejected rather than bad things happening.</li>
 </ul>
 </li>
 
