@@ -737,7 +737,7 @@ A struct representing the basic time unit of a track, as a rational number where
 <li><b><tt>int TopFieldFirst</tt></b> - Nonzero if the stream has the top field first, zero if it has the bottom field first.</li>
 <li><b><tt>int ColorSpace</tt></b> - Identifies the YUV color coefficients used in the stream. Same as in the MPEG-2 specs; see the <tt>FFMS_ColorSpaces</tt> enum. The ColorSpace property in FFMS_Frame should be instead of this, as this can vary between frames.</li>
 <li><b><tt>int ColorRange</tt></b> - Identifies the luma range of the stream. See the <tt>FFMS_ColorRanges</tt> enum. The ColorRange property in FFMS_Frame should be instead of this, as this can vary between frames.</li>
-<li><b><tt>double FirstTime; double LastTime;</tt></b> - The first and last timestamp of the stream respectively, in milliseconds. Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.</li>
+<li><b><tt>double FirstTime; double LastTime;</tt></b> - The first and last timestamp of the stream respectively, in seconds. Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.</li>
 </ul>
 
 <h3>FFMS_AudioProperties</h3>
