@@ -147,7 +147,8 @@ void FFMS_AudioSource::CacheBeginning() {
 	if (!Cache.empty()) return;
 
 	// The first frame is already decoded, so add it to the cache
-	CacheBlock(Cache.end());
+	CacheIterator it = Cache.end();
+	CacheBlock(it);
 
 	// The first packet after a seek is often decoded incorrectly, which
 	// makes it impossible to ever correctly seek back to the beginning, so
