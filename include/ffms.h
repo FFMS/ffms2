@@ -105,7 +105,6 @@ typedef enum FFMS_Errors {
 	// Main types - where the error occurred
 	FFMS_ERROR_INDEX = 1,			// index file handling
 	FFMS_ERROR_INDEXING,			// indexing
-	FFMS_ERROR_POSTPROCESSING,		// video postprocessing (libpostproc)
 	FFMS_ERROR_SCALING,				// image scaling (libswscale)
 	FFMS_ERROR_DECODING,			// audio/video decoding
 	FFMS_ERROR_SEEKING,				// seeking

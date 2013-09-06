@@ -1,4 +1,4 @@
-//  Copyright (c) 2010-2011 FFmpegSource Project
+//  Copyright (c) 2007-2011 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -18,21 +18,29 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#ifndef FFAVS_FILTERS_H
-#define FFAVS_FILTERS_H
+#ifndef FFSWSCALE_H
+#define FFSWSCALE_H
 
-#include "avs_common.h"
-#include "ffms.h"
+extern "C" {
+#include <libswscale/swscale.h>
+}
 
-AVS_Value FFVideoSource_create( AVS_ScriptEnvironment *env, const char *src, int track,
-    FFMS_Index *index, int fps_num, int fps_den, const char *pp, int threads, int seek_mode,
-    int rff_mode, int width, int height, const char *resizer_name, const char *csp_name,
-    const char *var_prefix );
+#include "ffmscompat.h"
+#include "avxplugin.h"
 
-AVS_Value FFAudioSource_create( AVS_ScriptEnvironment *env, const char *src, int track,
-    FFMS_Index *index, int adjust_delay, const char *var_prefix );
+SwsContext *FFGetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, int DstH, PixelFormat DstFormat, int64_t Flags, int ColorSpace = SWS_CS_DEFAULT, int ColorRange = -1);
+int FFGetSwsAssumedColorSpace(int Width, int Height);
 
-AVS_Value FFSWScale_create( AVS_ScriptEnvironment *env, AVS_Value child, int dst_width,
-    int dst_height, const char *resizer_name, const char *csp_name );
+class SWScale : public avxsynth::GenericVideoFilter {
+private:
+	SwsContext *Context;
+	int OrigWidth;
+	int OrigHeight;
+	bool FlipOutput;
+public:
+	SWScale(avxsynth::PClip Child, int ResizeToWidth, int ResizeToHeight, const char *ResizerName, const char *ConvertToFormatName, avxsynth::IScriptEnvironment *Env);
+	~SWScale();
+    avxsynth::PVideoFrame __stdcall GetFrame(int n, avxsynth::IScriptEnvironment *Env);
+};
 
 #endif

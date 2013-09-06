@@ -1,6 +1,6 @@
 # FFmpegSource 1.21 syntax compatibility
 # Created by TheFluff
-
+LoadCPlugin("ffms2.dll")
 function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", \
 	string "cachefile", int "fpsnum", int "fpsden", int "threads", \
 	string "timecodes", int "seekmode", bool "overwrite", int "width", int "height", \

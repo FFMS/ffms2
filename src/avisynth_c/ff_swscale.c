@@ -82,14 +82,14 @@ AVS_Value FFSWScale_create( AVS_ScriptEnvironment *env, AVS_Value child, int dst
     filter->orig_height = vi->height;
     filter->flip_output = avs_is_yuv( vi );
 
-    enum PixelFormat src_format = ffms_avs_lib->vi_to_pix_fmt( vi );
+    enum AVPixelFormat src_format = ffms_avs_lib->vi_to_pix_fmt( vi );
     if( src_format == PIX_FMT_NONE )
         return avs_new_value_error( "SWScale: Unknown input clip colorspace" );
 
     filter->fi->vi.width  = dst_width  > 0 ? dst_width  : filter->orig_width;
     filter->fi->vi.height = dst_height > 0 ? dst_height : filter->orig_height;
 
-    enum PixelFormat dst_pix_fmt = ffms_avs_lib->csp_name_to_pix_fmt( csp_name, src_format );
+    enum AVPixelFormat dst_pix_fmt = ffms_avs_lib->csp_name_to_pix_fmt( csp_name, src_format );
     if( dst_pix_fmt == PIX_FMT_NONE )
         return avs_new_value_error( ffms_avs_sprintf( "SWScale: Invalid colorspace specified (%s)", csp_name ) );
 

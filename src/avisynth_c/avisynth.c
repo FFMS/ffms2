@@ -288,15 +288,6 @@ static AVS_Value AVSC_CC create_FFAudioSource( AVS_ScriptEnvironment *env, AVS_V
     return audio;
 }
 
-#ifdef FFMS_USE_POSTPROC
-static AVS_Value AVSC_CC create_FFPP( AVS_ScriptEnvironment *env, AVS_Value args, void *user_data )
-{
-    AVS_Value child = as_elt( args, 0 );
-    const char* pp = as_string( as_elt( args, 1 ), "" );
-    return FFPP_create( env, child, pp );
-}
-#endif
-
 static AVS_Value AVSC_CC create_SWScale( AVS_ScriptEnvironment *env, AVS_Value args, void *user_data )
 {
     AVS_Value child = as_elt( args, 0 );
@@ -333,9 +324,6 @@ const char *AVSC_CC avisynth_c_plugin_init( AVS_ScriptEnvironment* env )
     ffms_avs_lib->avs_add_function( env, "FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", create_FFVideoSource, 0 );
     ffms_avs_lib->avs_add_function( env, "FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b[varprefix]s", create_FFAudioSource, 0 );
     ffms_avs_lib->avs_add_function( env, "SWScale", "c[width]i[height]i[resizer]s[colorspace]s", create_SWScale, 0 );
-#ifdef FFMS_USE_POSTPROC
-    ffms_avs_lib->avs_add_function( env, "FFPP", "c[pp]s", create_FFPP, 0 );
-#endif
     ffms_avs_lib->avs_add_function( env, "FFGetLogLevel", "", create_FFGetLogLevel, 0 );
     ffms_avs_lib->avs_add_function( env, "FFSetLogLevel", "i", create_FFSetLogLevel, 0 );
     ffms_avs_lib->avs_add_function( env, "FFGetVersion", "", create_FFGetVersion, 0 );

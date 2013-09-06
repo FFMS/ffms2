@@ -6,12 +6,14 @@ echo ""
 echo "available options:"
 echo ""
 echo "  --help                   print this message"
-echo "  --enable-avs             enables avisynth plugin support (windows only)"
+echo "  --enable-avisynth        enables avisynth plugin support (windows only)"
+echo "  --enable-avxsynth        enables avxsynth plugin support (linux, osx only)"
+echo "  --enable-vapoursynth     enables vapoursynth plugin support"
 echo "  --enable-debug           adds -g, doesn't strip"
 echo "  --enable-gprof           adds -pg, doesn't strip"
 echo "  --enable-pic             build position-independent code"
 echo "  --enable-shared          build libffms2.so"
-echo "  --enable-postproc        build with postproc support (requires libpostproc)"
+echo "  --optlevel=olev          GCC optimization level [0-3, s, fast] (0)"
 echo "  --extra-cppflags=EFLAGS  add EFLAGS to CPPFLAGS"
 echo "  --extra-cflags=ECFLAGS   add ECFLAGS to CFLAGS"
 echo "  --extra-cxxflags=EFLAGS  add EFLAGS to CXXFLAGS"
@@ -143,11 +145,12 @@ includedir='${prefix}/include'
 DEVNULL='/dev/null'
 
 avs="no"
+avx="no"
+vapoursynth="no"
 debug="no"
 gprof="no"
 pic="no"
 shared="no"
-postproc="no"
 
 CPPFLAGS="$CPPFLAGS -I. -Iinclude -D_FILE_OFFSET_BITS=64"
 CFLAGS="$CFLAGS -Wall"
@@ -155,6 +158,7 @@ CXXFLAGS="$CXXFLAGS -Wall -D__STDC_CONSTANT_MACROS"
 LDFLAGS="$LDFLAGS"
 SOFLAGS="$SOFLAGS"
 HAVE_GETOPT_LONG=1
+olev="0"
 cross_prefix=""
 
 EXE=""
@@ -179,11 +183,17 @@ for opt do
         --includedir=*)
             includedir="$optarg"
             ;;
-        --enable-avs)
+        --enable-avs|--enable-avisynth)
             avs="yes"
             ;;
-        --enable-postproc)
-            postproc="yes"
+        --enable-avx|--enable-avxsynth)
+            avx="yes"
+            ;;
+        --enable-vs|--enable-vapoursynth)
+            vapoursynth="yes"
+            ;;
+        --optlevel=*)
+            olev="$optarg"
             ;;
         --extra-cppflags=*)
             CPPFLAGS="$CPPFLAGS ${opt#--extra-cppflags=}"
@@ -310,6 +320,19 @@ elif cc_check '' -std=c99 ; then
     CPPFLAGS="$CPPFLAGS -D_POSIX_C_SOURCE=200112L -D_BSD_SOURCE -U__STRICT_ANSI__"
 fi
 
+if [ "$avs" = "yes" -a "$SYS" != "MINGW" ] ; then
+    msg="avisynth support is invalid under non-MinGW environments"
+    echo $msg
+    log_msg "$msg"
+fi
+
+if [ "$avx" = "yes" -a "$SYS" = "MINGW" ] ; then
+    msg="avxsynth support is invalid on Windows"
+    echo $msg
+    log_msg "$msg"
+    avx="no"
+fi
+
 if cpp_check '' '' "defined(_WIN32)" ; then
     pic="no"
 else
@@ -324,11 +347,6 @@ if ${cross_prefix}pkg-config --exists libavformat libavcodec libswscale libavuti
     FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavformat libavcodec libswscale libavutil libavresample)"
     FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libavformat libavcodec libswscale libavutil libavresample)"
 fi
-# optional libpostproc
-if [ "$postproc" = "yes" ] && ${cross_prefix}pkg-config --exist libpostproc 2>$DEVNULL; then
-    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libpostproc)"
-    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libpostproc)"
-fi
 # libavcore - for when ffmpeg decided to make this library out of nowhere and have a number of things depend on it
 if  ${cross_prefix}pkg-config --exist libavcore 2>$DEVNULL; then
     FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavcore)"
@@ -337,7 +355,6 @@ fi
 
 if [ -z "$FFMPEG_LIBS" -a -z "$FFMPEG_CFLAGS" ]; then
     FFMPEG_LIBS="-lavformat -lavcodec -lswscale -lavresample"
-    [ "$postproc" = "yes" ] && FFMPEG_LIBS="$FFMPEG_LIBS -lpostproc"
     for lib in -lavcore -lavutil -lm -lz -lbz2 -lpthread -lavifil32; do
         cc_check "" $lib && FFMPEG_LIBS="$FFMPEG_LIBS $lib"
     done
@@ -357,15 +374,6 @@ if ! cc_check libavformat/avformat.h "$FFMPEG_CFLAGS $FFMPEG_LIBS" "avcodec_deco
     die "unable to link against $ffmpegORlibav"
 fi
 
-# check for optional libpostproc
-if [ "$postproc" = "yes" ]; then
-    if ! cc_check libpostproc/postprocess.h "$FFMPEG_CFLAGS $FFMPEG_LIBS" "pp_free_mode( 0 );" ; then
-        die "unable to link against libpostproc"
-    else
-        CPPFLAGS="$CPPFLAGS -DFFMS_USE_POSTPROC"
-    fi
-fi
-
 #find libz
 if ! cc_check zlib.h -lz "deflate( 0, 0 );" ; then
     die "unable to link against zlib"
@@ -381,11 +389,15 @@ LDFLAGS="$FFMPEG_LIBS $LDFLAGS"
 #    CXXFLAGS="-Wshadow $CXXFLAGS"
 #fi
 
-if [ "$avs" = "yes" -a "$shared" = "no" ] ; then
-    msg="avisynth support is invalid when not building a shared library"
-    echo $msg
-    log_msg "$msg"
-    avs="no"
+if [ "$avs" = "yes" -o "$avx" = "yes" -o "$vapoursynth" = "yes" ] ; then
+    if [ "$shared" = "no" ] ; then
+        msg="plugin support is invalid when not building a shared library"
+        echo $msg
+        log_msg "$msg"
+        avs="no"
+        avx="no"
+        vapoursynth="no"
+fi
 fi
 
 if [ "$pic" = "yes" ] ; then
@@ -401,12 +413,20 @@ if [ "$debug" != "yes" -a "$gprof" != "yes" ]; then
     LDFLAGS="$LDFLAGS -s"
 fi
 if [ "$debug" = "yes" ]; then
-    CFLAGS="-O1 -g $CFLAGS"
-    CXXFLAGS="-O1 -g $CXXFLAGS"
-else
-    CFLAGS="-O3 $CFLAGS"
-    CXXFLAGS="-O3 $CXXFLAGS"
+    CFLAGS="$CFLAGS -g"
+    CXXFLAGS="$CXXFLAGS -g"
+    olev="0"
+		      test "x$?" != "x0" && pkg_failed=yes
 fi
+
+if [ "$optlevel" != "no" -a "$olev" = "0" ] ; then
+    CFLAGS="$CFLAGS"
+    CXXFLAGS="$CXXFLAGS"
+else
+    CFLAGS="-O$olev $CFLAGS"
+    CXXFLAGS="-O$olev $CXXFLAGS"
+fi
+
 
 # generate config files
 
@@ -464,26 +484,30 @@ includedir=$includedir
 API=$API
 CC=$CC
 CXX=$CXX
+PLC=$CC
+PLPL=$CXX
 CPPFLAGS=$CPPFLAGS
 CFLAGS=$CFLAGS
 CXXFLAGS=$CXXFLAGS
 LDFLAGS=$LDFLAGS
 AR=$AR
 RANLIB=$RANLIB
+RANLIBX=$RANLIB
 STRIP=$STRIP
 EXE=$EXE
 DEVNULL=$DEVNULL
 AVISYNTH=$avs
+AVXSYNTH=$avx
+VAPOURSYNTH=$vapoursynth
 SOFLAGS_USER=$SOFLAGS
 SYS=$SYS
-FFMS_USE_POSTPROC=$postproc
 RC=$RC
 EOF
 
 if [ "$shared" = "yes" ]; then
     if [ "$SYS" = "MINGW" ]; then
         # avisynth plugins have a generally different name than other things
-        if [ "$avs" = "yes" ] ; then
+        if [ "$avs" = "yes" -o "$vapoursynth" = "yes" ] ; then
             echo "SONAME=ffms${API}.dll" >> config.mak
             echo 'SOFLAGS=-Wl,--out-implib,$(IMPLIBNAME) -Wl,--enable-auto-image-base -Wl,--export-all-symbols' >> config.mak
         else
@@ -501,7 +525,7 @@ if [ "$shared" = "yes" ]; then
         echo 'SOFLAGS=-Wl,-h,$(SONAME)' >> config.mak
     else
         echo "SOSUFFIX=so" >> config.mak
-        echo "SONAME=ffms.so.$API" >> config.mak
+        echo "SONAME=libffms.so.$API" >> config.mak
         echo 'SOFLAGS=-Wl,-soname,$(SONAME)' >> config.mak
     fi
     echo 'default: $(SONAME)' >> config.mak
@@ -514,19 +538,21 @@ libdir=$libdir
 includedir=$includedir
 
 Description: The Fabulous FM Library
-Requires: libavformat libavcodec libswscale libpostproc libavutil libavresample
+Requires: libavformat libavcodec libswscale libavutil libavresample
 Version: $version
 Libs: -L$libdir -lffms -lz
 Cflags: -I$includedir
 EOF
 
 cat > conftest.log <<EOF
-avs:        $avs
+avisynth:   $avs
+avxsynth:   $avx
+vapoursynth:$vapoursynth
 debug:      $debug
 gprof:      $gprof
 PIC:        $pic
-postproc:   $postproc
 shared:     $shared
+optlevel:   $olev
 EOF
 
 echo >> config.log

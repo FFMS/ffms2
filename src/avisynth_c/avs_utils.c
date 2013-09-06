@@ -24,10 +24,6 @@
 #include <libswscale/swscale.h>
 #include <ffms.h>
 
-#ifdef FFMS_USE_POSTPROC
-#include <libpostproc/postprocess.h>
-#endif
-
 #if LIBSWSCALE_VERSION_INT >= AV_VERSION_INT(0, 12, 0)
 #define USE_AVOPT_SWSCALE 1
 #include <libavutil/opt.h>
@@ -50,14 +46,6 @@ int64_t avs_to_ff_cpu_flags( long avisynth_flags )
 int avs_to_pp_cpu_flags( long avisynth_flags )
 {
     int flags = 0;
-#ifdef FFMS_USE_POSTPROC
-    if( avisynth_flags & AVS_CPU_MMX )
-        flags |= PP_CPU_CAPS_MMX;
-    if( avisynth_flags & AVS_CPU_INTEGER_SSE )
-        flags |= PP_CPU_CAPS_MMX2;
-    if( avisynth_flags & AVS_CPU_3DNOW_EXT )
-        flags |= PP_CPU_CAPS_3DNOW;
-#endif // FFMS_USE_POSTPROC
     return flags;
 }
 
@@ -79,7 +67,7 @@ int64_t avs_to_sws_cpu_flags( long avisynth_flags )
     return flags;
 }
 
-enum PixelFormat csp_name_to_pix_fmt_25( const char *csp_name, enum PixelFormat def )
+enum AVPixelFormat csp_name_to_pix_fmt_25( const char *csp_name, enum AVPixelFormat def )
 {
     if( !csp_name || !strcmp( csp_name, "" ) )
         return def;
@@ -94,7 +82,7 @@ enum PixelFormat csp_name_to_pix_fmt_25( const char *csp_name, enum PixelFormat 
     return PIX_FMT_NONE;
 }
 
-enum PixelFormat csp_name_to_pix_fmt_26( const char *csp_name, enum PixelFormat def )
+enum AVPixelFormat csp_name_to_pix_fmt_26( const char *csp_name, enum AVPixelFormat def )
 {
     enum PixelFormat ret = csp_name_to_pix_fmt_25( csp_name, def );
     if( ret != PIX_FMT_NONE )
@@ -110,7 +98,7 @@ enum PixelFormat csp_name_to_pix_fmt_26( const char *csp_name, enum PixelFormat 
     return PIX_FMT_NONE;
 }
 
-enum PixelFormat vi_to_pix_fmt_25( const AVS_VideoInfo *vi )
+enum AVPixelFormat vi_to_pix_fmt_25( const AVS_VideoInfo *vi )
 {
     // so i can still use this entire function in the 2.6 version
     if( ffms_avs_lib->avs_is_yv12( vi ) )
@@ -125,7 +113,7 @@ enum PixelFormat vi_to_pix_fmt_25( const AVS_VideoInfo *vi )
         return PIX_FMT_NONE;
 }
 
-enum PixelFormat vi_to_pix_fmt_26( const AVS_VideoInfo *vi )
+enum AVPixelFormat vi_to_pix_fmt_26( const AVS_VideoInfo *vi )
 {
     enum PixelFormat ret = vi_to_pix_fmt_25( vi );
     if( ret != PIX_FMT_NONE )
@@ -221,15 +209,15 @@ struct SwsContext *ffms_sws_get_context( int src_width, int src_height, int src_
     // 0 = limited range, 1 = full range
     int range = crange == FFMS_CR_JPEG;
 
-    av_set_int( ctx, "sws_flags", flags );
-    av_set_int( ctx, "srcw", src_width );
-    av_set_int( ctx, "srch", src_height );
-    av_set_int( ctx, "dstw", dst_width );
-    av_set_int( ctx, "dsth", dst_height );
-    av_set_int( ctx, "src_range", range );
-    av_set_int( ctx, "dst_range", range );
-    av_set_int( ctx, "src_format", src_pix_fmt );
-    av_set_int( ctx, "dst_format", dst_pix_fmt );
+    av_opt_set_int( ctx, "sws_flags", flags, 0 );
+    av_opt_set_int( ctx, "srcw", src_width, 0 );
+    av_opt_set_int( ctx, "srch", src_height, 0 );
+    av_opt_set_int( ctx, "dstw", dst_width, 0 );
+    av_opt_set_int( ctx, "dsth", dst_height, 0 );
+    av_opt_set_int( ctx, "src_range", range, 0 );
+    av_opt_set_int( ctx, "dst_range", range, 0 );
+    av_opt_set_int( ctx, "src_format", src_pix_fmt, 0 );
+    av_opt_set_int( ctx, "dst_format", dst_pix_fmt, 0 );
 
     sws_setColorspaceDetails( ctx, sws_getCoefficients( csp ), range, sws_getCoefficients( csp ), range, 0, 1<<16, 1<<16 );
     if( sws_init_context( ctx, NULL, NULL ) < 0 )
