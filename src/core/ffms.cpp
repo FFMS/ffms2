@@ -38,7 +38,6 @@ extern "C" {
 static bool FFmpegInited	= false;
 bool HasHaaliMPEG = false;
 bool HasHaaliOGG = false;
-int CPUFeatures = 0;
 bool GlobalUseUTF8Paths = false;
 
 
@@ -80,11 +79,9 @@ void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl)
 FFMS_API(void) FFMS_Init(int CPUFeatures, int UseUTF8Paths) {
 	if (!FFmpegInited) {
 		av_register_all();
+		RegisterCustomParsers();
 #ifdef _WIN32
 		if (UseUTF8Paths) {
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(53,0,3)
-			ffms_patch_lavf_file_open();
-#endif
 			GlobalUseUTF8Paths = true;
 		}
 		else {
@@ -99,7 +96,6 @@ FFMS_API(void) FFMS_Init(int CPUFeatures, int UseUTF8Paths) {
 #else
 		av_log_set_level(AV_LOG_QUIET);
 #endif
-		::CPUFeatures = CPUFeatures;
 #ifdef HAALISOURCE
 		CComPtr<IMMContainer> pMMC;
 		HasHaaliMPEG = !FAILED(pMMC.CoCreateInstance(HAALI_MPEG_PARSER));
@@ -244,18 +240,36 @@ FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V) {
 	V->ResetOutputFormat();
 }
 
-FFMS_API(int) FFMS_SetPP(FFMS_VideoSource *V, const char *PP, FFMS_ErrorInfo *ErrorInfo) {
+FFMS_API(int) FFMS_SetInputFormatV(FFMS_VideoSource *V, int ColorSpace, int ColorRange, int Format, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
-		V->SetPP(PP);
+		V->SetInputFormat(ColorSpace, ColorRange, static_cast<PixelFormat>(Format));
 	} catch (FFMS_Exception &e) {
 		return e.CopyOut(ErrorInfo);
 	}
 	return FFMS_ERROR_SUCCESS;
 }
 
-FFMS_API(void) FFMS_ResetPP(FFMS_VideoSource *V) {
-	V->ResetPP();
+FFMS_API(void) FFMS_ResetInputFormatV(FFMS_VideoSource *V) {
+	V->ResetInputFormat();
+}
+
+FFMS_API(FFMS_ResampleOptions *) FFMS_CreateResampleOptions(FFMS_AudioSource *A) {
+	return A->CreateResampleOptions();
+}
+
+FFMS_API(void) FFMS_DestroyResampleOptions(FFMS_ResampleOptions *options) {
+	delete options;
+}
+
+FFMS_API(int) FFMS_SetOutputFormatA(FFMS_AudioSource *A, const FFMS_ResampleOptions *options, FFMS_ErrorInfo *ErrorInfo) {
+	ClearErrorInfo(ErrorInfo);
+	try {
+		A->SetOutputFormat(options);
+	} catch (FFMS_Exception &e) {
+		return e.CopyOut(ErrorInfo);
+	}
+	return FFMS_ERROR_SUCCESS;
 }
 
 FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {
@@ -267,6 +281,10 @@ FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {
 
 FFMS_API(int) FFMS_GetSourceType(FFMS_Index *Index) {
 	return Index->Decoder;
+}
+
+FFMS_API(FFMS_IndexErrorHandling) FFMS_GetErrorHandling(FFMS_Index *Index) {
+	return static_cast<FFMS_IndexErrorHandling>(Index->ErrorHandling);
 }
 
 FFMS_API(int) FFMS_GetFirstTrackOfType(FFMS_Index *Index, int TrackType, FFMS_ErrorInfo *ErrorInfo) {
@@ -287,7 +305,7 @@ FFMS_API(int) FFMS_GetFirstTrackOfType(FFMS_Index *Index, int TrackType, FFMS_Er
 FFMS_API(int) FFMS_GetFirstIndexedTrackOfType(FFMS_Index *Index, int TrackType, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	for (int i = 0; i < static_cast<int>(Index->size()); i++)
-		if ((*Index)[i].TT == TrackType && (*Index)[i].size() > 0)
+		if ((*Index)[i].TT == TrackType && !(*Index)[i].empty())
 			return i;
 	try {
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_NOT_AVAILABLE,
@@ -319,11 +337,11 @@ FFMS_API(const char *) FFMS_GetCodecNameI(FFMS_Indexer *Indexer, int Track) {
 }
 
 FFMS_API(int) FFMS_GetNumFrames(FFMS_Track *T) {
-	return T->size();
+	return T->VisibleFrameCount();
 }
 
 FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFMS_Track *T, int Frame) {
-	return &(*T)[Frame];
+	return &(*T)[T->RealFrameNumber(Frame)];
 }
 
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track) {

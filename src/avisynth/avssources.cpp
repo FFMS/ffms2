@@ -20,12 +20,13 @@
 
 #include "avssources.h"
 #include "avsutils.h"
+#include <libavutil/common.h>
 #include <cmath>
 
 
 
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
-		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode, int RFFMode,
+		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 		const char *ConvertToFormatName, const char *VarPrefix, IScriptEnvironment* Env) {
 
@@ -43,11 +44,6 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 	V = FFMS_CreateVideoSource(SourceFile, Track, Index, Threads, SeekMode, &E);
 	if (!V)
 		Env->ThrowError("FFVideoSource: %s", E.Buffer);
-
-	if (PP && FFMS_SetPP(V, PP, &E)) {
-		FFMS_DestroyVideoSource(V);
-		Env->ThrowError("FFVideoSource: %s", E.Buffer);
-	}
 
 	try {
 		InitOutputFormat(ResizeToWidth, ResizeToHeight, ResizerName, ConvertToFormatName, Env);
@@ -247,7 +243,7 @@ void AvisynthVideoSource::InitOutputFormat(
 	if (RFFMode > 0 && ResizeToHeight != F->EncodedHeight)
 		Env->ThrowError("FFVideoSource: Vertical scaling not allowed in RFF mode");
 
-	if (RFFMode > 0 && 	TargetPixelFormat != PIX_FMT_NV12)
+	if (RFFMode > 0 && TargetPixelFormat != PIX_FMT_NV21)
 		Env->ThrowError("FFVideoSource: Only the default output colorspace can be used in RFF mode");
 
 	// set color information variables

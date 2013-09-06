@@ -27,10 +27,8 @@ FFMS2 does not mux or encode anything. FFMS2 does not give you fine control over
 <p>FFMS2 has the following dependencies:</p>
 <ul>
 <li><b><a href="http://www.libav.org">Libav</a></b> (sure, you can use the <b><a href="http://www.ffmpeg.org">FFmpeg</a></b> branch too if you really want)
-<ul><li>As new as possible. If it's older than version 0.6 it will mean definite failure.</li>
-<li>On Win32 you should REALLY, REALLY make sure to have a good compile of the pthreads library.</li>
+<ul><li>At least 0.8 for libav and 0.9 for FFmpeg</li>
 <li>Further recommended configuration options: <tt>--disable-debug --disable-muxers --disable-encoders --disable-filters --disable-hwaccels --disable-network --disable-devices --enable-runtime-cpudetect</tt> (runtime cpudetect in particular is a good idea if you are planning on distributing the library; not disabling debug results in a gigantic dll).</li>
-<li>If you want to use the postprocessing filter functionality (i.e. <tt>FFMS_SetPP()</tt>) you need to compile FFmpeg with libpostproc (pass <tt>--enable-gpl --enable-postproc</tt> to its configure). Note that this will make the FFMS2 binary GPL licensed. Note that libpostproc support is deprecated and will go away some time in the future.</li>
 </ul>
 </li>
 <li><b><a href="http://www.zlib.net/">zlib</a></b></li>
@@ -43,7 +41,7 @@ Compiling the library itself is fairly straightforward. For the basics, just add
 If you're compiling the library on Windows, it is suggested that you use the Microsoft Visual Studio 2008 solution file from SVN. Any version of MSVC2008 and MSVC2010 should work for compiling it, including the free Express Edition (but if you use that you must undefine HAALISOURCE or find a copy of the ATL libraries). The project file in question assumes that you have compiled Libav with MinGW (guides on how to do that are easy to find) and want to link FFMS2 with it statically (linking it dynamically is possible but not recommended since it usually leads to DLL hell). If you're using FFmpeg (as opposed to Libav), uncomment #define FFMS_USE_FFMPEG_COMPAT in ffmscompat.h, as this is not always automatically detected. Add your mingw/include and mingw/lib folders to MSVC's respective global directory settings (Tools menu -&gt; Options -&gt; Projects and Solutions -&gt; VC++ Directories) and you should be good to go.
 </p>
 <p>
-Targetting x64 from msvc requires a little extra work. You'll need a fairly recent mingw, and a libav which has w32threads, as x64 pthreads is a linking nightmare. Building libav for x64 is much like for 32-bit, except with the relevant prefix information (which will be along the lines of --prefix=/mingw/x86_64-w64-mingw32/ --cross-prefix=x86_64-w64-mingw32- --arch=x86_64 --target-os=mingw32), and --extra-cflags="-D_SYSCRT" is <b>required</b> for the end result to be linkable from msvc. Note that you'll probably need to add /usr/local/x86_64-w64-mingw32/... to MSVC's directories rather than the usual paths.
+Targetting x64 from msvc requires a little extra work. Building libav for x64 is much like for 32-bit, except with the relevant prefix information (which will be along the lines of --prefix=/mingw/x86_64-w64-mingw32/ --cross-prefix=x86_64-w64-mingw32- --arch=x86_64 --target-os=mingw32), and --extra-cflags="-D_SYSCRT" is <b>required</b> for the end result to be linkable from msvc. Note that you'll probably need to add /usr/local/x86_64-w64-mingw32/... to MSVC's directories rather than the usual paths.
 </p>
 <p>
 If you're using anything else, you're on your own. It's possible to build the library using MinGW; there is an avisynth plugin available that uses the avisynth_c interface originally developed to target 64-bit avisynth (it is available in <tt>branches/c_plugin</tt> in svn). If you're rolling your own MSVC solution file, remember that you need to <tt>#define FFMS_EXPORTS</tt> somewhere when compiling the library. You may also <tt>#define HAALISOURCE</tt> if you want to make the library able to open MPEG TS/PS and OGM files using Haali's DirectShow splitter (if you do not define it, those files will be opened with libavformat instead, and that usually doesn't work out all that well). Note that if you do so, opening those files will fail unless the user has the <a href="http://haali.cs.msu.ru/mkv/">Haali Media Splitter</a> DirectShow filter installed. Both those defines are enabled by default in the solution file in SVN.
@@ -74,10 +72,7 @@ int main (...) {
 	}
 #endif
 
-	/* Initialize the library itself.
-	The cpu caps are autodetected almost all places nowadays. Passing 0 should have close to no performance
-	impact with a recent FFmpeg. If you want you can pass something like
-	FFMS_CPU_CAPS_MMX | FFMS_CPU_CAPS_MMX2. */
+	/* Initialize the library itself. */
 	FFMS_Init(0, 0);
 
 	/* Index the source file. Note that this example does not index any audio tracks. */
@@ -119,7 +114,7 @@ int main (...) {
 	
 	/* Get the first frame for examination so we know what we're getting. This is required
 	because resolution and colorspace is a per frame property and NOT global for the video. */
-	const FFMS_Frame *propframe = FFMS_GetFrame(videosource, 0, errinfo);
+	const FFMS_Frame *propframe = FFMS_GetFrame(videosource, 0, &amp;errinfo);
 
 	/* Now you may want to do something with the info; particularly interesting values are:
 	propframe-&gt;EncodedWidth; (frame width in pixels)
@@ -137,10 +132,10 @@ int main (...) {
 	
 	/* A -1 terminated list of the acceptable output formats. */
 	int pixfmts[2];
-	pixfmt[0] = FFMS_GetPixFmt("bgra");
-	pixfmt[1] = -1;
+	pixfmts[0] = FFMS_GetPixFmt("bgra");
+	pixfmts[1] = -1;
 	
-	if (FFMS_SetOutputFormatV2(videosource, pixfmt, propframe-&gt;EncodedWidth, propframe-&gt;EncodedHeight, FFMS_RESIZER_BICUBIC, &amp;errinfo)) {
+	if (FFMS_SetOutputFormatV2(videosource, pixfmts, propframe-&gt;EncodedWidth, propframe-&gt;EncodedHeight, FFMS_RESIZER_BICUBIC, &amp;errinfo)) {
 		/* handle error */
 	}
 
@@ -227,7 +222,7 @@ if (com_inited)
 </pre>
 <h4>Arguments</h4>
 <p><b><tt>int CPUFeatures</tt></b><br />
-An integer representing what CPU instruction sets may be used by the parts of FFmpeg that have handwritten assembler but no runtime CPU detection, i.e. libpostproc (and libswscale in ancient times) and nothing else. (see <tt>FFMS_CPUFeatures</tt> in the Constants and Preprocessor Definitions section; binary OR the constants together if you want more than one). Pass 0 if you don't care; the performance hit won't be that big unless you do a lot of postprocessing.</p>
+This argument is no longer used and is left only for API/ABI compatibility.  Pass 0.
 <p><b><tt>int UseUTF8Paths</tt></b><br />
 Controls filename handling on Windows; on all other operating systems this parameter does nothing and should be ignored.<br />
 On Windows, setting this parameter to a true value will make FFMS assume that all filename strings passed to it are UTF-8 encoded; setting it to false will make it assume filenames are in the system default codepage for non-Unicode programs. Setting this to true is one of two known ways to make FFMS2 open files with filenames containing characters that are not expressible in said codepage; the other is using the short (DOS 8.3 notation) filename. You can use the Win32 API function <tt>WideCharToMultiByte()</tt> to convert your <tt>wchar_t*</tt> Unicode strings to UTF-8 in <tt>char*</tt>, if necessary.<br />
@@ -314,7 +309,7 @@ See above.</p>
 
 <h3>FFMS_GetFrameByTime - retrieves a video frame at a given timestamp</h3>
 <pre>const FFMS_Frame *FFMS_GetFrameByTime(FFMS_VideoSource *V, double Time, FFMS_ErrorInfo *ErrorInfo)</pre>
-<p>Does the exact same thing as <tt>FFMS_GetFrame</tt> except instead of giving it a frame number you give it a timestamp in milliseconds, and it will retrieve the frame that starts closest to that timestamp. This function exists for the people who are too lazy to build and traverse a mapping between frame numbers and timestamps themselves. Note that it is measurably slower than <tt>FFMS_GetFrame</tt>.
+<p>Does the exact same thing as <tt>FFMS_GetFrame</tt> except instead of giving it a frame number you give it a timestamp in seconds, and it will retrieve the frame that starts closest to that timestamp. This function exists for the people who are too lazy to build and traverse a mapping between frame numbers and timestamps themselves.
 </p>
 
 <h3>FFMS_GetAudio - decodes a number of audio samples</h3>
@@ -363,27 +358,29 @@ See above.</p>
 Resets the output format for the given <tt>FFMS_VideoSource</tt> object so that no conversion takes place. Note that the results of this function may vary wildly, particularly if the video changes resolution mid-stream. If you call it, you'd better call <tt>FFMS_GetFrame</tt> afterwards and examine the properties to see what you actually ended up with.
 </p>
 
-<h3>FFMS_SetPP - sets postprocessing options</h3>
-<h5 class="deprecated">DEPRECATED</h5>
-<pre>int FFMS_SetPP(FFMS_VideoSource *V, const char *PP, FFMS_ErrorInfo *ErrorInfo)</pre>
-<p>
-Sets the postprocessing filter chain that will be applied to frames retrieved from the given <tt>FFMS_VideoSource</tt> object by all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt> until the next call to <tt>FFMS_SetPP</tt> or <tt>FFMS_ResetPP</tt>. The filter chain is described by a text string; see the PP string format section below for details.
+<h3>FFMS_SetInputFormatV - override the source format for video frames</h3>
+<pre>int FFMS_SetInputFormatV(FFMS_VideoSource *V, int ColorSpace, int ColorRange, int PixelFormat,
+    FFMS_ErrorInfo *ErrorInfo)</pre>
+<p>Override the source colorspace passed to SWScale for conversions and resizing for all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt>, until next time you call <tt>FFMS_SetInputFormatV</tt> or <tt>FFMS_ResetInputFormatV</tt>. You can change the input format at any time without having to reinitialize the <tt>FFMS_VideoSource</tt> object or anything else. This is intended primarily for compatibility with programs which use the wrong YUV colorspace when converting to or from RGB, but can also be useful for files which have incorrect colorspace flags. Values passed are not checked for sanity; if you wish you may tell FFMS2 to pretend that a RGB files is actually YUV using this function, but doing so is unlikely to have useful results. This function only has an effect if the output format is also set with <tt>FFMS_SetOutputFormatV2</tt>. Added in version 2.17.1.0.
+</p>
 <h4>Arguments</h4>
 <p><b><tt>FFMS_VideoSource *V</tt></b><br />
-A pointer to the <tt>FFMS_VideoSource</tt> object that represents the video stream you want to change the postprocessing settings for.</p>
-<p><b><tt>const char *PP</tt></b><br />
-A string describing the desired postprocessing. See the PP string format section below for details. Pass <tt>NULL</tt> or an empty string to disable postprocessing.</p>
+A pointer to the <tt>FFMS_VideoSource</tt> object that represents the video stream you want to change the input format for.</p>
+<p><b><tt>int ColorSpace</tt></b><br />
+The desired input colorspace, or FFMS_CS_UNSPECIFIED to leave it unchanged.</p>
+<p><b><tt>int ColorRange</tt></b><br />
+The desired input colorrange, or FFMS_CR_UNSPECIFIED to leave it unchanged.</p>
+<p><b><tt>int PixelFormat</tt></b><br />
+The desired input pixel format; see <tt>FFMS_GetPixFmt</tt>. <tt>FFMS_GetPixFmt("")</tt> will leave the pixel format unchanged.</p>
 <p><b><tt>FFMS_ErrorInfo *ErrorInfo</tt></b><br />
 See above.</p>
 <h4>Return values</h4>
 <p>Returns 0 on success. Returns non-0 and sets <tt>ErrorMsg</tt> on failure.</p>
-</p>
 
-<h3>FFMS_ResetPP - resets postprocessing options</h3>
-<h5 class="deprecated">DEPRECATED</h5>
-<pre>void FFMS_ResetPP(FFMS_VideoSource *V)</pre>
+<h3>FFMS_ResetInputFormatV - resets the video input format</h3>
+<pre>void FFMS_ResetInputFormatV(FFMS_VideoSource *V)</pre>
 <p>
-Resets the postprocessing filter chain that will be applied to frames retrieved from the given <tt>FFMS_VideoSource</tt> object by all further calls to <tt>FFMS_GetFrame</tt> and <tt>FFMS_GetFrameByTime</tt> until the next call to <tt>FFMS_SetPP</tt> or <tt>FFMS_ResetPP</tt> so that no postprocessing will be applied. Is equivalent to <tt>FFMS_SetPP(VideoSource, NULL, ErrorInfo)</tt> but is more efficient.
+Resets the input format for the given <tt>FFMS_VideoSource</tt> object to the values specified in the source file.
 </p>
 
 <h3>FFMS_DestroyIndex - deallocates an index object</h3>
@@ -401,6 +398,12 @@ Checks which source module (libavformat, Haali's Matroska parsing library, or Ha
 <pre>int FFMS_GetSourceTypeI(FFMS_Index *Indexer)</pre>
 <p>
 Does the same thing as <tt>FFMS_GetSourceType</tt>, but takes an indexer instead of an index.
+</p>
+
+<h3>FFMS_GetErrorHandling - gets which error handling mode was used when creating the given index</h3>
+<pre>int FFMS_GetErrorHandling(FFMS_Index *Index)</pre>
+<p>
+Returns the value of the ErrorHandling parameter which was passed to FFMS_DoIndexing or FFMS_MakeIndex.
 </p>
 
 <h3>FFMS_GetFirstTrackOfType - gets the track number of the first track of a given type</h3>
@@ -586,7 +589,7 @@ The chosen demuxer gets used for both indexing and decoding later on. Only force
 <pre>FFMS_Index *FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask,
 	TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate,
 	FFMS_ErrorInfo *ErrorInfo)</pre>
-<p>Does the exact same thing as <tt>FFMS_MakeIndex</tt>, but takes an indexer object instead of a source filename. Return values and arguments are identical to <tt>FFMS_MakeIndex</tt>; see that function for details. See the Indexing and You section for more details about indexing. Note that calling this function destroys the <tt>FFMS_Indexer</tt> object and frees the memory allocated by <tt>FFMS_CreateIndexer</tt>.</p>
+<p>Does the exact same thing as <tt>FFMS_MakeIndex</tt>, but takes an indexer object instead of a source filename. Return values and arguments are identical to <tt>FFMS_MakeIndex</tt>; see that function for details. See the Indexing and You section for more details about indexing. Note that calling this function destroys the <tt>FFMS_Indexer</tt> object and frees the memory allocated by <tt>FFMS_CreateIndexer</tt> (even if indexing fails for any reason).</p>
 
 <h3>FFMS_CancelIndexing - destroys the given indexer object</h3>
 <pre>void FFMS_CancelIndexing(FFMS_Indexer *Indexer)</pre>
@@ -734,7 +737,7 @@ A struct representing the basic time unit of a track, as a rational number where
 <li><b><tt>int TopFieldFirst</tt></b> - Nonzero if the stream has the top field first, zero if it has the bottom field first.</li>
 <li><b><tt>int ColorSpace</tt></b> - Identifies the YUV color coefficients used in the stream. Same as in the MPEG-2 specs; see the <tt>FFMS_ColorSpaces</tt> enum. The ColorSpace property in FFMS_Frame should be instead of this, as this can vary between frames.</li>
 <li><b><tt>int ColorRange</tt></b> - Identifies the luma range of the stream. See the <tt>FFMS_ColorRanges</tt> enum. The ColorRange property in FFMS_Frame should be instead of this, as this can vary between frames.</li>
-<li><b><tt>double FirstTime; double LastTime;</tt></b> - The first and last timestamp of the stream respectively, in milliseconds. Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.</li>
+<li><b><tt>double FirstTime; double LastTime;</tt></b> - The first and last timestamp of the stream respectively, in seconds. Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.</li>
 </ul>
 
 <h3>FFMS_AudioProperties</h3>
@@ -827,7 +830,7 @@ Identifies source modules.
     FFMS_CPU_CAPS_SSE2      = 0x20
 };</pre>
 <p>
-Used in <tt>FFMS_Init</tt> to indicate CPU instruction set capabilities. Should be self explanatory. For a lot of applications you can probably get away with simply passing 0 in the call to <tt>FFMS_Init</tt>.
+No longer used by anything in FFMS2. This enumeration will go away at some point in the future.
 </p>
 
 <h3>FFMS_SeekMode</h3>
@@ -1018,51 +1021,6 @@ b: FF_BI_TYPE (no good explanation available)
 <p>
 Example string: <tt>%sourcefile%_track%trackzn%.w64</tt>
 </p>
-
-
-<h2>PP string format</h2>
-<pre>
-Available postprocessing filters:
-Filters                        Options
-short  long name       short   long option     Description
-*      *               a       autoq           CPU power dependent enabler
-                       c       chrom           chrominance filtering enabled
-                       y       nochrom         chrominance filtering disabled
-                       n       noluma          luma filtering disabled
-hb     hdeblock        (2 threshold)           horizontal deblocking filter
-       1. difference factor: default=32, higher -&gt; more deblocking
-       2. flatness threshold: default=39, lower -&gt; more deblocking
-                       the h &amp; v deblocking filters share these
-                       so you can't set different thresholds for h / v
-vb     vdeblock        (2 threshold)           vertical deblocking filter
-ha     hadeblock       (2 threshold)           horizontal deblocking filter
-va     vadeblock       (2 threshold)           vertical deblocking filter
-h1     x1hdeblock                              experimental h deblock filter 1
-v1     x1vdeblock                              experimental v deblock filter 1
-dr     dering                                  deringing filter
-al     autolevels                              automatic brightness / contrast
-f      fullyrange                              stretch luminance to (0..255)
-lb     linblenddeint                           linear blend deinterlacer
-li     linipoldeint                            linear interpolating deinterlace
-ci     cubicipoldeint                          cubic interpolating deinterlacer
-md     mediandeint                             median deinterlacer
-fd     ffmpegdeint                             ffmpeg deinterlacer
-l5     lowpass5                                FIR lowpass deinterlacer
-de     default                                 hb:a,vb:a,dr:a
-fa     fast                                    h1:a,v1:a,dr:a
-ac                                             ha:a:128:7,va:a,dr:a
-tn     tmpnoise        (3 threshold)           temporal noise reducer
-                     1. &lt;= 2. &lt;= 3.            larger -&gt; stronger filtering
-fq     forceQuant      &lt;quantizer&gt;             force quantizer
-Usage:
-&lt;filterName&gt;[:&lt;option&gt;[:&lt;option&gt;...]][[,|/][-]&lt;filterName&gt;[:&lt;option&gt;...]]...
-long form example:
-vdeblock:autoq/hdeblock:autoq/linblenddeint    default,-vdeblock
-short form example:
-vb:a/hb:a/lb                                   de,-vb
-more examples:
-tn:64:128:256
-</pre>
 
 </div>
 

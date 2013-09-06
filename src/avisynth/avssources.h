@@ -49,7 +49,7 @@ private:
 	void OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst, int Field, IScriptEnvironment *Env);
 public:
 	AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
-		int FPSNum, int FPSDen, const char *PP, int Threads, int SeekMode, int RFFMode,
+		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 		const char *ConvertToFormatName, const char *VarPrefix, IScriptEnvironment* Env);
 	~AvisynthVideoSource();

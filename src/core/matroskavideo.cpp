@@ -64,12 +64,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 		TCC.reset(new TrackCompressionContext(MF, TI, VideoTrack));
 
 	CodecContext = avcodec_alloc_context3(NULL);
-#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52,111,0)
 	CodecContext->thread_count = DecodingThreads;
-#else
-	if (avcodec_thread_init(CodecContext, DecodingThreads))
-		CodecContext->thread_count = 1;
-#endif
 
 	Codec = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate));
 	if (Codec == NULL)
@@ -93,8 +88,10 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	// Calculate the average framerate
 	if (Frames.size() >= 2) {
 		double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
-		VP.FPSDenominator = (unsigned int)(PTSDiff * mkv_TruncFloat(TI->TimecodeScale) / (double)1000 / (double)(Frames.size() - 1) + 0.5);
-		VP.FPSNumerator = 1000000;
+		// Dividing by 1000 caused too much information to be lost, when CorrectNTSCRationalFramerate runs there was a possibility
+		// of it outputting the wrong framerate.  We still divide by 100 to protect against the possibility of overflows.
+		VP.FPSDenominator = (unsigned int)(PTSDiff * mkv_TruncFloat(TI->TimecodeScale) / (double)100 / (double)(Frames.size() - 1) + 0.5);
+		VP.FPSNumerator = 10000000;
 	}
 
 	// Set the video properties from the codec context
@@ -115,86 +112,58 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 }
 
 void FFMatroskaVideo::DecodeNextFrame() {
-	int FrameFinished = 0;
+	if (HasPendingDelayedFrames()) return;
+
 	AVPacket Packet;
 	InitNullPacket(Packet);
-
-	unsigned int FrameSize;
-
-	if (InitialDecode == -1) {
-		if (DelayCounter > FFMS_CALCULATE_DELAY) {
-			DelayCounter--;
-			goto Done;
-		} else {
-			InitialDecode = 0;
-		}
-	}
 
 	while (PacketNumber < Frames.size()) {
 		// The additional indirection is because the packets are stored in
 		// presentation order and not decoding order, this is unnoticeable
 		// in the other sources where less is done manually
 		const TFrameInfo &FI = Frames[Frames[PacketNumber].OriginalPos];
-		FrameSize = FI.FrameSize;
+		unsigned int FrameSize = FI.FrameSize;
 		ReadFrame(FI.FilePos, FrameSize, TCC.get(), MC);
 
 		Packet.data = MC.Buffer;
 		Packet.size = FrameSize;
-		if (FI.KeyFrame)
-			Packet.flags = AV_PKT_FLAG_KEY;
-		else
-			Packet.flags = 0;
+		Packet.flags = FI.KeyFrame ? AV_PKT_FLAG_KEY : 0;
 
 		PacketNumber++;
 
-		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
-
-		if (!FrameFinished)
-			DelayCounter++;
-		if (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode)
-			goto Done;
-
-		if (FrameFinished)
-			goto Done;
+		if (DecodePacket(&Packet))
+			return;
 	}
 
-	// Flush the last frames
-	if (FFMS_CALCULATE_DELAY) {
-		AVPacket NullPacket;
-		InitNullPacket(NullPacket);
-		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
-	}
-
-	if (!FrameFinished)
-		goto Error;
-
-Error:
-Done:
-	if (InitialDecode == 1) InitialDecode = -1;
+	FlushFinalFrames();
 }
 
 FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
 	GetFrameCheck(n);
+	n = Frames.RealFrameNumber(n);
 
 	if (LastFrameNum == n)
 		return &LocalFrame;
 
+	bool HasSeeked = false;
 	int ClosestKF = Frames.FindClosestVideoKeyFrame(n);
 	if (CurrentFrame > n || ClosestKF > CurrentFrame + 10) {
 		DelayCounter = 0;
 		InitialDecode = 1;
 		PacketNumber = ClosestKF;
 		CurrentFrame = ClosestKF;
-		avcodec_flush_buffers(CodecContext);
+		FlushBuffers(CodecContext);
+		HasSeeked = true;
 	}
 
 	do {
-		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n)
+		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n || HasSeeked)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;
 		DecodeNextFrame();
 		CurrentFrame++;
+		HasSeeked = false;
 	} while (CurrentFrame <= n);
 
 	LastFrameNum = n;

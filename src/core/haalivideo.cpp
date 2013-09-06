@@ -55,20 +55,15 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	HCodecContext = InitializeCodecContextFromHaaliInfo(pBag);
 	CodecContext = HCodecContext;
 
-	AVCodec *Codec = NULL;
+	const AVCodec *Codec = NULL;
 	std::swap(Codec, CodecContext->codec);
 	if (avcodec_open2(CodecContext, Codec, NULL) < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Could not open video codec");
 
-#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52,111,0)
 	CodecContext->thread_count = DecodingThreads;
-#else
-	if (avcodec_thread_init(CodecContext, DecodingThreads))
-		CodecContext->thread_count = 1;
-#endif
 
-	if (CodecContext->codec->id == CODEC_ID_H264 && SourceMode == FFMS_SOURCE_HAALIMPEG)
+	if (CodecContext->codec->id == FFMS_ID(H264) && SourceMode == FFMS_SOURCE_HAALIMPEG)
 		BitStreamFilter = av_bitstream_filter_init("h264_mp4toannexb");
 
 	Res.CloseCodec(true);
@@ -96,91 +91,78 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	// Set AR variables
 	CComVariant pV;
 
+	USHORT Num = 0, Den = 0;
+
 	pV.Clear();
 	if (SUCCEEDED(pBag->Read(L"Video.DisplayWidth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-		VP.SARNum  = pV.uiVal;
+		Num = pV.uiVal;
 	pV.Clear();
 	if (SUCCEEDED(pBag->Read(L"Video.DisplayHeight", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-		VP.SARDen = pV.uiVal;
+		Den = pV.uiVal;
+
+	if (Num && Den) {
+		VP.SARNum = LocalFrame.EncodedHeight * Num;
+		VP.SARDen = LocalFrame.EncodedWidth * Den;
+	}
 }
 
 void FFHaaliVideo::DecodeNextFrame(int64_t *AFirstStartTime) {
-	int FrameFinished = 0;
 	*AFirstStartTime = -1;
+	if (HasPendingDelayedFrames()) return;
+
 	AVPacket Packet;
 	InitNullPacket(Packet);
-
-	if (InitialDecode == -1) {
-		if (DelayCounter > FFMS_CALCULATE_DELAY) {
-			DelayCounter--;
-			goto Done;
-		} else {
-			InitialDecode = 0;
-		}
-	}
 
 	for (;;) {
 		CComPtr<IMMFrame> pMMF;
 		if (pMMC->ReadFrame(NULL, &pMMF) != S_OK)
 			break;
 
+		if (pMMF->GetTrack() != VideoTrack)
+			continue;
+
 		REFERENCE_TIME  Ts, Te;
 		if (*AFirstStartTime < 0 && SUCCEEDED(pMMF->GetTime(&Ts, &Te)))
 			*AFirstStartTime = Ts;
 
-		if (pMMF->GetTrack() == VideoTrack) {
-			BYTE *Data = NULL;
-			if (FAILED(pMMF->GetPointer(&Data)))
-				goto Error;
+		BYTE *Data = NULL;
+		if (FAILED(pMMF->GetPointer(&Data)))
+			return;
 
-			// align input data
-			Packet.size = pMMF->GetActualDataLength();
-			Packet.data = static_cast<uint8_t *>(av_mallocz(Packet.size + FF_INPUT_BUFFER_PADDING_SIZE));
-			memcpy(Packet.data, Data, Packet.size);
+		// align input data
+		Packet.size = pMMF->GetActualDataLength();
+		Packet.data = static_cast<uint8_t *>(av_mallocz(Packet.size + FF_INPUT_BUFFER_PADDING_SIZE));
+		uint8_t *OriginalData = Packet.data;
+		memcpy(Packet.data, Data, Packet.size);
+		Packet.flags = pMMF->IsSyncPoint() == S_OK ? AV_PKT_FLAG_KEY : 0;
 
-			if (pMMF->IsSyncPoint() == S_OK)
-				Packet.flags = AV_PKT_FLAG_KEY;
-			else
-				Packet.flags = 0;
-
-			AVBitStreamFilterContext *bsf = BitStreamFilter;
-			while (bsf) {
-				av_bitstream_filter_filter(bsf, CodecContext, NULL, &Packet.data,
-					&Packet.size, Data, Packet.size, Packet.flags & AV_PKT_FLAG_KEY);
-				bsf = bsf->next;
-			}
-
-			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
-
-			av_free(Packet.data);
-
-			if (!FrameFinished)
-				DelayCounter++;
-			if (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode)
-				goto Done;
-
-			if (FrameFinished)
-				goto Done;
+		AVBitStreamFilterContext *bsf = BitStreamFilter;
+		while (bsf) {
+			av_bitstream_filter_filter(bsf, CodecContext, NULL, &Packet.data,
+				&Packet.size, Data, Packet.size, Packet.flags & AV_PKT_FLAG_KEY);
+			bsf = bsf->next;
 		}
+
+		bool FrameFinished = DecodePacket(&Packet);
+
+		// av_bitstream_filter_filter() can, if it feels like it, reallocate the input buffer and change the pointer.
+		// If it does that, we need to free both the input buffer we allocated ourselves and the buffer lavc allocated.
+		if (Packet.data != OriginalData) {
+			av_free(Packet.data);
+			Packet.data = OriginalData;
+		}
+		av_free(Packet.data);
+
+		if (FrameFinished)
+			return;
 	}
 
-	// Flush the last frames
-	if (FFMS_CALCULATE_DELAY) {
-		AVPacket NullPacket;
-		InitNullPacket(NullPacket);
-		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
-	}
-
-	if (!FrameFinished)
-		goto Error;
-
-Error:
-Done:
-	if (InitialDecode == 1) InitialDecode = -1;
+	FlushFinalFrames();
 }
 
 FFMS_Frame *FFHaaliVideo::GetFrame(int n) {
 	GetFrameCheck(n);
+	n = Frames.RealFrameNumber(n);
 
 	if (LastFrameNum == n)
 		return &LocalFrame;
@@ -191,15 +173,15 @@ FFMS_Frame *FFHaaliVideo::GetFrame(int n) {
 	if (n < CurrentFrame || Frames.FindClosestVideoKeyFrame(n) > CurrentFrame + 10) {
 ReSeek:
 		pMMC->Seek(Frames[n + SeekOffset].PTS, MMSF_PREV_KF);
-		avcodec_flush_buffers(CodecContext);
+		FlushBuffers(CodecContext);
 		DelayCounter = 0;
 		InitialDecode = 1;
 		HasSeeked = true;
 	}
 
 	do {
-		int64_t StartTime;
-		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n)
+		int64_t StartTime = -1;
+		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n || HasSeeked)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;

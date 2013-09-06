@@ -67,10 +67,11 @@ FFMatroskaAudio::~FFMatroskaAudio() {
 }
 
 bool FFMatroskaAudio::ReadPacket(AVPacket *Packet) {
-	ReadFrame(CurrentFrame->FilePos, CurrentFrame->FrameSize, TCC.get(), MC);
+	unsigned int FrameSize = CurrentFrame->FrameSize;
+	ReadFrame(CurrentFrame->FilePos, FrameSize, TCC.get(), MC);
 	InitNullPacket(*Packet);
 	Packet->data = MC.Buffer;
-	Packet->size = CurrentFrame->FrameSize;
+	Packet->size = FrameSize;
 	Packet->flags = CurrentFrame->KeyFrame ? AV_PKT_FLAG_KEY : 0;
 
 	return true;

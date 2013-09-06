@@ -64,6 +64,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 
 	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest));
 	TrackIndices->Decoder = FFMS_SOURCE_MATROSKA;
+	TrackIndices->ErrorHandling = ErrorHandling;
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++) {
 		TrackInfo *TI = mkv_GetTrackInfo(MF, i);
@@ -132,23 +133,22 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 		}
 
 		if (TrackType == TT_VIDEO) {
-			uint8_t *OB = NULL;
-			int OBSize = 0;
+			TempPacket.pts = TempPacket.dts = TempPacket.pos = ffms_av_nopts_value;
+
 			int RepeatPict = -1;
+			int FrameType = 0;
+			bool Invisible = false;
+			ParseVideoPacket(VideoContexts[Track], TempPacket, &RepeatPict, &FrameType, &Invisible);
 
-			if (VideoContexts[Track].Parser) {
-				av_parser_parse2(VideoContexts[Track].Parser, VideoContexts[Track].CodecContext, &OB, &OBSize, TempPacket.data, TempPacket.size, ffms_av_nopts_value, ffms_av_nopts_value, ffms_av_nopts_value);
-				RepeatPict = VideoContexts[Track].Parser->repeat_pict;
-			}
-
-			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(StartTime, RepeatPict, (FrameFlags & FRAME_KF) != 0, FilePos, CompressedFrameSize));
+			(*TrackIndices)[Track].AddVideoFrame(StartTime, RepeatPict,
+				(FrameFlags & FRAME_KF) != 0, FrameType, FilePos,
+				CompressedFrameSize, Invisible);
 		} else if (TrackType == TT_AUDIO && (IndexMask & (1 << Track))) {
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
 			int64_t SampleCount = IndexAudioPacket(Track, &TempPacket, AudioContexts[Track], *TrackIndices);
 
-			if (SampleCount != 0)
-				(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(StartTime, StartSample,
-					SampleCount, (FrameFlags & FRAME_KF) != 0, FilePos, CompressedFrameSize));
+			(*TrackIndices)[Track].AddAudioFrame(StartTime, StartSample,
+				SampleCount, (FrameFlags & FRAME_KF) != 0, FilePos, CompressedFrameSize);
 		}
 	}
 
