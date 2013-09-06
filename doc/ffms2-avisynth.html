@@ -31,7 +31,7 @@ Donate if you like this software. Collecting weird clips from the internet and m
 <h2>Limitations</h2>
 <ul>
 <li>Requires <a href='http://haali.cs.msu.ru/mkv/'>Haali's Media Splitter</a> if you want to seek in OGM or MPEG PS/TS. Trying to do non-linear access in those containers without it will end in tears.</li>
-<li>Haali's splitter requires transport streams to be cut at packet boundaries. Use <a href='http://forum.doom9.org/showthread.php?t=125447'>TsRemux</a> to fix the stream before trying to open it.</li>
+<li>Haali's splitter requires transport streams to be cut at packet boundaries. Use <a href='http://forum.doom9.org/showthread.php?t=125447'>TsRemux</a> to fix the stream if you get an error message complaining about this.</li>
 <li>Because of LAVF's demuxer, most raw streams (such as elementary h264 and other mpeg video streams) will fail to work properly.</li>
 <li>FFAudioSource() will have to remake any index implicitly created by FFVideoSource() and therefore code like
 <pre>
@@ -104,9 +104,9 @@ Note that this function returns an integer, not a clip (since it doesn't open vi
 
 <dt>int indexmask = -1</dt>
 <dd>
-A binary mask representing what audio tracks should be indexed (all video tracks are always indexed; you have no choice in the matter). The mask is constructed by bitshifting 1 left by the track number; if multiple tracks are desired, bitwise OR each value so created together to get the full mask. In other words, the mask is a bit field where each bit is a track number (the least significant bit is track number 0). Since Avisynth doesn't have any bitwise operators at all, constructing the mask inside an Avisynth script is a rather annoying task.<br />
-Since the mask works like it does, and FFMS2 is designed to run on a machine that uses two's complement integers, -1 means index all tracks (the default) and 0 means index none.<br />
-Note that FFMS2's idea about what track has what number may be completely different from what any other application might think.
+A binary mask representing what audio tracks should be indexed (all video tracks are always indexed; you have no choice in the matter). The mask is constructed by bitshifting 1 left by the track number; if multiple tracks are desired, bitwise OR each value so created together to get the full mask. In other words, the mask is a bit field where each bit is a track number (the least significant bit is track number 0). Since Avisynth doesn't have any bitwise operators at all, constructing a mask for more than one track inside an Avisynth script is a rather annoying task; for a single track the mask is, naturally, 2 to the power of the track number minus 1 (i.e. if you want to index track 3, the mask is <tt>2^(3-1) = 4</tt>).<br />
+Since the mask works like it does, and FFMS2 is designed to run on a machine that uses two's complement integers, -1 (the default) means index all tracks and 0 means index none.<br />
+Note that FFMS2's idea about what track has what number may be completely different from what any other application might think, and that track numbering starts from 1.
 </dd>
 
 <dt>int dumpmask = 0</dt>
@@ -167,8 +167,8 @@ You should only use this parameter if you know exactly what you're doing and exa
 <pre>
 FFVideoSource(string source, int track = -1, bool cache = true,
     string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1,
-    string pp = "", int threads = -1, string timecodes = "", int seekmode = 1,
-    int rffmode = 0, int width = -1, int height = -1, string resizer = "BICUBIC",
+    int threads = -1, string timecodes = "", int seekmode = 1, int rffmode = 0,
+    int width = -1, int height = -1, string resizer = "BICUBIC",
     string colorspace = "", bool utf8 = false, string varprefix = "")
 </pre>
 <p>
@@ -190,13 +190,10 @@ Opens video. Will invoke indexing of all video tracks (but no audio tracks) if n
 <dd>The filename of the index file (where the indexing data is saved). Defaults to <tt>sourcefilename.ffindex</tt>. Note that if you didn't change this parameter from its default value and <tt>FFVideoSource</tt> encounters an index file that doesn't seem to match the file it's trying to open, it will automatically reindex and then overwrite the old index file. On the other hand, if you <em>do</em> change it, <tt>FFVideoSource</tt> will assume you have your reasons and throw an error instead if the index doesn't match the file.</dd>
 
 <dt>int fpsnum = -1, int fpsden = 1</dt>
-<dd>Forces a given (constant) framerate, expressed as a rational number where <tt>fpsnum</tt> is the numerator and <tt>fpsden</tt> is the denominator. Used for VFR to CFR conversion, as it will make <tt>FFVideoSource</tt> drop or duplicate frames to convert VFR to CFR if <tt>fpsnum</tt> is greater than 0. Setting <tt>fpsnum</tt> to a number less than or equal to zero means no frames will be dropped or duplicated.</dd>
-
-<dt>string pp = "" <span class="deprecated">[DEPRECATED]</span></dt>
-<dd>Sets a chain of postprocessing filters, expressed as a string (see the "PP string format" section below). Mostly useful to do quantizer-based deblocking/deringing, but can also do simple deinterlacing and a few other odd things.</dd>
+<dd>Controls the framerate of the output; used for VFR to CFR conversions. If <tt>fpsnum</tt> is less than or equal to zero (the default), the output will contain the same frames that the input did, and the frame rate reported to Avisynth will be set based on the input clip's average frame duration. If <tt>fpsnum</tt> is greater than zero, <tt>FFVideoSource</tt> will force a constant frame rate, expressed as a rational number where <tt>fpsnum</tt> is the numerator and <tt>fpsden</tt> is the denominator. This may naturally cause <tt>FFVideoSource</tt> to drop or duplicate frames to achieve the desired frame rate, and the output is not guaranteed to have the same number of frames that the input did.</dd>
 
 <dt>int threads = -1</dt>
-<dd>The number of decoding threads to request from libavcodec. Setting it to less than or equal to zero means it defaults to the number of logical CPU's reported by Windows. Note that this setting might be completely ignored by libavcodec under a number of conditions; most commonly because a lot of decoders actually do not support multithreading. You may also have a libavcodec without threading support compiled in at all.</dd>
+<dd>The number of decoding threads to request from libavcodec. Setting it to less than or equal to zero means it defaults to the number of logical CPU's reported by Windows. Note that this setting might be completely ignored by libavcodec under a number of conditions; most commonly because a lot of decoders actually do not support multithreading.</dd>
 
 <dt>string timecodes = ""</dt>
 <dd>Filename to write Matroska v2 timecodes for the opened video track to. If the file exists, it will be truncated and overwritten. Set to the empty string to disable timecodes writing (this is the default).</dd>
@@ -205,7 +202,7 @@ Opens video. Will invoke indexing of all video tracks (but no audio tracks) if n
 <dd>Controls how seeking is done. Mostly useful for getting uncooperative files to work. Only has an effect on files opened with the libavformat demuxer; on other files the equivalent of mode 1 is always used. Valid modes are:
 <ul>
 <li><b>-1:</b> Linear access without rewind; i.e. will throw an error if each successive requested frame number isn't bigger than the last one. Only intended for opening images but might work on well with some obscure video format.</li>
-<li><b>0:</b> Linear access (i.e. if you request frame <tt>n</tt> without having requested frames 0 to <tt>n-1</tt> in order first, all frames from 0 to <tt>n</tt> will have to be decoded before <tt>n</tt> can be delivered). The definition of slow, but should make some formats "usable".</li>
+<li><b>0:</b> Linear access (i.e. if you request frame <tt>n</tt> without having requested all frames from 0 to <tt>n-1</tt> in order first, all frames from 0 to <tt>n</tt> will have to be decoded before <tt>n</tt> can be delivered). The definition of slow, but should make some formats "usable".</li>
 <li><b>1:</b> Safe normal. Bases seeking decisions on the keyframe positions reported by libavformat.</li>
 <li><b>2:</b> Unsafe normal. Same as mode 1, but no error will be thrown if the exact seek destination has to be guessed.</li>
 <li><b>3:</b> Aggressive. Seeks in the forward direction even if no closer keyframe is known to exist. Only useful for testing and containers where libavformat doesn't report keyframes properly.</li>
@@ -269,7 +266,7 @@ Opens audio. Invokes indexing of all tracks if no valid index file is found, or 
 <pre>
 FFmpegSource2(string source, int vtrack = -1, int atrack = -2, bool cache = true,
     string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1,
-    string pp = "", int threads = -1, string timecodes = "", int seekmode = 1,
+    int threads = -1, string timecodes = "", int seekmode = 1,
     bool overwrite = false, int width = -1, int height = -1,
     string resizer = "BICUBIC", string colorspace = "", int rffmode = 0,
     int adjustdelay = -1, bool utf8 = false, string varprefix = "")
@@ -285,12 +282,6 @@ FFImageSource(string source, int width = -1, int height = -1,
 </pre>
 <p>A convenience alias for <tt>FFVideoSource</tt>, with the options set optimally for using it as an image reader. Disables caching and seeking for maximum compatiblity.</p>
 <p><strong>Note:</strong> this function is provided by <tt>FFMS2.avsi</tt> and is not available unless that script has been imported or autoloaded.</p>
-
-
-<h3>FFPP <span class="deprecated">[DEPRECATED]</span></h3>
-<pre>FFPP(clip, string pp)</pre>
-<p>A postprocessing filter. See the <tt>pp</tt> argument to <tt>FFVideoSource</tt> and the "PP string format" section below. In general, using <tt>FFVideoSource</tt>'s <tt>pp</tt> argument instead of this function is recommended (if possible), since if it's used there it has access to video quantizers and can adapt better to the video, particularly when doing deblocking/deringing.</p>
-<p>Postprocessing support is deprecated and will be removed in a future version of FFMS2.</p>
 
 
 <h3>SWScale</h3>
@@ -342,11 +333,20 @@ The playback aspect ratio specified by the container. <tt>FFSAR_NUM</tt> and <tt
 <dd>The on-playback cropping specified by the container.</dd>
 
 <dt>FFCOLOR_SPACE</dt>
-<dd>The output colorimetry. Matches the values used by <tt>ColorMatrix()</tt> as input.</dd>
+<dd>The colorimetry the input claims to be using. Only meaningful for YUV inputs. The source for this variable is a metadata flag that can arbitrarily be set or manipulated at will by incompetent users or buggy programs without changing the actual video content, so blindly trusting its correctness is not recommended.<br />
+The value is exported as a cryptic numerical constant that matches the values in the MPEG-2 specification. You can find the gory details in the FFMS2 API documentation, but the important ones are:
+<ul>
+<li><b>0:</b> RGB (usually indicates the stream isn't actually YUV, but RGB flagged as YUV)</li>
+<li><b>1:</b> ITU-R Rec.709</li>
+<li><b>2:</b> Unknown or unspecified</li>
+<li><b>5 and 6:</b> ITU-R Rec.601</li>
+</ul>
+</dd>
 
 <dt>FFCOLOR_RANGE</dt>
 <dd>
-The color range used by the output.
+The color range the input video claims to be using. Much like FFCOLOR_SPACE, the source for this variable is a metadata flag that can freely be set to arbitrary values, so trusting it blindly might not be a good idea.<br />
+Note that using SWScale() or the width/height/colorspace parameters to FFVideoSource may under some circumstances change the output color range.
 <ul>
 <li><b>0:</b> Unknown/unspecified</li>
 <li><b>1:</b> Limited range (usually 16-235)</li>
@@ -374,58 +374,13 @@ b: FF_BI_TYPE (no good explanation available)
 
 
 <dt>FFCHANNEL_LAYOUT</dt>
-<dd>The audio channel layout of the audio stream. This is exported as a very cryptic integer that is constructed in the same way as the <tt>dwChannelMask</tt> property of the Windows <tt>WAVEFORMATEXTENSIBLE</tt> struct. If you don't know what the <tt>WAVEFORMATEXTENSIBLE</tt> is or what the <tt>dwChannelMask</tt> does, don't worry about it.</dd>
+<dd>The audio channel layout of the audio stream. This is exported as a very cryptic integer that is constructed in the same way as the <tt>dwChannelMask</tt> property of the Windows <tt>WAVEFORMATEXTENSIBLE</tt> struct. If you don't know what a <tt>WAVEFORMATEXTENSIBLE</tt> is or what the <tt>dwChannelMask</tt> does, don't worry about it.</dd>
 
 <dt>FFVAR_PREFIX</dt>
 <dd>The variable prefix of the last called FFMS source function. Note that this is a global variable</dd>
 
 </dl>
 </div>
-
-
-<h2>PP string format</h2>
-<pre>
-Available postprocessing filters:
-Filters                        Options
-short  long name       short   long option     Description
-*      *               a       autoq           CPU power dependent enabler
-                       c       chrom           chrominance filtering enabled
-                       y       nochrom         chrominance filtering disabled
-                       n       noluma          luma filtering disabled
-hb     hdeblock        (2 threshold)           horizontal deblocking filter
-       1. difference factor: default=32, higher -&gt; more deblocking
-       2. flatness threshold: default=39, lower -&gt; more deblocking
-                       the h &amp; v deblocking filters share these
-                       so you can't set different thresholds for h / v
-vb     vdeblock        (2 threshold)           vertical deblocking filter
-ha     hadeblock       (2 threshold)           horizontal deblocking filter
-va     vadeblock       (2 threshold)           vertical deblocking filter
-h1     x1hdeblock                              experimental h deblock filter 1
-v1     x1vdeblock                              experimental v deblock filter 1
-dr     dering                                  deringing filter
-al     autolevels                              automatic brightness / contrast
-f      fullyrange                              stretch luminance to (0..255)
-lb     linblenddeint                           linear blend deinterlacer
-li     linipoldeint                            linear interpolating deinterlace
-ci     cubicipoldeint                          cubic interpolating deinterlacer
-md     mediandeint                             median deinterlacer
-fd     ffmpegdeint                             ffmpeg deinterlacer
-l5     lowpass5                                FIR lowpass deinterlacer
-de     default                                 hb:a,vb:a,dr:a
-fa     fast                                    h1:a,v1:a,dr:a
-ac                                             ha:a:128:7,va:a,dr:a
-tn     tmpnoise        (3 threshold)           temporal noise reducer
-                     1. &lt;= 2. &lt;= 3.            larger -&gt; stronger filtering
-fq     forceQuant      &lt;quantizer&gt;             force quantizer
-Usage:
-&lt;filterName&gt;[:&lt;option&gt;[:&lt;option&gt;...]][[,|/][-]&lt;filterName&gt;[:&lt;option&gt;...]]...
-long form example:
-vdeblock:autoq/hdeblock:autoq/linblenddeint    default,-vdeblock
-short form example:
-vb:a/hb:a/lb                                   de,-vb
-more examples:
-tn:64:128:256
-</pre>
 
 </div>
 

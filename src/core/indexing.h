@@ -38,9 +38,9 @@
 #	include "guids.h"
 #endif
 
+namespace { struct zipped_file; }
 
 class SharedVideoContext {
-private:
 	bool FreeCodecContext;
 public:
 	AVCodecContext *CodecContext;
@@ -53,7 +53,6 @@ public:
 };
 
 class SharedAudioContext {
-private:
 	bool FreeCodecContext;
 public:
 	AVCodecContext *CodecContext;
@@ -72,27 +71,64 @@ public:
 	int64_t FilePos;
 	unsigned int FrameSize;
 	size_t OriginalPos;
+	int FrameType;
 
-	TFrameInfo();
-	static TFrameInfo VideoFrameInfo(int64_t PTS, int RepeatPict, bool KeyFrame, int64_t FilePos = 0, unsigned int FrameSize = 0);
-	static TFrameInfo AudioFrameInfo(int64_t PTS, int64_t SampleStart, int64_t SampleCount, bool KeyFrame, int64_t FilePos = 0, unsigned int FrameSize = 0);
-private:
-	TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize);
+	TFrameInfo() { }
+	TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize, int FrameType);
 };
 
-struct FFMS_Track : public std::vector<TFrameInfo> {
+struct FFMS_Track {
+private:
+	typedef std::vector<TFrameInfo> frame_vec;
+	frame_vec Frames;
+	std::vector<size_t> InvisibleFrames;
+
+	void MaybeReorderFrames();
+	void MaybeHideFrames();
+
 public:
 	FFMS_TrackType TT;
 	FFMS_TrackTimeBase TB;
 	bool UseDTS;
+	bool HasTS;
 
-	int FindClosestVideoKeyFrame(int Frame);
-	int FrameFromPTS(int64_t PTS);
-	int ClosestFrameFromPTS(int64_t PTS);
-	void WriteTimecodes(const char *TimecodeFile);
+	void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, unsigned int FrameSize = 0, bool Invisible = false);
+	void AddAudioFrame(int64_t PTS, int64_t SampleStart, int64_t SampleCount, bool KeyFrame, int64_t FilePos = 0, unsigned int FrameSize = 0);
+
+	void SortByPTS();
+
+	int FindClosestVideoKeyFrame(int Frame) const;
+	int FrameFromPTS(int64_t PTS) const;
+	int FrameFromPos(int64_t Pos) const;
+	int ClosestFrameFromPTS(int64_t PTS) const;
+	int RealFrameNumber(int Frame) const;
+	int VisibleFrameCount() const;
+
+	void WriteTimecodes(const char *TimecodeFile) const;
+	void Write(zipped_file *Stream) const;
+
+	typedef frame_vec::allocator_type allocator_type;
+	typedef frame_vec::size_type size_type;
+	typedef frame_vec::difference_type difference_type;
+	typedef frame_vec::const_pointer pointer;
+	typedef frame_vec::const_reference reference;
+	typedef frame_vec::value_type value_type;
+	typedef frame_vec::const_iterator iterator;
+	typedef frame_vec::const_reverse_iterator reverse_iterator;
+
+	void clear() { Frames.clear(); InvisibleFrames.clear(); }
+
+	bool empty() const { return Frames.empty(); }
+	size_type size() const { return Frames.size(); }
+	reference operator[](size_type pos) const { return Frames[pos]; }
+	reference front() const { return Frames.front(); }
+	reference back() const { return Frames.back(); }
+	iterator begin() const { return Frames.begin(); }
+	iterator end() const { return Frames.end(); }
 
 	FFMS_Track();
-	FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false);
+	FFMS_Track(zipped_file &Stream);
+	FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false, bool HasTS = true);
 };
 
 struct FFMS_Index : public std::vector<FFMS_Track> {
@@ -105,6 +141,7 @@ public:
 	int Release();
 
 	int Decoder;
+	int ErrorHandling;
 	int64_t Filesize;
 	uint8_t Digest[20];
 
@@ -118,7 +155,6 @@ public:
 };
 
 struct FFMS_Indexer {
-private:
 	std::map<int, FFMS_AudioProperties> LastAudioProperties;
 protected:
 	int IndexMask;
@@ -129,14 +165,16 @@ protected:
 	TAudioNameCallback ANC;
 	void *ANCPrivate;
 	std::string SourceFile;
-	AlignedBuffer<uint8_t> DecodingBuffer;
+	ScopedFrame DecodeFrame;
 
 	int64_t Filesize;
 	uint8_t Digest[20];
 
-	void WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track, int DBSize);
+	void WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track);
 	void CheckAudioProperties(int Track, AVCodecContext *Context);
 	int64_t IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices);
+	void ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType, bool *Invisible);
+
 public:
 	static FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer = FFMS_SOURCE_DEFAULT);
 	FFMS_Indexer(const char *Filename);

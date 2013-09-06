@@ -32,6 +32,11 @@
 #ifndef MATROSKA_PARSER_H
 #define	MATROSKA_PARSER_H
 
+/* Make sure we undefine CodecID, since libavcodec defines it as AVCodec ID */
+#ifdef CodecID
+#undef CodecID
+#endif
+
 /* Random notes:
  *
  * The parser does not process frame data in any way and does not read it into

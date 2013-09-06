@@ -32,7 +32,7 @@
 #ifdef __CYGWIN__
 #include <sys/unistd.h>
 #endif
-#ifdef __LINUX__
+#ifdef __linux__
 #include <sched.h>
 #endif
 #if defined(__APPLE__) || defined(__FREEBSD__)
@@ -56,7 +56,7 @@ int GetNumberOfLogicalCPUs() {
 #elif defined(__CYGWIN__)
 	threads = sysconf(_SC_NPROCESSORS_ONLN);
 
-#elif defined(__LINUX__)
+#elif defined(__linux__)
 	cpu_set_t proc_affinity;
 	if (!sched_getaffinity(0, sizeof(proc_affinity), &proc_affinity))
 		threads = CPU_COUNT(&proc_affinity);

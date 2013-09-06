@@ -22,6 +22,11 @@
 #include <errno.h>
 #include <algorithm>
 
+// avcodec.h includes audioconvert.h, but we need to include audioconvert.h
+// ourselves later
+#define FF_API_OLD_AUDIOCONVERT 0
+#define AVUTIL_AUDIOCONVERT_H
+
 #include "utils.h"
 
 #include "codectype.h"
@@ -214,17 +219,51 @@ void InitNullPacket(AVPacket &pkt) {
 	pkt.size = 0;
 }
 
+extern "C" {
+#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 52, 2, 0, 52, 6, 100)
+#include <libavutil/channel_layout.h>
+#else
+#undef AVUTIL_AUDIOCONVERT_H
+
+// Whether or not av_get_default_channel_layout exists in a given version
+// depends on which branch that version is from, since FFmpeg doesn't
+// understand the concept of version numbers. Work around this by always using
+// our copy, since that's less effort than detecting whether or not it's
+// available.
+#define av_get_default_channel_layout av_get_default_channel_layout_hurr
+#include "libavutil/audioconvert.h"
+#undef av_get_default_channel_layout
+
+static int64_t av_get_default_channel_layout(int nb_channels) {
+	switch(nb_channels) {
+		case 1: return AV_CH_LAYOUT_MONO;
+		case 2: return AV_CH_LAYOUT_STEREO;
+		case 3: return AV_CH_LAYOUT_SURROUND;
+		case 4: return AV_CH_LAYOUT_QUAD;
+		case 5: return AV_CH_LAYOUT_5POINT0;
+		case 6: return AV_CH_LAYOUT_5POINT1;
+		case 7: return AV_CH_LAYOUT_6POINT1;
+		case 8: return AV_CH_LAYOUT_7POINT1;
+		default: return 0;
+	}
+}
+#endif
+}
+
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
-	AP.SampleFormat = static_cast<FFMS_SampleFormat>(CTX->sample_fmt);
-	AP.BitsPerSample = av_get_bits_per_sample_fmt(CTX->sample_fmt);
-	AP.Channels = CTX->channels;;
+	AP.SampleFormat = static_cast<FFMS_SampleFormat>(av_get_packed_sample_fmt(CTX->sample_fmt));
+	AP.BitsPerSample = av_get_bytes_per_sample(CTX->sample_fmt) * 8;
+	AP.Channels = CTX->channels;
 	AP.ChannelLayout = CTX->channel_layout;
 	AP.SampleRate = CTX->sample_rate;
-	if (Frames.size() > 0) {
+	if (!Frames.empty()) {
 		AP.NumSamples = (Frames.back()).SampleStart + (Frames.back()).SampleCount;
 		AP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 		AP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 	}
+
+	if (AP.ChannelLayout == 0)
+		AP.ChannelLayout = av_get_default_channel_layout(AP.Channels);
 }
 
 #ifdef HAALISOURCE
@@ -364,47 +403,40 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag)
 // work correctly on Win32.
 // It's a really ugly hack, and I blame Microsoft for it.
 #ifdef _WIN32
-static wchar_t *dup_char_to_wchar(const char *s, unsigned int cp) {
-	wchar_t *w;
-	int l;
-	if (!(l = MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1, NULL, 0)))
-		return NULL;
-	if (!(w = (wchar_t *)malloc(l * sizeof(wchar_t))))
-		return NULL;
-	if (MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1 , w, l) <= 0) {
-		free(w);
-		w = NULL;
-	}
-	return w;
+static std::wstring char_to_wstring(const char *s, unsigned int cp) {
+	std::wstring ret;
+	std::vector<wchar_t> tmp;
+	int len;
+	if (!(len = MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1, NULL, 0)))
+		return ret;
+
+	tmp.resize(len);
+	if (MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1 , &tmp[0], len) <= 0)
+		return ret;
+
+	ret.assign(&tmp[0]);
+	return ret;
+}
+
+static std::wstring widen_path(const char *s) {
+	return char_to_wstring(s, GlobalUseUTF8Paths ? CP_UTF8 : CP_ACP);
 }
 #endif
 
 FILE *ffms_fopen(const char *filename, const char *mode) {
 #ifdef _WIN32
-	unsigned int codepage;
-	if (GlobalUseUTF8Paths)
-		codepage = CP_UTF8;
+	std::wstring filename_wide = widen_path(filename);
+	std::wstring mode_wide     = widen_path(mode);
+	if (filename_wide.size() && mode_wide.size())
+		return _wfopen(filename_wide.c_str(), mode_wide.c_str());
 	else
-		codepage = CP_ACP;
-
-	FILE *ret;
-	wchar_t *filename_wide	= dup_char_to_wchar(filename, codepage);
-	wchar_t *mode_wide		= dup_char_to_wchar(mode, codepage);
-	if (filename_wide && mode_wide)
-		ret = _wfopen(filename_wide, mode_wide);
-	else
-		ret = fopen(filename, mode);
-
-	free(filename_wide);
-	free(mode_wide);
-
-	return ret;
+		return fopen(filename, mode);
 #else
 	return fopen(filename, mode);
 #endif /* _WIN32 */
 }
 
-size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max) {
+size_t ffms_mbstowcs(wchar_t *wcstr, const char *mbstr, size_t max) {
 #ifdef _WIN32
 	// this is only called by HaaliOpenFile anyway, so I think this is safe
 	return static_cast<size_t>(MultiByteToWideChar((GlobalUseUTF8Paths ? CP_UTF8 : CP_ACP), MB_ERR_INVALID_CHARS, mbstr, -1, wcstr, max));
@@ -413,84 +445,48 @@ size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max) {
 #endif
 }
 
+#ifdef __MINGW32__
+static int open_flags(std::ios::openmode mode) {
+	int flags = 0;
+	if ((mode & std::ios::in) && (mode & std::ios::out))
+		flags = _O_CREAT | _O_TRUNC | _O_RDWR;
+	if (mode & std::ios::in)
+		flags = _O_RDONLY;
+	else if (mode & std::ios::out)
+		flags = _O_CREAT | _O_TRUNC | _O_WRONLY;
+
+#ifdef _O_BINARY
+	flags |= _O_BINARY;
+#endif
+	return flags;
+}
+#endif
 
 // ffms_fstream stuff
-void ffms_fstream::open(const char *filename, std::ios_base::openmode mode) {
-	// Unlike MSVC, mingw's iostream library doesn't have an fstream overload
-	// that takes a wchar_t* filename, which means you can't open unicode
-	// filenames with it on Windows. gg.
-#if defined(_WIN32) && !defined(__MINGW32__)
-	unsigned int codepage = GlobalUseUTF8Paths ? CP_UTF8 : CP_ACP;
+ffms_fstream::ffms_fstream(const char *filename, std::ios_base::openmode mode)
+#ifdef __MINGW32__
+: filebuf(_wopen(widen_path(filename).c_str(), open_flags(mode), 0666), mode)
+#endif
+{
+#if defined(_WIN32)
 
-	wchar_t *filename_wide = dup_char_to_wchar(filename, codepage);
-	if (filename_wide)
-		std::fstream::open(filename_wide, mode);
+#ifndef __MINGW32__
+	std::wstring filename_wide = widen_path(filename);
+	if (filename_wide.size())
+		open(filename_wide.c_str(), mode);
 	else
-		std::fstream::open(filename, mode);
+		open(filename, mode);
+#else
+	// Unlike MSVC, mingw's iostream library doesn't have an fstream overload
+	// that takes a wchar_t* filename, so instead we use gcc's nonstandard
+	// fd wrapper
+	std::iostream::rdbuf(&filebuf);
+#endif //__MINGW32__
 
-	free(filename_wide);
-#else // defined(_WIN32) && !defined(__MINGW32__)
-	std::fstream::open(filename, mode);
-#endif // defined(_WIN32) && !defined(__MINGW32__)
-}
-
-ffms_fstream::ffms_fstream(const char *filename, std::ios_base::openmode mode) {
+#else // _WIN32
 	open(filename, mode);
-}
-
-
-#ifdef _WIN32
-int ffms_wchar_open(const char *fname, int oflags, int pmode) {
-    wchar_t *wfname = dup_char_to_wchar(fname, CP_UTF8);
-    if (wfname) {
-        int ret = _wopen(wfname, oflags, pmode);
-        free(wfname);
-        return ret;
-    }
-    return -1;
-}
-
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(53,0,3)
-static int ffms_lavf_file_open(URLContext *h, const char *filename, int flags) {
-    int access;
-    int fd;
-
-    av_strstart(filename, "file:", &filename);
-
-    if (flags & URL_RDWR) {
-        access = _O_CREAT | _O_TRUNC | _O_RDWR;
-    } else if (flags & URL_WRONLY) {
-        access = _O_CREAT | _O_TRUNC | _O_WRONLY;
-    } else {
-        access = _O_RDONLY;
-    }
-#ifdef _O_BINARY
-    access |= _O_BINARY;
-#endif
-    fd = ffms_wchar_open(filename, access, 0666);
-    if (fd == -1)
-        return AVERROR(ENOENT);
-    h->priv_data = (void *) (intptr_t) fd;
-    return 0;
-}
-
-// Hijack lavf's file protocol handler's open function and use our own instead.
-// Hack by nielsm.
-void ffms_patch_lavf_file_open() {
-	URLProtocol *proto = av_protocol_next(NULL);
-	while (proto != NULL) {
-		if (strcmp("file", proto->name) == 0) {
-			break;
-		}
-		proto = proto->next;
-	}
-	if (proto != NULL) {
-		proto->url_open = &ffms_lavf_file_open;
-	}
-}
-#endif
-
 #endif // _WIN32
+}
 
 // End of filename hackery.
 
@@ -549,5 +545,19 @@ void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
 		FormatContext = NULL;
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			"Couldn't find stream information");
+	}
+}
+
+void FlushBuffers(AVCodecContext *CodecContext) {
+	if (CodecContext->codec->flush)
+		avcodec_flush_buffers(CodecContext);
+	else {
+		// If the codec doesn't have flush(), it might not need it... or it
+		// might need it and just not implement it as in the case of VC-1, so
+		// close and reopen the codec
+		const AVCodec *codec = CodecContext->codec;
+		avcodec_close(CodecContext);
+		// Whether or not codec is const varies between versions
+		avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), 0);
 	}
 }

@@ -24,74 +24,33 @@
 #include <algorithm>
 
 /* if you have this, we'll assume you have a new enough libavutil too */
-#if LIBSWSCALE_VERSION_INT >= AV_VERSION_INT(0, 12, 0)
 extern "C" {
 #include <libavutil/opt.h>
 }
-#endif
 
-
-
-// hack
-extern int CPUFeatures;
-
-
-
-/***************************
-**
-** Functions related to initializing swscale and libpostproc contexts, etc.
-**
-***************************/
-
-int64_t GetSWSCPUFlags() {
-	int64_t Flags = 0;
-
-#ifdef SWS_CPU_CAPS_MMX
-	if (CPUFeatures & FFMS_CPU_CAPS_MMX)
-		Flags |= SWS_CPU_CAPS_MMX;
-	if (CPUFeatures & FFMS_CPU_CAPS_MMX2)
-		Flags |= SWS_CPU_CAPS_MMX2;
-	if (CPUFeatures & FFMS_CPU_CAPS_3DNOW)
-		Flags |= SWS_CPU_CAPS_3DNOW;
-	if (CPUFeatures & FFMS_CPU_CAPS_ALTIVEC)
-		Flags |= SWS_CPU_CAPS_ALTIVEC;
-	if (CPUFeatures & FFMS_CPU_CAPS_BFIN)
-		Flags |= SWS_CPU_CAPS_BFIN;
-#ifdef SWS_CPU_CAPS_SSE2
-	if (CPUFeatures & FFMS_CPU_CAPS_SSE2)
-		Flags |= SWS_CPU_CAPS_SSE2;
-#endif /* SWS_CPU_CAPS_SSE2 */
-#endif /* SWS_CPU_CAPS_MMX */
-
-	return Flags;
-}
-
-SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, int DstH, PixelFormat DstFormat, int64_t Flags, int ColorSpace, int ColorRange) {
-	Flags |= SWS_FULL_CHR_H_INT | SWS_FULL_CHR_H_INP;
-#if LIBSWSCALE_VERSION_INT < AV_VERSION_INT(0, 12, 0)
-	return sws_getContext(SrcW, SrcH, SrcFormat, DstW, DstH, DstFormat, Flags, 0, 0, 0);
-#else
+SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, PixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags) {
+	Flags |= SWS_FULL_CHR_H_INT | SWS_FULL_CHR_H_INP | SWS_ACCURATE_RND | SWS_BITEXACT;
 	SwsContext *Context = sws_alloc_context();
 	if (!Context) return 0;
 
-	// The intention here is to never change the color range.
-	int Range; // 0 = limited range, 1 = full range
-	if (ColorRange == AVCOL_RANGE_JPEG)
-		Range = 1;
-	else // explicit limited range, or unspecified
-		Range = 0;
+	// 0 = limited range, 1 = full range
+	int SrcRange = SrcColorRange == AVCOL_RANGE_JPEG;
+	int DstRange = DstColorRange == AVCOL_RANGE_JPEG;
 
-	av_set_int(Context, "sws_flags", Flags);
-	av_set_int(Context, "srcw",       SrcW);
-	av_set_int(Context, "srch",       SrcH);
-	av_set_int(Context, "dstw",       DstW);
-	av_set_int(Context, "dsth",       DstH);
-	av_set_int(Context, "src_range",  Range);
-	av_set_int(Context, "dst_range",  Range);
-	av_set_int(Context, "src_format", SrcFormat);
-	av_set_int(Context, "dst_format", DstFormat);
+	av_opt_set_int(Context, "sws_flags",  Flags, 0);
+	av_opt_set_int(Context, "srcw",       SrcW, 0);
+	av_opt_set_int(Context, "srch",       SrcH, 0);
+	av_opt_set_int(Context, "dstw",       DstW, 0);
+	av_opt_set_int(Context, "dsth",       DstH, 0);
+	av_opt_set_int(Context, "src_range",  SrcRange, 0);
+	av_opt_set_int(Context, "dst_range",  DstRange, 0);
+	av_opt_set_int(Context, "src_format", SrcFormat, 0);
+	av_opt_set_int(Context, "dst_format", DstFormat, 0);
 
-	sws_setColorspaceDetails(Context, sws_getCoefficients(ColorSpace), Range, sws_getCoefficients(ColorSpace), Range, 0, 1<<16, 1<<16);
+	sws_setColorspaceDetails(Context,
+		sws_getCoefficients(SrcColorSpace), SrcRange,
+		sws_getCoefficients(DstColorSpace), DstRange,
+		0, 1<<16, 1<<16);
 
 	if(sws_init_context(Context, 0, 0) < 0){
 		sws_freeContext(Context);
@@ -99,37 +58,14 @@ SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int DstW, i
 	}
 
 	return Context;
-#endif
-
 }
 
-int GetPPCPUFlags() {
-	int Flags = 0;
-
-#ifdef FFMS_USE_POSTPROC
-// not exactly a pretty solution but it'll never get called anyway
-	if (CPUFeatures & FFMS_CPU_CAPS_MMX)
-		Flags |= PP_CPU_CAPS_MMX;
-	if (CPUFeatures & FFMS_CPU_CAPS_MMX2)
-		Flags |= PP_CPU_CAPS_MMX2;
-	if (CPUFeatures & FFMS_CPU_CAPS_3DNOW)
-		Flags |= PP_CPU_CAPS_3DNOW;
-	if (CPUFeatures & FFMS_CPU_CAPS_ALTIVEC)
-		Flags |= PP_CPU_CAPS_ALTIVEC;
-#endif // FFMS_USE_POSTPROC
-
-	return Flags;
-}
-
-
-int GetSwsAssumedColorSpace(int W, int H) {
+AVColorSpace GetAssumedColorSpace(int W, int H) {
 	if (W > 1024 || H >= 600)
-		return SWS_CS_ITU709;
+		return AVCOL_SPC_BT709;
 	else
-		return SWS_CS_DEFAULT;
+		return AVCOL_SPC_BT470BG;
 }
-
-
 
 /***************************
 **
@@ -173,9 +109,6 @@ void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase) {
 	}
 }
 
-
-
-
 /***************************
 **
 ** Since avcodec_find_best_pix_fmt() is broken, we have our own implementation of it here.
@@ -191,12 +124,12 @@ enum BCSType {
 
 static BCSType GuessCSType(PixelFormat p) {
 	// guessing the colorspace type from the name is kinda hackish but libav doesn't export this kind of metadata
-	if (av_pix_fmt_descriptors[p].flags & PIX_FMT_HWACCEL)
+	if (av_pix_fmt_desc_get(p)->flags & PIX_FMT_HWACCEL)
 		return cUNUSABLE;
 	const char *n = av_get_pix_fmt_name(p);
 	if (strstr(n, "gray") || strstr(n, "mono") || strstr(n, "y400a"))
 		return cGRAY;
-	if (strstr(n, "rgb") || strstr(n, "bgr") || strstr(n, "pal8"))
+	if (strstr(n, "rgb") || strstr(n, "bgr") || strstr(n, "gbr") || strstr(n, "pal8"))
 		return cRGB;
 	if (strstr(n, "yuv") || strstr(n, "yv") || strstr(n, "nv12") || strstr(n, "nv21"))
 		return cYUV;
@@ -220,8 +153,8 @@ static int GetPseudoDepth(const AVPixFmtDescriptor &Desc) {
 }
 
 static LossAttributes CalculateLoss(PixelFormat Dst, PixelFormat Src) {
-	const AVPixFmtDescriptor &SrcDesc = av_pix_fmt_descriptors[Src];
-	const AVPixFmtDescriptor &DstDesc = av_pix_fmt_descriptors[Dst];
+	const AVPixFmtDescriptor &SrcDesc = *av_pix_fmt_desc_get(Src);
+	const AVPixFmtDescriptor &DstDesc = *av_pix_fmt_desc_get(Dst);
 	BCSType SrcCS = GuessCSType(Src);
 	BCSType DstCS = GuessCSType(Dst);
 
@@ -284,4 +217,25 @@ PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelForma
 	}
 
 	return Loss.Format;
+}
+
+namespace {
+int parse_vp8(AVCodecParserContext *s,
+	AVCodecContext *avctx,
+	const uint8_t **poutbuf, int *poutbuf_size,
+	const uint8_t *buf, int buf_size)
+{
+	s->pict_type = (buf[0] & 0x01) ? AV_PICTURE_TYPE_P : AV_PICTURE_TYPE_I;
+	s->repeat_pict = (buf[0] & 0x10) ? 0 : -1;
+
+	*poutbuf = buf;
+	*poutbuf_size = buf_size;
+	return buf_size;
+}
+
+AVCodecParser ffms_vp8_parser = { { FFMS_ID(VP8) }, 0, NULL, parse_vp8, NULL };
+}
+
+void RegisterCustomParsers() {
+	av_register_codec_parser(&ffms_vp8_parser);
 }

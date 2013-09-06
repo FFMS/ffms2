@@ -86,8 +86,10 @@ SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char 
 	if ((ConvertToFormat == PIX_FMT_YUV420P || ConvertToFormat == PIX_FMT_YUYV422) && vi.width & 1)
 		Env->ThrowError("SWScale: mod 2 output width required");
 
-	Context = GetSwsContext(OrigWidth, OrigHeight, ConvertFromFormat, vi.width, vi.height, ConvertToFormat,
-		AvisynthToSWSCPUFlags(Env->GetCPUFlags()) | Resizer, GetSwsAssumedColorSpace(OrigWidth, OrigHeight));
+	Context = GetSwsContext(
+		OrigWidth, OrigHeight, ConvertFromFormat, GetAssumedColorSpace(OrigWidth, OrigHeight), AVCOL_RANGE_UNSPECIFIED,
+		vi.width, vi.height, ConvertToFormat, GetAssumedColorSpace(OrigWidth, OrigHeight), AVCOL_RANGE_UNSPECIFIED,
+		AvisynthToSWSCPUFlags(Env->GetCPUFlags()) | Resizer);
 	if (Context == NULL)
 		Env->ThrowError("SWScale: Context creation failed");
 }

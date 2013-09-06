@@ -25,9 +25,6 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
-#ifdef FFMS_USE_POSTPROC
-#include <libpostproc/postprocess.h>
-#endif // FFMS_USE_POSTPROC
 }
 
 #include <algorithm>
@@ -56,43 +53,53 @@ extern "C" {
 struct FFMS_VideoSource {
 friend class FFSourceResources<FFMS_VideoSource>;
 private:
-#ifdef FFMS_USE_POSTPROC
-	pp_context *PPContext;
-	pp_mode *PPMode;
-#endif // FFMS_USE_POSTPROC
 	SwsContext *SWS;
+
 	int LastFrameHeight;
 	int LastFrameWidth;
 	PixelFormat LastFramePixelFormat;
+
 	int TargetHeight;
 	int TargetWidth;
 	std::vector<PixelFormat> TargetPixelFormats;
 	int TargetResizer;
+
 	PixelFormat OutputFormat;
 	AVColorRange OutputColorRange;
 	AVColorSpace OutputColorSpace;
-	AVPicture PPFrame;
+
+	bool InputFormatOverridden;
+	PixelFormat InputFormat;
+	AVColorRange InputColorRange;
+	AVColorSpace InputColorSpace;
+
 	AVPicture SWSFrame;
+
+	void DetectInputFormat();
+
 protected:
 	FFMS_VideoProperties VP;
 	FFMS_Frame LocalFrame;
 	AVFrame *DecodeFrame;
+	AVFrame *LastDecodedFrame;
 	int LastFrameNum;
 	FFMS_Index &Index;
 	FFMS_Track Frames;
 	int VideoTrack;
-	int	CurrentFrame;
+	int CurrentFrame;
 	int DelayCounter;
 	int InitialDecode;
 	int DecodingThreads;
 	AVCodecContext *CodecContext;
 
 	FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads);
-	void ReAdjustPP(PixelFormat VPixelFormat, int Width, int Height);
 	void ReAdjustOutputFormat();
 	FFMS_Frame *OutputFrame(AVFrame *Frame);
 	virtual void Free(bool CloseCodec) = 0;
 	void SetVideoProperties();
+	bool DecodePacket(AVPacket *Packet);
+	void FlushFinalFrames();
+	bool HasPendingDelayedFrames();
 public:
 	virtual ~FFMS_VideoSource();
 	const FFMS_VideoProperties& GetVideoProperties() { return VP; }
@@ -100,10 +107,10 @@ public:
 	virtual FFMS_Frame *GetFrame(int n) = 0;
 	void GetFrameCheck(int n);
 	FFMS_Frame *GetFrameByTime(double Time);
-	void SetPP(const char *PP);
-	void ResetPP();
 	void SetOutputFormat(const PixelFormat *TargetFormats, int Width, int Height, int Resizer);
 	void ResetOutputFormat();
+	void SetInputFormat(int ColorSpace, int ColorRange, PixelFormat Format);
+	void ResetInputFormat();
 };
 
 class FFLAVFVideo : public FFMS_VideoSource {
@@ -112,7 +119,8 @@ private:
 	int SeekMode;
 	FFSourceResources<FFMS_VideoSource> Res;
 
-	void DecodeNextFrame(int64_t *PTS);
+	void DecodeNextFrame(int64_t *PTS, int64_t *Pos);
+	bool SeekTo(int n, int SeekOffset);
 protected:
 	void Free(bool CloseCodec);
 public:
@@ -130,6 +138,7 @@ private:
 	size_t PacketNumber;
 
 	void DecodeNextFrame();
+
 protected:
 	void Free(bool CloseCodec);
 public:

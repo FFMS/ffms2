@@ -57,17 +57,23 @@ FFLAVFAudio::~FFLAVFAudio() {
 	avformat_close_input(&FormatContext);
 }
 
+int64_t FFLAVFAudio::FrameTS(size_t Packet) const {
+	return Frames.HasTS ? Frames[Packet].PTS : Frames[Packet].FilePos;
+}
+
 void FFLAVFAudio::Seek() {
 	size_t TargetPacket = GetSeekablePacketNumber(Frames, PacketNumber);
 	LastValidTS = AV_NOPTS_VALUE;
 
-	if (av_seek_frame(FormatContext, TrackNumber, Frames[TargetPacket].PTS, AVSEEK_FLAG_BACKWARD) < 0)
-		av_seek_frame(FormatContext, TrackNumber, Frames[TargetPacket].PTS, AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_ANY);
+	int Flags = Frames.HasTS ? AVSEEK_FLAG_BACKWARD : AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_BYTE;
+
+	if (av_seek_frame(FormatContext, TrackNumber, FrameTS(TargetPacket), Flags) < 0)
+		av_seek_frame(FormatContext, TrackNumber, FrameTS(TargetPacket), Flags | AVSEEK_FLAG_ANY);
 
 	if (TargetPacket != PacketNumber) {
 		// Decode until the PTS changes so we know where we are
-		int64_t LastPTS = Frames[PacketNumber].PTS;
-		while (LastPTS == Frames[PacketNumber].PTS) DecodeNextBlock();
+		int64_t LastPTS = FrameTS(PacketNumber);
+		while (LastPTS == FrameTS(PacketNumber)) DecodeNextBlock();
 	}
 }
 
@@ -83,9 +89,10 @@ bool FFLAVFAudio::ReadPacket(AVPacket *Packet) {
 				LastValidTS = Packet->pts;
 
 			// This only happens if a really shitty demuxer seeks to a packet without pts *hrm* ogg *hrm* so read until a valid pts is reached
-			if (Packet->pts != AV_NOPTS_VALUE) {
-				while (PacketNumber > 0 && Frames[PacketNumber].PTS > Packet->pts) --PacketNumber;
-				while (Frames[PacketNumber].PTS < Packet->pts) ++PacketNumber;
+			int64_t PacketTS = Frames.HasTS ? Packet->pts : Packet->pos;
+			if (PacketTS != AV_NOPTS_VALUE) {
+				while (PacketNumber > 0 && FrameTS(PacketNumber) > PacketTS) --PacketNumber;
+				while (FrameTS(PacketNumber) < PacketTS) ++PacketNumber;
 				return true;
 			}
 		}
@@ -93,6 +100,7 @@ bool FFLAVFAudio::ReadPacket(AVPacket *Packet) {
 	}
 	return false;
 }
+
 void FFLAVFAudio::FreePacket(AVPacket *Packet) {
 	av_free_packet(Packet);
 }

@@ -44,13 +44,14 @@ static const uint8_t Guiddata[16]={
 	0x64, 0x61, 0x74, 0x61, 0xF3, 0xAC, 0xD3, 0x11, 0x8C, 0xD1, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A
 };
 
-Wave64Writer::Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat) : WavFile(Filename, std::ios::out | std::ios::binary | std::ios::trunc) {
-	BytesWritten = 0;
-	this->BitsPerSample = BitsPerSample;
-	this->Channels = Channels;
-	this->SamplesPerSec = SamplesPerSec;
-	this->IsFloat = IsFloat;
-
+Wave64Writer::Wave64Writer(const char *Filename, uint16_t BytesPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat)
+: WavFile(Filename, std::ios::out | std::ios::binary | std::ios::trunc)
+, BytesPerSample(BytesPerSample)
+, Channels(Channels)
+, SamplesPerSec(SamplesPerSec)
+, BytesWritten(0)
+, IsFloat(IsFloat)
+{
 	if (!WavFile.is_open())
 		throw "Failed to open destination file for writing";
 
@@ -59,7 +60,6 @@ Wave64Writer::Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_
 
 Wave64Writer::~Wave64Writer() {
 	WriteHeader(false, IsFloat);
-	WavFile.close();
 }
 
 void Wave64Writer::WriteHeader(bool Initial, bool IsFloat) {
@@ -70,9 +70,9 @@ void Wave64Writer::WriteHeader(bool Initial, bool IsFloat) {
 		WFEX.wFormatTag = WAVE_FORMAT_PCM;
 	WFEX.nChannels = Channels;
 	WFEX.nSamplesPerSec = SamplesPerSec;
-	WFEX.nAvgBytesPerSec = (BitsPerSample * Channels * SamplesPerSec) / 8;
-	WFEX.nBlockAlign = (BitsPerSample * Channels) / 8;
-	WFEX.wBitsPerSample = BitsPerSample;
+	WFEX.nAvgBytesPerSec = BytesPerSample * Channels * SamplesPerSec;
+	WFEX.nBlockAlign = BytesPerSample * Channels;
+	WFEX.wBitsPerSample = BytesPerSample * 8;
 	WFEX.cbSize = 0;
 
 	uint64_t Header[14];
@@ -106,7 +106,16 @@ void Wave64Writer::WriteHeader(bool Initial, bool IsFloat) {
 		WavFile.seekp(CPos, std::ios::beg);
 }
 
-void Wave64Writer::WriteData(void *Data, std::streamsize Length) {
-	WavFile.write(reinterpret_cast<char *>(Data), Length);
+void Wave64Writer::WriteData(AVFrame const& Frame) {
+	uint64_t Length = Frame.nb_samples * BytesPerSample * Channels;
+	if (Channels > 1 && av_sample_fmt_is_planar(static_cast<AVSampleFormat>(Frame.format))) {
+		for (int32_t sample = 0; sample < Frame.nb_samples; ++sample) {
+			for (int32_t channel = 0; channel < Channels; ++channel)
+				WavFile.write(reinterpret_cast<char *>(&Frame.extended_data[channel][sample * BytesPerSample]), BytesPerSample);
+		}
+	}
+	else {
+		WavFile.write(reinterpret_cast<char *>(Frame.extended_data[0]), Length);
+	}
 	BytesWritten += Length;
 }
