@@ -320,9 +320,9 @@ fi
 cc_check "objbase.h" "-lole32" "CoUninitialize();" && LDFLAGS="$LDFLAGS -lole32"
 
 #find ffmpeg
-if ${cross_prefix}pkg-config --exists libavformat libavcodec libswscale libavutil 2>$DEVNULL; then
-    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavformat libavcodec libswscale libavutil)"
-    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libavformat libavcodec libswscale libavutil)"
+if ${cross_prefix}pkg-config --exists libavformat libavcodec libswscale libavutil libavresample 2>$DEVNULL; then
+    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavformat libavcodec libswscale libavutil libavresample)"
+    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libavformat libavcodec libswscale libavutil libavresample)"
 fi
 # optional libpostproc
 if [ "$postproc" = "yes" ] && ${cross_prefix}pkg-config --exist libpostproc 2>$DEVNULL; then
@@ -336,7 +336,7 @@ if  ${cross_prefix}pkg-config --exist libavcore 2>$DEVNULL; then
 fi
 
 if [ -z "$FFMPEG_LIBS" -a -z "$FFMPEG_CFLAGS" ]; then
-    FFMPEG_LIBS="-lavformat -lavcodec -lswscale"
+    FFMPEG_LIBS="-lavformat -lavcodec -lswscale -lavresample"
     [ "$postproc" = "yes" ] && FFMPEG_LIBS="$FFMPEG_LIBS -lpostproc"
     for lib in -lavcore -lavutil -lm -lz -lbz2 -lpthread -lavifil32; do
         cc_check "" $lib && FFMPEG_LIBS="$FFMPEG_LIBS $lib"
@@ -514,7 +514,7 @@ libdir=$libdir
 includedir=$includedir
 
 Description: The Fabulous FM Library
-Requires: libavformat libavcodec libswscale libpostproc libavutil
+Requires: libavformat libavcodec libswscale libpostproc libavutil libavresample
 Version: $version
 Libs: -L$libdir -lffms -lz
 Cflags: -I$includedir

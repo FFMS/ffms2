@@ -27,6 +27,7 @@ extern "C" {
 #endif
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <stdlib.h>
 #include "ffms.h"
@@ -40,6 +41,7 @@ int Demuxer;
 bool Overwrite;
 bool PrintProgress;
 bool WriteTC;
+bool WriteKF;
 std::string InputFile;
 std::string CacheFile;
 std::string AudioFile;
@@ -57,6 +59,7 @@ static void PrintUsage () {
 	     << "-v        Set FFmpeg verbosity level. Can be repeated for more verbosity. (default: no messages printed)" << endl
 	     << "-p        Disable progress reporting. (default: progress reporting on)" << endl
 	     << "-c        Write timecodes for all video tracks to outputfile_track00.tc.txt (default: no)" << endl
+	     << "-k        Write keyframes for all video tracks to outputfile_track00.kf.txt (default: no)" << endl
 	     << "-t N      Set the audio indexing mask to N (-1 means index all tracks, 0 means index none, default: 0)" << endl
 	     << "-d N      Set the audio decoding mask to N (mask syntax same as -t, default: 0)" << endl
 	     << "-a NAME   Set the audio output base filename to NAME (default: input filename)" << endl
@@ -100,6 +103,8 @@ static void ParseCMDLine (int argc, char *argv[]) {
 			PrintProgress = false;
 		} else if (!Option.compare("-c")) {
 			WriteTC = true;
+		} else if (!Option.compare("-k")) {
+			WriteKF = true;
 		} else if (!Option.compare("-t")) {
 			TrackMask = atoi(OptionArg.c_str());
 			i++;
@@ -232,6 +237,31 @@ static void DoIndexing () {
 				std::cout << "done." << std::endl << std::flush;
 		}
 
+		if (WriteKF) {
+			if (PrintProgress)
+				std::cout << "Writing keyframes... ";
+			int NumTracks = FFMS_GetNumTracks(Index);
+			for (int t = 0; t < NumTracks; t++) {
+				FFMS_Track *Track = FFMS_GetTrackFromIndex(Index, t);
+				if (FFMS_GetTrackType(Track) == FFMS_TYPE_VIDEO && FFMS_GetNumFrames(Track)) {
+					char tn[3];
+					snprintf(tn, 3, "%02d", t);
+
+					std::ofstream kf((CacheFile + "_track" + tn + ".kf.txt").c_str());
+					kf << "# keyframe format v1" << std::endl;
+					kf << "fps 0" << std::endl;
+
+					int FrameCount = FFMS_GetNumFrames(Track);
+					for (int CurFrameNum = 0; CurFrameNum < FrameCount; CurFrameNum++) {
+						if (FFMS_GetFrameInfo(Track, CurFrameNum)->KeyFrame)
+							kf << CurFrameNum << std::endl;
+					}
+				}
+			}
+			if (PrintProgress)
+				std::cout << "done.    " << std::endl << std::flush;
+		}
+
 		if (PrintProgress)
 			std::cout << "Writing index... ";
 
@@ -250,8 +280,20 @@ static void DoIndexing () {
 }
 
 
-#if defined(_WIN32) && !defined(__MINGW32__)
+#ifdef _WIN32
+#ifdef __MINGW32__
+// mingw doesn't support wmain
+extern int _CRT_glob;
+extern "C" void __wgetmainargs(int*, wchar_t***, wchar_t***, int, int*);
+int main() {
+	int argc;
+	wchar_t **_argv;
+	wchar_t **env;
+	int si = 0;
+	__wgetmainargs(&argc, &_argv, &env, _CRT_glob, &si);
+#else
 int wmain(int argc, wchar_t *_argv[]) {
+#endif
 	char **argv = (char**)malloc(argc*sizeof(char*));
 	for (int i=0; i<argc; i++) {
 		int len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, NULL, 0, NULL, NULL);
@@ -290,11 +332,7 @@ int main(int argc, char *argv[]) {
 	}
 #endif /* _WIN32 */
 
-#if defined(_WIN32) && !defined(__MINGW32__)
 	FFMS_Init(0, 1);
-#else
-	FFMS_Init(0, 0);
-#endif
 
 	switch (Verbose) {
 		case 0: FFMS_SetLogLevel(AV_LOG_QUIET); break;

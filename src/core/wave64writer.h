@@ -41,14 +41,13 @@ class Wave64Writer {
 public:
 	Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat);
 	~Wave64Writer();
-	void WriteData(void *Data, std::streamsize Length);
+	void WriteData(AVFrame const& Frame);
 private:
 	ffms_fstream WavFile;
-	int32_t BitsPerSample;
+	int32_t BytesPerSample;
 	int32_t Channels;
 	uint32_t SamplesPerSec;
 	uint64_t BytesWritten;
-	uint32_t HeaderSize;
 	bool IsFloat;
 
 	void WriteHeader(bool Initial, bool IsFloat);

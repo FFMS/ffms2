@@ -44,12 +44,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 			"Video track is unseekable");
 
 	CodecContext = FormatContext->streams[VideoTrack]->codec;
-#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52,111,0)
 	CodecContext->thread_count = DecodingThreads;
-#else
-	if (avcodec_thread_init(CodecContext, DecodingThreads))
-		CodecContext->thread_count = 1;
-#endif
 
 	Codec = avcodec_find_decoder(CodecContext->codec_id);
 	if (Codec == NULL)
@@ -63,8 +58,8 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	Res.CloseCodec(true);
 
 	// Always try to decode a frame to make sure all required parameters are known
-	int64_t Dummy;
-	DecodeNextFrame(&Dummy);
+	int64_t DummyPTS, DummyPos;
+	DecodeNextFrame(&DummyPTS, &DummyPos);
 
 	//VP.image_type = VideoInfo::IT_TFF;
 	VP.FPSDenominator = FormatContext->streams[VideoTrack]->time_base.num;
@@ -88,141 +83,135 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	// Set the video properties from the codec context
 	SetVideoProperties();
 
+	// Set the SAR from the container if the codec SAR is invalid
+	if (VP.SARNum <= 0 || VP.SARDen <= 0) {
+		VP.SARNum = FormatContext->streams[VideoTrack]->sample_aspect_ratio.num;
+		VP.SARDen = FormatContext->streams[VideoTrack]->sample_aspect_ratio.den;
+	}
+
 	// Cannot "output" to PPFrame without doing all other initialization
 	// This is the additional mess required for seekmode=-1 to work in a reasonable way
 	OutputFrame(DecodeFrame);
 }
 
-void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime) {
+void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime, int64_t *Pos) {
+	*AStartTime = -1;
+	if (HasPendingDelayedFrames()) return;
+
 	AVPacket Packet;
 	InitNullPacket(Packet);
-	int FrameFinished = 0;
-	*AStartTime = -1;
-
-	if (InitialDecode == -1) {
-		if (DelayCounter > FFMS_CALCULATE_DELAY) {
-			DelayCounter--;
-			goto Done;
-		} else {
-			InitialDecode = 0;
-		}
-	}
 
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
-        if (Packet.stream_index == VideoTrack) {
-			if (*AStartTime < 0) {
-				if (Frames.UseDTS)
-					*AStartTime = Packet.dts;
-				else
-					*AStartTime = Packet.pts;
-			}
+		if (Packet.stream_index != VideoTrack) {
+			av_free_packet(&Packet);
+			continue;
+		}
 
-			avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &Packet);
+		if (*AStartTime < 0)
+			*AStartTime = Frames.UseDTS ? Packet.dts : Packet.pts;
 
-			if (!FrameFinished)
-				DelayCounter++;
-			if (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode) {
-				av_free_packet(&Packet);
-				goto Done;
-			}
-        }
+		if (*Pos < 0)
+			*Pos = Packet.pos;
 
-        av_free_packet(&Packet);
-
-		if (FrameFinished)
-			goto Done;
+		bool FrameFinished = DecodePacket(&Packet);
+		av_free_packet(&Packet);
+		if (FrameFinished) return;
 	}
 
-	// Flush the last frames
-	if (FFMS_CALCULATE_DELAY) {
-		AVPacket NullPacket;
-		InitNullPacket(NullPacket);
-		avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, &NullPacket);
-	}
-
-	if (!FrameFinished)
-		goto Error;
-
-Error:
-Done:
-	if (InitialDecode == 1) InitialDecode = -1;
+	FlushFinalFrames();
 }
 
-FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
-	GetFrameCheck(n);
-
-	if (LastFrameNum == n)
-		return &LocalFrame;
-
-	bool HasSeeked = false;
-	int SeekOffset = 0;
-
-	int ClosestKF = 0;
+bool FFLAVFVideo::SeekTo(int n, int SeekOffset) {
 	if (SeekMode >= 0) {
-		ClosestKF = Frames.FindClosestVideoKeyFrame(n);
+		int TargetFrame = n + SeekOffset;
+		if (TargetFrame < 0)
+			throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_UNKNOWN,
+			"Frame accurate seeking is not possible in this file");
+
+		if (SeekMode < 3)
+			TargetFrame = Frames.FindClosestVideoKeyFrame(TargetFrame);
 
 		if (SeekMode == 0) {
 			if (n < CurrentFrame) {
 				av_seek_frame(FormatContext, VideoTrack, Frames[0].PTS, AVSEEK_FLAG_BACKWARD);
-				avcodec_flush_buffers(CodecContext);
+				FlushBuffers(CodecContext);
 				CurrentFrame = 0;
 				DelayCounter = 0;
 				InitialDecode = 1;
 			}
 		} else {
 			// 10 frames is used as a margin to prevent excessive seeking since the predicted best keyframe isn't always selected by avformat
-			if (n < CurrentFrame || ClosestKF > CurrentFrame + 10 || (SeekMode == 3 && n > CurrentFrame + 10)) {
-ReSeek:
-				av_seek_frame(FormatContext, VideoTrack,
-					(SeekMode == 3) ? Frames[n].PTS : Frames[ClosestKF + SeekOffset].PTS,
-					AVSEEK_FLAG_BACKWARD);
-				avcodec_flush_buffers(CodecContext);
-				HasSeeked = true;
+			if (n < CurrentFrame || TargetFrame > CurrentFrame + 10 || (SeekMode == 3 && n > CurrentFrame + 10)) {
+				av_seek_frame(FormatContext, VideoTrack, Frames[TargetFrame].PTS, AVSEEK_FLAG_BACKWARD);
+				FlushBuffers(CodecContext);
 				DelayCounter = 0;
 				InitialDecode = 1;
+				return true;
 			}
 		}
 	} else if (n < CurrentFrame) {
 		throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_INVALID_ARGUMENT,
 			"Non-linear access attempted");
 	}
+	return false;
+}
+
+FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
+	GetFrameCheck(n);
+	n = Frames.RealFrameNumber(n);
+
+	if (LastFrameNum == n)
+		return &LocalFrame;
+
+	int SeekOffset = 0;
+	bool Seek = true;
 
 	do {
-		int64_t StartTime;
-		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n)
+		bool HasSeeked = false;
+		if (Seek) {
+			HasSeeked = SeekTo(n, SeekOffset);
+			Seek = false;
+		}
+
+		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n || HasSeeked)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;
-		DecodeNextFrame(&StartTime);
 
-		if (HasSeeked) {
-			HasSeeked = false;
+		int64_t StartTime = ffms_av_nopts_value, FilePos = -1;
+		DecodeNextFrame(&StartTime, &FilePos);
 
-			// Is the seek destination time known? Does it belong to a frame?
-			if (StartTime < 0 || (CurrentFrame = Frames.FrameFromPTS(StartTime)) < 0) {
-				switch (SeekMode) {
-					case 1:
-						// No idea where we are so go back a bit further
-						if (ClosestKF + SeekOffset == 0)
-							throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_UNKNOWN,
-								"Frame accurate seeking is not possible in this file");
+		if (!HasSeeked)
+			continue;
 
-
-						SeekOffset -= FFMIN(10, ClosestKF + SeekOffset);
-						goto ReSeek;
-					case 2:
-					case 3:
-						CurrentFrame = Frames.ClosestFrameFromPTS(StartTime);
-						break;
-					default:
-						throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_UNKNOWN,
-							"Failed assertion");
-				}
+		if (StartTime == ffms_av_nopts_value && !Frames.HasTS) {
+			if (FilePos >= 0) {
+				CurrentFrame = Frames.FrameFromPos(FilePos);
+				if (CurrentFrame >= 0)
+					continue;
+			}
+			// If the track doesn't have timestamps or file positions then
+			// just trust that we got to the right place, since we have no
+			// way to tell where we are
+			else {
+				CurrentFrame = n;
+				continue;
 			}
 		}
 
-		CurrentFrame++;
-	} while (CurrentFrame <= n);
+		CurrentFrame = Frames.FrameFromPTS(StartTime);
+
+		// Is the seek destination time known? Does it belong to a frame?
+		if (CurrentFrame < 0) {
+			if (SeekMode == 1 || StartTime < 0) {
+				// No idea where we are so go back a bit further
+				SeekOffset -= 10;
+				Seek = true;
+			}
+			else
+				CurrentFrame = Frames.ClosestFrameFromPTS(StartTime);
+		}
+	} while (++CurrentFrame <= n);
 
 	LastFrameNum = n;
 	return OutputFrame(DecodeFrame);

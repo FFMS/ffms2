@@ -11,6 +11,42 @@ FFmpegSource2 Changelog
 <div class="maincontent">
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
+<li>2.18<ul>
+<li>Fix regression (r483) with rffmode that caused it to error out even if using the default output colorspace. (TheRyuu)</li>
+<li>High(er) quality YUV->RGB conversion. (TheRyuu)</li>
+<li>Fix indexing on files with cover art. (TheRyuu)</li>
+<li>Add support for libav/ffmpeg built with msvc, this is the default on windows when building with msvc. (TheRyuu)</li>
+<li>Remove postproc support. (TheRyuu)</li>
+<li>Deprecate the CPUFeatures argument to FFMS_Init since postproc was the only thing still using it. (Plorkyeran)</li>
+<li>Added VapourSynth support. (Myrsloik)</li>
+<li>ffmsindex can now output keyframe numbers to a file while indexing. (Plorkyeran)</li>
+<li>configure now defaults to building a shared library, except when building MinGW/Cygwin, since you usually want static for those. (Plorkyeran)</li>
+<li>The source color space and color range used when converting with swscale can now be overridden. (Plorkyeran)</li>
+<li>Fix issues with unicode filenames when building with mingw. (Plorkyeran)</li>
+<li>Fix progress reporting when indexing files with non-zero initial timestamp with haali's splitter. (Plorkyeran)</li>
+<li>Add support for formats with packet durations but no packet timestamps. (Plorkyeran)</li>
+<li>Fix corruption when seeking in VC-1 in MKV. (Plorkyeran)</li>
+<li>Fix bug that resulted in files opened with Haali's splitter sometimes always decoding from the beginning on every seek. (Plorkyeran)</li>
+<li>Add support for VP8. (Plorkyeran)</li>
+<li>Fix crash when indexing video formats with no parser. (Plorkyeran)</li>
+<li>Fix compilation errors with recent versions of libav/ffmpeg. (Plorkyeran)</li>
+<li>Fix NVOP handling with frame-based threading (aka zero-size frames with mp4 bug). (Plorkyeran)</li>
+<li>Add support for vc1image. (Plorkyeran)</li>
+<li>Use the container SAR when the codec SAR is unset when opening via lavf. (Plorkyeran)</li>
+<li>Actually set the ColorRange and ColorSpace of frames when nothing has been overridden. (Plorkyeran)</li>
+<li>Add support for files without timestamps to lavf audio. (Plorkyeran)</li>
+<li>Fix handling of audio delay with invalid inital timestamps. (Plorkyeran)</li>
+<li>Sort of partially fix interlaced H.264. (Plorkyeran)</li>
+<li>Fix errors when the client asks for audio past the end of the file. (Plorkyeran)</li>
+<li>Fix rounding error with MKV timestamps that resulted in things getting a FPS like 60001/1001. (TheRyuu)</li>
+<li>Bump required version to libav 0.8/FFmpeg 0.9. (Plorkyeran)</li>
+<li>Switch to avcodec_decode_audio4. (Plorkyeran)</li>
+<li>Add support for planar audio from lavc. (Plorkyeran)</li>
+<li>Add SetOutputFormatA for audio resampling/mixing using libavresample. (Plorkyeran)</li>
+<li>Zero-length index files are now rejected rather than bad things happening.</li>
+</ul>
+</li>
+
 <li>2.17<ul>
 <li>Reworked color matrix and color range handling a bit, which fixed a bug that could cause FFMS2 to always output TV range even if the input was full range. (TheFluff)</li>
 <li>The autotools build system can now create debug builds properly. (Daemon404)</li>
@@ -31,6 +67,7 @@ FFmpegSource2 Changelog
 <li>Bump minimum required version of FFmpeg to 0.6.</li>
 </ul>
 </li>
+
 <li>2.16<ul>
 <li>Reimplemented output colorspace selection, this should fix all issues with the Avisynth plugin when opening yuv420p10 or yuv444 material plus several other less common cases. (Myrsloik)</li>
 <li>Added <tt>FFMS_SetOutputFormatV2</tt> to the API. This function allows you to specify PixelFormats &gt;= 64 for use as output. (Myrsloik)</li>

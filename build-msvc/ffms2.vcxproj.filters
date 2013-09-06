@@ -22,6 +22,9 @@
     <Filter Include="Config">
       <UniqueIdentifier>{ac81097c-9043-43fa-a184-ea4c22091059}</UniqueIdentifier>
     </Filter>
+    <Filter Include="VapourSynth">
+      <UniqueIdentifier>{8a87437e-fe04-4b74-a917-f8c108247e3f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\core\audiosource.cpp">
@@ -63,9 +66,9 @@
     <ClCompile Include="..\src\core\ffms.cpp">
       <Filter>API</Filter>
     </ClCompile>
-	<ClCompile Include="..\src\core\codectype.cpp">
-	  <Filter>Utils</Filter>
-	</ClCompile>
+    <ClCompile Include="..\src\core\codectype.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\core\matroskaparser.c">
       <Filter>Utils</Filter>
     </ClCompile>
@@ -90,9 +93,6 @@
     <ClCompile Include="..\src\avisynth\avsutils.cpp">
       <Filter>Avisynth</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\avisynth\ffpp.cpp">
-      <Filter>Avisynth</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\avisynth\ffswscale.cpp">
       <Filter>Avisynth</Filter>
     </ClCompile>
@@ -101,6 +101,12 @@
     </ClCompile>
     <ClCompile Include="..\src\core\videoutils.cpp">
       <Filter>Video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vapoursynth\vapoursource.cpp">
+      <Filter>VapourSynth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vapoursynth\vapoursynth.cpp">
+      <Filter>VapourSynth</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -119,9 +125,9 @@
     <ClInclude Include="..\src\core\coparser.h">
       <Filter>Utils</Filter>
     </ClInclude>
-	<ClInclude Include="..\src\core\codectype.h">
-	  <Filter>Utils</Filter>
-	</ClInclude>
+    <ClInclude Include="..\src\core\codectype.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
     <ClInclude Include="..\include\ffmscompat.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -152,9 +158,6 @@
     <ClInclude Include="..\src\avisynth\avsutils.h">
       <Filter>Avisynth</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\avisynth\ffpp.h">
-      <Filter>Avisynth</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\avisynth\ffswscale.h">
       <Filter>Avisynth</Filter>
     </ClInclude>
@@ -163,6 +166,12 @@
     </ClInclude>
     <ClInclude Include="..\src\core\videoutils.h">
       <Filter>Video</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vapoursynth\vapoursource.h">
+      <Filter>VapourSynth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vapoursynth\VapourSynth.h">
+      <Filter>VapourSynth</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

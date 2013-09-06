@@ -25,77 +25,78 @@
 
 typedef struct CodecTags {
 	char str[20];
-	CodecID id;
+	FFMS_CodecID id;
 } CodecTags;
 
 static const CodecTags mkv_codec_tags[] = {
-	{"A_AAC"            , CODEC_ID_AAC},
-	{"A_AC3"            , CODEC_ID_AC3},
-	{"A_DTS"            , CODEC_ID_DTS},
-	{"A_EAC3"           , CODEC_ID_EAC3},
-	{"A_FLAC"           , CODEC_ID_FLAC},
-	{"A_MLP"            , CODEC_ID_MLP},
-	{"A_MPEG/L2"        , CODEC_ID_MP2},
-	{"A_MPEG/L1"        , CODEC_ID_MP2},
-	{"A_MPEG/L3"        , CODEC_ID_MP3},
-	{"A_PCM/FLOAT/IEEE" , CODEC_ID_PCM_F32LE},
-	{"A_PCM/FLOAT/IEEE" , CODEC_ID_PCM_F64LE},
-	{"A_PCM/INT/BIG"    , CODEC_ID_PCM_S16BE},
-	{"A_PCM/INT/BIG"    , CODEC_ID_PCM_S24BE},
-	{"A_PCM/INT/BIG"    , CODEC_ID_PCM_S32BE},
-	{"A_PCM/INT/LIT"    , CODEC_ID_PCM_S16LE},
-	{"A_PCM/INT/LIT"    , CODEC_ID_PCM_S24LE},
-	{"A_PCM/INT/LIT"    , CODEC_ID_PCM_S32LE},
-	{"A_PCM/INT/LIT"    , CODEC_ID_PCM_U8},
-	{"A_QUICKTIME/QDM2" , CODEC_ID_QDM2},
-	{"A_REAL/14_4"      , CODEC_ID_RA_144},
-	{"A_REAL/28_8"      , CODEC_ID_RA_288},
-	{"A_REAL/ATRC"      , CODEC_ID_ATRAC3},
-	{"A_REAL/COOK"      , CODEC_ID_COOK},
-	{"A_REAL/SIPR"      , CODEC_ID_SIPR},
-	{"A_TRUEHD"         , CODEC_ID_TRUEHD},
-	{"A_TTA1"           , CODEC_ID_TTA},
-	{"A_VORBIS"         , CODEC_ID_VORBIS},
-	{"A_WAVPACK4"       , CODEC_ID_WAVPACK},
+	{"A_AAC"            , FFMS_ID(AAC)},
+	{"A_AC3"            , FFMS_ID(AC3)},
+	{"A_DTS"            , FFMS_ID(DTS)},
+	{"A_EAC3"           , FFMS_ID(EAC3)},
+	{"A_FLAC"           , FFMS_ID(FLAC)},
+	{"A_MLP"            , FFMS_ID(MLP)},
+	{"A_MPEG/L2"        , FFMS_ID(MP2)},
+	{"A_MPEG/L1"        , FFMS_ID(MP2)},
+	{"A_MPEG/L3"        , FFMS_ID(MP3)},
+	{"A_PCM/FLOAT/IEEE" , FFMS_ID(PCM_F32LE)},
+	{"A_PCM/FLOAT/IEEE" , FFMS_ID(PCM_F64LE)},
+	{"A_PCM/INT/BIG"    , FFMS_ID(PCM_S16BE)},
+	{"A_PCM/INT/BIG"    , FFMS_ID(PCM_S24BE)},
+	{"A_PCM/INT/BIG"    , FFMS_ID(PCM_S32BE)},
+	{"A_PCM/INT/LIT"    , FFMS_ID(PCM_S16LE)},
+	{"A_PCM/INT/LIT"    , FFMS_ID(PCM_S24LE)},
+	{"A_PCM/INT/LIT"    , FFMS_ID(PCM_S32LE)},
+	{"A_PCM/INT/LIT"    , FFMS_ID(PCM_U8)},
+	{"A_QUICKTIME/QDM2" , FFMS_ID(QDM2)},
+	{"A_REAL/14_4"      , FFMS_ID(RA_144)},
+	{"A_REAL/28_8"      , FFMS_ID(RA_288)},
+	{"A_REAL/ATRC"      , FFMS_ID(ATRAC3)},
+	{"A_REAL/COOK"      , FFMS_ID(COOK)},
+	{"A_REAL/SIPR"      , FFMS_ID(SIPR)},
+	{"A_TRUEHD"         , FFMS_ID(TRUEHD)},
+	{"A_TTA1"           , FFMS_ID(TTA)},
+	{"A_VORBIS"         , FFMS_ID(VORBIS)},
+	{"A_WAVPACK4"       , FFMS_ID(WAVPACK)},
 
-	{"S_TEXT/UTF8"      , CODEC_ID_TEXT},
-#if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(52, 101, 0))
-	{"S_TEXT/UTF8"      , CODEC_ID_SRT},
+	{"S_TEXT/UTF8"      , FFMS_ID(TEXT)},
+	{"S_TEXT/UTF8"      , FFMS_ID(SRT)},
+	{"S_TEXT/ASCII"     , FFMS_ID(TEXT)},
+	{"S_TEXT/ASS"       , FFMS_ID(SSA)},
+	{"S_TEXT/SSA"       , FFMS_ID(SSA)},
+	{"S_ASS"            , FFMS_ID(SSA)},
+	{"S_SSA"            , FFMS_ID(SSA)},
+	{"S_VOBSUB"         , FFMS_ID(DVD_SUBTITLE)},
+	{"S_HDMV/PGS"       , FFMS_ID(HDMV_PGS_SUBTITLE)},
+
+	{"V_DIRAC"          , FFMS_ID(DIRAC)},
+	{"V_MJPEG"          , FFMS_ID(MJPEG)},
+	{"V_MPEG1"          , FFMS_ID(MPEG1VIDEO)},
+	{"V_MPEG2"          , FFMS_ID(MPEG2VIDEO)},
+	{"V_MPEG4/ISO/ASP"  , FFMS_ID(MPEG4)},
+	{"V_MPEG4/ISO/AP"   , FFMS_ID(MPEG4)},
+	{"V_MPEG4/ISO/SP"   , FFMS_ID(MPEG4)},
+	{"V_MPEG4/ISO/AVC"  , FFMS_ID(H264)},
+	{"V_MPEG4/MS/V3"    , FFMS_ID(MSMPEG4V3)},
+	{"V_REAL/RV10"      , FFMS_ID(RV10)},
+	{"V_REAL/RV20"      , FFMS_ID(RV20)},
+	{"V_REAL/RV30"      , FFMS_ID(RV30)},
+	{"V_REAL/RV40"      , FFMS_ID(RV40)},
+#if LIBAVCODEC_VERSION_MAJOR < 55
+	{"V_SNOW"           , FFMS_ID(SNOW)},
 #endif
-	{"S_TEXT/ASCII"     , CODEC_ID_TEXT},
-	{"S_TEXT/ASS"       , CODEC_ID_SSA},
-	{"S_TEXT/SSA"       , CODEC_ID_SSA},
-	{"S_ASS"            , CODEC_ID_SSA},
-	{"S_SSA"            , CODEC_ID_SSA},
-	{"S_VOBSUB"         , CODEC_ID_DVD_SUBTITLE},
-	{"S_HDMV/PGS"       , CODEC_ID_HDMV_PGS_SUBTITLE},
+	{"V_THEORA"         , FFMS_ID(THEORA)},
+	{"V_UNCOMPRESSED"   , FFMS_ID(RAWVIDEO)},
+	{"V_VP8"            , FFMS_ID(VP8)},
 
-	{"V_DIRAC"          , CODEC_ID_DIRAC},
-	{"V_MJPEG"          , CODEC_ID_MJPEG},
-	{"V_MPEG1"          , CODEC_ID_MPEG1VIDEO},
-	{"V_MPEG2"          , CODEC_ID_MPEG2VIDEO},
-	{"V_MPEG4/ISO/ASP"  , CODEC_ID_MPEG4},
-	{"V_MPEG4/ISO/AP"   , CODEC_ID_MPEG4},
-	{"V_MPEG4/ISO/SP"   , CODEC_ID_MPEG4},
-	{"V_MPEG4/ISO/AVC"  , CODEC_ID_H264},
-	{"V_MPEG4/MS/V3"    , CODEC_ID_MSMPEG4V3},
-	{"V_REAL/RV10"      , CODEC_ID_RV10},
-	{"V_REAL/RV20"      , CODEC_ID_RV20},
-	{"V_REAL/RV30"      , CODEC_ID_RV30},
-	{"V_REAL/RV40"      , CODEC_ID_RV40},
-	{"V_SNOW"           , CODEC_ID_SNOW},
-	{"V_THEORA"         , CODEC_ID_THEORA},
-	{"V_UNCOMPRESSED"   , CODEC_ID_RAWVIDEO},
-	{"V_VP8"            , CODEC_ID_VP8},
-
-	{""                 , CODEC_ID_NONE}
+	{""                 , FFMS_ID(NONE)}
 };
 
 typedef struct AVCodecTag {
-	enum CodecID id;
+	enum FFMS_CodecID id;
 	unsigned int tag;
 } AVCodecTag;
 
+#if VERSION_CHECK(LIBAVFORMAT_VERSION_INT, <, 54, 1, 0, 53, 32, 100) && !defined(RETARDED_LIBAV_RELEASE_BRANCH_WHICH_INTRODUCED_AVFORMAT_GET_RIFF_VIDEO_TAGS_AT_A_VERSION_NUMBER_WHICH_HAD_ALREADY_BEEN_USED)
 static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_H264,         MKTAG('H', '2', '6', '4') },
 	{ CODEC_ID_H264,         MKTAG('h', '2', '6', '4') },
@@ -263,9 +264,7 @@ static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_RAWVIDEO,     MKTAG('Y', 'V', 'U', '9') },
 	{ CODEC_ID_RAWVIDEO,     MKTAG('a', 'u', 'v', '2') },
 	{ CODEC_ID_FRWU,         MKTAG('F', 'R', 'W', 'U') },
-#if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(52, 89, 0))
 	{ CODEC_ID_R10K,         MKTAG('R', '1', '0', 'k') },
-#endif
 	{ CODEC_ID_R210,         MKTAG('r', '2', '1', '0') },
 	{ CODEC_ID_V210,         MKTAG('v', '2', '1', '0') },
 #if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >=, 53, 28, 0, 53, 44, 0)
@@ -316,14 +315,10 @@ static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_QPEG,         MKTAG('Q', '1', '.', '0') },
 	{ CODEC_ID_QPEG,         MKTAG('Q', '1', '.', '1') },
 	{ CODEC_ID_WMV3,         MKTAG('W', 'M', 'V', '3') },
-#if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(53, 9, 0))
 	{ CODEC_ID_WMV3IMAGE,    MKTAG('W', 'M', 'V', 'P') },
-#endif
 	{ CODEC_ID_VC1,          MKTAG('W', 'V', 'C', '1') },
 	{ CODEC_ID_VC1,          MKTAG('W', 'M', 'V', 'A') },
-#if (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(53, 9, 0))
 	{ CODEC_ID_VC1IMAGE,     MKTAG('W', 'V', 'P', '2') },
-#endif
 	{ CODEC_ID_LOCO,         MKTAG('L', 'O', 'C', 'O') },
 	{ CODEC_ID_WNV1,         MKTAG('W', 'N', 'V', '1') },
 	{ CODEC_ID_AASC,         MKTAG('A', 'A', 'S', 'C') },
@@ -362,15 +357,11 @@ static const AVCodecTag codec_bmp_tags[] = {
 	{ CODEC_ID_G2M,          MKTAG('G', '2', 'M', '4') },
 #endif
 	{ CODEC_ID_AMV,          MKTAG('A', 'M', 'V', 'F') },
-#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >, 53, 12, 2, 53, 20, 1)
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'R', 'A') },
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'R', 'G') },
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'Y', '0') },
 	{ CODEC_ID_UTVIDEO,      MKTAG('U', 'L', 'Y', '2') },
-#endif
-#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >=, 53, 19, 0, 53, 32, 0)
 	{ CODEC_ID_VBLE,         MKTAG('V', 'B', 'L', 'E') },
-#endif
 #if defined(FFMS_USE_FFMPEG_COMPAT) && (LIBAVCODEC_VERSION_INT) >= (AV_VERSION_INT(53, 43, 0))
 	{ CODEC_ID_ESCAPE130,    MKTAG('E', '1', '3', '0') },
 #endif
@@ -379,6 +370,11 @@ static const AVCodecTag codec_bmp_tags[] = {
 #endif
 	{ CODEC_ID_NONE,         0 }
 };
+
+static const AVCodecTag *avformat_get_riff_video_tags() {
+	return codec_bmp_tags;
+}
+#endif
 
 FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT) {
 	switch (TT) {
@@ -400,30 +396,30 @@ const char *GetLAVCSampleFormatName(AVSampleFormat s) {
 	}
 }
 
-CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC, unsigned int BitsPerSample) {
+FFMS_CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC, unsigned int BitsPerSample) {
 	/* Look up native codecs */
-	for(int i = 0; mkv_codec_tags[i].id != CODEC_ID_NONE; i++){
+	for(int i = 0; mkv_codec_tags[i].id != FFMS_ID(NONE); i++){
 		if(!strncmp(mkv_codec_tags[i].str, Codec,
 			strlen(mkv_codec_tags[i].str))) {
 
 				// Uncompressed and exotic format fixup
 				// This list is incomplete
-				CodecID CID = mkv_codec_tags[i].id;
+				FFMS_CodecID CID = mkv_codec_tags[i].id;
 				switch (CID) {
-					case CODEC_ID_PCM_S16LE:
+					case FFMS_ID(PCM_S16LE):
 						switch (BitsPerSample) {
-					case 8: CID = CODEC_ID_PCM_S8; break;
-					case 16: CID = CODEC_ID_PCM_S16LE; break;
-					case 24: CID = CODEC_ID_PCM_S24LE; break;
-					case 32: CID = CODEC_ID_PCM_S32LE; break;
+							case 8: CID = FFMS_ID(PCM_S8); break;
+							case 16: CID = FFMS_ID(PCM_S16LE); break;
+							case 24: CID = FFMS_ID(PCM_S24LE); break;
+							case 32: CID = FFMS_ID(PCM_S32LE); break;
 						}
 						break;
-					case CODEC_ID_PCM_S16BE:
+					case FFMS_ID(PCM_S16BE):
 						switch (BitsPerSample) {
-					case 8: CID = CODEC_ID_PCM_S8; break;
-					case 16: CID = CODEC_ID_PCM_S16BE; break;
-					case 24: CID = CODEC_ID_PCM_S24BE; break;
-					case 32: CID = CODEC_ID_PCM_S32BE; break;
+							case 8: CID = FFMS_ID(PCM_S8); break;
+							case 16: CID = FFMS_ID(PCM_S16BE); break;
+							case 24: CID = FFMS_ID(PCM_S24BE); break;
+							case 32: CID = FFMS_ID(PCM_S32BE); break;
 						}
 						break;
 					default:
@@ -435,7 +431,7 @@ CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC
 	}
 
 	/* Video codecs for "avi in mkv" mode */
-	const AVCodecTag *const tags[] = { codec_bmp_tags, 0 };
+	const AVCodecTag *const tags[] = { avformat_get_riff_video_tags(), 0 };
 
 	if (!strcmp(Codec, "V_MS/VFW/FOURCC")) {
 		FFMS_BITMAPINFOHEADER *b = reinterpret_cast<FFMS_BITMAPINFOHEADER *>(CodecPrivate);
@@ -455,5 +451,5 @@ CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC
 
 	/* Fixup for uncompressed audio formats */
 
-	return CODEC_ID_NONE;
+	return FFMS_ID(NONE);
 }

@@ -31,12 +31,13 @@
 extern "C" {
 #include "stdiostream.h"
 #include <libavutil/mem.h>
+#include <libavutil/opt.h>
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
-#ifdef FFMS_USE_POSTPROC
-#include <libpostproc/postprocess.h>
-#endif // FFMS_USE_POSTPROC
+#ifdef WITH_AVRESAMPLE
+#include <libavresample/avresample.h>
+#endif
 }
 
 // must be included after ffmpeg headers
@@ -52,6 +53,10 @@ extern "C" {
 #	include <initguid.h>
 #	include "CoParser.h"
 #	include "guids.h"
+#endif
+
+#ifdef __MINGW32__
+#include <ext/stdio_filebuf.h>
 #endif
 
 #define FFMS_GET_VECTOR_PTR(v) (((v).size() ? &(v)[0] : NULL))
@@ -132,6 +137,34 @@ public:
 	}
 };
 
+template<typename T, T *(*Alloc)(), void (*Del)(T **)>
+class unknown_size {
+	T *ptr;
+
+	unknown_size(unknown_size const&);
+	unknown_size& operator=(unknown_size const&);
+public:
+	operator T*() const { return ptr; }
+	operator void*() const { return ptr; }
+	T *operator->() const { return ptr; }
+
+	unknown_size() : ptr(Alloc()) { }
+	~unknown_size() { Del(&ptr); }
+};
+
+class ScopedFrame : public unknown_size<AVFrame, avcodec_alloc_frame, avcodec_free_frame> {
+public:
+	void reset() {
+		avcodec_get_frame_defaults(*this);
+	}
+};
+
+#ifdef WITH_AVRESAMPLE
+typedef unknown_size<AVAudioResampleContext, avresample_alloc_context, avresample_free> FFResampleContext;
+#else
+typedef struct {} FFResampleContext;
+#endif
+
 inline void DeleteHaaliCodecContext(AVCodecContext *CodecContext) {
 	av_freep(&CodecContext->extradata);
 	av_freep(&CodecContext);
@@ -163,31 +196,15 @@ public:
 	}
 };
 
-class ffms_fstream : public std::fstream {
+struct ffms_fstream : public std::fstream {
+#ifdef __MINGW32__
+private:
+	__gnu_cxx::stdio_filebuf<char> filebuf;
 public:
-	void open(const char *filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out);
+	bool is_open() const { return filebuf.is_open(); }
+#endif
 	ffms_fstream(const char *filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out);
 };
-
-template <typename T>
-class AlignedBuffer {
-	T *buf;
-
-public:
-	explicit AlignedBuffer(size_t n = 1) {
-		buf = (T*) av_malloc(sizeof(*buf) * n);
-		if (!buf) throw std::bad_alloc();
-	}
-
-	~AlignedBuffer() {
-		av_free(buf);
-		buf = 0;
-	}
-
-	const T &operator[] (size_t i) const { return buf[i]; }
-	T &operator[] (size_t i) { return buf[i]; }
-};
-
 
 class TrackCompressionContext {
 public:
@@ -216,13 +233,79 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag)
 void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext);
 FILE *ffms_fopen(const char *filename, const char *mode);
 size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max);
-#if defined(_WIN32) && LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(53,0,3)
-void ffms_patch_lavf_file_open();
-#endif // _WIN32
 #ifdef HAALISOURCE
 CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceMode);
 #endif // HAALISOURCE
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
 
+void FlushBuffers(AVCodecContext *CodecContext);
+
+namespace optdetail {
+	template<typename T>
+	T get_av_opt(void *v, const char *name) {
+		int64_t value = 0;
+		av_opt_get_int(v, name, 0, &value);
+		return static_cast<T>(value);
+	}
+
+	template<>
+	inline double get_av_opt<double>(void *v, const char *name) {
+		double value = 0.0;
+		av_opt_get_double(v, name, 0, &value);
+		return value;
+	}
+
+	template<typename T>
+	void set_av_opt(void *v, const char *name, T value) {
+		av_opt_set_int(v, name, value, 0);
+	}
+
+	template<>
+	inline void set_av_opt<double>(void *v, const char *name, double value) {
+		av_opt_set_double(v, name, value, 0);
+	}
+}
+
+template<typename FFMS_Struct>
+class OptionMapper {
+	struct OptionMapperBase {
+		virtual void ToOpt(const FFMS_Struct *src, void *dst) const=0;
+		virtual void FromOpt(FFMS_Struct *dst, void *src) const=0;
+	};
+
+	template<typename T>
+	class OptionMapperImpl : public OptionMapperBase {
+		T (FFMS_Struct::*ptr);
+		const char *name;
+
+	public:
+		OptionMapperImpl(T (FFMS_Struct::*ptr), const char *name) : ptr(ptr), name(name) { }
+		void ToOpt(const FFMS_Struct *src, void *dst) const { optdetail::set_av_opt(dst, name, src->*ptr); }
+		void FromOpt(FFMS_Struct *dst, void *src) const { dst->*ptr = optdetail::get_av_opt<T>(src, name); }
+	};
+
+	OptionMapperBase *impl;
+
+public:
+	template<typename T>
+	OptionMapper(const char *opt_name, T (FFMS_Struct::*member)) : impl(new OptionMapperImpl<T>(member, opt_name)) { }
+
+	void ToOpt(const FFMS_Struct *src, void *dst) const { impl->ToOpt(src, dst); }
+	void FromOpt(FFMS_Struct *dst, void *src) const { impl->FromOpt(dst, src); }
+};
+
+template<typename T, int N>
+T *ReadOptions(void *opt, OptionMapper<T> (&options)[N]) {
+	T *ret = new T;
+	for (int i = 0; i < N; ++i)
+		options[i].FromOpt(ret, opt);
+	return ret;
+}
+
+template<typename T, int N>
+void SetOptions(const T* src, void *opt, OptionMapper<T> (&options)[N]) {
+	for (int i = 0; i < N; ++i)
+		options[i].ToOpt(src, opt);
+}
 
 #endif

@@ -29,6 +29,9 @@ extern "C" {
 #include <vector>
 #include <list>
 #include <memory>
+
+#include "ffmscompat.h"
+
 #include "indexing.h"
 #include "utils.h"
 #include "ffms.h"
@@ -46,7 +49,6 @@ extern "C" {
 #endif
 
 struct FFMS_AudioSource {
-private:
 	struct AudioBlock {
 		int64_t Age;
 		int64_t Start;
@@ -54,9 +56,17 @@ private:
 		std::vector<uint8_t> Data;
 
 		AudioBlock(int64_t Start, int64_t Samples, uint8_t *SrcData, size_t SrcBytes)
-			: Start(Start)
-			, Samples(Samples)
-			, Data(SrcData, SrcData + SrcBytes)
+		: Start(Start)
+		, Samples(Samples)
+		, Data(SrcData, SrcData + SrcBytes)
+		{
+			static int64_t Now = 0;
+			Age = Now++;
+		}
+
+		AudioBlock(int64_t Start, int64_t Samples)
+		: Start(Start)
+		, Samples(Samples)
 		{
 			static int64_t Now = 0;
 			Age = Now++;
@@ -74,11 +84,18 @@ private:
 	CacheIterator CacheNoDelete;
 	// bytes per sample * number of channels
 	size_t BytesPerSample;
-	// Number of samples stored in the decoding buffer
-	size_t Decoded;
 
-	// Insert a block into the cache
-	void CacheBlock(CacheIterator &pos, int64_t Start, size_t Samples, uint8_t *SrcData);
+	bool NeedsResample;
+	FFResampleContext ResampleContext;
+
+	// Insert the current audio frame into the cache
+	void CacheBlock(CacheIterator &pos);
+
+	// Interleave the current audio frame and insert it into the cache
+	void ResampleAndCache(CacheIterator pos);
+
+	// Cache the unseekable beginning of the file once the output format is set
+	void CacheBeginning();
 
 	// Called after seeking
 	virtual void Seek() { };
@@ -91,7 +108,7 @@ protected:
 	// Next packet to be read
 	size_t PacketNumber;
 	// Current audio frame
-	TFrameInfo *CurrentFrame;
+	const TFrameInfo *CurrentFrame;
 	// Track which this corresponds to
 	int TrackNumber;
 	// Number of packets which the demuxer requires to know where it is
@@ -99,13 +116,13 @@ protected:
 	int SeekOffset;
 
 	// Buffer which audio is decoded into
-	AlignedBuffer<uint8_t> DecodingBuffer;
+	ScopedFrame DecodeFrame;
 	FFMS_Index &Index;
 	FFMS_Track Frames;
 	FFCodecContext CodecContext;
 	FFMS_AudioProperties AP;
 
-	void DecodeNextBlock();
+	void DecodeNextBlock(CacheIterator *cachePos = 0);
 	// Initialization which has to be done after the codec is opened
 	void Init(const FFMS_Index &Index, int DelayMode);
 
@@ -116,6 +133,9 @@ public:
 	FFMS_Track *GetTrack() { return &Frames; }
 	const FFMS_AudioProperties& GetAudioProperties() const { return AP; }
 	void GetAudio(void *Buf, int64_t Start, int64_t Count);
+
+	FFMS_ResampleOptions *CreateResampleOptions() const;
+	void SetOutputFormat(const FFMS_ResampleOptions *opt);
 };
 
 class FFLAVFAudio : public FFMS_AudioSource {
@@ -125,6 +145,8 @@ class FFLAVFAudio : public FFMS_AudioSource {
 	bool ReadPacket(AVPacket *);
 	void FreePacket(AVPacket *);
 	void Seek();
+
+	int64_t FrameTS(size_t Packet) const;
 
 public:
 	FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);

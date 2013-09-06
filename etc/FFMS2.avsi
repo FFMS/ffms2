@@ -2,7 +2,7 @@
 # Created by TheFluff
 
 function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", \
-	string "cachefile", int "fpsnum", int "fpsden", string "pp", int "threads", \
+	string "cachefile", int "fpsnum", int "fpsden", int "threads", \
 	string "timecodes", int "seekmode", bool "overwrite", int "width", int "height", \
 	string "resizer", string "colorspace", int "rffmode", int "adjustdelay", \
 	bool "utf8", string "varprefix") {
@@ -13,7 +13,6 @@ function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", 
 	cachefile	= default(cachefile,source+".ffindex")
 	fpsnum		= default(fpsnum,-1)
 	fpsden		= default(fpsden,1)
-	pp			= default(pp,"")
 	threads		= default(threads,-1)
 	timecodes	= default(timecodes,"")
 	seekmode	= default(seekmode,1)
@@ -32,7 +31,7 @@ function FFmpegSource2(string source, int "vtrack", int "atrack", bool "cache", 
 		cachefile=cachefile, indexmask=-1, overwrite=overwrite, utf8=utf8) : nop
 	
 	v = ffvideosource(source=source, track=vtrack, cache=cache, cachefile=cachefile, \
-		fpsnum=fpsnum, fpsden=fpsden, pp=pp, threads=threads, timecodes=timecodes, \
+		fpsnum=fpsnum, fpsden=fpsden, threads=threads, timecodes=timecodes, \
 		seekmode=seekmode, rffmode=rffmode, width=width, height=height, resizer=resizer, \
 		colorspace=colorspace, utf8=utf8, varprefix=varprefix)
 	

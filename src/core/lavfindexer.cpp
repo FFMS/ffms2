@@ -45,6 +45,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 
 	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest));
 	TrackIndices->Decoder = FFMS_SOURCE_LAVF;
+	TrackIndices->ErrorHandling = ErrorHandling;
 
 	for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {
 		TrackIndices->push_back(FFMS_Track((int64_t)FormatContext->streams[i]->time_base.num * 1000,
@@ -65,7 +66,11 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			VideoContexts[i].Parser = av_parser_init(FormatContext->streams[i]->codec->codec_id);
 			if (VideoContexts[i].Parser)
 				VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
-			IndexMask |= 1 << i;
+
+			if (FormatContext->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
+				IndexMask &= ~(1 << i);
+			else
+				IndexMask |= 1 << i;
 		}
 		else if (IndexMask & (1 << i) && FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
 			AVCodecContext *AudioCodecContext = FormatContext->streams[i]->codec;
@@ -80,6 +85,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 					"Could not open audio codec");
 
 			AudioContexts[i].CodecContext = AudioCodecContext;
+			(*TrackIndices)[i].HasTS = false;
 		} else {
 			IndexMask &= ~(1 << i);
 		}
@@ -87,14 +93,10 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 
 	AVPacket Packet;
 	InitNullPacket(Packet);
-	std::vector<int64_t> LastValidTS;
-	LastValidTS.resize(FormatContext->nb_streams, ffms_av_nopts_value);
+	std::vector<int64_t> LastValidTS(FormatContext->nb_streams, ffms_av_nopts_value);
+	std::vector<int> LastDuration(FormatContext->nb_streams, 0);
 
-#if (LIBAVFORMAT_VERSION_INT) < (AV_VERSION_INT(52,106,0))
-	int64_t filesize = FormatContext->file_size;
-#else
 	int64_t filesize = avio_size(FormatContext->pb);
-#endif
 	while (av_read_frame(FormatContext, &Packet) >= 0) {
 		// Update progress
 		// FormatContext->pb can apparently be NULL when opening images.
@@ -113,28 +115,41 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 		ReadTS(Packet, LastValidTS[Track], (*TrackIndices)[Track].UseDTS);
 
 		if (FormatContext->streams[Track]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-			if (LastValidTS[Track] == ffms_av_nopts_value)
-				throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
-				"Invalid initial pts and dts");
+			int64_t PTS = LastValidTS[Track];
+			if (PTS == ffms_av_nopts_value) {
+				if (Packet.duration == 0)
+					throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
+						"Invalid initial pts, dts, and duration");
 
-			int RepeatPict = -1;
+				if ((*TrackIndices)[Track].empty())
+					PTS = 0;
+				else
+					PTS = (*TrackIndices)[Track].back().PTS + LastDuration[Track];
 
-			if (VideoContexts[Track].Parser) {
-				uint8_t *OB;
-				int OBSize;
-				av_parser_parse2(VideoContexts[Track].Parser, VideoContexts[Track].CodecContext, &OB, &OBSize, Packet.data, Packet.size, Packet.pts, Packet.dts, Packet.pos);
-				RepeatPict = VideoContexts[Track].Parser->repeat_pict;
+				(*TrackIndices)[Track].HasTS = false;
+				LastDuration[Track] = Packet.duration;
 			}
 
-			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(LastValidTS[Track], RepeatPict, KeyFrame, Packet.pos));
+			int RepeatPict = -1;
+			int FrameType = 0;
+			bool Invisible = false;
+			ParseVideoPacket(VideoContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible);
+
+			(*TrackIndices)[Track].AddVideoFrame(PTS, RepeatPict, KeyFrame,
+				FrameType, Packet.pos, 0, Invisible);
 		}
 		else if (FormatContext->streams[Track]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+			// For video seeking timestamps are used only if all packets have
+			// timestamps, while for audio they're used if any have timestamps,
+			// as it's pretty common for only some packets to have timestamps
+			if (LastValidTS[Track] != ffms_av_nopts_value)
+				(*TrackIndices)[Track].HasTS = true;
+
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
 			int64_t SampleCount = IndexAudioPacket(Track, &Packet, AudioContexts[Track], *TrackIndices);
 
-			if (SampleCount != 0)
-				(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(LastValidTS[Track],
-					StartSample, SampleCount, KeyFrame, Packet.pos));
+			(*TrackIndices)[Track].AddAudioFrame(LastValidTS[Track],
+				StartSample, SampleCount, KeyFrame, Packet.pos);
 		}
 
 		av_free_packet(&Packet);

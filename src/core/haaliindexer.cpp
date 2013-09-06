@@ -24,6 +24,9 @@
 
 #include "codectype.h"
 
+#include <limits>
+#undef max
+
 FFHaaliIndexer::FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode) : FFMS_Indexer(Filename) {
 	this->SourceMode = SourceMode;
 	Duration = 0;
@@ -69,6 +72,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 	TrackIndices->Decoder = FFMS_SOURCE_HAALIMPEG;
 	if (SourceMode == FFMS_SOURCE_HAALIOGG)
 		TrackIndices->Decoder = FFMS_SOURCE_HAALIOGG;
+	TrackIndices->ErrorHandling = ErrorHandling;
 
 	for (int i = 0; i < NumTracks; i++) {
 		TrackIndices->push_back(FFMS_Track(1, 1000000, TrackType[i]));
@@ -79,7 +83,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 		if (!CodecContext->codec)
 			throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED, "Codec not found");
 
-		AVCodec *Codec = NULL;
+		const AVCodec *Codec = NULL;
 		std::swap(Codec, CodecContext->codec);
 		if (avcodec_open2(CodecContext, Codec, NULL) < 0)
 			throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
@@ -90,7 +94,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 			VideoContexts[i].CodecContext = CodecContext;
 			VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
 
-			if (CodecContext->codec->id == CODEC_ID_H264 && SourceMode == FFMS_SOURCE_HAALIMPEG)
+			if (CodecContext->codec->id == FFMS_ID(H264) && SourceMode == FFMS_SOURCE_HAALIMPEG)
 				VideoContexts[i].BitStreamFilter = av_bitstream_filter_init("h264_mp4toannexb");
 		}
 		else {
@@ -102,6 +106,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 	AVPacket TempPacket;
 	InitNullPacket(TempPacket);
 	REFERENCE_TIME Ts, Te;
+	REFERENCE_TIME MinTs = std::numeric_limits<REFERENCE_TIME>::max();
 
 	for (;;) {
 		CComPtr<IMMFrame> pMMF;
@@ -112,8 +117,9 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 
 		if (IC) {
 			if (Duration > 0) {
+				if (Ts < MinTs) MinTs = Ts;
 				if (SUCCEEDED(hr)) {
-					if ((*IC)(Ts, Duration, ICPrivate))
+					if ((*IC)(Ts - MinTs, Duration, ICPrivate))
 						throw FFMS_Exception(FFMS_ERROR_CANCELLED, FFMS_ERROR_USER,
 							"Cancelled by user");
 				}
@@ -125,15 +131,16 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 		}
 
 		unsigned int Track = pMMF->GetTrack();
-		pMMF->GetPointer(&TempPacket.data);
+
+		// copy data into aligned and padded buffer
 		TempPacket.size = pMMF->GetActualDataLength();
+		TempPacket.data = static_cast<uint8_t *>(av_mallocz(TempPacket.size + FF_INPUT_BUFFER_PADDING_SIZE));
+		BYTE *TempData;
+		pMMF->GetPointer(&TempData);
+		memcpy(TempPacket.data, TempData, TempPacket.size);
+		uint8_t *OriginalData = TempPacket.data;
 
 		if (TrackType[Track] == FFMS_TYPE_VIDEO) {
-			uint8_t *OB;
-			int OBSize;
-			int RepeatPict = -1;
-			uint8_t *OriginalData = TempPacket.data;
-
 			if (VideoContexts[Track].BitStreamFilter) {
 				AVBitStreamFilterContext *bsf = VideoContexts[Track].BitStreamFilter;
 				while (bsf) {
@@ -143,26 +150,32 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 				}
 			}
 
-			if (VideoContexts[Track].Parser) {
-				av_parser_parse2(VideoContexts[Track].Parser, VideoContexts[Track].CodecContext, &OB, &OBSize, TempPacket.data, TempPacket.size, ffms_av_nopts_value, ffms_av_nopts_value, ffms_av_nopts_value);
-				RepeatPict = VideoContexts[Track].Parser->repeat_pict;
-			}
+			TempPacket.pts = TempPacket.dts = TempPacket.pos = ffms_av_nopts_value;
 
-			(*TrackIndices)[Track].push_back(TFrameInfo::VideoFrameInfo(Ts, RepeatPict, pMMF->IsSyncPoint() == S_OK));
+			int RepeatPict = -1;
+			int FrameType = 0;
+			bool Invisible = false;
+			ParseVideoPacket(VideoContexts[Track], TempPacket, &RepeatPict, &FrameType, &Invisible);
 
-			// if TempPacket.data points at data not originally attained by Haali, then it was allocated by ffmpeg and needs to be av_free()'d
-			if (TempPacket.data != OriginalData)
+			(*TrackIndices)[Track].AddVideoFrame(Ts, RepeatPict,
+				pMMF->IsSyncPoint() == S_OK, FrameType, 0, 0, Invisible);
+
+			// av_bitstream_filter_filter() can, if it feels like it, reallocate the input buffer and change the pointer.
+			// If it does that, we need to free both the input buffer we allocated ourselves and the buffer lavc allocated.
+			if (TempPacket.data != OriginalData) {
 				av_free(TempPacket.data);
+				TempPacket.data = OriginalData;
+			}
 		} else if (TrackType[Track] == FFMS_TYPE_AUDIO && (IndexMask & (1 << Track))) {
 			TempPacket.flags = pMMF->IsSyncPoint() == S_OK ? AV_PKT_FLAG_KEY : 0;
 
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
 			int64_t SampleCount = IndexAudioPacket(Track, &TempPacket, AudioContexts[Track], *TrackIndices);
 
-			if (SampleCount != 0)
-				(*TrackIndices)[Track].push_back(TFrameInfo::AudioFrameInfo(Ts,
-					StartSample, SampleCount, pMMF->IsSyncPoint() == S_OK));
+			(*TrackIndices)[Track].AddAudioFrame(Ts, StartSample, SampleCount, pMMF->IsSyncPoint() == S_OK);
 		}
+
+		av_free(TempPacket.data);
 	}
 
 	TrackIndices->Sort();
