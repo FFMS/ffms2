@@ -295,14 +295,6 @@ AVS_Value FFVideoSource_create( AVS_ScriptEnvironment *env, const char *src, int
     if( !filter->vid )
         return avs_new_value_error( ffms_avs_sprintf( "FFVideoSource: %s", ei.Buffer ) );
 
-#ifdef FFMS_USE_POSTPROC
-    if( FFMS_SetPP( filter->vid, pp, &ei ) )
-    {
-        FFMS_DestroyVideoSource( filter->vid );
-        return avs_new_value_error( ffms_avs_sprintf( "FFVideoSource: %s", ei.Buffer ) );
-    }
-#endif
-
     AVS_Value result = init_output_format( filter, width, height, resizer_name, csp_name,
         var_prefix );
     if( avs_is_error( result ) )

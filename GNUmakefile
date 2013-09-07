@@ -4,6 +4,11 @@ include config.mak
 
 all: default
 
+ifndef V
+$(foreach VAR,CC CXX AR RANLIB RC,\
+    $(eval override $(VAR) = @printf " %s\t%s\n" $(VAR) "$$@"; $($(VAR))))
+endif
+
 CORE_C   = src/core/matroskaparser.c src/core/stdiostream.c
 
 CORE_CXX = src/core/audiosource.cpp src/core/ffms.cpp src/core/haaliaudio.cpp src/core/haaliindexer.cpp \
@@ -16,19 +21,26 @@ IDX_CXX = src/index/ffmsindex.cpp
 
 SO_C =
 
+SO_CXX =
+
 # Optional module sources
 ifeq ($(AVISYNTH), yes)
 SO_C += src/avisynth_c/avisynth.c src/avisynth_c/avs_lib.c src/avisynth_c/avs_utils.c src/avisynth_c/ff_audsource.c \
         src/avisynth_c/ff_swscale.c src/avisynth_c/ff_vidsource.c
-
-ifeq ($(FFMS_USE_POSTPROC), yes)
-SO_C += src/avisynth_c/ff_pp.c
 endif
+
+ifeq ($(AVXSYNTH), yes)
+SO_CXX += src/avxsynth/avssources_avx.cpp src/avxsynth/avsutils_avx.cpp src/avxsynth/avxffms2.cpp \
+        src/avxsynth/ffswscale_avx.cpp
+endif
+
+ifeq ($(VAPOURSYNTH),yes)
+SO_CXX += src/vapoursynth/vapoursynth.cpp src/vapoursynth/vapoursource.cpp
 endif
 
 CORE_O = $(CORE_C:%.c=%.o) $(CORE_CXX:%.cpp=%.o)
 IDX_O = $(IDX_CXX:%.cpp=%.o)
-SO_O = $(SO_C:%.c=%.o)
+SO_O = $(SO_C:%.c=%.o) $(SO_CXX:%.cpp=%.o)
 
 ifeq ($(SYS), MINGW)
 IDX_O += ffmsindexexe.o
@@ -56,16 +68,23 @@ libffms.a: .depend $(CORE_O)
 	$(AR) rc libffms.a $(CORE_O)
 	$(RANLIB) libffms.a
 
-$(SONAME): .depend $(CORE_O) $(SO_O)
+$(SONAME): .depend $(CORE_O) $(SO_O) $(SO_CXX)
 	$(CXX) -shared -o $@ $(CORE_O) $(SO_O) $(SOFLAGS) $(SOFLAGS_USER) $(LDFLAGS)
 
 ffmsindex$(EXE): $(IDX_O) libffms.a $(SONAME)
 	$(CXX) -o $@ $(IDX_O) $(INDEX_LINK) $(LDFLAGS)
 
+define \n
+
+
+endef
+
 .depend: config.mak
 	@rm -f .depend
-	@$(foreach SRC, $(CORE_C), $(CC) $(CPPFLAGS) $(CFLAGS) $(SRC) -MT $(SRC:%.c=%.o) -MM -g0 1>> .depend;)
-	@$(foreach SRC, $(CORE_CXX) $(IDX_CXX), $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SRC) -MT $(SRC:%.cpp=%.o) -MM -g0 1>> .depend;)
+	@$(foreach SRC_C, $(CORE_C), \
+            $(PLC) $(CPPFLAGS) $(CFLAGS) $(SRC_C) -MT $(SRC_C:%.c=%.o) -MM -g0 1>> .depend;${\n})
+	@$(foreach SRC_CXX, $(CORE_CXX) $(IDX_CXX), \
+            $(PLPL) $(CPPFLAGS) $(CXXFLAGS) $(SRC_CXX) -MT $(SRC_CXX:%.cpp=%.o) -MM -g0 1>> .depend;${\n})
 
 config.mak:
 	./configure
@@ -84,14 +103,27 @@ install: ffmsindex$(EXE) $(SONAME)
 	install -m 644 libffms.a $(DESTDIR)$(libdir)
 	install -m 644 ffms.pc $(DESTDIR)$(libdir)/pkgconfig
 	install ffmsindex$(EXE) $(DESTDIR)$(bindir)
-	$(RANLIB) $(DESTDIR)$(libdir)/libffms.a
+	$(RANLIBX) $(DESTDIR)$(libdir)/libffms.a
 ifeq ($(SYS),MINGW)
 	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(bindir))
 else
 	$(if $(SONAME), ln -f -s $(SONAME) $(DESTDIR)$(libdir)/libffms.$(SOSUFFIX))
 	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(libdir))
+ifeq ($(AVXSYNTH), yes)
+	install -d $(DESTDIR)$(libdir)/avxsynth
+	$(if $(SONAME), ln -f -s $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(libdir)/avxsynth/libavxffms2.$(SOSUFFIX))
+endif
 endif
 	$(if $(IMPLIBNAME), install -m 644 $(IMPLIBNAME) $(DESTDIR)$(libdir))
+
+install-avs:
+	install -d $(DESTDIR)$(bindir)
+	install ffmsindex$(EXE) $(DESTDIR)$(bindir)
+ifeq ($(SYS),MINGW)
+	cp etc/* $(DESTDIR)$(bindir)
+	cp -R doc $(DESTDIR)$(bindir)
+	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(bindir))
+endif
 
 uninstall:
 	rm -f $(DESTDIR)$(includedir)/ffms.h $(DESTDIR)$(libdir)/libffms.a
