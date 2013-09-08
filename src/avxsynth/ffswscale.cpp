@@ -18,8 +18,9 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#include "ffswscale_avx.h"
-#include "avsutils_avx.h"
+#include "ffswscale.h"
+#include "avsutils.h"
+#include "../core/videoutils.h"
 extern "C" {
 #include <libavutil/opt.h>
 }
@@ -27,13 +28,13 @@ extern "C" {
 static int64_t AvisynthToSWSCPUFlags(long AvisynthFlags) {
 	int64_t Flags = 0;
 #ifdef SWS_CPU_CAPS_MMX
-	if (AvisynthFlags & avxsynth::CPUF_MMX)
+	if (AvisynthFlags & CPUF_MMX)
 		Flags |= SWS_CPU_CAPS_MMX;
-	if (AvisynthFlags & avxsynth::CPUF_INTEGER_SSE)
+	if (AvisynthFlags & CPUF_INTEGER_SSE)
 		Flags |= SWS_CPU_CAPS_MMX2;
-	if (AvisynthFlags & avxsynth::CPUF_3DNOW_EXT)
+	if (AvisynthFlags & CPUF_3DNOW_EXT)
 		Flags |= SWS_CPU_CAPS_3DNOW;
-	if (AvisynthFlags & avxsynth::CPUF_SSE2)
+	if (AvisynthFlags & CPUF_SSE2)
 		Flags |= SWS_CPU_CAPS_SSE2;
 #endif
 	return Flags;
@@ -84,8 +85,8 @@ int FFGetSwsAssumedColorSpace(int W, int H) {
         return SWS_CS_DEFAULT;
 }
 
-SWScale::SWScale(avxsynth::PClip Child, int ResizeToWidth, int ResizeToHeight, const char *ResizerName, const char *ConvertToFormatName, avxsynth::IScriptEnvironment *Env)
-  : avxsynth::GenericVideoFilter(Child) {
+SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env)
+  : GenericVideoFilter(Child) {
 	Context = NULL;
 	OrigWidth = vi.width;
 	OrigHeight = vi.height;
@@ -116,10 +117,10 @@ SWScale::SWScale(avxsynth::PClip Child, int ResizeToWidth, int ResizeToHeight, c
 		Env->ThrowError("SWScale: Invalid colorspace specified (%s)", ConvertToFormatName);
 
 	switch (ConvertToFormat) {
-        case PIX_FMT_YUV420P: vi.pixel_type = avxsynth::VideoInfo::CS_I420; break;
-        case PIX_FMT_YUYV422: vi.pixel_type = avxsynth::VideoInfo::CS_YUY2; break;
-        case PIX_FMT_BGR24: vi.pixel_type = avxsynth::VideoInfo::CS_BGR24; break;
-        case PIX_FMT_RGB32: vi.pixel_type = avxsynth::VideoInfo::CS_BGR32; break;
+        case PIX_FMT_YUV420P: vi.pixel_type = VideoInfo::CS_I420; break;
+        case PIX_FMT_YUYV422: vi.pixel_type = VideoInfo::CS_YUY2; break;
+        case PIX_FMT_BGR24: vi.pixel_type = VideoInfo::CS_BGR24; break;
+        case PIX_FMT_RGB32: vi.pixel_type = VideoInfo::CS_BGR32; break;
         case PIX_FMT_NONE:
         case PIX_FMT_RGB24:
         case PIX_FMT_YUV422P:
@@ -213,7 +214,9 @@ SWScale::SWScale(avxsynth::PClip Child, int ResizeToWidth, int ResizeToHeight, c
 	if ((ConvertToFormat == PIX_FMT_YUV420P || ConvertToFormat == PIX_FMT_YUYV422) && vi.width & 1)
 		Env->ThrowError("SWScale: mod 2 output width required");
 
-	Context = FFGetSwsContext(OrigWidth, OrigHeight, ConvertFromFormat, vi.width, vi.height, ConvertToFormat,
+	Context = FFGetSwsContext(
+		OrigWidth, OrigHeight, ConvertFromFormat,
+		vi.width, vi.height, ConvertToFormat,
 		AvisynthToSWSCPUFlags(Env->GetCPUFlags()) | Resizer, FFGetSwsAssumedColorSpace(OrigWidth, OrigHeight));
 	if (Context == NULL)
 		Env->ThrowError("SWScale: Context creation failed");
@@ -224,20 +227,20 @@ SWScale::~SWScale() {
 		sws_freeContext(Context);
 }
 
-avxsynth::PVideoFrame SWScale::GetFrame(int n, avxsynth::IScriptEnvironment *Env) {
-	avxsynth::PVideoFrame Src = child->GetFrame(n, Env);
-	avxsynth::PVideoFrame Dst = Env->NewVideoFrame(vi);
+PVideoFrame SWScale::GetFrame(int n, IScriptEnvironment *Env) {
+	PVideoFrame Src = child->GetFrame(n, Env);
+	PVideoFrame Dst = Env->NewVideoFrame(vi);
 
-	const uint8_t *SrcData[3] = {(uint8_t *)Src->GetReadPtr(avxsynth::PLANAR_Y), (uint8_t *)Src->GetReadPtr(avxsynth::PLANAR_U), (uint8_t *)Src->GetReadPtr(avxsynth::PLANAR_V)};
-	int SrcStride[3] = {Src->GetPitch(avxsynth::PLANAR_Y), Src->GetPitch(avxsynth::PLANAR_U), Src->GetPitch(avxsynth::PLANAR_V)};
+	const uint8_t *SrcData[3] = {(uint8_t *)Src->GetReadPtr(PLANAR_Y), (uint8_t *)Src->GetReadPtr(PLANAR_U), (uint8_t *)Src->GetReadPtr(PLANAR_V)};
+	int SrcStride[3] = {Src->GetPitch(PLANAR_Y), Src->GetPitch(PLANAR_U), Src->GetPitch(PLANAR_V)};
 
 	if (FlipOutput) {
-		uint8_t *DstData[3] = {Dst->GetWritePtr(avxsynth::PLANAR_Y) + Dst->GetPitch(avxsynth::PLANAR_Y) * (Dst->GetHeight(avxsynth::PLANAR_Y) - 1), Dst->GetWritePtr(avxsynth::PLANAR_U) + Dst->GetPitch(avxsynth::PLANAR_U) * (Dst->GetHeight(avxsynth::PLANAR_U) - 1), Dst->GetWritePtr(avxsynth::PLANAR_V) + Dst->GetPitch(avxsynth::PLANAR_V) * (Dst->GetHeight(avxsynth::PLANAR_V) - 1)};
-		int DstStride[3] = {-Dst->GetPitch(avxsynth::PLANAR_Y), -Dst->GetPitch(avxsynth::PLANAR_U), -Dst->GetPitch(avxsynth::PLANAR_V)};
+		uint8_t *DstData[3] = {Dst->GetWritePtr(PLANAR_Y) + Dst->GetPitch(PLANAR_Y) * (Dst->GetHeight(PLANAR_Y) - 1), Dst->GetWritePtr(PLANAR_U) + Dst->GetPitch(PLANAR_U) * (Dst->GetHeight(PLANAR_U) - 1), Dst->GetWritePtr(PLANAR_V) + Dst->GetPitch(PLANAR_V) * (Dst->GetHeight(PLANAR_V) - 1)};
+		int DstStride[3] = {-Dst->GetPitch(PLANAR_Y), -Dst->GetPitch(PLANAR_U), -Dst->GetPitch(PLANAR_V)};
 		sws_scale(Context, SrcData, SrcStride, 0, OrigHeight, DstData, DstStride);
 	} else {
-		uint8_t *DstData[3] = {Dst->GetWritePtr(avxsynth::PLANAR_Y), Dst->GetWritePtr(avxsynth::PLANAR_U), Dst->GetWritePtr(avxsynth::PLANAR_V)};
-		int DstStride[3] = {Dst->GetPitch(avxsynth::PLANAR_Y), Dst->GetPitch(avxsynth::PLANAR_U), Dst->GetPitch(avxsynth::PLANAR_V)};
+		uint8_t *DstData[3] = {Dst->GetWritePtr(PLANAR_Y), Dst->GetWritePtr(PLANAR_U), Dst->GetWritePtr(PLANAR_V)};
+		int DstStride[3] = {Dst->GetPitch(PLANAR_Y), Dst->GetPitch(PLANAR_U), Dst->GetPitch(PLANAR_V)};
 		sws_scale(Context, SrcData, SrcStride, 0, OrigHeight, DstData, DstStride);
 	}
 

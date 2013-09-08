@@ -30,8 +30,8 @@ SO_C += src/avisynth_c/avisynth.c src/avisynth_c/avs_lib.c src/avisynth_c/avs_ut
 endif
 
 ifeq ($(AVXSYNTH), yes)
-SO_CXX += src/avxsynth/avssources_avx.cpp src/avxsynth/avsutils_avx.cpp src/avxsynth/avxffms2.cpp \
-        src/avxsynth/ffswscale_avx.cpp
+SO_CXX += src/avxsynth/avisynth.cpp src/avxsynth/avssources.cpp src/avxsynth/avsutils.cpp \
+        src/avxsynth/ffswscale.cpp
 endif
 
 ifeq ($(VAPOURSYNTH),yes)
