@@ -64,7 +64,7 @@
 #endif
 
 // And now for some symbol hide-and-seek...
-#if defined(_WIN32) // MSVC
+#if defined(_MSC_VER) // MSVC
 #	if defined(FFMS_EXPORTS) // building the FFMS2 library itself, with visible API symbols
 #		define FFMS_API(ret) FFMS_EXTERN_C __declspec(dllexport) ret FFMS_CC
 #		define FFMS_DEPRECATED_API(ret) FFMS_EXTERN_C FFMS_DEPRECATED __declspec(dllexport) ret FFMS_CC
