@@ -38,6 +38,8 @@ static const CodecTags mkv_codec_tags[] = {
 	{"A_MPEG/L2"        , FFMS_ID(MP2)},
 	{"A_MPEG/L1"        , FFMS_ID(MP2)},
 	{"A_MPEG/L3"        , FFMS_ID(MP3)},
+	{"A_OPUS"              , FFMS_ID(OPUS)},
+	{"A_OPUS/EXPERIMENTAL" , FFMS_ID(OPUS)}, /* Pre-final ID, for compatibility */
 	{"A_PCM/FLOAT/IEEE" , FFMS_ID(PCM_F32LE)},
 	{"A_PCM/FLOAT/IEEE" , FFMS_ID(PCM_F64LE)},
 	{"A_PCM/INT/BIG"    , FFMS_ID(PCM_S16BE)},
