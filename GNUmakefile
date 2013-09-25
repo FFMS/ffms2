@@ -113,6 +113,10 @@ ifeq ($(AVXSYNTH), yes)
 	install -d $(DESTDIR)$(libdir)/avxsynth
 	$(if $(SONAME), ln -f -s $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(libdir)/avxsynth/libavxffms2.$(SOSUFFIX))
 endif
+ifeq ($(VAPOURSYNTH), yes)
+	install -d $(DESTDIR)$(libdir)/vapoursynth
+	$(if $(SONAME), ln -f -s $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(libdir)/vapoursynth/libffms2.$(SOSUFFIX))
+endif
 endif
 	$(if $(IMPLIBNAME), install -m 644 $(IMPLIBNAME) $(DESTDIR)$(libdir))
 
