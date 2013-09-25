@@ -110,12 +110,12 @@ else
 	$(if $(SONAME), ln -f -s $(SONAME) $(DESTDIR)$(libdir)/libffms.$(SOSUFFIX))
 	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(libdir))
 ifeq ($(AVXSYNTH), yes)
-	install -d $(DESTDIR)$(libdir)/avxsynth
-	$(if $(SONAME), ln -f -s $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(libdir)/avxsynth/libavxffms2.$(SOSUFFIX))
+	install -d $(DESTDIR)$(avxplugindir)
+	$(if $(SONAME), ln -f -s $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(avxplugindir)/libavxffms2.$(SOSUFFIX))
 endif
 ifeq ($(VAPOURSYNTH), yes)
-	install -d $(DESTDIR)$(libdir)/vapoursynth
-	$(if $(SONAME), ln -f -s $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(libdir)/vapoursynth/libffms2.$(SOSUFFIX))
+	install -d $(DESTDIR)$(vsplugindir)
+	$(if $(SONAME), ln -f -s $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(vsplugindir)/libffms2.$(SOSUFFIX))
 endif
 endif
 	$(if $(IMPLIBNAME), install -m 644 $(IMPLIBNAME) $(DESTDIR)$(libdir))
