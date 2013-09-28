@@ -18,22 +18,24 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#include "avxplugin.h"
 #include "ffms.h"
+#include "avxplugin.h"
 
 extern "C" {
 #include <libswscale/swscale.h>
 }
 
+using namespace avxsynth;
+
 int64_t AvisynthToFFCPUFlags(long AvisynthFlags) {
 	int64_t Flags = 0;
-	if (AvisynthFlags & avxsynth::CPUF_MMX)
+	if (AvisynthFlags & CPUF_MMX)
 		Flags |= FFMS_CPU_CAPS_MMX;
-	if (AvisynthFlags & avxsynth::CPUF_INTEGER_SSE)
+	if (AvisynthFlags & CPUF_INTEGER_SSE)
 		Flags |= FFMS_CPU_CAPS_MMX2;
-	if (AvisynthFlags & avxsynth::CPUF_3DNOW_EXT)
+	if (AvisynthFlags & CPUF_3DNOW_EXT)
 		Flags |= FFMS_CPU_CAPS_3DNOW;
-	if (AvisynthFlags & avxsynth::CPUF_SSE2)
+	if (AvisynthFlags & CPUF_SSE2)
 		Flags |= FFMS_CPU_CAPS_SSE2;
 	return Flags;
 }

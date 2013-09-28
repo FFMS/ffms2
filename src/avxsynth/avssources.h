@@ -22,19 +22,19 @@
 #define FFAVSSOURCES_H
 
 #include <vector>
-#include "avxplugin.h"
 #include "ffms.h"
+#include "avxplugin.h"
 
+using namespace avxsynth;
 
-
-class AvisynthVideoSource : public avxsynth::IClip {
+class AvisynthVideoSource : public IClip {
 private:
 	struct FrameFields {
 		int Top;
 		int Bottom;
 	};
 
-	avxsynth::VideoInfo VI;
+	VideoInfo VI;
 	FFMS_VideoSource *V;
 	int FPSNum;
 	int FPSDen;
@@ -43,35 +43,35 @@ private:
 	const char *VarPrefix;
 
 	void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
-		const char *ResizerName, const char *ConvertToFormatName, avxsynth::IScriptEnvironment *Env);
-	void OutputFrame(const FFMS_Frame *Frame, avxsynth::PVideoFrame &Dst, avxsynth::IScriptEnvironment *Env);
-	void OutputField(const FFMS_Frame *Frame, avxsynth::PVideoFrame &Dst, int Field, avxsynth::IScriptEnvironment *Env);
+		const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env);
+	void OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env);
+	void OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst, int Field, IScriptEnvironment *Env);
 public:
 	AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
-        const char *ConvertToFormatName, const char *VarPrefix, avxsynth::IScriptEnvironment* Env);
+		const char *ConvertToFormatName, const char *VarPrefix, IScriptEnvironment* Env);
 	~AvisynthVideoSource();
 	bool __stdcall GetParity(int n);
 	void __stdcall SetCacheHints(int cachehints, size_t frame_range) { }
-	const avxsynth::VideoInfo& __stdcall GetVideoInfo() { return VI; }
-	void __stdcall GetAudio(void* Buf, avxsynth::__int64 Start, avxsynth::__int64 Count, avxsynth::IScriptEnvironment *Env) { }
-	avxsynth::PVideoFrame __stdcall GetFrame(int n, avxsynth::IScriptEnvironment *Env);
+	const VideoInfo& __stdcall GetVideoInfo() { return VI; }
+	void __stdcall GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env) { }
+	PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment *Env);
 };
 
-class AvisynthAudioSource : public avxsynth::IClip {
+class AvisynthAudioSource : public IClip {
 private:
-	avxsynth::VideoInfo VI;
+	VideoInfo VI;
 	FFMS_AudioSource *A;
 public:
 	AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
-		int AdjustDelay, const char *VarPrefix, avxsynth::IScriptEnvironment* Env);
+		int AdjustDelay, const char *VarPrefix, IScriptEnvironment* Env);
 	~AvisynthAudioSource();
 	bool __stdcall GetParity(int n) { return false; }
 	void __stdcall SetCacheHints(int cachehints, size_t frame_range) { }
-	const avxsynth::VideoInfo& __stdcall GetVideoInfo() { return VI; }
-	void __stdcall GetAudio(void* Buf, avxsynth::__int64 Start, avxsynth::__int64 Count, avxsynth::IScriptEnvironment *Env);
-	avxsynth::PVideoFrame __stdcall GetFrame(int n, avxsynth::IScriptEnvironment *Env) { return NULL; };
+	const VideoInfo& __stdcall GetVideoInfo() { return VI; }
+	void __stdcall GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env);
+	PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment *Env) { return NULL; };
 };
 
 #endif

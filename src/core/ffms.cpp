@@ -217,15 +217,6 @@ FFMS_API(int) FFMS_GetAudio(FFMS_AudioSource *A, void *Buf, int64_t Start, int64
 	return FFMS_ERROR_SUCCESS;
 }
 
-FFMS_API(int) FFMS_SetOutputFormatV(FFMS_VideoSource *V, int64_t TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo) {
-	std::vector<int> L;
-	for (int i = 0; i < 64; i++)
-		if ((TargetFormats >> i) & 1)
-			L.push_back(i);
-	L.push_back(PIX_FMT_NONE);
-	return FFMS_SetOutputFormatV2(V, &L[0], Width, Height, Resizer, ErrorInfo);
-}
-
 FFMS_API(int) FFMS_SetOutputFormatV2(FFMS_VideoSource *V, const int *TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {

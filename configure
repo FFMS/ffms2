@@ -5,23 +5,27 @@ echo "Usage: ./configure [options]"
 echo ""
 echo "available options:"
 echo ""
-echo "  --help                   print this message"
-echo "  --enable-avisynth        enables avisynth plugin support (windows only)"
-echo "  --enable-avxsynth        enables avxsynth plugin support (linux, osx only)"
-echo "  --enable-vapoursynth     enables vapoursynth plugin support"
-echo "  --enable-debug           adds -g, doesn't strip"
-echo "  --enable-gprof           adds -pg, doesn't strip"
-echo "  --enable-pic             build position-independent code"
-echo "  --enable-shared          build libffms2.so"
-echo "  --optlevel=olev          GCC optimization level [0-3, s, fast] (0)"
-echo "  --extra-cppflags=EFLAGS  add EFLAGS to CPPFLAGS"
-echo "  --extra-cflags=ECFLAGS   add ECFLAGS to CFLAGS"
-echo "  --extra-cxxflags=EFLAGS  add EFLAGS to CXXFLAGS"
-echo "  --extra-ldflags=ELDFLAGS add ELDFLAGS to LDFLAGS"
-echo "  --extra-soflags=ESOFLAGS add ESOFLAGS to SOFLAGS"
-echo "  --host=HOST              build programs to run on HOST"
-echo "  --cross-prefix=PREFIX    use PREFIX for compilation tools"
-echo "  --sysroot=SYSROOT        root of cross-build tree"
+echo "  --help                    print this message"
+echo "  --enable-avisynth         enables avisynth plugin support (windows only)"
+echo "  --enable-avxsynth         enables avxsynth plugin support (linux, osx only)"
+echo "  --enable-vapoursynth      enables vapoursynth plugin support"
+echo "  --enable-debug            adds -g, doesn't strip"
+echo "  --enable-gprof            adds -pg, doesn't strip"
+echo "  --enable-pic              build position-independent code"
+echo "  --enable-shared           build libffms2.so"
+echo "  --optlevel=olev           GCC optimization level [0-3, s, fast] (0)"
+echo "  --avx-plugindir=PLUGINDIR location of AvxSynth plugin directory,
+                                     default is [libdir]/avxsynth"
+echo "  --vs-plugindir=PLUGINDIR  location of VapourSynth plugin directory,
+                                     default is [libdir]/vapoursynth"
+echo "  --extra-cppflags=EFLAGS   add EFLAGS to CPPFLAGS"
+echo "  --extra-cflags=ECFLAGS    add ECFLAGS to CFLAGS"
+echo "  --extra-cxxflags=EFLAGS   add EFLAGS to CXXFLAGS"
+echo "  --extra-ldflags=ELDFLAGS  add ELDFLAGS to LDFLAGS"
+echo "  --extra-soflags=ESOFLAGS  add ESOFLAGS to SOFLAGS"
+echo "  --host=HOST               build programs to run on HOST"
+echo "  --cross-prefix=PREFIX     use PREFIX for compilation tools"
+echo "  --sysroot=SYSROOT         root of cross-build tree"
 echo ""
 exit 1
 fi
@@ -142,6 +146,8 @@ exec_prefix='${prefix}'
 bindir='${exec_prefix}/bin'
 libdir='${exec_prefix}/lib'
 includedir='${prefix}/include'
+avxplugindir='${libdir}/avxsynth'
+vsplugindir='${libdir}/vapoursynth'
 DEVNULL='/dev/null'
 
 avs="no"
@@ -194,6 +200,12 @@ for opt do
             ;;
         --optlevel=*)
             olev="$optarg"
+            ;;
+        --avx-plugindir=*|--avxsynth-plugindir=*)
+            avxplugindir="$optarg"
+            ;;
+        --vs-plugindir=*|--vapoursynth-plugindir=*)
+            vsplugindir="$optarg"
             ;;
         --extra-cppflags=*)
             CPPFLAGS="$CPPFLAGS ${opt#--extra-cppflags=}"
@@ -480,6 +492,8 @@ prefix=$prefix
 exec_prefix=$exec_prefix
 bindir=$bindir
 libdir=$libdir
+avxplugindir=$avxplugindir
+vsplugindir=$vsplugindir
 includedir=$includedir
 API=$API
 CC=$CC

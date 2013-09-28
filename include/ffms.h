@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (17 << 16) | (4 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (19 << 16) | (0 << 8) | 0)
 
 #include <stdint.h>
 
@@ -64,7 +64,7 @@
 #endif
 
 // And now for some symbol hide-and-seek...
-#if defined(_WIN32) // MSVC
+#if defined(_MSC_VER) // MSVC
 #	if defined(FFMS_EXPORTS) // building the FFMS2 library itself, with visible API symbols
 #		define FFMS_API(ret) FFMS_EXTERN_C __declspec(dllexport) ret FFMS_CC
 #		define FFMS_DEPRECATED_API(ret) FFMS_EXTERN_C FFMS_DEPRECATED __declspec(dllexport) ret FFMS_CC
@@ -361,7 +361,6 @@ FFMS_API(const FFMS_AudioProperties *) FFMS_GetAudioProperties(FFMS_AudioSource 
 FFMS_API(const FFMS_Frame *) FFMS_GetFrame(FFMS_VideoSource *V, int n, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(const FFMS_Frame *) FFMS_GetFrameByTime(FFMS_VideoSource *V, double Time, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_GetAudio(FFMS_AudioSource *A, void *Buf, int64_t Start, int64_t Count, FFMS_ErrorInfo *ErrorInfo);
-FFMS_DEPRECATED_API(int) FFMS_SetOutputFormatV(FFMS_VideoSource *V, int64_t TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_SetOutputFormatV2(FFMS_VideoSource *V, const int *TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo); /* Introduced in FFMS_VERSION ((2 << 24) | (15 << 16) | (3 << 8) | 0) */
 FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V);
 FFMS_API(int) FFMS_SetInputFormatV(FFMS_VideoSource *V, int ColorSpace, int ColorRange, int Format, FFMS_ErrorInfo *ErrorInfo); /* Introduced in FFMS_VERSION ((2 << 24) | (17 << 16) | (1 << 8) | 0) */
