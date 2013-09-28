@@ -83,6 +83,11 @@ static void avcodec_free_frame(AVFrame **frame) { av_freep(frame); }
 #	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 51, 44, 0, 51, 76, 100)
 #		include <libavutil/pixdesc.h>
 
+#		if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 51, 42, 0, 51, 74, 100)
+#			define AVPixelFormat PixelFormat
+#			define AV_PIX_FMT_NB PIX_FMT_NB
+#		endif
+
 static const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt) {
 	if (pix_fmt < 0 || pix_fmt >= AV_PIX_FMT_NB)
 		return NULL;

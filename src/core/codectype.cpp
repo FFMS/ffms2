@@ -38,8 +38,10 @@ static const CodecTags mkv_codec_tags[] = {
 	{"A_MPEG/L2"           , FFMS_ID(MP2)},
 	{"A_MPEG/L1"           , FFMS_ID(MP2)},
 	{"A_MPEG/L3"           , FFMS_ID(MP3)},
+#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >=, 54, 29, 0, 54, 60, 100)
 	{"A_OPUS"              , FFMS_ID(OPUS)},
 	{"A_OPUS/EXPERIMENTAL" , FFMS_ID(OPUS)}, /* Pre-final ID, for compatibility */
+#endif
 	{"A_PCM/FLOAT/IEEE"    , FFMS_ID(PCM_F32LE)},
 	{"A_PCM/FLOAT/IEEE"    , FFMS_ID(PCM_F64LE)},
 	{"A_PCM/INT/BIG"       , FFMS_ID(PCM_S16BE)},
@@ -79,7 +81,9 @@ static const CodecTags mkv_codec_tags[] = {
 	{"V_MPEG4/ISO/SP"      , FFMS_ID(MPEG4)},
 	{"V_MPEG4/ISO/AVC"     , FFMS_ID(H264)},
 	{"V_MPEG4/MS/V3"       , FFMS_ID(MSMPEG4V3)},
+#if VERSION_CHECK(LIBAVFORMAT_VERSION_INT, >=, 255, 255, 255, 55, 15, 100)
 	{"V_MPEGH/ISO/HEVC"    , FFMS_ID(H265)},
+#endif
 	{"V_REAL/RV10"         , FFMS_ID(RV10)},
 	{"V_REAL/RV20"         , FFMS_ID(RV20)},
 	{"V_REAL/RV30"         , FFMS_ID(RV30)},
