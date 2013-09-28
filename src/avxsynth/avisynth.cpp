@@ -20,11 +20,11 @@
 
 #include <string>
 #include "ffms.h"
-#include "avssources_avx.h"
-#include "ffswscale_avx.h"
-#include "avsutils_avx.h"
+#include "avssources.h"
+#include "ffswscale.h"
+#include "avsutils.h"
 
-static avxsynth::AVSValue __cdecl CreateFFIndex(avxsynth::AVSValue Args, void* UserData, avxsynth::IScriptEnvironment* Env) {
+static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	FFMS_Init((int)AvisynthToFFCPUFlags(Env->GetCPUFlags()),  Args[7].AsBool(false));
 
 	char ErrorMsg[1024];
@@ -34,7 +34,7 @@ static avxsynth::AVSValue __cdecl CreateFFIndex(avxsynth::AVSValue Args, void* U
 
 
 	if (!Args[0].Defined())
-	Env->ThrowError("FFIndex: No source specified");
+    	Env->ThrowError("FFIndex: No source specified");
 
 	const char *Source = Args[0].AsString();
 	const char *CacheFile = Args[1].AsString("");
@@ -80,16 +80,16 @@ static avxsynth::AVSValue __cdecl CreateFFIndex(avxsynth::AVSValue Args, void* U
 		}
 		FFMS_DestroyIndex(Index);
 		if (!OverWrite)
-			return avxsynth::AVSValue(1);
+			return AVSValue(1);
 		else
-			return avxsynth::AVSValue(2);
+			return AVSValue(2);
 	} else {
 		FFMS_DestroyIndex(Index);
-		return avxsynth::AVSValue(0);
+		return AVSValue(0);
 	}
 }
 
-static avxsynth::AVSValue __cdecl CreateFFVideoSource(avxsynth::AVSValue Args, void* UserData, avxsynth::IScriptEnvironment* Env) {
+static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	FFMS_Init((int)AvisynthToFFCPUFlags(Env->GetCPUFlags()), Args[15].AsBool(false));
 
 	char ErrorMsg[1024];
@@ -98,7 +98,7 @@ static avxsynth::AVSValue __cdecl CreateFFVideoSource(avxsynth::AVSValue Args, v
 	E.BufferSize = sizeof(ErrorMsg);
 
 	if (!Args[0].Defined())
-	Env->ThrowError("FFVideoSource: No source specified");
+    	Env->ThrowError("FFVideoSource: No source specified");
 
 	const char *Source = Args[0].AsString();
 	int Track = Args[1].AsInt(-1);
@@ -192,7 +192,7 @@ static avxsynth::AVSValue __cdecl CreateFFVideoSource(avxsynth::AVSValue Args, v
 	return Filter;
 }
 
-static avxsynth::AVSValue __cdecl CreateFFAudioSource(avxsynth::AVSValue Args, void* UserData, avxsynth::IScriptEnvironment* Env) {
+static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	FFMS_Init((int)AvisynthToFFCPUFlags(Env->GetCPUFlags()), Args[5].AsBool(false));
 
 	char ErrorMsg[1024];
@@ -201,7 +201,7 @@ static avxsynth::AVSValue __cdecl CreateFFAudioSource(avxsynth::AVSValue Args, v
 	E.BufferSize = sizeof(ErrorMsg);
 
 	if (!Args[0].Defined())
-	Env->ThrowError("FFAudioSource: No source specified");
+    	Env->ThrowError("FFAudioSource: No source specified");
 
 	const char *Source = Args[0].AsString();
 	int Track = Args[1].AsInt(-1);
@@ -289,41 +289,41 @@ static avxsynth::AVSValue __cdecl CreateFFAudioSource(avxsynth::AVSValue Args, v
 	return Filter;
 }
 
-static avxsynth::AVSValue __cdecl CreateSWScale(avxsynth::AVSValue Args, void* UserData, avxsynth::IScriptEnvironment* Env) {
+static AVSValue __cdecl CreateSWScale(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	return new SWScale(Args[0].AsClip(), Args[1].AsInt(0), Args[2].AsInt(0), Args[3].AsString("BICUBIC"), Args[4].AsString(""), Env);
 }
 
-static avxsynth::AVSValue __cdecl CreateFFConvertToRGB24(avxsynth::AVSValue Args, void* UserData, avxsynth::IScriptEnvironment* Env) {
+static AVSValue __cdecl CreateFFConvertToRGB24(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	return new SWScale(Args[0].AsClip(), 0, 0, "BICUBIC", "rgb24", Env);
 }
 
-static avxsynth::AVSValue __cdecl CreateFFConvertToRGB32(avxsynth::AVSValue Args, void* UserData, avxsynth::IScriptEnvironment* Env) {
+static AVSValue __cdecl CreateFFConvertToRGB32(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	return new SWScale(Args[0].AsClip(), 0, 0, "BICUBIC", "rgb32", Env);
 }
 
-static avxsynth::AVSValue __cdecl CreateFFConvertToYV12(avxsynth::AVSValue Args, void* UserData, avxsynth::IScriptEnvironment* Env) {
+static AVSValue __cdecl CreateFFConvertToYV12(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	return new SWScale(Args[0].AsClip(), 0, 0, "BICUBIC", "yv12", Env);
 }
 
-static avxsynth::AVSValue __cdecl CreateFFConvertToYUY2(avxsynth::AVSValue Args, void* UserData, avxsynth::IScriptEnvironment* Env) {
+static AVSValue __cdecl CreateFFConvertToYUY2(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	return new SWScale(Args[0].AsClip(), 0, 0, "BICUBIC", "yuy2", Env);
 }
 
-static avxsynth::AVSValue __cdecl FFGetLogLevel(avxsynth::AVSValue Args, void* UserData, avxsynth::IScriptEnvironment* Env) {
+static AVSValue __cdecl FFGetLogLevel(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	return FFMS_GetLogLevel();
 }
 
-static avxsynth::AVSValue __cdecl FFSetLogLevel(avxsynth::AVSValue Args, void* UserData, avxsynth::IScriptEnvironment* Env) {
+static AVSValue __cdecl FFSetLogLevel(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	FFMS_SetLogLevel(Args[0].AsInt());
 	return FFMS_GetLogLevel();
 }
 
-static avxsynth::AVSValue __cdecl FFGetVersion(avxsynth::AVSValue Args, void* UserData, avxsynth::IScriptEnvironment* Env) {
+static AVSValue __cdecl FFGetVersion(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	int Version = FFMS_GetVersion();
 	return Env->Sprintf("%d.%d.%d.%d", Version >> 24, (Version & 0xFF0000) >> 16, (Version & 0xFF00) >> 8, Version & 0xFF);
 }
 
-extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(avxsynth::IScriptEnvironment* Env) {
+extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScriptEnvironment* Env) {
     Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b[demuxer]s", CreateFFIndex, 0);
 	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", CreateFFVideoSource, 0);
 	Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b[varprefix]s", CreateFFAudioSource, 0);

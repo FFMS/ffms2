@@ -30,8 +30,8 @@ SO_C += src/avisynth_c/avisynth.c src/avisynth_c/avs_lib.c src/avisynth_c/avs_ut
 endif
 
 ifeq ($(AVXSYNTH), yes)
-SO_CXX += src/avxsynth/avssources_avx.cpp src/avxsynth/avsutils_avx.cpp src/avxsynth/avxffms2.cpp \
-        src/avxsynth/ffswscale_avx.cpp
+SO_CXX += src/avxsynth/avisynth.cpp src/avxsynth/avssources.cpp src/avxsynth/avsutils.cpp \
+        src/avxsynth/ffswscale.cpp
 endif
 
 ifeq ($(VAPOURSYNTH),yes)
@@ -110,8 +110,12 @@ else
 	$(if $(SONAME), ln -f -s $(SONAME) $(DESTDIR)$(libdir)/libffms.$(SOSUFFIX))
 	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(libdir))
 ifeq ($(AVXSYNTH), yes)
-	install -d $(DESTDIR)$(libdir)/avxsynth
-	$(if $(SONAME), ln -f -s $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(libdir)/avxsynth/libavxffms2.$(SOSUFFIX))
+	install -d $(DESTDIR)$(avxplugindir)
+	$(if $(SONAME), ln -f -s $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(avxplugindir)/libavxffms2.$(SOSUFFIX))
+endif
+ifeq ($(VAPOURSYNTH), yes)
+	install -d $(DESTDIR)$(vsplugindir)
+	$(if $(SONAME), ln -f -s $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(vsplugindir)/libffms2.$(SOSUFFIX))
 endif
 endif
 	$(if $(IMPLIBNAME), install -m 644 $(IMPLIBNAME) $(DESTDIR)$(libdir))

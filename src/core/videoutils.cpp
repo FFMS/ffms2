@@ -22,6 +22,7 @@
 #include "videoutils.h"
 
 #include <algorithm>
+#include <math.h>
 
 /* if you have this, we'll assume you have a new enough libavutil too */
 extern "C" {
