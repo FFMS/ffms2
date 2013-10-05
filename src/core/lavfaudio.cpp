@@ -54,6 +54,7 @@ FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, i
 }
 
 FFLAVFAudio::~FFLAVFAudio() {
+	avcodec_close(CodecContext);
 	avformat_close_input(&FormatContext);
 }
 
