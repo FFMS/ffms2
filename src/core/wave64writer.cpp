@@ -19,7 +19,7 @@
 //  THE SOFTWARE.
 
 #include "wave64writer.h"
-#include <string.h>
+#include <cstring>
 
 #define WAVE_FORMAT_IEEE_FLOAT 0x0003
 #define WAVE_FORMAT_PCM 1

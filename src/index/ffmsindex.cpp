@@ -26,10 +26,10 @@ extern "C" {
 #include <objbase.h>
 #endif
 
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <stdlib.h>
 #include "ffms.h"
 #include "ffmscompat.h"
 
