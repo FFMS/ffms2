@@ -226,7 +226,6 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	E.Buffer = ErrorMsg;
 	E.BufferSize = sizeof(ErrorMsg);
 
-	const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
 	const FFMS_Frame *F = FFMS_GetFrame(V, 0, &E);
 	if (!F) {
 		std::string buf = "Source: ";
