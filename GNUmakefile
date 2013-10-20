@@ -107,7 +107,7 @@ install: ffmsindex$(EXE) $(SONAME)
 ifeq ($(SYS),MINGW)
 	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(bindir))
 else
-	$(if $(SONAME), ln -f -s $(SONAME) $(DESTDIR)$(libdir)/libffms.$(SOSUFFIX))
+	$(if $(SONAME), ln -f -s $(SONAME) $(DESTDIR)$(libdir)/libffms2.$(SOSUFFIX))
 	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(libdir))
 ifeq ($(AVXSYNTH), yes)
 	install -d $(DESTDIR)$(avxplugindir)

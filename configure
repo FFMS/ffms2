@@ -525,21 +525,21 @@ if [ "$shared" = "yes" ]; then
             echo "SONAME=ffms${API}.dll" >> config.mak
             echo 'SOFLAGS=-Wl,--out-implib,$(IMPLIBNAME) -Wl,--enable-auto-image-base -Wl,--export-all-symbols' >> config.mak
         else
-            echo "SONAME=libffms-${API}.dll" >> config.mak
+            echo "SONAME=libffms2-${API}.dll" >> config.mak
             echo 'SOFLAGS=-Wl,--out-implib,$(IMPLIBNAME) -Wl,--enable-auto-image-base' >> config.mak
         fi
-        echo "IMPLIBNAME=libffms-${API}.dll.a" >> config.mak
+        echo "IMPLIBNAME=libffms2-${API}.dll.a" >> config.mak
     elif [ "$SYS" = "MACOSX" ]; then
         echo "SOSUFFIX=dylib" >> config.mak
-        echo "SONAME=ffms.$API.dylib" >> config.mak
+        echo "SONAME=ffms2.$API.dylib" >> config.mak
         echo 'SOFLAGS=-dynamiclib -Wl,-single_module -Wl,-read_only_relocs,suppress -install_name $(DESTDIR)$(libdir)/$(SONAME)' >> config.mak
     elif [ "$SYS" = "SunOS" ]; then
         echo "SOSUFFIX=so" >> config.mak
-        echo "SONAME=ffms.so.$API" >> config.mak
+        echo "SONAME=ffms2.so.$API" >> config.mak
         echo 'SOFLAGS=-Wl,-h,$(SONAME)' >> config.mak
     else
         echo "SOSUFFIX=so" >> config.mak
-        echo "SONAME=libffms.so.$API" >> config.mak
+        echo "SONAME=libffms2.so.$API" >> config.mak
         echo 'SOFLAGS=-Wl,-soname,$(SONAME)' >> config.mak
     fi
     echo 'default: $(SONAME)' >> config.mak
