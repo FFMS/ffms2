@@ -203,8 +203,6 @@ void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContex
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 					"Short read while reading frame");
 			}
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-				"Unknown read error");
 		}
 
 		if (TCC && TCC->CompressionMethod == COMP_PREPEND)
