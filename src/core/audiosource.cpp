@@ -221,9 +221,12 @@ void FFMS_AudioSource::SetOutputFormat(const FFMS_ResampleOptions *opt) {
 
 	if (avresample_open(ResampleContext)) {
 		SetOptions(oldOptions.get(), ResampleContext, resample_options);
-		avresample_open(ResampleContext);
-		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
-			"Could not open avresample context");
+		if (avresample_open(ResampleContext) < 0)
+			throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
+				"Could not re-open old avresample context");
+		else
+			throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
+				"Could not open avresample context");
 	}
 #endif
 }
