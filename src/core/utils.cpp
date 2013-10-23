@@ -556,6 +556,8 @@ void FlushBuffers(AVCodecContext *CodecContext) {
 		const AVCodec *codec = CodecContext->codec;
 		avcodec_close(CodecContext);
 		// Whether or not codec is const varies between versions
-		avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), 0);
+		if (avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), 0) < 0)
+			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_CODEC,
+				"Couldn't re-open codec.");
 	}
 }
