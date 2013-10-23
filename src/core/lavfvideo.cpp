@@ -58,7 +58,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	Res.CloseCodec(true);
 
 	// Always try to decode a frame to make sure all required parameters are known
-	int64_t DummyPTS, DummyPos;
+	int64_t DummyPTS = 0, DummyPos = 0;
 	DecodeNextFrame(&DummyPTS, &DummyPos);
 
 	//VP.image_type = VideoInfo::IT_TFF;
