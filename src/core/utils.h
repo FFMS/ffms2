@@ -289,6 +289,7 @@ class OptionMapper {
 public:
 	template<typename T>
 	OptionMapper(const char *opt_name, T (FFMS_Struct::*member)) : impl(new OptionMapperImpl<T>(member, opt_name)) { }
+	~OptionMapper() { delete impl; }
 
 	void ToOpt(const FFMS_Struct *src, void *dst) const { impl->ToOpt(src, dst); }
 	void FromOpt(FFMS_Struct *dst, void *src) const { impl->FromOpt(dst, src); }
