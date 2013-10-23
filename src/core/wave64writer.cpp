@@ -107,7 +107,7 @@ void Wave64Writer::WriteHeader(bool Initial, bool IsFloat) {
 }
 
 void Wave64Writer::WriteData(AVFrame const& Frame) {
-	uint64_t Length = Frame.nb_samples * BytesPerSample * Channels;
+	uint64_t Length = (uint64_t) Frame.nb_samples * BytesPerSample * Channels;
 	if (Channels > 1 && av_sample_fmt_is_planar(static_cast<AVSampleFormat>(Frame.format))) {
 		for (int32_t sample = 0; sample < Frame.nb_samples; ++sample) {
 			for (int32_t channel = 0; channel < Channels; ++channel)
