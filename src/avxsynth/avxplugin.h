@@ -54,21 +54,6 @@
 #endif // LINUXIZED_VERSION
 #include <stdio.h>
 
-namespace avxsynth {
-
-
-enum { AVISYNTH_INTERFACE_VERSION = 3 };
-
-// Raster types used by VirtualDub & Avisynth
-#define in64 (__int64)(unsigned short)
-typedef uint32_t	Pixel;
-typedef uint32_t	Pixel32;
-typedef unsigned char	Pixel8;
-typedef long			PixCoord;
-typedef long			PixDim;
-typedef long			PixOffset;
-
-
 /* Compiler-specific crap */
 
 // Tell MSVC to stop precompiling here
@@ -86,6 +71,19 @@ typedef long			PixOffset;
   #define _ASSERTE(x) assert(x)
 #endif
 
+namespace avxsynth {
+
+
+enum { AVISYNTH_INTERFACE_VERSION = 3 };
+
+// Raster types used by VirtualDub & Avisynth
+#define in64 (__int64)(unsigned short)
+typedef uint32_t	Pixel;
+typedef uint32_t	Pixel32;
+typedef unsigned char	Pixel8;
+typedef long			PixCoord;
+typedef long			PixDim;
+typedef long			PixOffset;
 
 
 // I had problems with Premiere wanting 1-byte alignment for its structures,
@@ -437,7 +435,7 @@ public:
   virtual PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env) = 0;
   virtual bool __stdcall GetParity(int n) = 0;  // return field parity if field_based, else parity of first field in frame
   virtual void __stdcall GetAudio(void* buf, __int64 start, __int64 count, IScriptEnvironment* env) = 0;  // start and count are in samples
-  virtual void __stdcall SetCacheHints(int cachehints,size_t frame_range) = 0 ;  // We do not pass cache requests upwards, only to the next filter.
+  virtual void __stdcall SetCacheHints(int cachehints,int frame_range) = 0 ;  // We do not pass cache requests upwards, only to the next filter.
   virtual const VideoInfo& __stdcall GetVideoInfo() = 0;
   virtual __stdcall ~IClip() {}
 };
@@ -600,7 +598,7 @@ public:
   void __stdcall GetAudio(void* buf, __int64 start, __int64 count, IScriptEnvironment* env) { child->GetAudio(buf, start, count, env); }
   const VideoInfo& __stdcall GetVideoInfo() { return vi; }
   bool __stdcall GetParity(int n) { return child->GetParity(n); }
-  void __stdcall SetCacheHints(int cachehints,size_t frame_range) { } ;  // We do not pass cache requests upwards, only to the next filter.
+  void __stdcall SetCacheHints(int cachehints,int frame_range) { } ;  // We do not pass cache requests upwards, only to the next filter.
 };
 
 
@@ -637,7 +635,7 @@ class ConvertAudio : public GenericVideoFilter
 public:
   ConvertAudio(PClip _clip, int prefered_format);
   void __stdcall GetAudio(void* buf, __int64 start, __int64 count, IScriptEnvironment* env);
-  void __stdcall SetCacheHints(int cachehints,size_t frame_range);  // We do pass cache requests upwards, to the cache!
+  void __stdcall SetCacheHints(int cachehints,int frame_range);  // We do pass cache requests upwards, to the cache!
 
   static PClip Create(PClip clip, int sample_type, int prefered_type);
   static AVSValue __cdecl Create_float(AVSValue args, void*, IScriptEnvironment*);
