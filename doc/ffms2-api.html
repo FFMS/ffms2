@@ -306,6 +306,7 @@ The frame number to get. Frame numbering starts from zero, and hence the first f
 See above.</p>
 <h4>Return values</h4>
 <p>Returns a pointer to the <tt>FFMS_Frame</tt> on success. Returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.</p>
+<p>The returned frame is owned by the given <tt>FFMS_VideoSource</tt>, and remains valid until the video source is destroyed, a different frame is requested from the video source, or the video source's input or output format is changed. Note that while FFMS_GetFrame tends to return the same pointer with each call, it is not safe to rely on this as the output frame will sometimes be reallocated.</p>
 
 <h3>FFMS_GetFrameByTime - retrieves a video frame at a given timestamp</h3>
 <pre>const FFMS_Frame *FFMS_GetFrameByTime(FFMS_VideoSource *V, double Time, FFMS_ErrorInfo *ErrorInfo)</pre>

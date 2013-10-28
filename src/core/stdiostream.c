@@ -96,8 +96,12 @@ int StdIoProgress(StdIoStream *st, ulonglong cur, ulonglong max) {
 longlong StdIoGetFileSize(StdIoStream *st) {
 	longlong epos = 0;
 	longlong cpos = ftello(st->fp);
+	if (cpos < 0)
+		return 0;
 	fseeko(st->fp, 0, SEEK_END);
 	epos = ftello(st->fp);
+	if (epos < 0)
+		return 0;
 	fseeko(st->fp, cpos, SEEK_SET);
 	return epos;
 }
