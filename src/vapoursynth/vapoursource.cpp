@@ -118,10 +118,12 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 		const FFMS_Frame *Frame;
 
 		if (vs->FPSNum > 0 && vs->FPSDen > 0) {
-			Frame = FFMS_GetFrameByTime(vs->V, FFMS_GetVideoProperties(vs->V)->FirstTime +
-				(double)(n * (int64_t)vs->FPSDen) / vs->FPSNum, &E);
+			double currentTime = FFMS_GetVideoProperties(vs->V)->FirstTime +
+				(double)(n * (int64_t)vs->FPSDen) / vs->FPSNum;
+			Frame = FFMS_GetFrameByTime(vs->V, currentTime, &E);
 			vsapi->propSetInt(Props, "_DurationNum", vs->FPSDen, paReplace);
 			vsapi->propSetInt(Props, "_DurationDen", vs->FPSNum, paReplace);
+			vsapi->propSetFloat(Props, "_AbsoluteTime", currentTime, paReplace);
 		} else {
 			Frame = FFMS_GetFrame(vs->V, n, &E);
 			FFMS_Track *T = FFMS_GetTrackFromVideo(vs->V);
@@ -133,6 +135,8 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 				num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
 			vsapi->propSetInt(Props, "_DurationNum", TB->Num * num, paReplace);
 			vsapi->propSetInt(Props, "_DurationDen", TB->Den, paReplace);
+			vsapi->propSetFloat(Props, "_AbsoluteTime",
+				((double)(TB->Num / 1000) *  FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, paReplace);
 		}
 
 		if (Frame == NULL) {
@@ -226,7 +230,6 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	E.Buffer = ErrorMsg;
 	E.BufferSize = sizeof(ErrorMsg);
 
-	const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
 	const FFMS_Frame *F = FFMS_GetFrame(V, 0, &E);
 	if (!F) {
 		std::string buf = "Source: ";

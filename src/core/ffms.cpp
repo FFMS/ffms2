@@ -20,7 +20,6 @@
 
 #include <sstream>
 #include <iomanip>
-#include <assert.h>
 #include "ffms.h"
 #include "videosource.h"
 #include "audiosource.h"
@@ -264,7 +263,6 @@ FFMS_API(int) FFMS_SetOutputFormatA(FFMS_AudioSource *A, const FFMS_ResampleOpti
 }
 
 FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {
-	assert(Index != NULL);
 	if (Index == NULL)
 		return;
 	Index->Release();

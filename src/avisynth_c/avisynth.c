@@ -22,13 +22,6 @@
 #include "avs_common.h"
 #include "ff_filters.h"
 
-/* set the correct entry point names for each platform, so things work smoothly.
- * these would likely need to be corrected for MSVC...
- * but as MSVC can't compile this code, pretend it doesn't exist. */
-#ifndef _WIN64
-#define AvisynthPluginInit2 _AvisynthPluginInit2
-#endif
-
 #define MAX_CACHE_FILE_LENGTH 512 // Windows API should explode before getting this long
 
 static int default_cache_file( const char *src, const char *user_cache_file, char *out_cache_file )
@@ -338,10 +331,3 @@ const char *AVSC_CC avisynth_c_plugin_init( AVS_ScriptEnvironment* env )
 const char *AVSC_CC avisynth_c_plugin_init_s( AVS_ScriptEnvironment* env )
 { return avisynth_c_plugin_init( env ); }
 #endif
-
-/* the AVS loader for LoadPlugin.
- * Allows the conditional avs script logic:
- * ( LoadPlugin("ffms2.dll") == "Use LoadCPlugin" ) ? LoadCPlugin("ffms2.dll") : NOP()
- * to successfully load the plugin for both MSVC and MinGW versions */
-const char * __stdcall AvisynthPluginInit2( void *Env )
-{ return "Use LoadCPlugin"; }
