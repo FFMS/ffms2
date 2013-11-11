@@ -139,13 +139,15 @@ die() {
     exit 1
 }
 
-rm -f config.h config.mak config.log ffms.pc ffmsdll.rc.h ffmsindexexe.rc.h conftest*
+rm -f config.h config.mak config.log ffms2.pc ffmsdll.rc.h ffmsindexexe.rc.h conftest*
 
 prefix='/usr/local'
 exec_prefix='${prefix}'
 bindir='${exec_prefix}/bin'
 libdir='${exec_prefix}/lib'
 includedir='${prefix}/include'
+libdirpc='${libdir}'
+includedirpc='${includedir}'
 avxplugindir='${libdir}/avxsynth'
 vsplugindir='${libdir}/vapoursynth'
 DEVNULL='/dev/null'
@@ -545,17 +547,21 @@ if [ "$shared" = "yes" ]; then
     echo 'default: $(SONAME)' >> config.mak
 fi
 
-cat > ffms.pc << EOF
+cat > ffms2.pc << EOF
+# ffms2.pc.  Generated internally by configure.
+
 prefix=$prefix
 exec_prefix=$exec_prefix
 libdir=$libdir
 includedir=$includedir
 
-Description: The Fabulous FM Library
-Requires: libavformat libavcodec libswscale libavutil libavresample
+Name: ffms2
+Description: The Fabulous FM Library 2
+Requires.private: libavformat libavcodec libswscale libavutil libavresample
 Version: $version
-Libs: -L$libdir -lffms -lz
-Cflags: -I$includedir
+Libs.private:  -lz
+Libs: -L$libdirpc -lffms2
+Cflags: -I$includedirpc
 EOF
 
 cat > conftest.log <<EOF

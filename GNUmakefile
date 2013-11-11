@@ -101,7 +101,7 @@ install: ffmsindex$(EXE) $(SONAME)
 	install -d $(DESTDIR)$(libdir)/pkgconfig
 	install -m 644 include/ffms.h $(DESTDIR)$(includedir)
 	install -m 644 libffms2.a $(DESTDIR)$(libdir)
-	install -m 644 ffms.pc $(DESTDIR)$(libdir)/pkgconfig
+	install -m 644 ffms2.pc $(DESTDIR)$(libdir)/pkgconfig
 	install ffmsindex$(EXE) $(DESTDIR)$(bindir)
 	$(RANLIBX) $(DESTDIR)$(libdir)/libffms2.a
 ifeq ($(SYS),MINGW)
@@ -131,11 +131,11 @@ endif
 
 uninstall:
 	rm -f $(DESTDIR)$(includedir)/ffms.h $(DESTDIR)$(libdir)/libffms2.a
-	rm -f $(DESTDIR)$(bindir)/ffmsindex$(EXE) $(DESTDIR)$(libdir)/pkgconfig/ffms.pc
+	rm -f $(DESTDIR)$(bindir)/ffmsindex$(EXE) $(DESTDIR)$(libdir)/pkgconfig/ffms2.pc
 	$(if $(SONAME), rm -f $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(libdir)/libffms2.$(SOSUFFIX) $(DESTDIR)$(bindir)/$(SONAME))
 	$(if $(IMPLIBNAME), rm -f $(DESTDIR)$(libdir)/$(IMPLIBNAME))
 
 clean:
 	rm -f $(CORE_O) $(SO_O) $(IDX_O) $(SONAME) *.a ffmsindex ffmsindex$(EXE) .depend TAGS
 distclean: clean
-	rm -f config.mak config.h config.log ffms.pc
+	rm -f config.mak config.h config.log ffms2.pc
