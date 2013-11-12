@@ -23,6 +23,12 @@
 #include <algorithm>
 #include <cassert>
 
+extern "C" {
+#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 52, 2, 0, 52, 6, 100)
+#include <libavutil/channel_layout.h>
+#endif
+}
+
 namespace {
 #define MAPPER(m, n) OptionMapper<FFMS_ResampleOptions>(n, &FFMS_ResampleOptions::m)
 OptionMapper<FFMS_ResampleOptions> resample_options[] = {
