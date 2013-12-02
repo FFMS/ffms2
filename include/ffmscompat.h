@@ -96,6 +96,9 @@ static const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt) {
 }
 
 #	endif
+#	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 52, 9, 0, 52, 20, 100)
+#		define av_frame_alloc avcodec_alloc_frame
+#	endif
 #endif
 
 #endif // FFMSCOMPAT_H
