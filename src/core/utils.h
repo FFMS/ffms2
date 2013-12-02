@@ -152,7 +152,7 @@ public:
 	~unknown_size() { Del(&ptr); }
 };
 
-class ScopedFrame : public unknown_size<AVFrame, avcodec_alloc_frame, avcodec_free_frame> {
+class ScopedFrame : public unknown_size<AVFrame, av_frame_alloc, avcodec_free_frame> {
 public:
 	void reset() {
 		avcodec_get_frame_defaults(*this);
