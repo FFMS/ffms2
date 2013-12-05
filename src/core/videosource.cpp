@@ -144,8 +144,8 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 		DecodingThreads = GetNumberOfLogicalCPUs();
 	else
 		DecodingThreads = Threads;
-	DecodeFrame = avcodec_alloc_frame();
-	LastDecodedFrame = avcodec_alloc_frame();
+	DecodeFrame = av_frame_alloc();
+	LastDecodedFrame = av_frame_alloc();
 
 	// Dummy allocations so the unallocated case doesn't have to be handled later
 	avpicture_alloc(&SWSFrame, PIX_FMT_GRAY8, 16, 16);
