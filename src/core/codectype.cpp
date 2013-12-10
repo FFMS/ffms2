@@ -81,7 +81,7 @@ static const CodecTags mkv_codec_tags[] = {
 	{"V_MPEG4/ISO/SP"      , FFMS_ID(MPEG4)},
 	{"V_MPEG4/ISO/AVC"     , FFMS_ID(H264)},
 	{"V_MPEG4/MS/V3"       , FFMS_ID(MSMPEG4V3)},
-#if VERSION_CHECK(LIBAVFORMAT_VERSION_INT, >=, 255, 255, 255, 55, 38, 101)
+#if VERSION_CHECK(LIBAVFORMAT_VERSION_INT, >=, 55, 24, 0, 55, 38, 101)
 	{"V_MPEGH/ISO/HEVC"    , FFMS_ID(HEVC)},
 #endif
 	{"V_REAL/RV10"         , FFMS_ID(RV10)},

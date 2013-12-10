@@ -49,7 +49,7 @@ SO_O += ffmsdll.o
 endif
 endif
 
-INDEX_LINK=libffms.a
+INDEX_LINK=libffms2.a
 ifneq ($(SONAME),)
 INDEX_LINK=$(SONAME)
 endif
@@ -64,14 +64,14 @@ ffmsindexexe.o: ffmsindexexe.rc.h
 
 default: $(DEP) ffmsindex$(EXE)
 
-libffms.a: .depend $(CORE_O)
-	$(AR) rc libffms.a $(CORE_O)
-	$(RANLIB) libffms.a
+libffms2.a: .depend $(CORE_O)
+	$(AR) rc libffms2.a $(CORE_O)
+	$(RANLIB) libffms2.a
 
 $(SONAME): .depend $(CORE_O) $(SO_O) $(SO_CXX)
 	$(CXX) -shared -o $@ $(CORE_O) $(SO_O) $(SOFLAGS) $(SOFLAGS_USER) $(LDFLAGS)
 
-ffmsindex$(EXE): $(IDX_O) libffms.a $(SONAME)
+ffmsindex$(EXE): $(IDX_O) libffms2.a $(SONAME)
 	$(CXX) -o $@ $(IDX_O) $(INDEX_LINK) $(LDFLAGS)
 
 define \n
@@ -100,10 +100,10 @@ install: ffmsindex$(EXE) $(SONAME)
 	install -d $(DESTDIR)$(libdir)
 	install -d $(DESTDIR)$(libdir)/pkgconfig
 	install -m 644 include/ffms.h $(DESTDIR)$(includedir)
-	install -m 644 libffms.a $(DESTDIR)$(libdir)
-	install -m 644 ffms.pc $(DESTDIR)$(libdir)/pkgconfig
+	install -m 644 libffms2.a $(DESTDIR)$(libdir)
+	install -m 644 ffms2.pc $(DESTDIR)$(libdir)/pkgconfig
 	install ffmsindex$(EXE) $(DESTDIR)$(bindir)
-	$(RANLIBX) $(DESTDIR)$(libdir)/libffms.a
+	$(RANLIBX) $(DESTDIR)$(libdir)/libffms2.a
 ifeq ($(SYS),MINGW)
 	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(bindir))
 else
@@ -130,12 +130,12 @@ ifeq ($(SYS),MINGW)
 endif
 
 uninstall:
-	rm -f $(DESTDIR)$(includedir)/ffms.h $(DESTDIR)$(libdir)/libffms.a
-	rm -f $(DESTDIR)$(bindir)/ffmsindex$(EXE) $(DESTDIR)$(libdir)/pkgconfig/ffms.pc
-	$(if $(SONAME), rm -f $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(libdir)/libffms.$(SOSUFFIX) $(DESTDIR)$(bindir)/$(SONAME))
+	rm -f $(DESTDIR)$(includedir)/ffms.h $(DESTDIR)$(libdir)/libffms2.a
+	rm -f $(DESTDIR)$(bindir)/ffmsindex$(EXE) $(DESTDIR)$(libdir)/pkgconfig/ffms2.pc
+	$(if $(SONAME), rm -f $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(libdir)/libffms2.$(SOSUFFIX) $(DESTDIR)$(bindir)/$(SONAME))
 	$(if $(IMPLIBNAME), rm -f $(DESTDIR)$(libdir)/$(IMPLIBNAME))
 
 clean:
 	rm -f $(CORE_O) $(SO_O) $(IDX_O) $(SONAME) *.a ffmsindex ffmsindex$(EXE) .depend TAGS
 distclean: clean
-	rm -f config.mak config.h config.log ffms.pc
+	rm -f config.mak config.h config.log ffms2.pc
