@@ -314,10 +314,10 @@ void FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
 		// during indexing, so continue to just ignore decoding errors
 		if (Ret < 0) break;
 
-		if (Ret > 0 && GotFrame) {
+		if (Ret > 0) {
 			Packet.size -= Ret;
 			Packet.data += Ret;
-			if (DecodeFrame->nb_samples > 0) {
+			if (GotFrame && DecodeFrame->nb_samples > 0) {
 				GotSamples = true;
 				if (pos)
 					CacheBlock(*pos);
