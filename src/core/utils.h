@@ -271,6 +271,7 @@ class OptionMapper {
 	struct OptionMapperBase {
 		virtual void ToOpt(const FFMS_Struct *src, void *dst) const=0;
 		virtual void FromOpt(FFMS_Struct *dst, void *src) const=0;
+		virtual ~OptionMapperBase() {}
 	};
 
 	template<typename T>
