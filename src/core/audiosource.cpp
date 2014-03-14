@@ -219,21 +219,16 @@ void FFMS_AudioSource::SetOutputFormat(const FFMS_ResampleOptions *opt) {
 #ifdef WITH_AVRESAMPLE
 	if (!NeedsResample) return;
 
-	std::auto_ptr<FFMS_ResampleOptions> oldOptions(ReadOptions(ResampleContext, resample_options));
-	SetOptions(opt, ResampleContext, resample_options);
+	FFResampleContext newContext;
+	SetOptions(opt, newContext, resample_options);
 	av_opt_set_int(ResampleContext, "in_sample_rate", AP.SampleRate, 0);
 	av_opt_set_int(ResampleContext, "in_sample_fmt", CodecContext->sample_fmt, 0);
 	av_opt_set_int(ResampleContext, "in_channel_layout", AP.ChannelLayout, 0);
 
-	if (avresample_open(ResampleContext)) {
-		SetOptions(oldOptions.get(), ResampleContext, resample_options);
-		if (avresample_open(ResampleContext) < 0)
-			throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
-				"Could not re-open old avresample context");
-		else
-			throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
-				"Could not open avresample context");
-	}
+	if (avresample_open(newContext))
+		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
+			"Could not open avresample context");
+	newContext.swap(ResampleContext);
 #endif
 }
 

@@ -147,6 +147,7 @@ public:
 	operator T*() const { return ptr; }
 	operator void*() const { return ptr; }
 	T *operator->() const { return ptr; }
+	void swap(unknown_size<T, Alloc, Del>& other) { std::swap(ptr, other.ptr); }
 
 	unknown_size() : ptr(Alloc()) { }
 	~unknown_size() { Del(&ptr); }
