@@ -75,6 +75,9 @@ public:
 
 	TFrameInfo() { }
 	TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize, int FrameType);
+
+	void Write(zipped_file &zf) const;
+	void Read(zipped_file &zf, const TFrameInfo *prev);
 };
 
 struct FFMS_Track {
@@ -105,7 +108,7 @@ public:
 	int VisibleFrameCount() const;
 
 	void WriteTimecodes(const char *TimecodeFile) const;
-	void Write(zipped_file *Stream) const;
+	void Write(zipped_file &Stream) const;
 
 	typedef frame_vec::allocator_type allocator_type;
 	typedef frame_vec::size_type size_type;
