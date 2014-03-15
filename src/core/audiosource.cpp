@@ -221,9 +221,9 @@ void FFMS_AudioSource::SetOutputFormat(const FFMS_ResampleOptions *opt) {
 
 	FFResampleContext newContext;
 	SetOptions(opt, newContext, resample_options);
-	av_opt_set_int(ResampleContext, "in_sample_rate", AP.SampleRate, 0);
-	av_opt_set_int(ResampleContext, "in_sample_fmt", CodecContext->sample_fmt, 0);
-	av_opt_set_int(ResampleContext, "in_channel_layout", AP.ChannelLayout, 0);
+	av_opt_set_int(newContext, "in_sample_rate", AP.SampleRate, 0);
+	av_opt_set_int(newContext, "in_sample_fmt", CodecContext->sample_fmt, 0);
+	av_opt_set_int(newContext, "in_channel_layout", AP.ChannelLayout, 0);
 
 	if (avresample_open(newContext))
 		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
