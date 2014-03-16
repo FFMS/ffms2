@@ -172,16 +172,21 @@ TFrameInfo::TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCoun
 	this->KeyFrame = KeyFrame;
 }
 
-void TFrameInfo::Read(zipped_file &stream, const TFrameInfo *prev) {
+void TFrameInfo::Read(zipped_file &stream, const TFrameInfo *prev, const FFMS_TrackType TT) {
 	PTS = stream.read<int64_t>();
-	RepeatPict = stream.read<int32_t>();
 	KeyFrame = stream.read<int8_t>();
-	SampleStart = stream.read<int64_t>();
-	SampleCount = stream.read<uint32_t>();
 	FilePos = stream.read<int64_t>();
 	FrameSize = stream.read<uint32_t>();
 	OriginalPos = stream.read<uint32_t>();
-	FrameType = stream.read<uint8_t>();
+
+	if (TT == FFMS_TYPE_AUDIO) {
+		SampleStart = stream.read<int64_t>();
+		SampleCount = stream.read<uint32_t>();
+	}
+	else if (TT == FFMS_TYPE_VIDEO) {
+		FrameType = stream.read<uint8_t>();
+		RepeatPict = stream.read<int32_t>();
+	}
 
 	if (prev) {
 		FilePos += prev->FilePos;
@@ -191,16 +196,21 @@ void TFrameInfo::Read(zipped_file &stream, const TFrameInfo *prev) {
 	}
 }
 
-void TFrameInfo::Write(zipped_file &stream) const {
+void TFrameInfo::Write(zipped_file &stream, const FFMS_TrackType TT) const {
 	stream.write(PTS);
-	stream.write<int32_t>(RepeatPict);
 	stream.write<int8_t>(KeyFrame);
-	stream.write(SampleStart);
-	stream.write<uint32_t>(SampleCount);
 	stream.write(FilePos);
 	stream.write<uint32_t>(FrameSize);
 	stream.write<uint32_t>(OriginalPos);
-	stream.write<uint8_t>(FrameType);
+
+	if (TT == FFMS_TYPE_AUDIO) {
+		stream.write(SampleStart);
+		stream.write<uint32_t>(SampleCount);
+	}
+	else if (TT == FFMS_TYPE_VIDEO) {
+		stream.write<uint8_t>(FrameType);
+		stream.write<int32_t>(RepeatPict);
+	}
 }
 
 void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, unsigned int FrameSize, bool Invisible) {
@@ -382,7 +392,7 @@ FFMS_Track::FFMS_Track(zipped_file &stream) {
 
 	if (Frames.empty()) return;
 	for (size_t i = 0; i < Frames.size(); ++i)
-		Frames[i].Read(stream, i == 0 ? NULL : &Frames[i - 1]);
+		Frames[i].Read(stream, i == 0 ? NULL : &Frames[i - 1], TT);
 
 	InvisibleFrames.resize(static_cast<size_t>(stream.read<uint64_t>()));
 	for (size_t i = 0; i < InvisibleFrames.size(); ++i)
@@ -400,14 +410,14 @@ void FFMS_Track::Write(zipped_file &stream) const {
 
 	if (empty()) return;
 
-	Frames[0].Write(stream);
+	Frames[0].Write(stream, TT);
 	for (size_t i = 1; i < size(); ++i) {
 		TFrameInfo temp = Frames[i];
 		temp.FilePos -= Frames[i - 1].FilePos;
 		temp.OriginalPos -= Frames[i - 1].OriginalPos;
 		temp.PTS -= Frames[i - 1].PTS;
 		temp.SampleStart -= Frames[i - 1].SampleStart;
-		temp.Write(stream);
+		temp.Write(stream, TT);
 	}
 
 	stream.write<uint64_t>(InvisibleFrames.size());
@@ -468,7 +478,6 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 	fclose(SFile);
 	av_sha_final(ctx, Digest);
 }
-
 
 int FFMS_Index::AddRef() {
 	return ++RefCount;

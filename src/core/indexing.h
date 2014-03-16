@@ -76,8 +76,8 @@ public:
 	TFrameInfo() { }
 	TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize, int FrameType);
 
-	void Write(zipped_file &zf) const;
-	void Read(zipped_file &zf, const TFrameInfo *prev);
+	void Write(zipped_file &zf, FFMS_TrackType TT) const;
+	void Read(zipped_file &zf, const TFrameInfo *prev, FFMS_TrackType TT);
 };
 
 struct FFMS_Track {
