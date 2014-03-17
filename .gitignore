@@ -1,14 +1,15 @@
 
 # /
-/testing
-/todo.txt
+/.gitignore
+/Makefile
+/autom4te.cache
 /config.log
 /config.status
-/libtool
+/deps
 /ffms2.pc
-/autom4te.cache
-/Makefile
-/.gitignore
+/libtool
+/testing
+/todo.txt
 
 # /build-msvc/
 /build-msvc/*.suo
