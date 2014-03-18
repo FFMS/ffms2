@@ -179,7 +179,7 @@ class MatroskaReaderContext {
 public:
 	StdIoStream ST;
 	uint8_t *Buffer;
-	unsigned int BufferSize;
+	size_t BufferSize;
 	char CSBuffer[4096];
 
 	MatroskaReaderContext() {

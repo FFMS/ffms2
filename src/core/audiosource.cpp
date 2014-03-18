@@ -121,20 +121,18 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 			"Audio delay compensation must be relative to a video track");
 
 	int64_t Delay = 0;
-	if (DelayMode != FFMS_DELAY_TIME_ZERO) {
-		if (DelayMode == FFMS_DELAY_FIRST_VIDEO_TRACK) {
-			for (size_t i = 0; i < Index.size(); ++i) {
-				if (Index[i].TT == FFMS_TYPE_VIDEO && !Index[i].empty()) {
-					DelayMode = i;
-					break;
-				}
+	if (DelayMode == FFMS_DELAY_FIRST_VIDEO_TRACK) {
+		for (size_t i = 0; i < Index.size(); ++i) {
+			if (Index[i].TT == FFMS_TYPE_VIDEO && !Index[i].empty()) {
+				DelayMode = i;
+				break;
 			}
 		}
+	}
 
-		if (DelayMode >= 0) {
-			const FFMS_Track &VTrack = Index[DelayMode];
-			Delay = -(VTrack[0].PTS * VTrack.TB.Num * AP.SampleRate / (VTrack.TB.Den * 1000));
-		}
+	if (DelayMode >= 0) {
+		const FFMS_Track &VTrack = Index[DelayMode];
+		Delay = -(VTrack[0].PTS * VTrack.TB.Num * AP.SampleRate / (VTrack.TB.Den * 1000));
 	}
 
 	if (Frames.HasTS) {
@@ -385,8 +383,8 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 			if (SeekOffset >= 0 && (Start < CurrentSample || Start > CurrentSample + DecodeFrame->nb_samples * 5)) {
 				TFrameInfo f;
 				f.SampleStart = Start;
-				int NewPacketNumber = std::distance(Frames.begin(), std::lower_bound(Frames.begin(), Frames.end(), f, SampleStartComp));
-				NewPacketNumber = FFMAX(0, NewPacketNumber - SeekOffset - 15);
+				size_t NewPacketNumber = std::distance(Frames.begin(), std::lower_bound(Frames.begin(), Frames.end(), f, SampleStartComp));
+				NewPacketNumber = std::max<size_t>(0, NewPacketNumber - SeekOffset - 15);
 				while (NewPacketNumber > 0 && !Frames[NewPacketNumber].KeyFrame) --NewPacketNumber;
 
 				// Only seek forward if it'll actually result in moving forward
