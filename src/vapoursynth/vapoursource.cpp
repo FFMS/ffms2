@@ -19,11 +19,14 @@
 //  THE SOFTWARE.
 
 #include "vapoursource.h"
+
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
+
 extern "C" {
 #include <libavutil/common.h>
 #include <libavutil/pixdesc.h>
