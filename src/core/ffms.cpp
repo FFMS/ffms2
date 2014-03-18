@@ -438,15 +438,12 @@ FFMS_API(void) FFMS_CancelIndexing(FFMS_Indexer *Indexer) {
 
 FFMS_API(FFMS_Index *) FFMS_ReadIndex(const char *IndexFile, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
-	FFMS_Index *Index = new FFMS_Index();
 	try {
-		Index->ReadIndex(IndexFile);
+		return new FFMS_Index(IndexFile);
 	} catch (FFMS_Exception &e) {
-		delete Index;
 		e.CopyOut(ErrorInfo);
 		return NULL;
 	}
-	return Index;
 }
 
 FFMS_API(int) FFMS_IndexBelongsToFile(FFMS_Index *Index, const char *SourceFile, FFMS_ErrorInfo *ErrorInfo) {

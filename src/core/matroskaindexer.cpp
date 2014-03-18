@@ -62,9 +62,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 	std::vector<SharedAudioContext> AudioContexts(mkv_GetNumTracks(MF), SharedAudioContext(true));
 	std::vector<SharedVideoContext> VideoContexts(mkv_GetNumTracks(MF), SharedVideoContext(true));
 
-	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest));
-	TrackIndices->Decoder = FFMS_SOURCE_MATROSKA;
-	TrackIndices->ErrorHandling = ErrorHandling;
+	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest, FFMS_SOURCE_MATROSKA, ErrorHandling));
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++) {
 		TrackInfo *TI = mkv_GetTrackInfo(MF, i);

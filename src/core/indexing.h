@@ -151,10 +151,9 @@ public:
 	void Sort();
 	bool CompareFileSignature(const char *Filename);
 	void WriteIndex(const char *IndexFile);
-	void ReadIndex(const char *IndexFile);
 
-	FFMS_Index();
-	FFMS_Index(int64_t Filesize, uint8_t Digest[20]);
+	FFMS_Index(const char *IndexFile);
+	FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling);
 };
 
 struct FFMS_Indexer {

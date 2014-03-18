@@ -535,7 +535,9 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 	zf.finish();
 }
 
-void FFMS_Index::ReadIndex(const char *IndexFile) {
+FFMS_Index::FFMS_Index(const char *IndexFile)
+: RefCount(1)
+{
 	ffms_fstream Index(IndexFile, std::ios::in | std::ios::binary);
 
 	if (!Index.is_open())
@@ -597,10 +599,12 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 	}
 }
 
-FFMS_Index::FFMS_Index() : RefCount(1) {
-}
-
-FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20]) : RefCount(1), Filesize(Filesize) {
+FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling)
+: RefCount(1)
+, Decoder(Decoder)
+, ErrorHandling(ErrorHandling)
+, Filesize(Filesize)
+{
 	memcpy(this->Digest, Digest, sizeof(this->Digest));
 }
 
