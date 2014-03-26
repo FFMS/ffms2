@@ -67,17 +67,17 @@ public:
 struct TFrameInfo : public FFMS_FrameInfo {
 public:
 	int64_t SampleStart;
-	unsigned int SampleCount;
+	uint32_t SampleCount;
 	int64_t FilePos;
-	unsigned int FrameSize;
+	uint32_t FrameSize;
 	size_t OriginalPos;
 	int FrameType;
 
 	TFrameInfo() { }
-	TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize, int FrameType);
+	TFrameInfo(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, uint32_t FrameSize, int FrameType);
 
-	void Write(zipped_file &zf, FFMS_TrackType TT) const;
-	void Read(zipped_file &zf, const TFrameInfo *prev, FFMS_TrackType TT);
+	void Write(zipped_file &zf, TFrameInfo const& prev, FFMS_TrackType TT) const;
+	void Read(zipped_file &zf, TFrameInfo const& prev, FFMS_TrackType TT);
 };
 
 struct FFMS_Track {
