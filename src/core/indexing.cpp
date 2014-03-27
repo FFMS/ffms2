@@ -181,7 +181,7 @@ void TFrameInfo::Read(zipped_file &stream, TFrameInfo const& prev, const FFMS_Tr
 
 	if (TT == FFMS_TYPE_AUDIO) {
 		SampleStart = stream.read<int64_t>() + prev.SampleStart;
-		SampleCount = stream.read<uint32_t>();
+		SampleCount = stream.read<uint32_t>() + prev.SampleCount;
 	}
 	else if (TT == FFMS_TYPE_VIDEO) {
 		FrameType = stream.read<uint8_t>();
@@ -197,7 +197,7 @@ void TFrameInfo::Write(zipped_file &stream, TFrameInfo const& prev, const FFMS_T
 	stream.write(static_cast<uint64_t>(OriginalPos) - prev.OriginalPos);
 
 	if (TT == FFMS_TYPE_AUDIO) {
-		stream.write(SampleStart);
+		stream.write(SampleStart - prev.SampleStart);
 		stream.write(SampleCount - prev.SampleCount);
 	}
 	else if (TT == FFMS_TYPE_VIDEO) {
