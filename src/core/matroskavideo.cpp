@@ -90,7 +90,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 		double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
 		// Dividing by 1000 caused too much information to be lost, when CorrectNTSCRationalFramerate runs there was a possibility
 		// of it outputting the wrong framerate.  We still divide by 100 to protect against the possibility of overflows.
-		VP.FPSDenominator = (unsigned int)(PTSDiff * mkv_TruncFloat(TI->TimecodeScale) / (double)100 / (double)(Frames.size() - 1) + 0.5);
+		VP.FPSDenominator = (unsigned int)(PTSDiff * mkv_TruncFloat(TI->TimecodeScale) / 100.0 / (double)(Frames.size() - 1) + 0.5);
 		VP.FPSNumerator = 10000000;
 	}
 
