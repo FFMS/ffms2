@@ -29,7 +29,6 @@
 #include "matroskaparser.h"
 
 extern "C" {
-#include "stdiostream.h"
 #include <libavutil/mem.h>
 #include <libavutil/opt.h>
 #include <libavformat/avformat.h>
@@ -93,30 +92,20 @@ public:
 
 template<class T>
 class FFSourceResources {
-private:
-	T *_PrivClass;
-	bool _Enabled;
-	bool _Arg;
+	T *PrivClass;
+	bool Enabled;
+	bool Arg;
+
 public:
-	FFSourceResources(T *Target) : _PrivClass(Target), _Enabled(true), _Arg(false) {
-	}
+	FFSourceResources(T *Target) : PrivClass(Target), Enabled(true), Arg(false) { }
 
 	~FFSourceResources() {
-		if (_Enabled)
-			_PrivClass->Free(_Arg);
+		if (Enabled)
+			PrivClass->Free(Arg);
 	}
 
-	void SetEnabled(bool Enabled) {
-		_Enabled = Enabled;
-	}
-
-	void SetArg(bool Arg) {
-		_Arg = Arg;
-	}
-
-	void CloseCodec(bool Arg) {
-		_Arg = Arg;
-	}
+	void SetEnabled(bool Enabled) { this->Enabled = Enabled; }
+	void CloseCodec(bool Arg) { this->Arg = Arg; }
 };
 // auto_ptr-ish holder for AVCodecContexts with overridable deleter
 class FFCodecContext {
@@ -175,28 +164,6 @@ inline void DeleteMatroskaCodecContext(AVCodecContext *CodecContext) {
 	av_freep(&CodecContext);
 }
 
-class MatroskaReaderContext {
-public:
-	StdIoStream ST;
-	uint8_t *Buffer;
-	size_t BufferSize;
-	char CSBuffer[4096];
-
-	MatroskaReaderContext() {
-		InitStdIoStream(&ST);
-		Buffer = static_cast<uint8_t *>(av_mallocz(16384)); // arbitrarily decided number
-		if (!Buffer)
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED, "Out of memory");
-		BufferSize = 16384;
-	}
-
-	~MatroskaReaderContext() {
-		if (Buffer)
-			av_free(Buffer);
-		if (ST.fp) fclose(ST.fp);
-	}
-};
-
 struct ffms_fstream : public std::fstream {
 #ifdef __MINGW32__
 private:
@@ -218,9 +185,7 @@ public:
 	~TrackCompressionContext();
 };
 
-
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
-void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContext *TCC, MatroskaReaderContext &Context);
 bool AudioFMTIsFloat(AVSampleFormat FMT);
 void InitNullPacket(AVPacket &pkt);
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);
@@ -233,6 +198,7 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag)
 
 void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext);
 FILE *ffms_fopen(const char *filename, const char *mode);
+std::wstring widen_path(const char *s);
 size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max);
 #ifdef HAALISOURCE
 CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceMode);

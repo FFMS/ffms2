@@ -24,24 +24,16 @@
 #include "matroskaparser.h"
 
 
-FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename) : FFMS_Indexer(Filename) {
+FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename)
+: FFMS_Indexer(Filename)
+, MC(Filename)
+{
+	for (int i = 0; i < 32; i++)
+		Codec[i] = NULL;
+
 	char ErrorMessage[256];
 
-	for (int i = 0; i < 32; i++) {
-		Codec[i] = NULL;
-	}
-
-	InitStdIoStream(&MC.ST);
-	MC.ST.fp = ffms_fopen(Filename, "rb");
-	if (MC.ST.fp == NULL) {
-		std::ostringstream buf;
-		buf << "Can't open '" << Filename << "': " << strerror(errno);
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
-
-	setvbuf(MC.ST.fp, NULL, _IOFBF, CACHESIZE);
-
-	MF = mkv_OpenEx(&MC.ST.base, 0, 0, ErrorMessage, sizeof(ErrorMessage));
+	MF = mkv_OpenEx(&MC.Reader, 0, 0, ErrorMessage, sizeof(ErrorMessage));
 	if (MF == NULL) {
 		std::ostringstream buf;
 		buf << "Can't parse Matroska file: " << ErrorMessage;
@@ -112,7 +104,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 
 	while (mkv_ReadFrame(MF, 0, &Track, &StartTime, &EndTime, &FilePos, &FrameSize, &FrameFlags) == 0) {
 		// Update progress
-		if (IC && (*IC)(ftello(MC.ST.fp), Filesize, ICPrivate))
+		if (IC && (*IC)(FilePos, Filesize, ICPrivate))
 			throw FFMS_Exception(FFMS_ERROR_CANCELLED, FFMS_ERROR_USER, "Cancelled by user");
 
 		unsigned int CompressedFrameSize = FrameSize;
@@ -124,9 +116,9 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 				TCC = VideoContexts[Track].TCC;
 			else
 				TCC = AudioContexts[Track].TCC;
-			ReadFrame(FilePos, FrameSize, TCC, MC);
+			MC.ReadFrame(FilePos, FrameSize, TCC);
 			TempPacket.data = MC.Buffer;
-			TempPacket.size = FrameSize;
+			TempPacket.size = MC.FrameSize;
 			TempPacket.flags = FrameFlags & FRAME_KF ? AV_PKT_FLAG_KEY : 0;
 		}
 

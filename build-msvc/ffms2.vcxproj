@@ -127,9 +127,9 @@
     <ClCompile Include="..\src\core\matroskaaudio.cpp" />
     <ClCompile Include="..\src\core\matroskaindexer.cpp" />
     <ClCompile Include="..\src\core\matroskaparser.c" />
+    <ClCompile Include="..\src\core\matroskareader.cpp" />
     <ClCompile Include="..\src\core\matroskavideo.cpp" />
     <ClCompile Include="..\src\core\numthreads.cpp" />
-    <ClCompile Include="..\src\core\stdiostream.c" />
     <ClCompile Include="..\src\core\utils.cpp" />
     <ClCompile Include="..\src\core\videosource.cpp" />
     <ClCompile Include="..\src\core\videoutils.cpp" />
@@ -151,8 +151,8 @@
     <ClInclude Include="..\src\core\guids.h" />
     <ClInclude Include="..\src\core\indexing.h" />
     <ClInclude Include="..\src\core\matroskaparser.h" />
+    <ClInclude Include="..\src\core\matroskareader.h" />
     <ClInclude Include="..\src\core\numthreads.h" />
-    <ClInclude Include="..\src\core\stdiostream.h" />
     <ClInclude Include="..\src\core\utils.h" />
     <ClInclude Include="..\src\core\videosource.h" />
     <ClInclude Include="..\src\core\videoutils.h" />

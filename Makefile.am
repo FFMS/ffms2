@@ -30,11 +30,11 @@ src_core_libffms2_la_SOURCES = \
 	src/core/matroskaindexer.cpp \
 	src/core/matroskaparser.h \
 	src/core/matroskaparser.c \
+	src/core/matroskareader.h \
+	src/core/matroskareader.cpp \
 	src/core/matroskavideo.cpp \
 	src/core/numthreads.h \
 	src/core/numthreads.cpp \
-	src/core/stdiostream.h \
-	src/core/stdiostream.c \
 	src/core/utils.h \
 	src/core/utils.cpp \
 	src/core/videosource.h \

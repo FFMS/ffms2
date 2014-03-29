@@ -21,10 +21,12 @@
 #ifndef INDEXING_H
 #define INDEXING_H
 
+#include "utils.h"
+#include "matroskareader.h"
+#include "wave64writer.h"
+
 #include <map>
 #include <memory>
-#include "utils.h"
-#include "wave64writer.h"
 
 #ifdef HAALISOURCE
 #	define WIN32_LEAN_AND_MEAN
