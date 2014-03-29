@@ -9,13 +9,16 @@ $(foreach VAR,CC CXX AR RANLIB RC,\
     $(eval override $(VAR) = @printf " %s\t%s\n" $(VAR) "$$@"; $($(VAR))))
 endif
 
-CORE_C   = src/core/matroskaparser.c src/core/stdiostream.c
+CORE_C   = src/core/matroskaparser.c
 
-CORE_CXX = src/core/audiosource.cpp src/core/ffms.cpp src/core/haaliaudio.cpp src/core/haaliindexer.cpp \
-           src/core/haalivideo.cpp src/core/indexing.cpp src/core/lavfaudio.cpp src/core/lavfindexer.cpp \
-           src/core/lavfvideo.cpp src/core/matroskaaudio.cpp src/core/matroskaindexer.cpp src/core/matroskavideo.cpp \
-           src/core/utils.cpp src/core/videosource.cpp src/core/wave64writer.cpp src/core/numthreads.cpp \
-           src/core/videoutils.cpp src/core/codectype.cpp
+CORE_CXX = src/core/audiosource.cpp src/core/codectype.cpp src/core/ffms.cpp \
+           src/core/filehandle.cpp src/core/haaliaudio.cpp src/core/haalicommon.cpp \
+           src/core/haaliindexer.cpp src/core/haalivideo.cpp src/core/indexing.cpp \
+           src/core/lavfaudio.cpp src/core/lavfindexer.cpp src/core/lavfvideo.cpp \
+           src/core/matroskaaudio.cpp src/core/matroskaindexer.cpp \
+           src/core/matroskareader.cpp src/core/matroskavideo.cpp src/core/numthreads.cpp \
+           src/core/track.cpp src/core/utils.cpp src/core/videosource.cpp \
+           src/core/videoutils.cpp src/core/wave64writer.cpp src/core/zipfile.cpp
 
 IDX_CXX = src/index/ffmsindex.cpp
 
