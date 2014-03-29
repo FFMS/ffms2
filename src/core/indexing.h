@@ -21,10 +21,12 @@
 #ifndef INDEXING_H
 #define INDEXING_H
 
+#include "utils.h"
+#include "matroskareader.h"
+#include "wave64writer.h"
+
 #include <map>
 #include <memory>
-#include "utils.h"
-#include "wave64writer.h"
 
 #ifdef HAALISOURCE
 #	define WIN32_LEAN_AND_MEAN
@@ -67,14 +69,17 @@ public:
 struct TFrameInfo : public FFMS_FrameInfo {
 public:
 	int64_t SampleStart;
-	unsigned int SampleCount;
+	uint32_t SampleCount;
 	int64_t FilePos;
-	unsigned int FrameSize;
+	uint32_t FrameSize;
 	size_t OriginalPos;
 	int FrameType;
 
 	TFrameInfo() { }
-	TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize, int FrameType);
+	TFrameInfo(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, uint32_t FrameSize, int FrameType);
+
+	void Write(zipped_file &zf, TFrameInfo const& prev, FFMS_TrackType TT) const;
+	void Read(zipped_file &zf, TFrameInfo const& prev, FFMS_TrackType TT);
 };
 
 struct FFMS_Track {
@@ -105,7 +110,7 @@ public:
 	int VisibleFrameCount() const;
 
 	void WriteTimecodes(const char *TimecodeFile) const;
-	void Write(zipped_file *Stream) const;
+	void Write(zipped_file &Stream) const;
 
 	typedef frame_vec::allocator_type allocator_type;
 	typedef frame_vec::size_type size_type;
@@ -148,10 +153,9 @@ public:
 	void Sort();
 	bool CompareFileSignature(const char *Filename);
 	void WriteIndex(const char *IndexFile);
-	void ReadIndex(const char *IndexFile);
 
-	FFMS_Index();
-	FFMS_Index(int64_t Filesize, uint8_t Digest[20]);
+	FFMS_Index(const char *IndexFile);
+	FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling);
 };
 
 struct FFMS_Indexer {

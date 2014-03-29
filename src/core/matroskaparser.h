@@ -32,6 +32,8 @@
 #ifndef MATROSKA_PARSER_H
 #define	MATROSKA_PARSER_H
 
+#include "stdlib.h"
+
 /* Make sure we undefine CodecID, since libavcodec defines it as AVCodec ID */
 #ifdef CodecID
 #undef CodecID

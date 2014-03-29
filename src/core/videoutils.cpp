@@ -222,7 +222,7 @@ PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelForma
 
 namespace {
 int parse_vp8(AVCodecParserContext *s,
-	AVCodecContext *avctx,
+	AVCodecContext *,
 	const uint8_t **poutbuf, int *poutbuf_size,
 	const uint8_t *buf, int buf_size)
 {

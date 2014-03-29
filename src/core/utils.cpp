@@ -109,108 +109,6 @@ void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo) {
 	}
 }
 
-template<class T> static void safe_aligned_reallocz(T *&ptr, size_t old_size, size_t new_size) {
-	void *newalloc = av_mallocz(new_size);
-	if (newalloc) {
-		memcpy(newalloc, ptr, FFMIN(old_size, new_size));
-	}
-	av_free(ptr);
-	ptr = static_cast<T*>(newalloc);
-}
-
-void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContext *TCC, MatroskaReaderContext &Context) {
-	memset(Context.Buffer, 0, Context.BufferSize); // necessary to avoid lavc hurfing a durf with some mpeg4 video streams
-	if (TCC && TCC->CompressionMethod == COMP_ZLIB) {
-		CompressedStream *CS = TCC->CS;
-		unsigned int DecompressedFrameSize = 0;
-
-		cs_NextFrame(CS, FilePos, FrameSize);
-
-		for (;;) {
-			int ReadBytes = cs_ReadData(CS, Context.CSBuffer, sizeof(Context.CSBuffer));
-			if (ReadBytes < 0) {
-				std::ostringstream buf;
-				buf << "Error decompressing data: " << cs_GetLastError(CS);
-				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-			}
-
-			if (ReadBytes == 0) {
-				FrameSize = DecompressedFrameSize;
-				return;
-			}
-
-			if (Context.BufferSize < DecompressedFrameSize + ReadBytes + FF_INPUT_BUFFER_PADDING_SIZE) {
-				size_t NewSize = (DecompressedFrameSize + ReadBytes) * 2;
-				safe_aligned_reallocz(Context.Buffer, Context.BufferSize, NewSize);
-				if (Context.Buffer == NULL)
-					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
-					"Out of memory");
-				Context.BufferSize = NewSize;
-			}
-
-			memcpy(Context.Buffer + DecompressedFrameSize, Context.CSBuffer, ReadBytes);
-			DecompressedFrameSize += ReadBytes;
-		}
-	} else {
-		if (fseeko(Context.ST.fp, FilePos, SEEK_SET)) {
-			std::ostringstream buf;
-			buf << "fseek(): " << strerror(errno);
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_SEEKING, buf.str());
-		}
-
-		if (TCC && TCC->CompressionMethod == COMP_PREPEND) {
-			unsigned ReqBufsize = FrameSize + TCC->CompressedPrivateDataSize + FF_INPUT_BUFFER_PADDING_SIZE;
-			if (Context.BufferSize < ReqBufsize) {
-				size_t NewSize = ReqBufsize * 2;
-				safe_aligned_reallocz(Context.Buffer, Context.BufferSize, NewSize);
-				if (Context.Buffer == NULL)
-					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED, "Out of memory");
-				Context.BufferSize = NewSize;
-			}
-
-			/* // maybe faster? maybe not?
-			for (int i=0; i < TCC->CompressedPrivateDataSize; i++)
-				*(Context.Buffer)++ = ((uint8_t *)TCC->CompressedPrivateData)[i];
-			*/
-			// screw it, memcpy and fuck the losers who use header compression
-			memcpy(Context.Buffer, TCC->CompressedPrivateData, TCC->CompressedPrivateDataSize);
-		}
-		else if (Context.BufferSize < FrameSize + FF_INPUT_BUFFER_PADDING_SIZE) {
-			size_t NewSize = FrameSize * 2;
-			safe_aligned_reallocz(Context.Buffer, Context.BufferSize, NewSize);
-			if (Context.Buffer == NULL)
-				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
-					"Out of memory");
-			Context.BufferSize = NewSize;
-		}
-
-		uint8_t *TargetPtr = Context.Buffer;
-		if (TCC && TCC->CompressionMethod == COMP_PREPEND)
-			TargetPtr += TCC->CompressedPrivateDataSize;
-
-		size_t ReadBytes = fread(TargetPtr, 1, FrameSize, Context.ST.fp);
-		if (ReadBytes != FrameSize) {
-			if (ReadBytes == 0) {
-				if (feof(Context.ST.fp)) {
-					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-						"Unexpected EOF while reading frame");
-				} else {
-					std::ostringstream buf;
-					buf << "Error reading frame: " << strerror(errno);
-					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_SEEKING, buf.str());
-				}
-			} else {
-				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-					"Short read while reading frame");
-			}
-		}
-
-		if (TCC && TCC->CompressionMethod == COMP_PREPEND)
-			FrameSize += TCC->CompressedPrivateDataSize;
-		return;
-	}
-}
-
 void InitNullPacket(AVPacket &pkt) {
 	av_init_packet(&pkt);
 	pkt.data = NULL;
@@ -403,20 +301,18 @@ FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag)
 #ifdef _WIN32
 static std::wstring char_to_wstring(const char *s, unsigned int cp) {
 	std::wstring ret;
-	std::vector<wchar_t> tmp;
 	int len;
 	if (!(len = MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1, NULL, 0)))
 		return ret;
 
-	tmp.resize(len);
-	if (MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1 , &tmp[0], len) <= 0)
+	ret.resize(len);
+	if (MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1 , &ret[0], len) <= 0)
 		return ret;
 
-	ret.assign(&tmp[0]);
 	return ret;
 }
 
-static std::wstring widen_path(const char *s) {
+std::wstring widen_path(const char *s) {
 	return char_to_wstring(s, GlobalUseUTF8Paths ? CP_UTF8 : CP_ACP);
 }
 #endif

@@ -68,11 +68,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 	std::vector<SharedAudioContext> AudioContexts(NumTracks, SharedAudioContext(false));
 	std::vector<SharedVideoContext> VideoContexts(NumTracks, SharedVideoContext(false));
 
-	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest));
-	TrackIndices->Decoder = FFMS_SOURCE_HAALIMPEG;
-	if (SourceMode == FFMS_SOURCE_HAALIOGG)
-		TrackIndices->Decoder = FFMS_SOURCE_HAALIOGG;
-	TrackIndices->ErrorHandling = ErrorHandling;
+	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest, SourceMode, ErrorHandling));
 
 	for (int i = 0; i < NumTracks; i++) {
 		TrackIndices->push_back(FFMS_Track(1, 1000000, TrackType[i]));

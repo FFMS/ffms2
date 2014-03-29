@@ -24,9 +24,7 @@
 
 void FFMatroskaVideo::Free(bool CloseCodec) {
 	TCC.reset();
-	if (MC.ST.fp) {
-		mkv_Close(MF);
-	}
+	if (MF) mkv_Close(MF);
 	if (CloseCodec)
 		avcodec_close(CodecContext);
 	av_freep(&CodecContext);
@@ -35,23 +33,15 @@ void FFMatroskaVideo::Free(bool CloseCodec) {
 FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	FFMS_Index &Index, int Threads)
 : FFMS_VideoSource(SourceFile, Index, Track, Threads)
-, MF(0)
+, MF(NULL)
+, MC(SourceFile)
 , Res(FFSourceResources<FFMS_VideoSource>(this))
 , PacketNumber(0)
 {
 	AVCodec *Codec = NULL;
 	TrackInfo *TI = NULL;
 
-	MC.ST.fp = ffms_fopen(SourceFile, "rb");
-	if (MC.ST.fp == NULL) {
-		std::ostringstream buf;
-		buf << "Can't open '" << SourceFile << "': " << strerror(errno);
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
-
-	setvbuf(MC.ST.fp, NULL, _IOFBF, CACHESIZE);
-
-	MF = mkv_OpenEx(&MC.ST.base, 0, 0, ErrorMessage, sizeof(ErrorMessage));
+	MF = mkv_OpenEx(&MC.Reader, 0, 0, ErrorMessage, sizeof(ErrorMessage));
 	if (MF == NULL) {
 		std::ostringstream buf;
 		buf << "Can't parse Matroska file: " << ErrorMessage;
@@ -90,7 +80,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 		double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
 		// Dividing by 1000 caused too much information to be lost, when CorrectNTSCRationalFramerate runs there was a possibility
 		// of it outputting the wrong framerate.  We still divide by 100 to protect against the possibility of overflows.
-		VP.FPSDenominator = (unsigned int)(PTSDiff * mkv_TruncFloat(TI->TimecodeScale) / (double)100 / (double)(Frames.size() - 1) + 0.5);
+		VP.FPSDenominator = (unsigned int)(PTSDiff * mkv_TruncFloat(TI->TimecodeScale) / 100.0 / (double)(Frames.size() - 1) + 0.5);
 		VP.FPSNumerator = 10000000;
 	}
 
@@ -122,11 +112,10 @@ void FFMatroskaVideo::DecodeNextFrame() {
 		// presentation order and not decoding order, this is unnoticeable
 		// in the other sources where less is done manually
 		const TFrameInfo &FI = Frames[Frames[PacketNumber].OriginalPos];
-		unsigned int FrameSize = FI.FrameSize;
-		ReadFrame(FI.FilePos, FrameSize, TCC.get(), MC);
+		MC.ReadFrame(FI.FilePos, FI.FrameSize, TCC.get());
 
 		Packet.data = MC.Buffer;
-		Packet.size = FrameSize;
+		Packet.size = MC.FrameSize;
 		Packet.flags = FI.KeyFrame ? AV_PKT_FLAG_KEY : 0;
 
 		PacketNumber++;
