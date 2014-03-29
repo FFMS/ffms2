@@ -29,16 +29,14 @@ extern "C" {
 #include <libavutil/pixdesc.h>
 }
 
-
 #ifdef FFMS_WIN_DEBUG
 #	include <windows.h>
 #endif
 
-static bool FFmpegInited	= false;
+static bool FFmpegInited = false;
 bool HasHaaliMPEG = false;
 bool HasHaaliOGG = false;
 bool GlobalUseUTF8Paths = false;
-
 
 #ifdef FFMS_WIN_DEBUG
 
@@ -75,19 +73,14 @@ void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl)
 
 #endif
 
-FFMS_API(void) FFMS_Init(int CPUFeatures, int UseUTF8Paths) {
+FFMS_API(void) FFMS_Init(int, int UseUTF8Paths) {
 	if (!FFmpegInited) {
 		av_register_all();
 		RegisterCustomParsers();
 #ifdef _WIN32
-		if (UseUTF8Paths) {
-			GlobalUseUTF8Paths = true;
-		}
-		else {
-			GlobalUseUTF8Paths = false;
-		}
+		GlobalUseUTF8Paths = !!UseUTF8Paths;
 #else
-		GlobalUseUTF8Paths = false;
+		(void)UseUTF8Paths;
 #endif
 #ifdef FFMS_WIN_DEBUG
 		av_log_set_callback(av_log_windebug_callback);
@@ -382,7 +375,7 @@ static void ReplaceString(std::string &s, std::string from, std::string to) {
 		s.replace(idx, from.length(), to);
 }
 
-FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int FNSize, void *Private) {
+FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int, void *Private) {
 	std::string s = static_cast<char *>(Private);
 
 	ReplaceString(s, "%sourcefile%", SourceFile);

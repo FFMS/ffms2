@@ -206,11 +206,11 @@ const uint8_t *FileMapping::Read(ulonglong start, ulonglong length) {
 }
 
 namespace {
-unsigned GetCacheSize(InputStream *st) { return 1024 * 1024; }
+unsigned GetCacheSize(InputStream *) { return 16 * 1024 * 1024; }
 void *Malloc(InputStream *, size_t size) { return malloc(size); }
 void *Realloc(InputStream *, void *mem, size_t size) { return realloc(mem, size); }
 void Free(InputStream *, void *mem) { free(mem); }
-int Progress(InputStream *, ulonglong cur, ulonglong max) { return 1; }
+int Progress(InputStream *, ulonglong, ulonglong) { return 1; }
 }
 
 MatroskaReader::MatroskaReader(const char *path)
@@ -277,9 +277,10 @@ ulonglong MatroskaReader::Size() const {
 }
 
 MatroskaReaderContext::MatroskaReaderContext(const char *filename)
-: Reader(filename)
+: BufferSize(0)
+, Reader(filename)
 , Buffer(NULL)
-, BufferSize(0)
+, FrameSize(0)
 {
 }
 

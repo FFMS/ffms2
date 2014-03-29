@@ -58,7 +58,7 @@
 #endif
 
 #ifndef FFMS_DEPRECATED
-// Define as empty if the compilter doesn't support deprecation attributes or
+// Define as empty if the compiler doesn't support deprecation attributes or
 // if we're building FFMS2 itself
 #	define FFMS_DEPRECATED
 #endif
