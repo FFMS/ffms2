@@ -38,7 +38,7 @@ static void CopyAVPictureFields(AVPicture &Picture, FFMS_Frame &Dst) {
 // this might look stupid, but we have actually had crashes caused by not checking like this.
 static void SanityCheckFrameForData(AVFrame *Frame) {
 	for (int i = 0; i < 4; i++) {
-		if (Frame->data[i] != NULL && Frame->linesize[i] > 0)
+		if (Frame->data[i] != NULL && Frame->linesize[i] != 0)
 			return;
 	}
 

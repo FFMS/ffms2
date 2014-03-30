@@ -175,12 +175,12 @@ TFrameInfo::TFrameInfo(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, i
 void TFrameInfo::Read(zipped_file &stream, TFrameInfo const& prev, const FFMS_TrackType TT) {
 	PTS = stream.read<int64_t>() + prev.PTS;
 	KeyFrame = stream.read<int8_t>();
-	FilePos = stream.read<int64_t>() + prev.FilePos;
+	FilePos = stream.read<int64_t>() + prev.FilePos + prev.FrameSize;
 	FrameSize = stream.read<uint32_t>();
-	OriginalPos = static_cast<size_t>(stream.read<uint64_t>() + prev.OriginalPos);
+	OriginalPos = static_cast<size_t>(stream.read<uint64_t>() + prev.OriginalPos + 1);
 
 	if (TT == FFMS_TYPE_AUDIO) {
-		SampleStart = stream.read<int64_t>() + prev.SampleStart;
+		SampleStart = prev.SampleStart + prev.SampleCount;
 		SampleCount = stream.read<uint32_t>() + prev.SampleCount;
 	}
 	else if (TT == FFMS_TYPE_VIDEO) {
@@ -192,14 +192,12 @@ void TFrameInfo::Read(zipped_file &stream, TFrameInfo const& prev, const FFMS_Tr
 void TFrameInfo::Write(zipped_file &stream, TFrameInfo const& prev, const FFMS_TrackType TT) const {
 	stream.write(PTS - prev.PTS);
 	stream.write<int8_t>(KeyFrame);
-	stream.write(FilePos - prev.FilePos);
+	stream.write(FilePos - prev.FilePos - prev.FrameSize);
 	stream.write(FrameSize);
-	stream.write(static_cast<uint64_t>(OriginalPos) - prev.OriginalPos);
+	stream.write(static_cast<uint64_t>(OriginalPos) - prev.OriginalPos - 1);
 
-	if (TT == FFMS_TYPE_AUDIO) {
-		stream.write(SampleStart - prev.SampleStart);
+	if (TT == FFMS_TYPE_AUDIO)
 		stream.write(SampleCount - prev.SampleCount);
-	}
 	else if (TT == FFMS_TYPE_VIDEO) {
 		stream.write<uint8_t>(FrameType);
 		stream.write<int32_t>(RepeatPict);
@@ -406,9 +404,8 @@ void FFMS_Track::Write(zipped_file &stream) const {
 
 	TFrameInfo temp(0, 0, 0, 0, 0, 0, 0, 0);
 	Frames[0].Write(stream, temp, TT);
-	for (size_t i = 1; i < size(); ++i) {
+	for (size_t i = 1; i < size(); ++i)
 		Frames[i].Write(stream, Frames[i - 1], TT);
-	}
 
 	stream.write<uint64_t>(InvisibleFrames.size());
 	if (InvisibleFrames.empty()) return;
