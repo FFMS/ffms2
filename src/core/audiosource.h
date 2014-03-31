@@ -98,7 +98,7 @@ struct FFMS_AudioSource {
 	void CacheBeginning();
 
 	// Called after seeking
-	virtual void Seek() { };
+	virtual void Seek() { }
 	// Read the next packet from the file
 	virtual bool ReadPacket(AVPacket *) = 0;
 	virtual void FreePacket(AVPacket *) { }

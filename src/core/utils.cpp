@@ -71,12 +71,12 @@ int FFMS_Exception::CopyOut(FFMS_ErrorInfo *ErrorInfo) const {
 	return (_ErrorType << 16) | _SubType;
 }
 
-TrackCompressionContext::TrackCompressionContext(MatroskaFile *MF, TrackInfo *TI, unsigned int Track) {
-	CS = NULL;
-	CompressedPrivateData = NULL;
-	CompressedPrivateDataSize = 0;
-	CompressionMethod = TI->CompMethod;
-
+TrackCompressionContext::TrackCompressionContext(MatroskaFile *MF, TrackInfo *TI, unsigned int Track)
+: CS(NULL)
+, CompressedPrivateData(NULL)
+, CompressedPrivateDataSize(0)
+, CompressionMethod(TI->CompMethod)
+{
 	if (CompressionMethod == COMP_ZLIB) {
 		char ErrorMessage[512];
 		CS = cs_Create(MF, Track, ErrorMessage, sizeof(ErrorMessage));

@@ -46,10 +46,10 @@ static const uint8_t Guiddata[16]={
 
 Wave64Writer::Wave64Writer(const char *Filename, uint16_t BytesPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat)
 : WavFile(Filename, std::ios::out | std::ios::binary | std::ios::trunc)
+, BytesWritten(0)
+, SamplesPerSec(SamplesPerSec)
 , BytesPerSample(BytesPerSample)
 , Channels(Channels)
-, SamplesPerSec(SamplesPerSec)
-, BytesWritten(0)
 , IsFloat(IsFloat)
 {
 	if (!WavFile.is_open())

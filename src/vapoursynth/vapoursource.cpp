@@ -36,7 +36,7 @@ extern "C" {
 
 typedef std::pair<int, int> IntPair;
 
-void BitBlt(uint8_t* dstp, int dst_pitch, const uint8_t* srcp, int src_pitch, int row_size, int height) {
+static void BitBlt(uint8_t* dstp, int dst_pitch, const uint8_t* srcp, int src_pitch, int row_size, int height) {
     if (src_pitch == dst_pitch && dst_pitch == row_size) {
         memcpy(dstp, srcp, row_size * height);
     } else {
