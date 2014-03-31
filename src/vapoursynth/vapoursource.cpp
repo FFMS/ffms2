@@ -98,13 +98,12 @@ static int formatConversion(int id, bool toPixelFormat, VSCore *core, const VSAP
 	}
 }
 
-void VS_CC VSVideoSource::Init(VSMap *in, VSMap *out, void **instanceData, VSNode *node, VSCore *core, const VSAPI *vsapi) {
-	VSVideoSource *vs = (VSVideoSource *)*instanceData;
-	vsapi->setVideoInfo(&vs->VI, 1, node);
+void VS_CC VSVideoSource::Init(VSMap *, VSMap *, void **instanceData, VSNode *node, VSCore *, const VSAPI *vsapi) {
+	vsapi->setVideoInfo(&static_cast<VSVideoSource *>(*instanceData)->VI, 1, node);
 }
 
-const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, void **instanceData, void **frameData, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi) {
-	VSVideoSource *vs = (VSVideoSource *)*instanceData;
+const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, void **instanceData, void **, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi) {
+	VSVideoSource *vs = static_cast<VSVideoSource *>(*instanceData);
 	if (activationReason == arInitial) {
 		if (vs->VI.numFrames && n >= vs->VI.numFrames)
 			n = vs->VI.numFrames - 1;
@@ -169,13 +168,12 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 	return NULL;
 }
 
-void VS_CC VSVideoSource::Free(void *instanceData, VSCore *core, const VSAPI *vsapi) {
-	VSVideoSource *vs = (VSVideoSource *)instanceData;
-	delete vs;
+void VS_CC VSVideoSource::Free(void *instanceData, VSCore *, const VSAPI *) {
+	delete static_cast<VSVideoSource *>(instanceData);
 }
 
 VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
-		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
+		int FPSNum, int FPSDen, int Threads, int SeekMode, int /*RFFMode*/,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 		int Format, const VSAPI *vsapi, VSCore *core)
 		: FPSNum(FPSNum), FPSDen(FPSDen) {
@@ -189,9 +187,7 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
 
 	V = FFMS_CreateVideoSource(SourceFile, Track, Index, Threads, SeekMode, &E);
 	if (!V) {
-		std::string buf = "Source: ";
-		buf += E.Buffer;
-		throw std::runtime_error(buf);
+		throw std::runtime_error(std::string("Source: ") + E.Buffer);
 	}
 	try {
 		InitOutputFormat(ResizeToWidth, ResizeToHeight, ResizerName, Format, vsapi, core);
@@ -226,7 +222,7 @@ VSVideoSource::~VSVideoSource() {
 }
 
 void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
-		const char *ResizerName, int ConvertToFormat, const VSAPI *vsapi, VSCore *core) {
+		const char */*ResizerName*/, int ConvertToFormat, const VSAPI *vsapi, VSCore *core) {
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
@@ -298,7 +294,7 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	// fixme? Crop to obey sane even width/height requirements
 }
 
-void VSVideoSource::OutputFrame(const FFMS_Frame *Frame, VSFrameRef *Dst, const VSAPI *vsapi, VSCore *core) {
+void VSVideoSource::OutputFrame(const FFMS_Frame *Frame, VSFrameRef *Dst, const VSAPI *vsapi, VSCore *) {
 	const VSFormat *fi = vsapi->getFrameFormat(Dst);
     for (int i = 0; i < fi->numPlanes; i++)
         BitBlt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i],
