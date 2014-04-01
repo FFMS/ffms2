@@ -144,7 +144,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 				(*TrackIndices)[Track].HasTS = true;
 
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
-			int64_t SampleCount = IndexAudioPacket(Track, &Packet, AudioContexts[Track], *TrackIndices);
+			uint32_t SampleCount = IndexAudioPacket(Track, &Packet, AudioContexts[Track], *TrackIndices);
 
 			(*TrackIndices)[Track].AddAudioFrame(LastValidTS[Track],
 				StartSample, SampleCount, KeyFrame, Packet.pos);

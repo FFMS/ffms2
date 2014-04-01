@@ -135,7 +135,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 				CompressedFrameSize, Invisible);
 		} else if (TrackType == TT_AUDIO && (IndexMask & (1 << Track))) {
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
-			int64_t SampleCount = IndexAudioPacket(Track, &TempPacket, AudioContexts[Track], *TrackIndices);
+			uint32_t SampleCount = IndexAudioPacket(Track, &TempPacket, AudioContexts[Track], *TrackIndices);
 
 			(*TrackIndices)[Track].AddAudioFrame(StartTime, StartSample,
 				SampleCount, (FrameFlags & FRAME_KF) != 0, FilePos, CompressedFrameSize);

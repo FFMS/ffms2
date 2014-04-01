@@ -66,26 +66,25 @@ public:
 	~SharedAudioContext();
 };
 
-struct FrameInfo : public FFMS_FrameInfo {
-public:
+struct FrameInfo {
+	int64_t PTS;
+	int64_t FilePos;
 	int64_t SampleStart;
 	uint32_t SampleCount;
-	int64_t FilePos;
 	uint32_t FrameSize;
 	size_t OriginalPos;
 	int FrameType;
-
-	FrameInfo() { }
-	FrameInfo(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, uint32_t FrameSize, int FrameType);
-
-	void Write(zipped_file &zf, FrameInfo const& prev, FFMS_TrackType TT) const;
-	void Read(zipped_file &zf, FrameInfo const& prev, FFMS_TrackType TT);
+	int RepeatPict;
+	bool KeyFrame;
+	bool Hidden;
 };
 
 struct FFMS_Track {
+private:
 	typedef std::vector<FrameInfo> frame_vec;
 	frame_vec Frames;
-	std::vector<size_t> InvisibleFrames;
+	std::vector<int> RealFrameNumbers;
+	mutable std::vector<FFMS_FrameInfo> PublicFrameInfo;
 
 	void MaybeReorderFrames();
 	void MaybeHideFrames();
@@ -96,8 +95,8 @@ public:
 	bool UseDTS;
 	bool HasTS;
 
-	void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, unsigned int FrameSize = 0, bool Invisible = false);
-	void AddAudioFrame(int64_t PTS, int64_t SampleStart, int64_t SampleCount, bool KeyFrame, int64_t FilePos = 0, unsigned int FrameSize = 0);
+	void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, uint32_t FrameSize = 0, bool Invisible = false);
+	void AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0, uint32_t FrameSize = 0);
 
 	void SortByPTS();
 
@@ -107,6 +106,8 @@ public:
 	int ClosestFrameFromPTS(int64_t PTS) const;
 	int RealFrameNumber(int Frame) const;
 	int VisibleFrameCount() const;
+
+	const FFMS_FrameInfo *FrameInfo(size_t N) const;
 
 	void WriteTimecodes(const char *TimecodeFile) const;
 	void Write(zipped_file &Stream) const;
@@ -120,7 +121,11 @@ public:
 	typedef frame_vec::const_iterator iterator;
 	typedef frame_vec::const_reverse_iterator reverse_iterator;
 
-	void clear() { Frames.clear(); InvisibleFrames.clear(); }
+	void clear() {
+		Frames.clear();
+		RealFrameNumbers.clear();
+		PublicFrameInfo.clear();
+	}
 
 	bool empty() const { return Frames.empty(); }
 	size_type size() const { return Frames.size(); }
@@ -174,7 +179,7 @@ protected:
 
 	void WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track);
 	void CheckAudioProperties(int Track, AVCodecContext *Context);
-	int64_t IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices);
+	uint32_t IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices);
 	void ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType, bool *Invisible);
 
 public:
