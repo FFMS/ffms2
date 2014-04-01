@@ -351,10 +351,10 @@ void FFMS_Track::SortByPTS() {
 	sort(Frames.begin(), Frames.end(), PTSComparison);
 
 	std::vector<size_t> ReorderTemp;
-	ReorderTemp.resize(size());
+	ReorderTemp.reserve(size());
 
 	for (size_t i = 0; i < size(); i++)
-		ReorderTemp[i] = Frames[i].OriginalPos;
+		ReorderTemp.push_back(Frames[i].OriginalPos);
 
 	for (size_t i = 0; i < size(); i++)
 		Frames[ReorderTemp[i]].OriginalPos = i;
