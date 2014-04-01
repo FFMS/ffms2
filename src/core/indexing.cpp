@@ -159,7 +159,7 @@ SharedAudioContext::~SharedAudioContext() {
 	delete TCC;
 }
 
-TFrameInfo::TFrameInfo(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, uint32_t FrameSize, int FrameType)
+FrameInfo::FrameInfo(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, uint32_t FrameSize, int FrameType)
 : SampleStart(SampleStart)
 , SampleCount(SampleCount)
 , FilePos(FilePos)
@@ -172,7 +172,7 @@ TFrameInfo::TFrameInfo(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, i
 	this->KeyFrame = KeyFrame;
 }
 
-void TFrameInfo::Read(zipped_file &stream, TFrameInfo const& prev, const FFMS_TrackType TT) {
+void FrameInfo::Read(zipped_file &stream, FrameInfo const& prev, const FFMS_TrackType TT) {
 	PTS = stream.read<int64_t>() + prev.PTS;
 	KeyFrame = stream.read<int8_t>();
 	FilePos = stream.read<int64_t>() + prev.FilePos + prev.FrameSize;
@@ -189,7 +189,7 @@ void TFrameInfo::Read(zipped_file &stream, TFrameInfo const& prev, const FFMS_Tr
 	}
 }
 
-void TFrameInfo::Write(zipped_file &stream, TFrameInfo const& prev, const FFMS_TrackType TT) const {
+void FrameInfo::Write(zipped_file &stream, FrameInfo const& prev, const FFMS_TrackType TT) const {
 	stream.write(PTS - prev.PTS);
 	stream.write<int8_t>(KeyFrame);
 	stream.write(FilePos - prev.FilePos - prev.FrameSize);
@@ -208,12 +208,12 @@ void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int F
 	if (Invisible)
 		InvisibleFrames.push_back(Frames.size() - InvisibleFrames.size());
 
-	Frames.push_back(TFrameInfo(PTS, 0, 0, RepeatPict, KeyFrame, FilePos, FrameSize, FrameType));
+	Frames.push_back(FrameInfo(PTS, 0, 0, RepeatPict, KeyFrame, FilePos, FrameSize, FrameType));
 }
 
 void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t SampleStart, int64_t SampleCount, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
 	if (SampleCount > 0)
-		Frames.push_back(TFrameInfo(PTS, SampleStart, static_cast<unsigned int>(SampleCount), 0, KeyFrame, FilePos, FrameSize, 0));
+		Frames.push_back(FrameInfo(PTS, SampleStart, static_cast<unsigned int>(SampleCount), 0, KeyFrame, FilePos, FrameSize, 0));
 }
 
 void FFMS_Track::WriteTimecodes(const char *TimecodeFile) const {
@@ -231,12 +231,12 @@ void FFMS_Track::WriteTimecodes(const char *TimecodeFile) const {
 	}
 }
 
-static bool PTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
+static bool PTSComparison(FrameInfo FI1, FrameInfo FI2) {
 	return FI1.PTS < FI2.PTS;
 }
 
 int FFMS_Track::FrameFromPTS(int64_t PTS) const {
-	TFrameInfo F;
+	FrameInfo F;
 	F.PTS = PTS;
 
 	iterator Pos = std::lower_bound(begin(), end(), F, PTSComparison);
@@ -253,7 +253,7 @@ int FFMS_Track::FrameFromPos(int64_t Pos) const {
 }
 
 int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) const {
-	TFrameInfo F;
+	FrameInfo F;
 	F.PTS = PTS;
 
 	iterator Pos = std::lower_bound(begin(), end(), F, PTSComparison);
@@ -389,7 +389,7 @@ FFMS_Track::FFMS_Track(zipped_file &stream) {
 	HasTS = !!stream.read<uint8_t>();
 
 	if (Frames.empty()) return;
-	TFrameInfo temp(0, 0, 0, 0, 0, 0, 0, 0);
+	FrameInfo temp(0, 0, 0, 0, 0, 0, 0, 0);
 	for (size_t i = 0; i < Frames.size(); ++i)
 		Frames[i].Read(stream, i == 0 ? temp : Frames[i - 1], TT);
 
@@ -409,7 +409,7 @@ void FFMS_Track::Write(zipped_file &stream) const {
 
 	if (empty()) return;
 
-	TFrameInfo temp(0, 0, 0, 0, 0, 0, 0, 0);
+	FrameInfo temp(0, 0, 0, 0, 0, 0, 0, 0);
 	Frames[0].Write(stream, temp, TT);
 	for (size_t i = 1; i < size(); ++i)
 		Frames[i].Write(stream, Frames[i - 1], TT);

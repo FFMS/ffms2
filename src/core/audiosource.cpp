@@ -322,7 +322,7 @@ void FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
 		++PacketNumber;
 }
 
-static bool SampleStartComp(const TFrameInfo &a, const TFrameInfo &b) {
+static bool SampleStartComp(const FrameInfo &a, const FrameInfo &b) {
 	return a.SampleStart < b.SampleStart;
 }
 
@@ -374,7 +374,7 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 				throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_CODEC, "Audio stream is not seekable");
 
 			if (SeekOffset >= 0 && (Start < CurrentSample || Start > CurrentSample + DecodeFrame->nb_samples * 5)) {
-				TFrameInfo f;
+				FrameInfo f;
 				f.SampleStart = Start;
 				size_t NewPacketNumber = std::distance(Frames.begin(), std::lower_bound(Frames.begin(), Frames.end(), f, SampleStartComp));
 				NewPacketNumber = std::max<size_t>(0, NewPacketNumber - SeekOffset - 15);

@@ -66,7 +66,7 @@ public:
 	~SharedAudioContext();
 };
 
-struct TFrameInfo : public FFMS_FrameInfo {
+struct FrameInfo : public FFMS_FrameInfo {
 public:
 	int64_t SampleStart;
 	uint32_t SampleCount;
@@ -75,15 +75,15 @@ public:
 	size_t OriginalPos;
 	int FrameType;
 
-	TFrameInfo() { }
-	TFrameInfo(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, uint32_t FrameSize, int FrameType);
+	FrameInfo() { }
+	FrameInfo(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, uint32_t FrameSize, int FrameType);
 
-	void Write(zipped_file &zf, TFrameInfo const& prev, FFMS_TrackType TT) const;
-	void Read(zipped_file &zf, TFrameInfo const& prev, FFMS_TrackType TT);
+	void Write(zipped_file &zf, FrameInfo const& prev, FFMS_TrackType TT) const;
+	void Read(zipped_file &zf, FrameInfo const& prev, FFMS_TrackType TT);
 };
 
 struct FFMS_Track {
-	typedef std::vector<TFrameInfo> frame_vec;
+	typedef std::vector<FrameInfo> frame_vec;
 	frame_vec Frames;
 	std::vector<size_t> InvisibleFrames;
 

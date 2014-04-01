@@ -108,7 +108,7 @@ protected:
 	// Next packet to be read
 	size_t PacketNumber;
 	// Current audio frame
-	const TFrameInfo *CurrentFrame;
+	const FrameInfo *CurrentFrame;
 	// Track which this corresponds to
 	int TrackNumber;
 	// Number of packets which the demuxer requires to know where it is

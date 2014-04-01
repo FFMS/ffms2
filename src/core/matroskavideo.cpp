@@ -111,7 +111,7 @@ void FFMatroskaVideo::DecodeNextFrame() {
 		// The additional indirection is because the packets are stored in
 		// presentation order and not decoding order, this is unnoticeable
 		// in the other sources where less is done manually
-		const TFrameInfo &FI = Frames[Frames[PacketNumber].OriginalPos];
+		const FrameInfo &FI = Frames[Frames[PacketNumber].OriginalPos];
 		MC.ReadFrame(FI.FilePos, FI.FrameSize, TCC.get());
 
 		Packet.data = MC.Buffer;
