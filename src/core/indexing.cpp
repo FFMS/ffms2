@@ -306,8 +306,13 @@ void FFMS_Track::MaybeReorderFrames() {
 	if (!has_b_frames)
 		return;
 
-	// Swap the presentation time stamps of each b-frame with that of the frame
-	// before it
+	// We have b-frames, but the timestamps are monotonically increasing. This
+	// means that the timestamps we have are decoding timestamps, and we want
+	// presentation time stamps. Convert DTS to PTS by swapping the timestamp
+	// of each b-frame with the frame before it. This only works for the
+	// specific case of b-frames which reference the frame immediately after
+	// them temporally, but that happens to cover the only files I've seen
+	// with b-frames and no presentation timestamps.
 	for (size_t i = 1; i < size(); ++i) {
 		if (Frames[i].FrameType == AV_PICTURE_TYPE_B)
 			std::swap(Frames[i].PTS, Frames[i - 1].PTS);
