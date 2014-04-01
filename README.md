@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/FFMS/ffms2.svg)](https://travis-ci.org/FFMS/ffms2)
+
 **FFmpegSource** (usually known as **FFMS** or **FFMS2**) is a cross-platform wrapper library around [libav](http://libav.org/)/[FFmpeg](http://ffmpeg.org), plus some additional components to deal with file formats libavformat has (or used to have) problems with. It gives you an easy, convenient way to say "open and decompress this media file for me, I don't care how you do it" and get frame- and sample-accurate access (usually), without having to bother with the sometimes less than straightforward and less than perfectly documented libav API.
 
 The library is written in C++, but the public API is pure C, so if you can link to a C library, you can use FFMS2. The source is available under the MIT license, but the license of the binaries depends on how libav was compiled. There are optional components that require a GPL libav, and if those are compiled in FFMS2 itself becomes covered by the GPL as well. The official Windows builds are GPLv3 for this reason.

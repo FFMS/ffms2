@@ -24,7 +24,7 @@
 FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode)
 : FFMS_AudioSource(SourceFile, Index, Track)
 , FormatContext(NULL)
-, LastValidTS(AV_NOPTS_VALUE)
+, LastValidTS(ffms_av_nopts_value)
 {
 	LAVFOpenFile(SourceFile, FormatContext);
 
@@ -64,7 +64,7 @@ int64_t FFLAVFAudio::FrameTS(size_t Packet) const {
 
 void FFLAVFAudio::Seek() {
 	size_t TargetPacket = GetSeekablePacketNumber(Frames, PacketNumber);
-	LastValidTS = AV_NOPTS_VALUE;
+	LastValidTS = ffms_av_nopts_value;
 
 	int Flags = Frames.HasTS ? AVSEEK_FLAG_BACKWARD : AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_BYTE;
 
@@ -84,14 +84,14 @@ bool FFLAVFAudio::ReadPacket(AVPacket *Packet) {
 	while (av_read_frame(FormatContext, Packet) >= 0) {
 		if (Packet->stream_index == TrackNumber) {
 			// Required because not all audio packets, especially in ogg, have a pts. Use the previous valid packet's pts instead.
-			if (Packet->pts == AV_NOPTS_VALUE)
+			if (Packet->pts == ffms_av_nopts_value)
 				Packet->pts = LastValidTS;
 			else
 				LastValidTS = Packet->pts;
 
 			// This only happens if a really shitty demuxer seeks to a packet without pts *hrm* ogg *hrm* so read until a valid pts is reached
 			int64_t PacketTS = Frames.HasTS ? Packet->pts : Packet->pos;
-			if (PacketTS != AV_NOPTS_VALUE) {
+			if (PacketTS != ffms_av_nopts_value) {
 				while (PacketNumber > 0 && FrameTS(PacketNumber) > PacketTS) --PacketNumber;
 				while (FrameTS(PacketNumber) < PacketTS) ++PacketNumber;
 				return true;

@@ -60,7 +60,7 @@ extern "C" {
 
 #define FFMS_GET_VECTOR_PTR(v) (((v).size() ? &(v)[0] : NULL))
 
-const int64_t ffms_av_nopts_value = static_cast<int64_t>(1) << 63;
+const int64_t ffms_av_nopts_value = static_cast<int64_t>(UINT64_C(0x8000000000000000));
 
 // used for matroska<->ffmpeg codec ID mapping to avoid Win32 dependency
 typedef struct FFMS_BITMAPINFOHEADER {
@@ -90,8 +90,15 @@ public:
 	int CopyOut(FFMS_ErrorInfo *ErrorInfo) const;
 };
 
+class noncopyable {
+	noncopyable(const noncopyable&);
+	noncopyable& operator=(const noncopyable&);
+public:
+	noncopyable() { }
+};
+
 template<class T>
-class FFSourceResources {
+class FFSourceResources : private noncopyable {
 	T *PrivClass;
 	bool Enabled;
 	bool Arg;
@@ -104,8 +111,8 @@ public:
 			PrivClass->Free(Arg);
 	}
 
-	void SetEnabled(bool Enabled) { this->Enabled = Enabled; }
-	void CloseCodec(bool Arg) { this->Arg = Arg; }
+	void SetEnabled(bool value) { Enabled = value; }
+	void CloseCodec(bool value) { Arg = value; }
 };
 // auto_ptr-ish holder for AVCodecContexts with overridable deleter
 class FFCodecContext {
@@ -127,11 +134,9 @@ public:
 };
 
 template<typename T, T *(*Alloc)(), void (*Del)(T **)>
-class unknown_size {
+class unknown_size : private noncopyable {
 	T *ptr;
 
-	unknown_size(unknown_size const&);
-	unknown_size& operator=(unknown_size const&);
 public:
 	operator T*() const { return ptr; }
 	operator void*() const { return ptr; }
@@ -174,12 +179,11 @@ public:
 	ffms_fstream(const char *filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out);
 };
 
-class TrackCompressionContext {
-public:
+struct TrackCompressionContext : private noncopyable {
 	CompressedStream *CS;
-	unsigned CompressionMethod;
 	void *CompressedPrivateData;
 	unsigned CompressedPrivateDataSize;
+	unsigned CompressionMethod;
 
 	TrackCompressionContext(MatroskaFile *MF, TrackInfo *TI, unsigned int Track);
 	~TrackCompressionContext();

@@ -28,7 +28,7 @@
 #include <string>
 
 class FileMapping;
-class TrackCompressionContext;
+struct TrackCompressionContext;
 
 class MatroskaReader : public InputStream {
 	std::auto_ptr<FileMapping> file;
@@ -38,6 +38,9 @@ class MatroskaReader : public InputStream {
 	static longlong Scan(MatroskaReader *st, ulonglong start, unsigned signature);
 	static const char *GetLastError(MatroskaReader *st);
 	static longlong GetFileSize(MatroskaReader *st);
+
+	MatroskaReader& operator=(MatroskaReader const&);
+	MatroskaReader(MatroskaReader const&);
 
 public:
 	MatroskaReader(const char *path);

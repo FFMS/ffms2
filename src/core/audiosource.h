@@ -98,7 +98,7 @@ struct FFMS_AudioSource {
 	void CacheBeginning();
 
 	// Called after seeking
-	virtual void Seek() { };
+	virtual void Seek() { }
 	// Read the next packet from the file
 	virtual bool ReadPacket(AVPacket *) = 0;
 	virtual void FreePacket(AVPacket *) { }
@@ -117,7 +117,6 @@ protected:
 
 	// Buffer which audio is decoded into
 	ScopedFrame DecodeFrame;
-	FFMS_Index &Index;
 	FFMS_Track Frames;
 	FFCodecContext CodecContext;
 	FFMS_AudioProperties AP;
@@ -129,7 +128,7 @@ protected:
 	FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track);
 
 public:
-	virtual ~FFMS_AudioSource();
+	virtual ~FFMS_AudioSource() { }
 	FFMS_Track *GetTrack() { return &Frames; }
 	const FFMS_AudioProperties& GetAudioProperties() const { return AP; }
 	void GetAudio(void *Buf, int64_t Start, int64_t Count);

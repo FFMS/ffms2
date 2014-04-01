@@ -29,7 +29,7 @@
 #define _stricmp strcmp
 #endif
 
-static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi)  {
+static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, const VSAPI *vsapi)  {
 	FFMS_Init(0,  1);
 
 	char ErrorMsg[1024];
@@ -113,7 +113,7 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *userData, VSCor
 	}
 }
 
-static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi)  {
+static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core, const VSAPI *vsapi)  {
 	FFMS_Init(0,  1);
 
 	char ErrorMsg[1024];
@@ -251,16 +251,16 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *userData, VSCo
 	FFMS_DestroyIndex(Index);
 }
 
-static void VS_CC GetLogLevel(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
+static void VS_CC GetLogLevel(const VSMap *, VSMap *out, void *, VSCore *, const VSAPI *vsapi) {
 	vsapi->propSetInt(out, "level", FFMS_GetLogLevel(), 0);
 }
 
-static void VS_CC SetLogLevel(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
+static void VS_CC SetLogLevel(const VSMap *in, VSMap *out, void *, VSCore *, const VSAPI *vsapi) {
 	FFMS_SetLogLevel((int)vsapi->propGetInt(in, "level", 0, 0));
 	vsapi->propSetInt(out, "level", FFMS_GetLogLevel(), 0);
 }
 
-static void VS_CC GetVersion(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
+static void VS_CC GetVersion(const VSMap *, VSMap *out, void *, VSCore *, const VSAPI *vsapi) {
 	int Version = FFMS_GetVersion();
 	char buf[100];
 	sprintf(buf, "%d.%d.%d.%d", Version >> 24, (Version & 0xFF0000) >> 16, (Version & 0xFF00) >> 8, Version & 0xFF);

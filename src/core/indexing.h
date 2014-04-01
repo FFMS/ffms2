@@ -83,7 +83,6 @@ public:
 };
 
 struct FFMS_Track {
-private:
 	typedef std::vector<TFrameInfo> frame_vec;
 	frame_vec Frames;
 	std::vector<size_t> InvisibleFrames;
@@ -136,8 +135,7 @@ public:
 	FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false, bool HasTS = true);
 };
 
-struct FFMS_Index : public std::vector<FFMS_Track> {
-private:
+struct FFMS_Index : public std::vector<FFMS_Track>, private noncopyable {
 	int RefCount;
 public:
 	static void CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]);
@@ -158,7 +156,7 @@ public:
 	FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling);
 };
 
-struct FFMS_Indexer {
+struct FFMS_Indexer : private noncopyable {
 	std::map<int, FFMS_AudioProperties> LastAudioProperties;
 protected:
 	int IndexMask;

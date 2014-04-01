@@ -252,13 +252,13 @@ int MatroskaReader::ISRead(MatroskaReader *self, ulonglong pos, void *buffer, in
 	return count;
 }
 
-int64_t MatroskaReader::Scan(MatroskaReader *self, ulonglong start, unsigned signature) {
+longlong MatroskaReader::Scan(MatroskaReader *self, ulonglong start, unsigned signature) {
 	unsigned cmp = 0;
 	for (ulonglong i = start; i < self->file->Size(); ++i) {
 		int c = *self->file->Read(i, 1);
 		cmp = ((cmp << 8) | c) & 0xffffffff;
 		if (cmp == signature)
-			return i - 4;
+			return static_cast<longlong>(i) - 4;
 	}
 
 	return -1;

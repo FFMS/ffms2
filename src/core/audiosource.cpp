@@ -63,7 +63,6 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 , CurrentFrame(NULL)
 , TrackNumber(Track)
 , SeekOffset(0)
-, Index(Index)
 {
 	if (Track < 0 || Track >= static_cast<int>(Index.size()))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
@@ -82,8 +81,6 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 			"The index does not match the source file");
 
 	Frames = Index[Track];
-
-	Index.AddRef();
 }
 
 #define EXCESSIVE_CACHE_SIZE 400
@@ -327,10 +324,6 @@ void FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
 
 static bool SampleStartComp(const TFrameInfo &a, const TFrameInfo &b) {
 	return a.SampleStart < b.SampleStart;
-}
-
-FFMS_AudioSource::~FFMS_AudioSource() {
-	Index.Release();
 }
 
 void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {

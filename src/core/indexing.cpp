@@ -357,20 +357,22 @@ void FFMS_Track::SortByPTS() {
 	MaybeHideFrames();
 }
 
-FFMS_Track::FFMS_Track() {
-	this->TT = FFMS_TYPE_UNKNOWN;
+FFMS_Track::FFMS_Track()
+: TT(FFMS_TYPE_UNKNOWN)
+, UseDTS(false)
+, HasTS(true)
+{
 	this->TB.Num = 0;
 	this->TB.Den = 0;
-	this->UseDTS = false;
-	this->HasTS = true;
 }
 
-FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS, bool HasTS) {
-	this->TT = TT;
+FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS, bool HasTS)
+: TT(TT)
+, UseDTS(UseDTS)
+, HasTS(HasTS)
+{
 	this->TB.Num = Num;
 	this->TB.Den = Den;
-	this->UseDTS = UseDTS;
-	this->HasTS = HasTS;
 }
 
 FFMS_Track::FFMS_Track(zipped_file &stream) {

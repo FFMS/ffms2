@@ -31,7 +31,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 : FFMS_VideoSource(SourceFile, Index, Track, Threads)
 , FormatContext(NULL)
 , SeekMode(SeekMode)
-, Res(FFSourceResources<FFMS_VideoSource>(this))
+, Res(this)
 {
 	AVCodec *Codec = NULL;
 

@@ -33,6 +33,8 @@ extern "C" {
 #include "ffms.h"
 #include "ffmscompat.h"
 
+namespace {
+
 int TrackMask;
 int DumpMask;
 int Verbose;
@@ -48,8 +50,7 @@ std::string AudioFile;
 
 FFMS_Index *Index;
 
-
-static void PrintUsage () {
+void PrintUsage () {
 	using namespace std;
 	cout << "FFmpegSource2 indexing app" << endl
 	     << "Usage: ffmsindex [options] inputfile [outputfile]" << endl
@@ -67,8 +68,7 @@ static void PrintUsage () {
 		 << "-m NAME   Force the use of demuxer NAME (default, lavf, matroska, haalimpeg, haaliogg)" << endl;
 }
 
-
-static void ParseCMDLine (int argc, char *argv[]) {
+void ParseCMDLine (int argc, char *argv[]) {
 	if (argc <= 1) {
 		PrintUsage();
 		throw "";
@@ -155,8 +155,7 @@ static void ParseCMDLine (int argc, char *argv[]) {
 	AudioFile.append("%s.%d2.w64");
 }
 
-
-static int FFMS_CC UpdateProgress(int64_t Current, int64_t Total, void *Private) {
+int FFMS_CC UpdateProgress(int64_t Current, int64_t Total, void *Private) {
 	if (!PrintProgress)
 		return 0;
 
@@ -179,17 +178,11 @@ static int FFMS_CC UpdateProgress(int64_t Current, int64_t Total, void *Private)
 	return 0;
 }
 
-
-static int FFMS_CC GenAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int FNSize, void *Private) {
-	const char * FormatString = AudioFile.c_str();
-	if (FileName == NULL)
-		return snprintf(NULL, 0, FormatString, SourceFile, Track) + 1;
-	else
-		return snprintf(FileName, FNSize, FormatString, SourceFile, Track) + 1;
+int FFMS_CC GenAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *, char *FileName, int FNSize, void *) {
+	return snprintf(FileName, FileName ? FNSize : 0, AudioFile.c_str(), SourceFile, Track) + 1;
 }
 
-
-static void DoIndexing () {
+void DoIndexing () {
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
 	E.Buffer = ErrorMsg;
@@ -279,6 +272,7 @@ static void DoIndexing () {
 	}
 }
 
+} // namespace {
 
 #ifdef _WIN32
 #ifdef __MINGW32__

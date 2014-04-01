@@ -35,7 +35,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 : FFMS_VideoSource(SourceFile, Index, Track, Threads)
 , MF(NULL)
 , MC(SourceFile)
-, Res(FFSourceResources<FFMS_VideoSource>(this))
+, Res(this)
 , PacketNumber(0)
 {
 	AVCodec *Codec = NULL;
