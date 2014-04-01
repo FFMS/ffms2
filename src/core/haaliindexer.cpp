@@ -23,6 +23,7 @@
 #include "indexing.h"
 
 #include "codectype.h"
+#include "track.h"
 
 #include <limits>
 #undef max

@@ -18,10 +18,6 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#include <cstring>
-#include <cerrno>
-#include <algorithm>
-
 // avcodec.h includes audioconvert.h, but we need to include audioconvert.h
 // ourselves later
 #define FF_API_OLD_AUDIOCONVERT 0
@@ -31,6 +27,7 @@
 
 #include "codectype.h"
 #include "indexing.h"
+#include "track.h"
 
 #ifdef _WIN32
 #	define WIN32_LEAN_AND_MEAN
@@ -42,20 +39,15 @@ extern "C" {
 }
 #endif // _WIN32
 
+#include <algorithm>
+#include <cerrno>
+#include <cstring>
+#include <sstream>
+
 extern bool GlobalUseUTF8Paths;
 
-FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const char *Message) : _Message(Message), _ErrorType(ErrorType), _SubType(SubType) {
-}
-
-FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const std::string &Message) : _Message(Message), _ErrorType(ErrorType), _SubType(SubType) {
-}
-
-FFMS_Exception::~FFMS_Exception() throw () {
-}
-
-const std::string &FFMS_Exception::GetErrorMessage() const {
-	return _Message;
-}
+FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const char *Message) : _Message(Message), _ErrorType(ErrorType), _SubType(SubType) { }
+FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const std::string &Message) : _Message(Message), _ErrorType(ErrorType), _SubType(SubType) { }
 
 int FFMS_Exception::CopyOut(FFMS_ErrorInfo *ErrorInfo) const {
 	if (ErrorInfo) {
@@ -317,19 +309,6 @@ std::wstring widen_path(const char *s) {
 }
 #endif
 
-FILE *ffms_fopen(const char *filename, const char *mode) {
-#ifdef _WIN32
-	std::wstring filename_wide = widen_path(filename);
-	std::wstring mode_wide     = widen_path(mode);
-	if (filename_wide.size() && mode_wide.size())
-		return _wfopen(filename_wide.c_str(), mode_wide.c_str());
-	else
-		return fopen(filename, mode);
-#else
-	return fopen(filename, mode);
-#endif /* _WIN32 */
-}
-
 size_t ffms_mbstowcs(wchar_t *wcstr, const char *mbstr, size_t max) {
 #ifdef _WIN32
 	// this is only called by HaaliOpenFile anyway, so I think this is safe
@@ -339,51 +318,7 @@ size_t ffms_mbstowcs(wchar_t *wcstr, const char *mbstr, size_t max) {
 #endif
 }
 
-#ifdef __MINGW32__
-static int open_flags(std::ios::openmode mode) {
-	int flags = 0;
-	if ((mode & std::ios::in) && (mode & std::ios::out))
-		flags = _O_CREAT | _O_TRUNC | _O_RDWR;
-	if (mode & std::ios::in)
-		flags = _O_RDONLY;
-	else if (mode & std::ios::out)
-		flags = _O_CREAT | _O_TRUNC | _O_WRONLY;
-
-#ifdef _O_BINARY
-	flags |= _O_BINARY;
-#endif
-	return flags;
-}
-#endif
-
-// ffms_fstream stuff
-ffms_fstream::ffms_fstream(const char *filename, std::ios_base::openmode mode)
-#ifdef __MINGW32__
-: filebuf(_wopen(widen_path(filename).c_str(), open_flags(mode), 0666), mode)
-#endif
-{
-#if defined(_WIN32)
-
-#ifndef __MINGW32__
-	std::wstring filename_wide = widen_path(filename);
-	if (filename_wide.size())
-		open(filename_wide.c_str(), mode);
-	else
-		open(filename, mode);
-#else
-	// Unlike MSVC, mingw's iostream library doesn't have an fstream overload
-	// that takes a wchar_t* filename, so instead we use gcc's nonstandard
-	// fd wrapper
-	std::iostream::rdbuf(&filebuf);
-#endif //__MINGW32__
-
-#else // _WIN32
-	open(filename, mode);
-#endif // _WIN32
-}
-
 // End of filename hackery.
-
 
 #ifdef HAALISOURCE
 

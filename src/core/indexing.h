@@ -32,15 +32,12 @@
 #	define WIN32_LEAN_AND_MEAN
 #	define _WIN32_DCOM
 #	include <windows.h>
-#	include <tchar.h>
 #	include <atlbase.h>
 #	include <dshow.h>
 #	include <initguid.h>
 #	include "CoParser.h"
 #	include "guids.h"
 #endif
-
-namespace { struct zipped_file; }
 
 class SharedVideoContext {
 	bool FreeCodecContext;
@@ -66,87 +63,13 @@ public:
 	~SharedAudioContext();
 };
 
-struct FrameInfo {
-	int64_t PTS;
-	int64_t FilePos;
-	int64_t SampleStart;
-	uint32_t SampleCount;
-	uint32_t FrameSize;
-	size_t OriginalPos;
-	int FrameType;
-	int RepeatPict;
-	bool KeyFrame;
-	bool Hidden;
-};
-
-struct FFMS_Track {
-private:
-	typedef std::vector<FrameInfo> frame_vec;
-	frame_vec Frames;
-	std::vector<int> RealFrameNumbers;
-	mutable std::vector<FFMS_FrameInfo> PublicFrameInfo;
-
-	void MaybeReorderFrames();
-	void MaybeHideFrames();
-
-public:
-	FFMS_TrackType TT;
-	FFMS_TrackTimeBase TB;
-	bool UseDTS;
-	bool HasTS;
-
-	void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, uint32_t FrameSize = 0, bool Invisible = false);
-	void AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0, uint32_t FrameSize = 0);
-
-	void SortByPTS();
-
-	int FindClosestVideoKeyFrame(int Frame) const;
-	int FrameFromPTS(int64_t PTS) const;
-	int FrameFromPos(int64_t Pos) const;
-	int ClosestFrameFromPTS(int64_t PTS) const;
-	int RealFrameNumber(int Frame) const;
-	int VisibleFrameCount() const;
-
-	const FFMS_FrameInfo *FrameInfo(size_t N) const;
-
-	void WriteTimecodes(const char *TimecodeFile) const;
-	void Write(zipped_file &Stream) const;
-
-	typedef frame_vec::allocator_type allocator_type;
-	typedef frame_vec::size_type size_type;
-	typedef frame_vec::difference_type difference_type;
-	typedef frame_vec::const_pointer pointer;
-	typedef frame_vec::const_reference reference;
-	typedef frame_vec::value_type value_type;
-	typedef frame_vec::const_iterator iterator;
-	typedef frame_vec::const_reverse_iterator reverse_iterator;
-
-	void clear() {
-		Frames.clear();
-		RealFrameNumbers.clear();
-		PublicFrameInfo.clear();
-	}
-
-	bool empty() const { return Frames.empty(); }
-	size_type size() const { return Frames.size(); }
-	reference operator[](size_type pos) const { return Frames[pos]; }
-	reference front() const { return Frames.front(); }
-	reference back() const { return Frames.back(); }
-	iterator begin() const { return Frames.begin(); }
-	iterator end() const { return Frames.end(); }
-
-	FFMS_Track();
-	FFMS_Track(zipped_file &Stream);
-	FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false, bool HasTS = true);
-};
-
 struct FFMS_Index : public std::vector<FFMS_Track>, private noncopyable {
 	int RefCount;
 public:
 	static void CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]);
 
-	int AddRef();
-	int Release();
+	void AddRef();
+	void Release();
 
 	int Decoder;
 	int ErrorHandling;
@@ -185,12 +108,14 @@ protected:
 public:
 	static FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer = FFMS_SOURCE_DEFAULT);
 	FFMS_Indexer(const char *Filename);
-	virtual ~FFMS_Indexer();
-	void SetIndexMask(int IndexMask);
-	void SetDumpMask(int DumpMask);
+	virtual ~FFMS_Indexer() { }
+
+	void SetIndexMask(int IndexMask) { this->IndexMask = IndexMask; }
+	void SetDumpMask(int DumpMask) { this->DumpMask = DumpMask; }
 	void SetErrorHandling(int ErrorHandling);
 	void SetProgressCallback(TIndexCallback IC, void *ICPrivate);
 	void SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate);
+
 	virtual FFMS_Index *DoIndexing() = 0;
 	virtual int GetNumberOfTracks() = 0;
 	virtual FFMS_TrackType GetTrackType(int Track) = 0;

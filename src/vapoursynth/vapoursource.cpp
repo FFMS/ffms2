@@ -222,7 +222,7 @@ VSVideoSource::~VSVideoSource() {
 }
 
 void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
-		const char */*ResizerName*/, int ConvertToFormat, const VSAPI *vsapi, VSCore *core) {
+		const char * /*ResizerName*/, int ConvertToFormat, const VSAPI *vsapi, VSCore *core) {
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;

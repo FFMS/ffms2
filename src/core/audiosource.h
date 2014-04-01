@@ -26,21 +26,21 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
-#include <vector>
-#include <list>
-#include <memory>
-
+#include "ffms.h"
 #include "ffmscompat.h"
 
 #include "indexing.h"
 #include "utils.h"
-#include "ffms.h"
+#include "track.h"
+
+#include <list>
+#include <memory>
+#include <vector>
 
 #ifdef HAALISOURCE
 #	define WIN32_LEAN_AND_MEAN
 #	define _WIN32_DCOM
 #	include <windows.h>
-#	include <tchar.h>
 #	include <atlbase.h>
 #	include <dshow.h>
 #	include <initguid.h>

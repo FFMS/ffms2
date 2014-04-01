@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2014 Thomas Goyne <tgoyne@gmail.com>
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -18,40 +18,26 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#ifndef WAVE64WRITER_H
-#define	WAVE64WRITER_H
+#pragma once
 
-#include "filehandle.h"
-
+#include <cstdio>
 #include <stdint.h>
+#include <string>
 
-struct AVFrame;
-
-// this is to avoid depending on windows.h etc.
-typedef struct FFMS_WAVEFORMATEX {
-	uint16_t wFormatTag;
-	uint16_t nChannels;
-	uint32_t nSamplesPerSec;
-	uint32_t nAvgBytesPerSec;
-	uint16_t nBlockAlign;
-	uint16_t wBitsPerSample;
-	uint16_t cbSize;
-} FFMS_WAVEFORMATEX;
-
-class Wave64Writer {
-	FileHandle WavFile;
-	uint64_t BytesWritten;
-	uint32_t SamplesPerSec;
-	uint16_t BytesPerSample;
-	uint16_t Channels;
-	bool IsFloat;
-
-	void WriteHeader(bool Initial, bool IsFloat);
+class FileHandle {
+	FILE *f;
+	std::string filename;
+	int error_source;
+	int error_cause;
 
 public:
-	Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat);
-	~Wave64Writer();
-	void WriteData(AVFrame const& Frame);
-};
+	FileHandle(const char *filename, const char *mode, int error_source, int error_cause);
+	~FileHandle() { fclose(f); }
 
-#endif
+	void Seek(int64_t offset, int origin);
+	int64_t Tell();
+
+	size_t Read(char *buffer, size_t size);
+	size_t Write(const char *buffer, size_t size);
+	int Printf(const char *fmt, ...);
+};

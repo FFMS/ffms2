@@ -42,11 +42,9 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	TrackInfo *TI = NULL;
 
 	MF = mkv_OpenEx(&MC.Reader, 0, 0, ErrorMessage, sizeof(ErrorMessage));
-	if (MF == NULL) {
-		std::ostringstream buf;
-		buf << "Can't parse Matroska file: " << ErrorMessage;
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
+	if (MF == NULL)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("Can't parse Matroska file: ") + ErrorMessage);
 
 	TI = mkv_GetTrackInfo(MF, VideoTrack);
 

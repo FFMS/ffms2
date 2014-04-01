@@ -22,7 +22,7 @@
 
 #include "codectype.h"
 #include "matroskaparser.h"
-
+#include "track.h"
 
 FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename)
 : FFMS_Indexer(Filename)
@@ -34,11 +34,9 @@ FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename)
 	char ErrorMessage[256];
 
 	MF = mkv_OpenEx(&MC.Reader, 0, 0, ErrorMessage, sizeof(ErrorMessage));
-	if (MF == NULL) {
-		std::ostringstream buf;
-		buf << "Can't parse Matroska file: " << ErrorMessage;
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
+	if (MF == NULL)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("Can't parse Matroska file: ") + ErrorMessage);
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++) {
 		TrackInfo *TI = mkv_GetTrackInfo(MF, i);

@@ -29,12 +29,12 @@ extern "C" {
 
 #include <algorithm>
 #include <memory>
-#include <sstream>
 #include <vector>
 
 #include "ffms.h"
 #include "ffmscompat.h"
 #include "indexing.h"
+#include "track.h"
 #include "utils.h"
 #include "videoutils.h"
 
@@ -42,7 +42,6 @@ extern "C" {
 #	define WIN32_LEAN_AND_MEAN
 #	define _WIN32_DCOM
 #	include <windows.h>
-#	include <tchar.h>
 #	include <atlbase.h>
 #	include <dshow.h>
 #	include <initguid.h>

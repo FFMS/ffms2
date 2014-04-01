@@ -323,7 +323,7 @@ FFMS_API(int) FFMS_GetNumFrames(FFMS_Track *T) {
 }
 
 FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFMS_Track *T, int Frame) {
-	return T->FrameInfo(static_cast<size_t>(Frame));
+	return T->GetFrameInfo(static_cast<size_t>(Frame));
 }
 
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track) {

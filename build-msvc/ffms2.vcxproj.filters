@@ -108,6 +108,15 @@
     <ClCompile Include="..\src\core\matroskareader.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\core\track.cpp">
+      <Filter>Indexing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\zipfile.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\filehandle.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\core\audiosource.h">
@@ -171,6 +180,15 @@
       <Filter>VapourSynth</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\matroskareader.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\track.h">
+      <Filter>Indexing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\zipfile.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\filehandle.h">
       <Filter>Utils</Filter>
     </ClInclude>
   </ItemGroup>

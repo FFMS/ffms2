@@ -20,6 +20,8 @@
 
 #include "indexing.h"
 
+#include "track.h"
+
 extern "C" {
 #include <libavutil/avutil.h>
 };

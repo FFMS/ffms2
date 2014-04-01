@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2014 Thomas Goyne <tgoyne@gmail.com>
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -18,40 +18,38 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#ifndef WAVE64WRITER_H
-#define	WAVE64WRITER_H
-
 #include "filehandle.h"
 
-#include <stdint.h>
+#include <vector>
+#include <zlib.h>
 
-struct AVFrame;
-
-// this is to avoid depending on windows.h etc.
-typedef struct FFMS_WAVEFORMATEX {
-	uint16_t wFormatTag;
-	uint16_t nChannels;
-	uint32_t nSamplesPerSec;
-	uint32_t nAvgBytesPerSec;
-	uint16_t nBlockAlign;
-	uint16_t wBitsPerSample;
-	uint16_t cbSize;
-} FFMS_WAVEFORMATEX;
-
-class Wave64Writer {
-	FileHandle WavFile;
-	uint64_t BytesWritten;
-	uint32_t SamplesPerSec;
-	uint16_t BytesPerSample;
-	uint16_t Channels;
-	bool IsFloat;
-
-	void WriteHeader(bool Initial, bool IsFloat);
+class ZipFile {
+	FileHandle file;
+	std::vector<char> buffer;
+	z_stream z;
+	enum {
+		Initial,
+		Inflate,
+		Deflate
+	} state;
 
 public:
-	Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat);
-	~Wave64Writer();
-	void WriteData(AVFrame const& Frame);
-};
+	ZipFile(const char *filename, const char *mode);
+	~ZipFile();
 
-#endif
+	void Read(void *buffer, size_t size);
+	int Write(const void *buffer, size_t size);
+	void Finish();
+
+	template<typename T>
+	T Read() {
+		T ret = T();
+		Read(&ret, sizeof(T));
+		return ret;
+	}
+
+	template<typename T>
+	void Write(T const& value) {
+		Write(&value, sizeof value);
+	}
+};
