@@ -188,11 +188,11 @@ if (frame == NULL) {
 	/* etc... */
 }</pre>
 <p>
-How many characters you want to allocate to the error message is up to you; if you allocate too few the messages may get truncated. 1024 should be enough for anyone.
+How many characters you want to allocate to the error message is up to you; if you allocate too few the messages will get truncated. 1024 should be enough for anyone.
 </p>
 
 <h3>FFMS_Init - initializes the library</h3>
-<pre>void FFMS_Init(int CPUFeatures, int UseUTF8Paths)</pre>
+<pre>void FFMS_Init(int Unused, int UseUTF8Paths)</pre>
 <p>Initializes the FFMS2 library. This function must be called once at the start of your program, before doing any other FFMS2 function calls.</p>
 <p>If you are on Windows, you should also initialize COM before calling this function, since the library might have been built with <tt>HAALISOURCE</tt>. If it was indeed built with <tt>HAALISOURCE</tt> but you do not intialize COM, all MPEG-TS/PS and OGM files will cause an error when you try to open them. All other file types will work normally. Typically, you'd initialize COM something like the following:</p>
 <pre>#include &lt;objbase.h&gt;
@@ -210,12 +210,11 @@ if (com_inited)
 	CoUninitialize();
 </pre>
 <h4>Arguments</h4>
-<p><b><tt>int CPUFeatures</tt></b><br />
+<p><b><tt>int Unused</tt></b><br />
 This argument is no longer used and is left only for API/ABI compatibility.  Pass 0.
 <p><b><tt>int UseUTF8Paths</tt></b><br />
 Controls filename handling on Windows; on all other operating systems this parameter does nothing and should be ignored.<br />
 On Windows, setting this parameter to a true value will make FFMS assume that all filename strings passed to it are UTF-8 encoded; setting it to false will make it assume filenames are in the system default codepage for non-Unicode programs. Setting this to true is one of two known ways to make FFMS2 open files with filenames containing characters that are not expressible in said codepage; the other is using the short (DOS 8.3 notation) filename. You can use the Win32 API function <tt>WideCharToMultiByte()</tt> to convert your <tt>wchar_t*</tt> Unicode strings to UTF-8 in <tt>char*</tt>, if necessary.<br />
-<b>NOTE:</b> setting this parameter to true will break most file open operations if you compiled FFMS in MinGW, because MinGW's <tt>std::fstream</tt> implementation doesn't support Unicode filenames.<br />
 Prior to API version 2.14.0.0 this functionality was a compile-time option and was controlled via <tt>FFMS_USE_UTF8_PATHS</tt>.</p>
 
 <h3>FFMS_GetLogLevel - gets FFmpeg message level</h3>
@@ -240,7 +239,7 @@ The track number of the video track to open, as seen by the relevant demuxer. Se
 <p><b><tt>FFMS_Index *Index</tt></b><br />
 A pointer to a FFMS_Index object containing indexing information for the track you want to open.</p>
 <p><b><tt>int Threads</tt></b><br />
-The number of decoding threads to use. Passing funny values like 0 or -1 may lead to undefined behavior so you better sanity check the input if you let the user set this. Values &gt;1 have no effect if FFmpeg was not compiled with threading support.</p>
+The number of decoding threads to use. Anything less than 1 will use threads equal to the number of CPU cores. Values &gt;1 have no effect if FFmpeg was not compiled with threading support.</p>
 <p><b><tt>int SeekMode</tt></b><br />
 Controls how seeking (random access) is handled and hence affects frame accuracy. You will almost always want to use <tt>FFMS_SEEK_NORMAL</tt>. Has no effect on Matroska files, where the equivalent of <tt>FFMS_SEEK_NORMAL</tt> is always used. For a list of valid values, see the Constants and Preprocessor Definitions section. <tt>FFMS_SEEK_LINEAR_NO_RW</tt> may come in handy if you want to open images.</p>
 <p><b><tt>FFMS_ErrorInfo *ErrorInfo</tt></b><br />
@@ -284,7 +283,7 @@ Retreives the video properties from the given <tt>FFMS_VideoSource</tt> object a
 
 <h3>FFMS_GetFrame - retrieves a given video frame</h3>
 <pre>const FFMS_Frame *FFMS_GetFrame(FFMS_VideoSource *V, int n, FFMS_ErrorInfo *ErrorInfo)</pre>
-<p>Gets and decodes a video frame from the video stream represented by the given <tt>FFMS_VideoSource</tt> object and stores it in a <tt>FFMS_Frame</tt> struct. The colorspace and resolution of the frame can be changed by calling <tt>FFMS_SetOutputFormatV2</tt> with the appropriate parameters before calling this function. Note that this function is not threadsafe (you can only request one frame at a time from a given <tt>FFMS_VideoSource</tt> object) and that the returned pointer to the FFMS_Frame is a <i>const</i> pointer.
+<p>Gets and decodes a video frame from the video stream represented by the given <tt>FFMS_VideoSource</tt> object and stores it in a <tt>FFMS_Frame</tt> struct. The colorspace and resolution of the frame can be changed by calling <tt>FFMS_SetOutputFormatV2</tt> with the appropriate parameters before calling this function. Note that this function is not thread-safe (you can only request one frame at a time from a given <tt>FFMS_VideoSource</tt> object) and that the returned pointer to the FFMS_Frame is a <i>const</i> pointer.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFMS_VideoSource *V</tt></b><br />
@@ -304,7 +303,7 @@ See above.</p>
 
 <h3>FFMS_GetAudio - decodes a number of audio samples</h3>
 <pre>int FFMS_GetAudio(FFMS_AudioSource *A, void *Buf, int64_t Start, int64_t Count, FFMS_ErrorInfo *ErrorInfo)</pre>
-<p>Decodes the requested audio samples from the audio stream represented by the given <tt>FFMS_AudioSource</tt> object and stores them in the given buffer. Note that this function is not threadsafe; you can only request one decoding operation at a time from a given <tt>FFMS_AudioSource</tt> object.
+<p>Decodes the requested audio samples from the audio stream represented by the given <tt>FFMS_AudioSource</tt> object and stores them in the given buffer. Note that this function is not thread-safe; you can only request one decoding operation at a time from a given <tt>FFMS_AudioSource</tt> object.
 </p>
 <h4>Arguments</h4>
 <p><b><tt>FFMS_AudioSource *A</tt></b><br />
