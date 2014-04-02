@@ -30,6 +30,7 @@ extern "C" {
 #include "ffmscompat.h"
 
 #include "indexing.h"
+#include "matroskareader.h"
 #include "utils.h"
 #include "track.h"
 

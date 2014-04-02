@@ -22,22 +22,11 @@
 #define INDEXING_H
 
 #include "utils.h"
-#include "matroskareader.h"
-#include "wave64writer.h"
 
 #include <map>
 #include <memory>
 
-#ifdef HAALISOURCE
-#	define WIN32_LEAN_AND_MEAN
-#	define _WIN32_DCOM
-#	include <windows.h>
-#	include <atlbase.h>
-#	include <dshow.h>
-#	include <initguid.h>
-#	include "CoParser.h"
-#	include "guids.h"
-#endif
+class Wave64Writer;
 
 class SharedVideoContext {
 	bool FreeCodecContext;
@@ -106,7 +95,6 @@ protected:
 	void ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType, bool *Invisible);
 
 public:
-	static FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer = FFMS_SOURCE_DEFAULT);
 	FFMS_Indexer(const char *Filename);
 	virtual ~FFMS_Indexer() { }
 
@@ -124,57 +112,10 @@ public:
 	virtual const char *GetFormatName() = 0;
 };
 
-class FFLAVFIndexer : public FFMS_Indexer {
-	AVFormatContext *FormatContext;
-	void ReadTS(const AVPacket &Packet, int64_t &TS, bool &UseDTS);
-public:
-	FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContext);
-	~FFLAVFIndexer();
-	FFMS_Index *DoIndexing();
-	int GetNumberOfTracks();
-	FFMS_TrackType GetTrackType(int Track);
-	const char *GetTrackCodec(int Track);
-	const char *GetFormatName();
-	FFMS_Sources GetSourceType();
-};
+FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer = FFMS_SOURCE_DEFAULT);
 
-class FFMatroskaIndexer : public FFMS_Indexer {
-private:
-	MatroskaFile *MF;
-	MatroskaReaderContext MC;
-	AVCodec *Codec[32];
-public:
-	FFMatroskaIndexer(const char *Filename);
-	~FFMatroskaIndexer();
-	FFMS_Index *DoIndexing();
-	int GetNumberOfTracks();
-	FFMS_TrackType GetTrackType(int Track);
-	const char *GetTrackCodec(int Track);
-	const char *GetFormatName();
-	FFMS_Sources GetSourceType();
-};
-
-#ifdef HAALISOURCE
-
-class FFHaaliIndexer : public FFMS_Indexer {
-private:
-	int SourceMode;
-	CComPtr<IMMContainer> pMMC;
-	int NumTracks;
-	FFMS_TrackType TrackType[32];
-	CComQIPtr<IPropertyBag> PropertyBags[32];
-	int64_t Duration;
-	AVFormatContext *FormatContext;
-public:
-	FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode);
-	FFMS_Index *DoIndexing();
-	int GetNumberOfTracks();
-	FFMS_TrackType GetTrackType(int Track);
-	const char *GetTrackCodec(int Track);
-	const char *GetFormatName();
-	FFMS_Sources GetSourceType();
-};
-
-#endif // HAALISOURCE
+FFMS_Indexer *CreateLavfIndexer(const char *Filename, AVFormatContext *FormatContext);
+FFMS_Indexer *CreateMatroskaIndexer(const char *Filename);
+FFMS_Indexer *CreateHaaliIndexer(const char *Filename, FFMS_Sources SourceMode);
 
 #endif

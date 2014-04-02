@@ -21,18 +21,37 @@
 #include "indexing.h"
 
 #include "codectype.h"
-#include "matroskaparser.h"
+#include "matroskareader.h"
 #include "track.h"
+
+namespace {
+class FFMatroskaIndexer : public FFMS_Indexer {
+	MatroskaFile *MF;
+	MatroskaReaderContext MC;
+	AVCodec *Codec[32];
+
+public:
+	FFMatroskaIndexer(const char *Filename);
+    ~FFMatroskaIndexer() {
+        mkv_Close(MF);
+    }
+
+	FFMS_Index *DoIndexing();
+
+	int GetNumberOfTracks() { return mkv_GetNumTracks(MF); }
+	FFMS_TrackType GetTrackType(int Track) { return HaaliTrackTypeToFFTrackType(mkv_GetTrackInfo(MF, Track)->Type); }
+	const char *GetTrackCodec(int Track) { return Codec[Track] ? Codec[Track]->name : NULL; }
+	const char *GetFormatName() { return "matroska"; }
+	FFMS_Sources GetSourceType() { return FFMS_SOURCE_MATROSKA; }
+};
 
 FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename)
 : FFMS_Indexer(Filename)
 , MC(Filename)
 {
-	for (int i = 0; i < 32; i++)
-		Codec[i] = NULL;
+	memset(Codec, 0, sizeof(Codec));
 
 	char ErrorMessage[256];
-
 	MF = mkv_OpenEx(&MC.Reader, 0, 0, ErrorMessage, sizeof(ErrorMessage));
 	if (MF == NULL)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
@@ -42,10 +61,6 @@ FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename)
 		TrackInfo *TI = mkv_GetTrackInfo(MF, i);
 		Codec[i] = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate, 0, TI->AV.Audio.BitDepth));
 	}
-}
-
-FFMatroskaIndexer::~FFMatroskaIndexer() {
-	mkv_Close(MF);
 }
 
 FFMS_Index *FFMatroskaIndexer::DoIndexing() {
@@ -143,24 +158,8 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 	TrackIndices->Sort();
 	return TrackIndices.release();
 }
-
-int FFMatroskaIndexer::GetNumberOfTracks() {
-	return mkv_GetNumTracks(MF);
 }
 
-FFMS_TrackType FFMatroskaIndexer::GetTrackType(int Track) {
-	return HaaliTrackTypeToFFTrackType(mkv_GetTrackInfo(MF, Track)->Type);
+FFMS_Indexer *CreateMatroskaIndexer(const char *Filename) {
+	return new FFMatroskaIndexer(Filename);
 }
-
-const char *FFMatroskaIndexer::GetTrackCodec(int Track) {
-	return Codec[Track] ? Codec[Track]->name : NULL;
-}
-
-const char *FFMatroskaIndexer::GetFormatName() {
-	return "matroska";
-}
-
-FFMS_Sources FFMatroskaIndexer::GetSourceType() {
-	return FFMS_SOURCE_MATROSKA;
-}
-

@@ -22,6 +22,7 @@
 
 #include "codectype.h"
 #include "track.h"
+#include "wave64writer.h"
 #include "zipfile.h"
 
 #include <algorithm>
@@ -231,7 +232,7 @@ void FFMS_Indexer::SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate
 	this->ANCPrivate = ANCPrivate;
 }
 
-FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Demuxer) {
+FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer) {
 	AVFormatContext *FormatContext = NULL;
 
 	if (avformat_open_input(&FormatContext, Filename, NULL, NULL) != 0)
@@ -243,23 +244,23 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Dem
 		// Do matroska indexing instead?
 		if (!strncmp(FormatContext->iformat->name, "matroska", 8)) {
 			avformat_close_input(&FormatContext);
-			return new FFMatroskaIndexer(Filename);
+			return CreateMatroskaIndexer(Filename);
 		}
 
 #ifdef HAALISOURCE
 		// Do haali ts indexing instead?
 		if (HasHaaliMPEG && (!strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts"))) {
 			avformat_close_input(&FormatContext);
-			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
+			return CreateHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
 		}
 
 		if (HasHaaliOGG && !strcmp(FormatContext->iformat->name, "ogg")) {
 			avformat_close_input(&FormatContext);
-			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
+			return CreateHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
 		}
 #endif
 
-		return new FFLAVFIndexer(Filename, FormatContext);
+		return CreateLavfIndexer(Filename, FormatContext);
 	}
 
 	// someone forced a demuxer, use it
@@ -273,19 +274,19 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Dem
 
 	switch (Demuxer) {
 		case FFMS_SOURCE_LAVF:
-			return new FFLAVFIndexer(Filename, FormatContext);
+			return CreateLavfIndexer(Filename, FormatContext);
 #ifdef HAALISOURCE
 		case FFMS_SOURCE_HAALIOGG:
 			if (!HasHaaliOGG)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali's Ogg parser is not available");
-			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
+			return CreateHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
 		case FFMS_SOURCE_HAALIMPEG:
 			if (!HasHaaliMPEG)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali's MPEG PS/TS parser is not available");
-			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
+			return CreateHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
 #endif
 		case FFMS_SOURCE_MATROSKA:
-			return new FFMatroskaIndexer(Filename);
+			return CreateMatroskaIndexer(Filename);
 		default:
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_INVALID_ARGUMENT, "Invalid demuxer requested");
 	}

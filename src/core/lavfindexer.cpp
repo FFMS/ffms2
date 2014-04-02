@@ -26,20 +26,42 @@ extern "C" {
 #include <libavutil/avutil.h>
 };
 
+namespace {
+class FFLAVFIndexer : public FFMS_Indexer {
+	AVFormatContext *FormatContext;
+	void ReadTS(const AVPacket &Packet, int64_t &TS, bool &UseDTS);
 
-FFLAVFIndexer::FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContext) : FFMS_Indexer(Filename) {
-	this->FormatContext = FormatContext;
-
-	if (avformat_find_stream_info(FormatContext,NULL) < 0) {
-		avformat_close_input(&FormatContext);
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			"Couldn't find stream information");
+public:
+	FFLAVFIndexer(const char *Filename, AVFormatContext *FormatContext)
+	: FFMS_Indexer(Filename)
+	, FormatContext(FormatContext)
+	{
+		if (avformat_find_stream_info(FormatContext,NULL) < 0) {
+			avformat_close_input(&FormatContext);
+			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+				"Couldn't find stream information");
+		}
 	}
-}
 
-FFLAVFIndexer::~FFLAVFIndexer() {
-	avformat_close_input(&FormatContext);
-}
+	~FFLAVFIndexer() {
+		avformat_close_input(&FormatContext);
+	}
+
+	FFMS_Index *DoIndexing();
+
+	int GetNumberOfTracks() { return FormatContext->nb_streams; }
+	const char *GetFormatName() { return this->FormatContext->iformat->name; }
+	FFMS_Sources GetSourceType() { return FFMS_SOURCE_LAVF; }
+
+	FFMS_TrackType GetTrackType(int Track) {
+		return static_cast<FFMS_TrackType>(FormatContext->streams[Track]->codec->codec_type);
+	}
+
+	const char *GetTrackCodec(int Track) {
+		AVCodec *codec = avcodec_find_decoder(FormatContext->streams[Track]->codec->codec_id);
+		return codec ? codec->name : NULL;
+	}
+};
 
 FFMS_Index *FFLAVFIndexer::DoIndexing() {
 	std::vector<SharedAudioContext> AudioContexts(FormatContext->nb_streams, SharedAudioContext(false));
@@ -167,24 +189,8 @@ void FFLAVFIndexer::ReadTS(const AVPacket &Packet, int64_t &TS, bool &UseDTS) {
 	if (UseDTS && Packet.dts != ffms_av_nopts_value)
 		TS = Packet.dts;
 }
-
-int FFLAVFIndexer::GetNumberOfTracks() {
-	return FormatContext->nb_streams;
 }
 
-FFMS_TrackType FFLAVFIndexer::GetTrackType(int Track) {
-	return static_cast<FFMS_TrackType>(FormatContext->streams[Track]->codec->codec_type);
-}
-
-const char *FFLAVFIndexer::GetTrackCodec(int Track) {
-	AVCodec *codec = avcodec_find_decoder(FormatContext->streams[Track]->codec->codec_id);
-	return codec ? codec->name : NULL;
-}
-
-const char *FFLAVFIndexer::GetFormatName() {
-	return this->FormatContext->iformat->name;
-}
-
-FFMS_Sources FFLAVFIndexer::GetSourceType() {
-	return FFMS_SOURCE_LAVF;
+FFMS_Indexer *CreateLavfIndexer(const char *Filename, AVFormatContext *FormatContext) {
+	return new FFLAVFIndexer(Filename, FormatContext);
 }

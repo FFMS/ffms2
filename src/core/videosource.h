@@ -34,6 +34,7 @@ extern "C" {
 #include "ffms.h"
 #include "ffmscompat.h"
 #include "indexing.h"
+#include "matroskareader.h"
 #include "track.h"
 #include "utils.h"
 #include "videoutils.h"

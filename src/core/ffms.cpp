@@ -399,7 +399,7 @@ FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorIn
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int Demuxer, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
-		return FFMS_Indexer::CreateIndexer(SourceFile, static_cast<FFMS_Sources>(Demuxer));
+		return CreateIndexer(SourceFile, static_cast<FFMS_Sources>(Demuxer));
 	} catch (FFMS_Exception &e) {
 		e.CopyOut(ErrorInfo);
 		return NULL;
