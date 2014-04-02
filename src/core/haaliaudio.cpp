@@ -22,6 +22,8 @@
 
 #include "audiosource.h"
 
+#include "haalicommon.h"
+
 namespace {
 class FFHaaliAudio : public FFMS_AudioSource {
 	CComPtr<IMMContainer> pMMC;

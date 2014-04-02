@@ -119,6 +119,7 @@
     <ClCompile Include="..\src\core\ffms.cpp" />
     <ClCompile Include="..\src\core\filehandle.cpp" />
     <ClCompile Include="..\src\core\haaliaudio.cpp" />
+    <ClCompile Include="..\src\core\haalicommon.cpp" />
     <ClCompile Include="..\src\core\haaliindexer.cpp" />
     <ClCompile Include="..\src\core\haalivideo.cpp" />
     <ClCompile Include="..\src\core\indexing.cpp" />
@@ -153,6 +154,7 @@
     <ClInclude Include="..\src\core\coparser.h" />
     <ClInclude Include="..\src\core\filehandle.h" />
     <ClInclude Include="..\src\core\guids.h" />
+    <ClInclude Include="..\src\core\haalicommon.h" />
     <ClInclude Include="..\src\core\indexing.h" />
     <ClInclude Include="..\src\core\matroskaparser.h" />
     <ClInclude Include="..\src\core\matroskareader.h" />

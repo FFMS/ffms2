@@ -22,6 +22,7 @@
 
 #include "audiosource.h"
 #include "indexing.h"
+#include "haalicommon.h"
 #include "videosource.h"
 #include "videoutils.h"
 

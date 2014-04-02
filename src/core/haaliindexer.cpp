@@ -23,20 +23,10 @@
 #include "indexing.h"
 
 #include "codectype.h"
+#include "haalicommon.h"
 #include "track.h"
 
 #include <limits>
-
-#ifdef HAALISOURCE
-#	define WIN32_LEAN_AND_MEAN
-#	define _WIN32_DCOM
-#	include <windows.h>
-#	include <atlbase.h>
-#	include <dshow.h>
-#	include <initguid.h>
-#	include "CoParser.h"
-#	include "guids.h"
-#endif
 
 namespace {
 class FFHaaliIndexer : public FFMS_Indexer {

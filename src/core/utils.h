@@ -42,17 +42,6 @@ extern "C" {
 #include <string>
 #include <vector>
 
-#ifdef HAALISOURCE
-#	define WIN32_LEAN_AND_MEAN
-#	define _WIN32_DCOM
-#	include <windows.h>
-#	include <atlbase.h>
-#	include <dshow.h>
-#	include <initguid.h>
-#	include "CoParser.h"
-#	include "guids.h"
-#endif
-
 const int64_t ffms_av_nopts_value = static_cast<int64_t>(UINT64_C(0x8000000000000000));
 
 // used for matroska<->ffmpeg codec ID mapping to avoid Win32 dependency
@@ -153,10 +142,6 @@ typedef unknown_size<AVAudioResampleContext, avresample_alloc_context, avresampl
 typedef struct {} FFResampleContext;
 #endif
 
-inline void DeleteHaaliCodecContext(AVCodecContext *CodecContext) {
-	av_freep(&CodecContext->extradata);
-	av_freep(&CodecContext);
-}
 inline void DeleteMatroskaCodecContext(AVCodecContext *CodecContext) {
 	avcodec_close(CodecContext);
 	av_freep(&CodecContext);
@@ -177,18 +162,8 @@ bool AudioFMTIsFloat(AVSampleFormat FMT);
 void InitNullPacket(AVPacket &pkt);
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);
 
-#ifdef HAALISOURCE
-unsigned vtSize(VARIANT &vt);
-void vtCopy(VARIANT& vt,void *dest);
-FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag);
-#endif
-
 void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext);
 std::wstring widen_path(const char *s);
-size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max);
-#ifdef HAALISOURCE
-CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceMode);
-#endif // HAALISOURCE
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
 
 void FlushBuffers(AVCodecContext *CodecContext);

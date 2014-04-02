@@ -32,16 +32,9 @@
 #ifdef _WIN32
 #	define WIN32_LEAN_AND_MEAN
 #	include <windows.h>
-#	include <io.h>
-#	include <fcntl.h>
-extern "C" {
-#	include <libavutil/avstring.h>
-}
 #endif // _WIN32
 
 #include <algorithm>
-#include <cerrno>
-#include <cstring>
 #include <sstream>
 
 extern bool GlobalUseUTF8Paths;
@@ -154,31 +147,6 @@ void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
 		AP.ChannelLayout = av_get_default_channel_layout(AP.Channels);
 }
 
-#ifdef HAALISOURCE
-
-unsigned vtSize(VARIANT &vt) {
-	if (V_VT(&vt) != (VT_ARRAY | VT_UI1))
-		return 0;
-	long lb,ub;
-	if (FAILED(SafeArrayGetLBound(V_ARRAY(&vt),1,&lb)) ||
-		FAILED(SafeArrayGetUBound(V_ARRAY(&vt),1,&ub)))
-		return 0;
-	return ub - lb + 1;
-}
-
-void vtCopy(VARIANT& vt,void *dest) {
-	unsigned sz = vtSize(vt);
-	if (sz > 0) {
-		void  *vp;
-		if (SUCCEEDED(SafeArrayAccessData(V_ARRAY(&vt),&vp))) {
-			memcpy(dest,vp,sz);
-			SafeArrayUnaccessData(V_ARRAY(&vt));
-		}
-	}
-}
-
-#endif
-
 void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext) {
 	uint8_t *PrivateDataSrc = static_cast<uint8_t *>(TI->CodecPrivate);
 	size_t PrivateDataSize = TI->CodecPrivateSize;
@@ -220,72 +188,6 @@ void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *
 	}
 }
 
-#ifdef HAALISOURCE
-
-FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag) {
-	CComVariant pV;
-	if (FAILED(pBag->Read(L"Type", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-		return FFCodecContext();
-
-	unsigned int TT = pV.uintVal;
-
-	FFCodecContext CodecContext(avcodec_alloc_context3(NULL), DeleteHaaliCodecContext);
-
-	unsigned int FourCC = 0;
-	if (TT == TT_VIDEO) {
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"Video.PixelWidth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-			CodecContext->coded_width = pV.uintVal;
-
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"Video.PixelHeight", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-			CodecContext->coded_height = pV.uintVal;
-
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"FOURCC", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-			FourCC = pV.uintVal;
-
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
-			CodecContext->extradata_size = vtSize(pV);
-			CodecContext->extradata = static_cast<uint8_t*>(av_mallocz(CodecContext->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE));
-			vtCopy(pV, CodecContext->extradata);
-		}
-	}
-	else if (TT == TT_AUDIO) {
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
-			CodecContext->extradata_size = vtSize(pV);
-			CodecContext->extradata = static_cast<uint8_t*>(av_mallocz(CodecContext->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE));
-			vtCopy(pV, CodecContext->extradata);
-		}
-
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"Audio.SamplingFreq", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-			CodecContext->sample_rate = pV.uintVal;
-
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"Audio.BitDepth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-			CodecContext->bits_per_coded_sample = pV.uintVal;
-
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"Audio.Channels", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-			CodecContext->channels = pV.uintVal;
-	}
-
-	pV.Clear();
-	if (SUCCEEDED(pBag->Read(L"CodecID", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_BSTR))) {
-		char CodecStr[2048];
-		wcstombs(CodecStr, pV.bstrVal, 2000);
-
-		CodecContext->codec = avcodec_find_decoder(MatroskaToFFCodecID(CodecStr, CodecContext->extradata, FourCC, CodecContext->bits_per_coded_sample));
-	}
-	return CodecContext;
-}
-
-#endif
-
-
 // All this filename chikanery that follows is supposed to make sure both local
 // codepage (used by avisynth etc) and UTF8 (potentially used by API users) strings
 // work correctly on Win32.
@@ -309,60 +211,7 @@ std::wstring widen_path(const char *s) {
 }
 #endif
 
-size_t ffms_mbstowcs(wchar_t *wcstr, const char *mbstr, size_t max) {
-#ifdef _WIN32
-	// this is only called by HaaliOpenFile anyway, so I think this is safe
-	return static_cast<size_t>(MultiByteToWideChar((GlobalUseUTF8Paths ? CP_UTF8 : CP_ACP), MB_ERR_INVALID_CHARS, mbstr, -1, wcstr, max));
-#else
-	return mbstowcs(wcstr, mbstr, max);
-#endif
-}
-
 // End of filename hackery.
-
-#ifdef HAALISOURCE
-
-CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceMode) {
-	CComPtr<IMMContainer> pMMC;
-
-	CLSID clsid = HAALI_MPEG_PARSER;
-	if (SourceMode == FFMS_SOURCE_HAALIOGG)
-		clsid = HAALI_OGG_PARSER;
-
-	if (FAILED(pMMC.CoCreateInstance(clsid)))
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
-			"Can't create parser");
-
-	CComPtr<IMemAlloc> pMA;
-	if (FAILED(pMA.CoCreateInstance(CLSID_MemAlloc)))
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
-			"Can't create memory allocator");
-
-	CComPtr<IMMStream> pMS;
-	if (FAILED(pMS.CoCreateInstance(CLSID_DiskFile)))
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
-			"Can't create disk file reader");
-
-	WCHAR WSourceFile[2048];
-	ffms_mbstowcs(WSourceFile, SourceFile, 2000);
-	CComQIPtr<IMMStreamOpen> pMSO(pMS);
-	if (FAILED(pMSO->Open(WSourceFile)))
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			"Can't open file");
-
-	if (FAILED(pMMC->Open(pMS, 0, NULL, pMA))) {
-		if (SourceMode == FFMS_SOURCE_HAALIMPEG)
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_INVALID_ARGUMENT,
-				"Can't parse file, most likely a transport stream not cut at packet boundaries");
-		else
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_INVALID_ARGUMENT,
-				"Can't parse file");
-	}
-
-	return pMMC;
-}
-
-#endif
 
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
 	if (avformat_open_input(&FormatContext, SourceFile, NULL, NULL) != 0)

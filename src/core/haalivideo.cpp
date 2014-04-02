@@ -20,6 +20,7 @@
 
 #ifdef HAALISOURCE
 
+#include "haalicommon.h"
 #include "videosource.h"
 
 namespace {

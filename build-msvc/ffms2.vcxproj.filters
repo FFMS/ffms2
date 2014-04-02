@@ -117,6 +117,9 @@
     <ClCompile Include="..\src\core\filehandle.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\core\haalicommon.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\core\audiosource.h">
@@ -189,6 +192,9 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\filehandle.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\haalicommon.h">
       <Filter>Utils</Filter>
     </ClInclude>
   </ItemGroup>
