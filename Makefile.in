@@ -135,16 +135,18 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 src_core_libffms2_la_DEPENDENCIES =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_src_core_libffms2_la_OBJECTS = src/core/audiosource.lo \
-	src/core/codectype.lo src/core/ffms.lo src/core/haaliaudio.lo \
+	src/core/codectype.lo src/core/ffms.lo src/core/filehandle.lo \
+	src/core/haaliaudio.lo src/core/haalicommon.lo \
 	src/core/haaliindexer.lo src/core/haalivideo.lo \
 	src/core/indexing.lo src/core/lavfaudio.lo \
 	src/core/lavfindexer.lo src/core/lavfvideo.lo \
 	src/core/matroskaaudio.lo src/core/matroskaindexer.lo \
 	src/core/matroskaparser.lo src/core/matroskareader.lo \
 	src/core/matroskavideo.lo src/core/numthreads.lo \
-	src/core/utils.lo src/core/videosource.lo \
+	src/core/track.lo src/core/utils.lo src/core/videosource.lo \
 	src/core/videoutils.lo src/core/wave64writer.lo \
-	src/vapoursynth/vapoursource.lo src/vapoursynth/vapoursynth.lo
+	src/core/zipfile.lo src/vapoursynth/vapoursource.lo \
+	src/vapoursynth/vapoursynth.lo
 src_core_libffms2_la_OBJECTS = $(am_src_core_libffms2_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -397,41 +399,49 @@ AM_CPPFLAGS = -I. -I$(top_srcdir)/include -I$(top_srcdir)/src/config @LIBAV_CFLA
 lib_LTLIBRARIES = src/core/libffms2.la
 src_core_libffms2_la_LIBADD = @LIBAV_LIBS@ @AVRESAMPLE_LIBS@ @ZLIB_LDFLAGS@ -lz @LTUNDEF@
 src_core_libffms2_la_SOURCES = \
-	src/core/audiosource.h \
 	src/core/audiosource.cpp \
-	src/core/codectype.h \
+	src/core/audiosource.h \
 	src/core/codectype.cpp \
+	src/core/codectype.h \
 	src/core/coparser.h \
 	src/core/ffms.cpp \
+	src/core/filehandle.cpp \
+	src/core/filehandle.h \
 	src/core/guids.h \
 	src/core/haaliaudio.cpp \
+	src/core/haalicommon.cpp \
+	src/core/haalicommon.h \
 	src/core/haaliindexer.cpp \
 	src/core/haalivideo.cpp \
-	src/core/indexing.h \
 	src/core/indexing.cpp \
+	src/core/indexing.h \
 	src/core/lavfaudio.cpp \
 	src/core/lavfindexer.cpp \
 	src/core/lavfvideo.cpp \
 	src/core/matroskaaudio.cpp \
 	src/core/matroskaindexer.cpp \
-	src/core/matroskaparser.h \
 	src/core/matroskaparser.c \
-	src/core/matroskareader.h \
+	src/core/matroskaparser.h \
 	src/core/matroskareader.cpp \
+	src/core/matroskareader.h \
 	src/core/matroskavideo.cpp \
-	src/core/numthreads.h \
 	src/core/numthreads.cpp \
-	src/core/utils.h \
+	src/core/numthreads.h \
+	src/core/track.cpp \
+	src/core/track.h \
 	src/core/utils.cpp \
-	src/core/videosource.h \
+	src/core/utils.h \
 	src/core/videosource.cpp \
-	src/core/videoutils.h \
+	src/core/videosource.h \
 	src/core/videoutils.cpp \
-	src/core/wave64writer.h \
+	src/core/videoutils.h \
 	src/core/wave64writer.cpp \
+	src/core/wave64writer.h \
+	src/core/zipfile.cpp \
+	src/core/zipfile.h \
 	src/vapoursynth/VapourSynth.h \
-	src/vapoursynth/vapoursource.h \
 	src/vapoursynth/vapoursource.cpp \
+	src/vapoursynth/vapoursource.h \
 	src/vapoursynth/vapoursynth.cpp
 
 include_HEADERS = $(top_srcdir)/include/ffms.h $(top_srcdir)/include/ffmscompat.h
@@ -539,7 +549,11 @@ src/core/codectype.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/ffms.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
+src/core/filehandle.lo: src/core/$(am__dirstamp) \
+	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/haaliaudio.lo: src/core/$(am__dirstamp) \
+	src/core/$(DEPDIR)/$(am__dirstamp)
+src/core/haalicommon.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/haaliindexer.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
@@ -565,6 +579,8 @@ src/core/matroskavideo.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/numthreads.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
+src/core/track.lo: src/core/$(am__dirstamp) \
+	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/utils.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/videosource.lo: src/core/$(am__dirstamp) \
@@ -572,6 +588,8 @@ src/core/videosource.lo: src/core/$(am__dirstamp) \
 src/core/videoutils.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/wave64writer.lo: src/core/$(am__dirstamp) \
+	src/core/$(DEPDIR)/$(am__dirstamp)
+src/core/zipfile.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
 src/vapoursynth/$(am__dirstamp):
 	@$(MKDIR_P) src/vapoursynth
@@ -662,7 +680,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/audiosource.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/codectype.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/ffms.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/filehandle.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/haaliaudio.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/haalicommon.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/haaliindexer.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/haalivideo.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/indexing.Plo@am__quote@
@@ -675,10 +695,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/matroskareader.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/matroskavideo.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/numthreads.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/track.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/utils.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/videosource.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/videoutils.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/wave64writer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/zipfile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/index/$(DEPDIR)/ffmsindex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/vapoursynth/$(DEPDIR)/vapoursource.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/vapoursynth/$(DEPDIR)/vapoursynth.Plo@am__quote@
