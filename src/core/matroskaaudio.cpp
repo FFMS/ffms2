@@ -19,8 +19,26 @@
 //  THE SOFTWARE.
 
 #include "audiosource.h"
+
 #include "codectype.h"
+#include "matroskareader.h"
+
 #include <cassert>
+
+namespace {
+class FFMatroskaAudio : public FFMS_AudioSource {
+	MatroskaFile *MF;
+	MatroskaReaderContext MC;
+	TrackInfo *TI;
+	std::auto_ptr<TrackCompressionContext> TCC;
+	char ErrorMessage[256];
+
+	bool ReadPacket(AVPacket *);
+
+public:
+	FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
+	~FFMatroskaAudio();
+};
 
 FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode)
 : FFMS_AudioSource(SourceFile, Index, Track)
@@ -69,4 +87,9 @@ bool FFMatroskaAudio::ReadPacket(AVPacket *Packet) {
 	Packet->flags = CurrentFrame->KeyFrame ? AV_PKT_FLAG_KEY : 0;
 
 	return true;
+}
+}
+
+FFMS_AudioSource *CreateMatroskaAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode) {
+    return new FFMatroskaAudio(SourceFile, Track, Index, DelayMode);
 }

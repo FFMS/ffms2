@@ -144,17 +144,17 @@ FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int 
 	try {
 		switch (Index->Decoder) {
 			case FFMS_SOURCE_LAVF:
-				return new FFLAVFAudio(SourceFile, Track, *Index, DelayMode);
+				return CreateLavfAudioSource(SourceFile, Track, *Index, DelayMode);
 			case FFMS_SOURCE_MATROSKA:
-				return new FFMatroskaAudio(SourceFile, Track, *Index, DelayMode);
+				return CreateMatroskaAudioSource(SourceFile, Track, *Index, DelayMode);
 #ifdef HAALISOURCE
 			case FFMS_SOURCE_HAALIMPEG:
 				if (HasHaaliMPEG)
-					return new FFHaaliAudio(SourceFile, Track, *Index, FFMS_SOURCE_HAALIMPEG, DelayMode);
+					return CreateHaaliAudioSource(SourceFile, Track, *Index, FFMS_SOURCE_HAALIMPEG, DelayMode);
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali MPEG/TS source unavailable");
 			case FFMS_SOURCE_HAALIOGG:
 				if (HasHaaliOGG)
-					return new FFHaaliAudio(SourceFile, Track, *Index, FFMS_SOURCE_HAALIOGG, DelayMode);
+					return CreateHaaliAudioSource(SourceFile, Track, *Index, FFMS_SOURCE_HAALIOGG, DelayMode);
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali OGG/OGM source unavailable");
 #endif
 			default:

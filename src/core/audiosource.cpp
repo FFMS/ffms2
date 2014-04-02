@@ -20,6 +20,8 @@
 
 #include "audiosource.h"
 
+#include "indexing.h"
+
 #include <algorithm>
 #include <cassert>
 
