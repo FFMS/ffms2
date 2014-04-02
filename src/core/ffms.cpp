@@ -18,16 +18,19 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#include <sstream>
-#include <iomanip>
 #include "ffms.h"
-#include "videosource.h"
+
 #include "audiosource.h"
 #include "indexing.h"
+#include "videosource.h"
+#include "videoutils.h"
 
 extern "C" {
 #include <libavutil/pixdesc.h>
 }
+
+#include <sstream>
+#include <iomanip>
 
 #ifdef FFMS_WIN_DEBUG
 #	include <windows.h>
@@ -115,17 +118,17 @@ FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int 
 	try {
 		switch (Index->Decoder) {
 			case FFMS_SOURCE_LAVF:
-				return new FFLAVFVideo(SourceFile, Track, *Index, Threads, SeekMode);
+				return CreateLavfVideoSource(SourceFile, Track, *Index, Threads, SeekMode);
 			case FFMS_SOURCE_MATROSKA:
-				return new FFMatroskaVideo(SourceFile, Track, *Index, Threads);
+				return CreateMatroskaVideoSource(SourceFile, Track, *Index, Threads);
 #ifdef HAALISOURCE
 			case FFMS_SOURCE_HAALIMPEG:
 				if (HasHaaliMPEG)
-					return new FFHaaliVideo(SourceFile, Track, *Index, Threads, FFMS_SOURCE_HAALIMPEG);
+					return CreateHaaliVideoSource(SourceFile, Track, *Index, Threads, FFMS_SOURCE_HAALIMPEG);
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali MPEG/TS source unavailable");
 			case FFMS_SOURCE_HAALIOGG:
 				if (HasHaaliOGG)
-					return new FFHaaliVideo(SourceFile, Track, *Index, Threads, FFMS_SOURCE_HAALIOGG);
+					return CreateHaaliVideoSource(SourceFile, Track, *Index, Threads, FFMS_SOURCE_HAALIOGG);
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali OGG/OGM source unavailable");
 #endif
 			default:

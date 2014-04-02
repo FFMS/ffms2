@@ -18,7 +18,6 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-
 extern "C" {
 #include <libavutil/mem.h>
 #include <libavformat/avformat.h>

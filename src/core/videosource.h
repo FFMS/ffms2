@@ -27,28 +27,10 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-#include <algorithm>
-#include <memory>
 #include <vector>
 
-#include "ffms.h"
-#include "ffmscompat.h"
-#include "indexing.h"
-#include "matroskareader.h"
 #include "track.h"
 #include "utils.h"
-#include "videoutils.h"
-
-#ifdef HAALISOURCE
-#	define WIN32_LEAN_AND_MEAN
-#	define _WIN32_DCOM
-#	include <windows.h>
-#	include <atlbase.h>
-#	include <dshow.h>
-#	include <initguid.h>
-#	include "CoParser.h"
-#	include "guids.h"
-#endif
 
 struct FFMS_VideoSource {
 friend class FFSourceResources<FFMS_VideoSource>;
@@ -113,55 +95,8 @@ public:
 	void ResetInputFormat();
 };
 
-class FFLAVFVideo : public FFMS_VideoSource {
-private:
-	AVFormatContext *FormatContext;
-	int SeekMode;
-	FFSourceResources<FFMS_VideoSource> Res;
-
-	void DecodeNextFrame(int64_t *PTS, int64_t *Pos);
-	bool SeekTo(int n, int SeekOffset);
-protected:
-	void Free(bool CloseCodec);
-public:
-	FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode);
-	FFMS_Frame *GetFrame(int n);
-};
-
-class FFMatroskaVideo : public FFMS_VideoSource {
-private:
-	MatroskaFile *MF;
-	MatroskaReaderContext MC;
-	std::auto_ptr<TrackCompressionContext> TCC;
-	char ErrorMessage[256];
-	FFSourceResources<FFMS_VideoSource> Res;
-	size_t PacketNumber;
-
-	void DecodeNextFrame();
-
-protected:
-	void Free(bool CloseCodec);
-public:
-	FFMatroskaVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads);
-	FFMS_Frame *GetFrame(int n);
-};
-
-#ifdef HAALISOURCE
-
-class FFHaaliVideo : public FFMS_VideoSource {
-	FFCodecContext HCodecContext;
-	CComPtr<IMMContainer> pMMC;
-	AVBitStreamFilterContext *BitStreamFilter;
-	FFSourceResources<FFMS_VideoSource> Res;
-
-	void DecodeNextFrame(int64_t *AFirstStartTime);
-protected:
-	void Free(bool CloseCodec);
-public:
-	FFHaaliVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, FFMS_Sources SourceMode);
-	FFMS_Frame *GetFrame(int n);
-};
-
-#endif // HAALISOURCE
+FFMS_VideoSource *CreateLavfVideoSource(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode);
+FFMS_VideoSource *CreateMatroskaVideoSource(const char *SourceFile, int Track, FFMS_Index &Index, int Threads);
+FFMS_VideoSource *CreateHaaliVideoSource(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, FFMS_Sources SourceMode);
 
 #endif

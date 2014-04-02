@@ -20,6 +20,21 @@
 
 #include "videosource.h"
 
+namespace {
+class FFLAVFVideo : public FFMS_VideoSource {
+	AVFormatContext *FormatContext;
+	int SeekMode;
+	FFSourceResources<FFMS_VideoSource> Res;
+
+	void DecodeNextFrame(int64_t *PTS, int64_t *Pos);
+	bool SeekTo(int n, int SeekOffset);
+	void Free(bool CloseCodec);
+
+public:
+	FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode);
+	FFMS_Frame *GetFrame(int n);
+};
+
 void FFLAVFVideo::Free(bool CloseCodec) {
 	if (CloseCodec)
 		avcodec_close(CodecContext);
@@ -213,4 +228,9 @@ FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
 
 	LastFrameNum = n;
 	return OutputFrame(DecodeFrame);
+}
+}
+
+FFMS_VideoSource *CreateLavfVideoSource(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode) {
+	return new FFLAVFVideo(SourceFile, Track, Index, Threads, SeekMode);
 }

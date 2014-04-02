@@ -21,6 +21,24 @@
 #include "videosource.h"
 
 #include "codectype.h"
+#include "matroskareader.h"
+
+namespace {
+class FFMatroskaVideo : public FFMS_VideoSource {
+	MatroskaFile *MF;
+	MatroskaReaderContext MC;
+	std::auto_ptr<TrackCompressionContext> TCC;
+	char ErrorMessage[256];
+	FFSourceResources<FFMS_VideoSource> Res;
+	size_t PacketNumber;
+
+	void DecodeNextFrame();
+	void Free(bool CloseCodec);
+
+public:
+	FFMatroskaVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads);
+	FFMS_Frame *GetFrame(int n);
+};
 
 void FFMatroskaVideo::Free(bool CloseCodec) {
 	TCC.reset();
@@ -155,4 +173,9 @@ FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
 
 	LastFrameNum = n;
 	return OutputFrame(DecodeFrame);
+}
+}
+
+FFMS_VideoSource *CreateMatroskaVideoSource(const char *SourceFile, int Track, FFMS_Index &Index, int Threads) {
+    return new FFMatroskaVideo(SourceFile, Track, Index, Threads);
 }
