@@ -44,8 +44,6 @@ inline void DeleteHaaliCodecContext(AVCodecContext *CodecContext) {
 	av_freep(&CodecContext);
 }
 
-unsigned vtSize(VARIANT &vt);
-void vtCopy(VARIANT& vt, void *dest);
 FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag);
 CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceMode);
 #endif // HAALISOURCE

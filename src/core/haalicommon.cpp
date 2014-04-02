@@ -25,7 +25,7 @@
 #include "codectype.h"
 #include "utils.h"
 
-unsigned vtSize(VARIANT &vt) {
+static unsigned vtSize(VARIANT &vt) {
 	if (V_VT(&vt) != (VT_ARRAY | VT_UI1))
 		return 0;
 	long lb, ub;
@@ -35,7 +35,7 @@ unsigned vtSize(VARIANT &vt) {
 	return ub - lb + 1;
 }
 
-void vtCopy(VARIANT& vt, void *dest) {
+static void vtCopy(VARIANT& vt, void *dest) {
 	unsigned sz = vtSize(vt);
 	if (sz > 0) {
 		void  *vp;
@@ -46,55 +46,38 @@ void vtCopy(VARIANT& vt, void *dest) {
 	}
 }
 
-FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag) {
+template<typename Integer>
+static void ReadValue(Integer &dst, CComQIPtr<IPropertyBag> &pBag, const wchar_t *key) {
 	CComVariant pV;
-	if (FAILED(pBag->Read(L"Type", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-		return FFCodecContext();
+	if (SUCCEEDED(pBag->Read(key, &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
+		dst = pV.uintVal;
+}
 
-	unsigned int TT = pV.uintVal;
+FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag) {
+	unsigned int TT = 0;
+	ReadValue(TT, pBag, L"Type");
+	if (TT != TT_VIDEO && TT != TT_AUDIO)
+		return FFCodecContext();
 
 	FFCodecContext CodecContext(avcodec_alloc_context3(NULL), DeleteHaaliCodecContext);
 
+	CComVariant pV;
+	if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
+		CodecContext->extradata_size = vtSize(pV);
+		CodecContext->extradata = static_cast<uint8_t*>(av_mallocz(CodecContext->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE));
+		vtCopy(pV, CodecContext->extradata);
+	}
+
 	unsigned int FourCC = 0;
 	if (TT == TT_VIDEO) {
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"Video.PixelWidth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-			CodecContext->coded_width = pV.uintVal;
-
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"Video.PixelHeight", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-			CodecContext->coded_height = pV.uintVal;
-
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"FOURCC", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-			FourCC = pV.uintVal;
-
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
-			CodecContext->extradata_size = vtSize(pV);
-			CodecContext->extradata = static_cast<uint8_t*>(av_mallocz(CodecContext->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE));
-			vtCopy(pV, CodecContext->extradata);
-		}
+		ReadValue(CodecContext->coded_width, pBag, L"Video.PixelWidth");
+		ReadValue(CodecContext->coded_height, pBag, L"Video.PixelHeight");
+		ReadValue(FourCC, pBag, L"FOURCC");
 	}
-	else if (TT == TT_AUDIO) {
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"CodecPrivate", &pV, NULL))) {
-			CodecContext->extradata_size = vtSize(pV);
-			CodecContext->extradata = static_cast<uint8_t*>(av_mallocz(CodecContext->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE));
-			vtCopy(pV, CodecContext->extradata);
-		}
-
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"Audio.SamplingFreq", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-			CodecContext->sample_rate = pV.uintVal;
-
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"Audio.BitDepth", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-			CodecContext->bits_per_coded_sample = pV.uintVal;
-
-		pV.Clear();
-		if (SUCCEEDED(pBag->Read(L"Audio.Channels", &pV, NULL)) && SUCCEEDED(pV.ChangeType(VT_UI4)))
-			CodecContext->channels = pV.uintVal;
+	else {
+		ReadValue(CodecContext->sample_rate, pBag, L"Audio.SamplingFreq");
+		ReadValue(CodecContext->bits_per_coded_sample, pBag, L"Audio.BitDepth");
+		ReadValue(CodecContext->channels, pBag, L"Audio.Channels");
 	}
 
 	pV.Clear();
