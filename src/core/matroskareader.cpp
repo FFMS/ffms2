@@ -258,7 +258,7 @@ longlong MatroskaReader::Scan(MatroskaReader *self, ulonglong start, unsigned si
 		int c = *self->file->Read(i, 1);
 		cmp = ((cmp << 8) | c) & 0xffffffff;
 		if (cmp == signature)
-			return static_cast<longlong>(i) - 4;
+			return static_cast<longlong>(i) - 3;
 	}
 
 	return -1;
