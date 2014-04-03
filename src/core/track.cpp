@@ -67,6 +67,7 @@ static void WriteFrame(ZipFile &stream, FrameInfo const& f, FrameInfo const& pre
 
 FFMS_Track::FFMS_Track()
 : TT(FFMS_TYPE_UNKNOWN)
+, MaxBFrames(0)
 , UseDTS(false)
 , HasTS(true)
 {
@@ -76,6 +77,7 @@ FFMS_Track::FFMS_Track()
 
 FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS, bool HasTS)
 : TT(TT)
+, MaxBFrames(0)
 , UseDTS(UseDTS)
 , HasTS(HasTS)
 {
@@ -85,11 +87,12 @@ FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS,
 
 FFMS_Track::FFMS_Track(ZipFile &stream) {
 	TT = static_cast<FFMS_TrackType>(stream.Read<uint8_t>());
-	size_t FrameCount = static_cast<size_t>(stream.Read<uint64_t>());
 	TB.Num = stream.Read<int64_t>();
 	TB.Den = stream.Read<int64_t>();
+	MaxBFrames = stream.Read<int32_t>();
 	UseDTS = !!stream.Read<uint8_t>();
 	HasTS = !!stream.Read<uint8_t>();
+	size_t FrameCount = static_cast<size_t>(stream.Read<uint64_t>());
 
 	if (!FrameCount) return;
 
@@ -106,11 +109,12 @@ FFMS_Track::FFMS_Track(ZipFile &stream) {
 
 void FFMS_Track::Write(ZipFile &stream) const {
 	stream.Write<uint8_t>(TT);
-	stream.Write<uint64_t>(size());
 	stream.Write(TB.Num);
 	stream.Write(TB.Den);
+	stream.Write<int32_t>(MaxBFrames);
 	stream.Write<uint8_t>(UseDTS);
 	stream.Write<uint8_t>(HasTS);
+	stream.Write<uint64_t>(size());
 
 	if (empty()) return;
 

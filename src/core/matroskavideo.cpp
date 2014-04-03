@@ -78,6 +78,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 			"Video codec not found");
 
 	InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);
+	CodecContext->has_b_frames = Frames.MaxBFrames;
 
 	if (avcodec_open2(CodecContext, Codec, NULL) < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,

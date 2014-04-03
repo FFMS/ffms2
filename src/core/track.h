@@ -53,6 +53,7 @@ private:
 public:
 	FFMS_TrackType TT;
 	FFMS_TrackTimeBase TB;
+	int MaxBFrames;
 	bool UseDTS;
 	bool HasTS;
 
