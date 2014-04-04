@@ -34,13 +34,13 @@ FrameInfo ReadFrame(ZipFile &stream, FrameInfo const& prev, const FFMS_TrackType
 	f.KeyFrame = !!stream.Read<int8_t>();
 	f.FilePos = stream.Read<int64_t>() + prev.FilePos + prev.FrameSize;
 	f.FrameSize = stream.Read<uint32_t>();
-	f.OriginalPos = static_cast<size_t>(stream.Read<uint64_t>() + prev.OriginalPos + 1);
 
 	if (TT == FFMS_TYPE_AUDIO) {
 		f.SampleStart = prev.SampleStart + prev.SampleCount;
 		f.SampleCount = stream.Read<uint32_t>() + prev.SampleCount;
 	}
 	else if (TT == FFMS_TYPE_VIDEO) {
+		f.OriginalPos = static_cast<size_t>(stream.Read<uint64_t>() + prev.OriginalPos + 1);
 		f.FrameType = stream.Read<uint8_t>();
 		f.RepeatPict = stream.Read<int32_t>();
 		f.Hidden = !!stream.Read<uint8_t>();
@@ -53,11 +53,11 @@ static void WriteFrame(ZipFile &stream, FrameInfo const& f, FrameInfo const& pre
 	stream.Write<int8_t>(f.KeyFrame);
 	stream.Write(f.FilePos - prev.FilePos - prev.FrameSize);
 	stream.Write(f.FrameSize);
-	stream.Write(static_cast<uint64_t>(f.OriginalPos) - prev.OriginalPos - 1);
 
 	if (TT == FFMS_TYPE_AUDIO)
 		stream.Write(f.SampleCount - prev.SampleCount);
 	else if (TT == FFMS_TYPE_VIDEO) {
+		stream.Write(static_cast<uint64_t>(f.OriginalPos) - prev.OriginalPos - 1);
 		stream.Write<uint8_t>(f.FrameType);
 		stream.Write<int32_t>(f.RepeatPict);
 		stream.Write<uint8_t>(f.Hidden);
@@ -261,11 +261,11 @@ void FFMS_Track::FinalizeTrack() {
 	if (size() > 2 && front().PTS >= back().PTS)
 		Frames.pop_back();
 
-	for (size_t i = 0; i < size(); i++)
-		Frames[i].OriginalPos = i;
-
 	if (TT != FFMS_TYPE_VIDEO)
 		return;
+
+	for (size_t i = 0; i < size(); i++)
+		Frames[i].OriginalPos = i;
 
 	MaybeReorderFrames();
 	MaybeHideFrames();
