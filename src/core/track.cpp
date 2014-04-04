@@ -41,7 +41,6 @@ FrameInfo ReadFrame(ZipFile &stream, FrameInfo const& prev, const FFMS_TrackType
 	}
 	else if (TT == FFMS_TYPE_VIDEO) {
 		f.OriginalPos = static_cast<size_t>(stream.Read<uint64_t>() + prev.OriginalPos + 1);
-		f.FrameType = stream.Read<uint8_t>();
 		f.RepeatPict = stream.Read<int32_t>();
 		f.Hidden = !!stream.Read<uint8_t>();
 	}
@@ -58,7 +57,6 @@ static void WriteFrame(ZipFile &stream, FrameInfo const& f, FrameInfo const& pre
 		stream.Write(f.SampleCount - prev.SampleCount);
 	else if (TT == FFMS_TYPE_VIDEO) {
 		stream.Write(static_cast<uint64_t>(f.OriginalPos) - prev.OriginalPos - 1);
-		stream.Write<uint8_t>(f.FrameType);
 		stream.Write<int32_t>(f.RepeatPict);
 		stream.Write<uint8_t>(f.Hidden);
 	}
