@@ -167,7 +167,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 		// Whether or not has_b_frames gets set during indexing seems
 		// to vary based on version of FFmpeg/Libav, so do an extra
 		// check for b-frames if it's 0.
-		for (size_t f = 0; i < track.size(); ++f) {
+		for (size_t f = 0; f < track.size(); ++f) {
 			if (track[f].FrameType == AV_PICTURE_TYPE_B) {
 				track.MaxBFrames = 1;
 				break;
