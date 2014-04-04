@@ -21,15 +21,10 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <vector>
-#include <sstream>
-#include <fstream>
-#include <cstdio>
 #include "ffms.h"
 #include "matroskaparser.h"
 
 extern "C" {
-#include "stdiostream.h"
 #include <libavutil/mem.h>
 #include <libavutil/opt.h>
 #include <libavformat/avformat.h>
@@ -43,25 +38,11 @@ extern "C" {
 // must be included after ffmpeg headers
 #include "ffmscompat.h"
 
-#ifdef HAALISOURCE
-#	define WIN32_LEAN_AND_MEAN
-#	define _WIN32_DCOM
-#	include <windows.h>
-#	include <tchar.h>
-#	include <atlbase.h>
-#	include <dshow.h>
-#	include <initguid.h>
-#	include "CoParser.h"
-#	include "guids.h"
-#endif
+#include <cstdio>
+#include <string>
+#include <vector>
 
-#ifdef __MINGW32__
-#include <ext/stdio_filebuf.h>
-#endif
-
-#define FFMS_GET_VECTOR_PTR(v) (((v).size() ? &(v)[0] : NULL))
-
-const int64_t ffms_av_nopts_value = static_cast<int64_t>(1) << 63;
+const int64_t ffms_av_nopts_value = static_cast<int64_t>(UINT64_C(0x8000000000000000));
 
 // used for matroska<->ffmpeg codec ID mapping to avoid Win32 dependency
 typedef struct FFMS_BITMAPINFOHEADER {
@@ -79,44 +60,41 @@ typedef struct FFMS_BITMAPINFOHEADER {
 } FFMS_BITMAPINFOHEADER;
 
 class FFMS_Exception : public std::exception {
-private:
 	std::string _Message;
 	int _ErrorType;
 	int _SubType;
+
 public:
 	FFMS_Exception(int ErrorType, int SubType, const char *Message = "");
 	FFMS_Exception(int ErrorType, int SubType, const std::string &Message);
-	~FFMS_Exception() throw ();
-	const std::string &GetErrorMessage() const;
+	~FFMS_Exception() throw() { }
+	const std::string &GetErrorMessage() const { return _Message; }
 	int CopyOut(FFMS_ErrorInfo *ErrorInfo) const;
 };
 
-template<class T>
-class FFSourceResources {
-private:
-	T *_PrivClass;
-	bool _Enabled;
-	bool _Arg;
+class noncopyable {
+	noncopyable(const noncopyable&);
+	noncopyable& operator=(const noncopyable&);
 public:
-	FFSourceResources(T *Target) : _PrivClass(Target), _Enabled(true), _Arg(false) {
-	}
+	noncopyable() { }
+};
+
+template<class T>
+class FFSourceResources : private noncopyable {
+	T *PrivClass;
+	bool Enabled;
+	bool Arg;
+
+public:
+	FFSourceResources(T *Target) : PrivClass(Target), Enabled(true), Arg(false) { }
 
 	~FFSourceResources() {
-		if (_Enabled)
-			_PrivClass->Free(_Arg);
+		if (Enabled)
+			PrivClass->Free(Arg);
 	}
 
-	void SetEnabled(bool Enabled) {
-		_Enabled = Enabled;
-	}
-
-	void SetArg(bool Arg) {
-		_Arg = Arg;
-	}
-
-	void CloseCodec(bool Arg) {
-		_Arg = Arg;
-	}
+	void SetEnabled(bool value) { Enabled = value; }
+	void CloseCodec(bool value) { Arg = value; }
 };
 // auto_ptr-ish holder for AVCodecContexts with overridable deleter
 class FFCodecContext {
@@ -138,24 +116,23 @@ public:
 };
 
 template<typename T, T *(*Alloc)(), void (*Del)(T **)>
-class unknown_size {
+class unknown_size : private noncopyable {
 	T *ptr;
 
-	unknown_size(unknown_size const&);
-	unknown_size& operator=(unknown_size const&);
 public:
 	operator T*() const { return ptr; }
 	operator void*() const { return ptr; }
 	T *operator->() const { return ptr; }
+	void swap(unknown_size<T, Alloc, Del>& other) { std::swap(ptr, other.ptr); }
 
 	unknown_size() : ptr(Alloc()) { }
 	~unknown_size() { Del(&ptr); }
 };
 
-class ScopedFrame : public unknown_size<AVFrame, av_frame_alloc, avcodec_free_frame> {
+class ScopedFrame : public unknown_size<AVFrame, av_frame_alloc, av_frame_free> {
 public:
 	void reset() {
-		avcodec_get_frame_defaults(*this);
+		av_frame_unref(*this);
 	}
 };
 
@@ -165,77 +142,28 @@ typedef unknown_size<AVAudioResampleContext, avresample_alloc_context, avresampl
 typedef struct {} FFResampleContext;
 #endif
 
-inline void DeleteHaaliCodecContext(AVCodecContext *CodecContext) {
-	av_freep(&CodecContext->extradata);
-	av_freep(&CodecContext);
-}
 inline void DeleteMatroskaCodecContext(AVCodecContext *CodecContext) {
 	avcodec_close(CodecContext);
 	av_freep(&CodecContext);
 }
 
-class MatroskaReaderContext {
-public:
-	StdIoStream ST;
-	uint8_t *Buffer;
-	unsigned int BufferSize;
-	char CSBuffer[4096];
-
-	MatroskaReaderContext() {
-		InitStdIoStream(&ST);
-		Buffer = static_cast<uint8_t *>(av_mallocz(16384)); // arbitrarily decided number
-		if (!Buffer)
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED, "Out of memory");
-		BufferSize = 16384;
-	}
-
-	~MatroskaReaderContext() {
-		if (Buffer)
-			av_free(Buffer);
-		if (ST.fp) fclose(ST.fp);
-	}
-};
-
-struct ffms_fstream : public std::fstream {
-#ifdef __MINGW32__
-private:
-	__gnu_cxx::stdio_filebuf<char> filebuf;
-public:
-	bool is_open() const { return filebuf.is_open(); }
-#endif
-	ffms_fstream(const char *filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out);
-};
-
-class TrackCompressionContext {
-public:
+struct TrackCompressionContext : private noncopyable {
 	CompressedStream *CS;
-	unsigned CompressionMethod;
 	void *CompressedPrivateData;
 	unsigned CompressedPrivateDataSize;
+	unsigned CompressionMethod;
 
 	TrackCompressionContext(MatroskaFile *MF, TrackInfo *TI, unsigned int Track);
 	~TrackCompressionContext();
 };
 
-
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
-void ReadFrame(uint64_t FilePos, unsigned int &FrameSize, TrackCompressionContext *TCC, MatroskaReaderContext &Context);
 bool AudioFMTIsFloat(AVSampleFormat FMT);
 void InitNullPacket(AVPacket &pkt);
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);
 
-#ifdef HAALISOURCE
-unsigned vtSize(VARIANT &vt);
-void vtCopy(VARIANT& vt,void *dest);
-FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag);
-#endif
-
 void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext);
-FILE *ffms_fopen(const char *filename, const char *mode);
-size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max);
-#ifdef HAALISOURCE
-CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceMode);
-#endif // HAALISOURCE
+std::wstring widen_path(const char *s);
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
 
 void FlushBuffers(AVCodecContext *CodecContext);
@@ -271,6 +199,7 @@ class OptionMapper {
 	struct OptionMapperBase {
 		virtual void ToOpt(const FFMS_Struct *src, void *dst) const=0;
 		virtual void FromOpt(FFMS_Struct *dst, void *src) const=0;
+		virtual ~OptionMapperBase() {}
 	};
 
 	template<typename T>

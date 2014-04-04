@@ -20,6 +20,8 @@
 
 #include "audiosource.h"
 
+#include "indexing.h"
+
 #include <algorithm>
 #include <cassert>
 
@@ -63,7 +65,6 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 , CurrentFrame(NULL)
 , TrackNumber(Track)
 , SeekOffset(0)
-, Index(Index)
 {
 	if (Track < 0 || Track >= static_cast<int>(Index.size()))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
@@ -82,8 +83,6 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 			"The index does not match the source file");
 
 	Frames = Index[Track];
-
-	Index.AddRef();
 }
 
 #define EXCESSIVE_CACHE_SIZE 400
@@ -121,20 +120,18 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 			"Audio delay compensation must be relative to a video track");
 
 	int64_t Delay = 0;
-	if (DelayMode != FFMS_DELAY_TIME_ZERO) {
-		if (DelayMode == FFMS_DELAY_FIRST_VIDEO_TRACK) {
-			for (size_t i = 0; i < Index.size(); ++i) {
-				if (Index[i].TT == FFMS_TYPE_VIDEO && !Index[i].empty()) {
-					DelayMode = i;
-					break;
-				}
+	if (DelayMode == FFMS_DELAY_FIRST_VIDEO_TRACK) {
+		for (size_t i = 0; i < Index.size(); ++i) {
+			if (Index[i].TT == FFMS_TYPE_VIDEO && !Index[i].empty()) {
+				DelayMode = i;
+				break;
 			}
 		}
+	}
 
-		if (DelayMode >= 0) {
-			const FFMS_Track &VTrack = Index[DelayMode];
-			Delay = -(VTrack[0].PTS * VTrack.TB.Num * AP.SampleRate / (VTrack.TB.Den * 1000));
-		}
+	if (DelayMode >= 0) {
+		const FFMS_Track &VTrack = Index[DelayMode];
+		Delay = -(VTrack[0].PTS * VTrack.TB.Num * AP.SampleRate / (VTrack.TB.Den * 1000));
 	}
 
 	if (Frames.HasTS) {
@@ -219,21 +216,16 @@ void FFMS_AudioSource::SetOutputFormat(const FFMS_ResampleOptions *opt) {
 #ifdef WITH_AVRESAMPLE
 	if (!NeedsResample) return;
 
-	std::auto_ptr<FFMS_ResampleOptions> oldOptions(ReadOptions(ResampleContext, resample_options));
-	SetOptions(opt, ResampleContext, resample_options);
-	av_opt_set_int(ResampleContext, "in_sample_rate", AP.SampleRate, 0);
-	av_opt_set_int(ResampleContext, "in_sample_fmt", CodecContext->sample_fmt, 0);
-	av_opt_set_int(ResampleContext, "in_channel_layout", AP.ChannelLayout, 0);
+	FFResampleContext newContext;
+	SetOptions(opt, newContext, resample_options);
+	av_opt_set_int(newContext, "in_sample_rate", AP.SampleRate, 0);
+	av_opt_set_int(newContext, "in_sample_fmt", CodecContext->sample_fmt, 0);
+	av_opt_set_int(newContext, "in_channel_layout", AP.ChannelLayout, 0);
 
-	if (avresample_open(ResampleContext)) {
-		SetOptions(oldOptions.get(), ResampleContext, resample_options);
-		if (avresample_open(ResampleContext) < 0)
-			throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
-				"Could not re-open old avresample context");
-		else
-			throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
-				"Could not open avresample context");
-	}
+	if (avresample_open(newContext))
+		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
+			"Could not open avresample context");
+	newContext.swap(ResampleContext);
 #endif
 }
 
@@ -314,10 +306,10 @@ void FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
 		// during indexing, so continue to just ignore decoding errors
 		if (Ret < 0) break;
 
-		if (Ret > 0 && GotFrame) {
+		if (Ret > 0) {
 			Packet.size -= Ret;
 			Packet.data += Ret;
-			if (DecodeFrame->nb_samples > 0) {
+			if (GotFrame && DecodeFrame->nb_samples > 0) {
 				GotSamples = true;
 				if (pos)
 					CacheBlock(*pos);
@@ -332,12 +324,8 @@ void FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
 		++PacketNumber;
 }
 
-static bool SampleStartComp(const TFrameInfo &a, const TFrameInfo &b) {
+static bool SampleStartComp(const FrameInfo &a, const FrameInfo &b) {
 	return a.SampleStart < b.SampleStart;
-}
-
-FFMS_AudioSource::~FFMS_AudioSource() {
-	Index.Release();
 }
 
 void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
@@ -388,10 +376,10 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 				throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_CODEC, "Audio stream is not seekable");
 
 			if (SeekOffset >= 0 && (Start < CurrentSample || Start > CurrentSample + DecodeFrame->nb_samples * 5)) {
-				TFrameInfo f;
+				FrameInfo f;
 				f.SampleStart = Start;
-				int NewPacketNumber = std::distance(Frames.begin(), std::lower_bound(Frames.begin(), Frames.end(), f, SampleStartComp));
-				NewPacketNumber = FFMAX(0, NewPacketNumber - SeekOffset - 15);
+				size_t NewPacketNumber = std::distance(Frames.begin(), std::lower_bound(Frames.begin(), Frames.end(), f, SampleStartComp));
+				NewPacketNumber = std::max<size_t>(0, NewPacketNumber - SeekOffset - 15);
 				while (NewPacketNumber > 0 && !Frames[NewPacketNumber].KeyFrame) --NewPacketNumber;
 
 				// Only seek forward if it'll actually result in moving forward

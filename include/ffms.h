@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (19 << 16) | (0 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (19 << 16) | (0 << 8) | 7)
 
 #include <stdint.h>
 
@@ -58,7 +58,7 @@
 #endif
 
 #ifndef FFMS_DEPRECATED
-// Define as empty if the compilter doesn't support deplcation attributes or
+// Define as empty if the compiler doesn't support deprecation attributes or
 // if we're building FFMS2 itself
 #	define FFMS_DEPRECATED
 #endif

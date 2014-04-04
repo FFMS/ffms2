@@ -1,29 +1,24 @@
 
 # /
-/testing
-/todo.txt
+/.gitignore
+/Makefile
+/autom4te.cache
 /config.log
 /config.status
-/libtool
+/deps
 /ffms2.pc
-/autom4te.cache
-/Makefile
-/.gitignore
+/libtool
+/testing
+/todo.txt
 
 # /build-msvc/
+/build-msvc/*.sdf
 /build-msvc/*.suo
 /build-msvc/*.user
-/build-msvc/Debug
-/build-msvc/Release
 /build-msvc/ffms2.ncb
 /build-msvc/ffmsindex
-
-# /shave/
-/shave/shave
-/shave/shave-libtool
-
-# /src/
-/src/
+/build-msvc/bin
+/build-msvc/obj
 
 # /src/config/
 /src/config/config.h
@@ -46,3 +41,10 @@
 /src/index/*.o
 /src/index/*.exe
 /src/index/ffmsindex
+
+# /src/vapoursynth/
+/src/vapoursynth/.deps
+/src/vapoursynth/.libs
+/src/vapoursynth/.dirstamp
+/src/vapoursynth/*.o
+/src/vapoursynth/*.lo

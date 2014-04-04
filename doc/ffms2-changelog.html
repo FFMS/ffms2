@@ -11,9 +11,21 @@ FFmpegSource2 Changelog
 <div class="maincontent">
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
+<li>2.20<ul>
+<li>Add support for Opus in MKV when ffmpeg/libav are built with libopus (qyot27)</li>
+<li>vapoursource: Provide _AbsoluteTime metadata (Daemon404)</li>
+<li>Fix a pile of small things found by Coverity (Daemon404)</li>
+<li>Add support for HEVC in MKV (qyot27)</li>
+<li>Fix infinite loop on garbage data at the beginning of AAC files (Plorkyeran)</li>
+<li>Deal with the never-ending bitrot from FFmpeg/Libav API changes (Daemon404, Plorkyeran)</li>
+<li>Make indexes not arch-specific and trivially smaller (Plorkyeran)</li>
+<li>Fix bug where the first b-frame was replaced with the frame before it with open-gop h.264 in matroska (Plorkyeran)</li>
+</ul>
+</li>
+
 <li>2.18<ul>
 <li>Fix regression (r483) with rffmode that caused it to error out even if using the default output colorspace. (TheRyuu)</li>
-<li>High(er) quality YUV->RGB conversion. (TheRyuu)</li>
+<li>High(er) quality YUV-&gt;RGB conversion. (TheRyuu)</li>
 <li>Fix indexing on files with cover art. (TheRyuu)</li>
 <li>Add support for libav/ffmpeg built with msvc, this is the default on windows when building with msvc. (TheRyuu)</li>
 <li>Remove postproc support. (TheRyuu)</li>

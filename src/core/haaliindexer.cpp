@@ -23,26 +23,54 @@
 #include "indexing.h"
 
 #include "codectype.h"
+#include "haalicommon.h"
+#include "track.h"
 
 #include <limits>
-#undef max
 
-FFHaaliIndexer::FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode) : FFMS_Indexer(Filename) {
-	this->SourceMode = SourceMode;
-	Duration = 0;
+namespace {
+class FFHaaliIndexer : public FFMS_Indexer {
+	FFMS_Sources SourceMode;
+	CComPtr<IMMContainer> pMMC;
+	int NumTracks;
+	FFMS_TrackType TrackType[32];
+	CComQIPtr<IPropertyBag> PropertyBags[32];
+	int64_t Duration;
+	AVFormatContext *FormatContext;
 
-	for (int i = 0; i < 32; i++) {
-		TrackType[i] = FFMS_TYPE_UNKNOWN;
+public:
+	FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode);
+	FFMS_Index *DoIndexing();
+
+	const char *GetTrackCodec(int Track) {
+		if (!PropertyBags[Track]) return NULL;
+
+		FFCodecContext CodecContext(InitializeCodecContextFromHaaliInfo(PropertyBags[Track]));
+		if (!CodecContext || !CodecContext->codec) return NULL;
+		return CodecContext->codec->name;
 	}
 
-	pMMC = HaaliOpenFile(Filename, SourceMode);
+	int GetNumberOfTracks() { return NumTracks; }
+	FFMS_TrackType GetTrackType(int Track) { return TrackType[Track]; }
+	const char *GetFormatName() { return SourceMode == FFMS_SOURCE_HAALIMPEG ? "mpeg" : "ogg"; }
+	FFMS_Sources GetSourceType() { return SourceMode; }
+};
+
+FFHaaliIndexer::FFHaaliIndexer(const char *Filename, FFMS_Sources SourceMode)
+: FFMS_Indexer(Filename)
+, SourceMode(SourceMode)
+, pMMC(HaaliOpenFile(Filename, SourceMode))
+, NumTracks(0)
+, Duration(0)
+{
+	for (int i = 0; i < 32; i++)
+		TrackType[i] = FFMS_TYPE_UNKNOWN;
 
 	CComQIPtr<IPropertyBag> pBag2 = pMMC;
 	CComVariant pV2;
 	if (SUCCEEDED(pBag2->Read(L"Duration", &pV2, NULL)) && SUCCEEDED(pV2.ChangeType(VT_UI8)))
 		Duration = pV2.ullVal;
 
-	NumTracks = 0;
 	CComPtr<IEnumUnknown> pEU;
 	if (SUCCEEDED(pMMC->EnumTracks(&pEU))) {
 		CComPtr<IUnknown> pU;
@@ -68,11 +96,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 	std::vector<SharedAudioContext> AudioContexts(NumTracks, SharedAudioContext(false));
 	std::vector<SharedVideoContext> VideoContexts(NumTracks, SharedVideoContext(false));
 
-	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest));
-	TrackIndices->Decoder = FFMS_SOURCE_HAALIMPEG;
-	if (SourceMode == FFMS_SOURCE_HAALIOGG)
-		TrackIndices->Decoder = FFMS_SOURCE_HAALIOGG;
-	TrackIndices->ErrorHandling = ErrorHandling;
+	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest, SourceMode, ErrorHandling));
 
 	for (int i = 0; i < NumTracks; i++) {
 		TrackIndices->push_back(FFMS_Track(1, 1000000, TrackType[i]));
@@ -106,7 +130,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 	AVPacket TempPacket;
 	InitNullPacket(TempPacket);
 	REFERENCE_TIME Ts, Te;
-	REFERENCE_TIME MinTs = std::numeric_limits<REFERENCE_TIME>::max();
+	REFERENCE_TIME MinTs = (std::numeric_limits<REFERENCE_TIME>::max)();
 
 	for (;;) {
 		CComPtr<IMMFrame> pMMF;
@@ -170,7 +194,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 			TempPacket.flags = pMMF->IsSyncPoint() == S_OK ? AV_PKT_FLAG_KEY : 0;
 
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
-			int64_t SampleCount = IndexAudioPacket(Track, &TempPacket, AudioContexts[Track], *TrackIndices);
+			uint32_t SampleCount = IndexAudioPacket(Track, &TempPacket, AudioContexts[Track], *TrackIndices);
 
 			(*TrackIndices)[Track].AddAudioFrame(Ts, StartSample, SampleCount, pMMF->IsSyncPoint() == S_OK);
 		}
@@ -181,32 +205,9 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 	TrackIndices->Sort();
 	return TrackIndices.release();
 }
-
-int FFHaaliIndexer::GetNumberOfTracks() {
-	return NumTracks;
 }
 
-FFMS_TrackType FFHaaliIndexer::GetTrackType(int Track) {
-	return TrackType[Track];
+FFMS_Indexer *CreateHaaliIndexer(const char *Filename, FFMS_Sources SourceMode) {
+	return new FFHaaliIndexer(Filename, SourceMode);
 }
-
-const char *FFHaaliIndexer::GetTrackCodec(int Track) {
-	if (!PropertyBags[Track]) return NULL;
-
-	FFCodecContext CodecContext(InitializeCodecContextFromHaaliInfo(PropertyBags[Track]));
-	if (!CodecContext || !CodecContext->codec) return NULL;
-	return CodecContext->codec->name;
-}
-
-const char *FFHaaliIndexer::GetFormatName() {
-	if (this->SourceMode == FFMS_SOURCE_HAALIMPEG)
-		return "mpeg";
-	else
-		return "ogg";
-}
-
-FFMS_Sources FFHaaliIndexer::GetSourceType() {
-	return static_cast<FFMS_Sources>(this->SourceMode);
-}
-
 #endif

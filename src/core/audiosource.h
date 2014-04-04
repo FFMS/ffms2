@@ -21,32 +21,11 @@
 #ifndef FFAUDIOSOURCE_H
 #define FFAUDIOSOURCE_H
 
-extern "C" {
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
-}
-
-#include <vector>
-#include <list>
-#include <memory>
-
-#include "ffmscompat.h"
-
-#include "indexing.h"
 #include "utils.h"
-#include "ffms.h"
+#include "track.h"
 
-#ifdef HAALISOURCE
-#	define WIN32_LEAN_AND_MEAN
-#	define _WIN32_DCOM
-#	include <windows.h>
-#	include <tchar.h>
-#	include <atlbase.h>
-#	include <dshow.h>
-#	include <initguid.h>
-#	include "CoParser.h"
-#	include "guids.h"
-#endif
+#include <list>
+#include <vector>
 
 struct FFMS_AudioSource {
 	struct AudioBlock {
@@ -98,7 +77,7 @@ struct FFMS_AudioSource {
 	void CacheBeginning();
 
 	// Called after seeking
-	virtual void Seek() { };
+	virtual void Seek() { }
 	// Read the next packet from the file
 	virtual bool ReadPacket(AVPacket *) = 0;
 	virtual void FreePacket(AVPacket *) { }
@@ -108,7 +87,7 @@ protected:
 	// Next packet to be read
 	size_t PacketNumber;
 	// Current audio frame
-	const TFrameInfo *CurrentFrame;
+	const FrameInfo *CurrentFrame;
 	// Track which this corresponds to
 	int TrackNumber;
 	// Number of packets which the demuxer requires to know where it is
@@ -117,7 +96,6 @@ protected:
 
 	// Buffer which audio is decoded into
 	ScopedFrame DecodeFrame;
-	FFMS_Index &Index;
 	FFMS_Track Frames;
 	FFCodecContext CodecContext;
 	FFMS_AudioProperties AP;
@@ -129,7 +107,7 @@ protected:
 	FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track);
 
 public:
-	virtual ~FFMS_AudioSource();
+	virtual ~FFMS_AudioSource() { }
 	FFMS_Track *GetTrack() { return &Frames; }
 	const FFMS_AudioProperties& GetAudioProperties() const { return AP; }
 	void GetAudio(void *Buf, int64_t Start, int64_t Count);
@@ -138,50 +116,10 @@ public:
 	void SetOutputFormat(const FFMS_ResampleOptions *opt);
 };
 
-class FFLAVFAudio : public FFMS_AudioSource {
-	AVFormatContext *FormatContext;
-	int64_t LastValidTS;
-
-	bool ReadPacket(AVPacket *);
-	void FreePacket(AVPacket *);
-	void Seek();
-
-	int64_t FrameTS(size_t Packet) const;
-
-public:
-	FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
-	~FFLAVFAudio();
-};
-
-class FFMatroskaAudio : public FFMS_AudioSource {
-	MatroskaFile *MF;
-	MatroskaReaderContext MC;
-	TrackInfo *TI;
-	std::auto_ptr<TrackCompressionContext> TCC;
-	char ErrorMessage[256];
-
-	bool ReadPacket(AVPacket *);
-
-public:
-	FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
-	~FFMatroskaAudio();
-};
-
-#ifdef HAALISOURCE
-
-class FFHaaliAudio : public FFMS_AudioSource {
-	CComPtr<IMMContainer> pMMC;
-	CComPtr<IMMFrame> pMMF;
-
-	bool ReadPacket(AVPacket *);
-	void Seek();
-
-public:
-	FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index, FFMS_Sources SourceMode, int DelayMode);
-};
-
-#endif // HAALISOURCE
-
 size_t GetSeekablePacketNumber(FFMS_Track const& Frames, size_t PacketNumber);
+
+FFMS_AudioSource *CreateLavfAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
+FFMS_AudioSource *CreateMatroskaAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
+FFMS_AudioSource *CreateHaaliAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, FFMS_Sources SourceMode, int DelayMode);
 
 #endif

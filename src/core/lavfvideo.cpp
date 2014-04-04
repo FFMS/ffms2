@@ -20,7 +20,20 @@
 
 #include "videosource.h"
 
+namespace {
+class FFLAVFVideo : public FFMS_VideoSource {
+	AVFormatContext *FormatContext;
+	int SeekMode;
+	FFSourceResources<FFMS_VideoSource> Res;
 
+	void DecodeNextFrame(int64_t *PTS, int64_t *Pos);
+	bool SeekTo(int n, int SeekOffset);
+	void Free(bool CloseCodec);
+
+public:
+	FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode);
+	FFMS_Frame *GetFrame(int n);
+};
 
 void FFLAVFVideo::Free(bool CloseCodec) {
 	if (CloseCodec)
@@ -33,7 +46,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 : FFMS_VideoSource(SourceFile, Index, Track, Threads)
 , FormatContext(NULL)
 , SeekMode(SeekMode)
-, Res(FFSourceResources<FFMS_VideoSource>(this))
+, Res(this)
 {
 	AVCodec *Codec = NULL;
 
@@ -76,7 +89,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 		double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
 		double TD = (double)(Frames.TB.Den);
 		double TN = (double)(Frames.TB.Num);
-		VP.FPSDenominator = (unsigned int)(((double)1000000) / (double)((Frames.size() - 1) / ((PTSDiff * TN/TD) / (double)1000)));
+		VP.FPSDenominator = (unsigned int)(PTSDiff * TN/TD * 1000.0 / (Frames.size() - 1));
 		VP.FPSNumerator = 1000000;
 	}
 
@@ -215,4 +228,9 @@ FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
 
 	LastFrameNum = n;
 	return OutputFrame(DecodeFrame);
+}
+}
+
+FFMS_VideoSource *CreateLavfVideoSource(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode) {
+	return new FFLAVFVideo(SourceFile, Track, Index, Threads, SeekMode);
 }

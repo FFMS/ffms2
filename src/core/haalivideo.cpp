@@ -20,9 +20,23 @@
 
 #ifdef HAALISOURCE
 
+#include "haalicommon.h"
 #include "videosource.h"
 
+namespace {
+class FFHaaliVideo : public FFMS_VideoSource {
+	FFCodecContext HCodecContext;
+	CComPtr<IMMContainer> pMMC;
+	AVBitStreamFilterContext *BitStreamFilter;
+	FFSourceResources<FFMS_VideoSource> Res;
 
+	void DecodeNextFrame(int64_t *AFirstStartTime);
+	void Free(bool CloseCodec);
+
+public:
+	FFHaaliVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, FFMS_Sources SourceMode);
+	FFMS_Frame *GetFrame(int n);
+};
 
 void FFHaaliVideo::Free(bool CloseCodec) {
 	if (CloseCodec)
@@ -31,13 +45,11 @@ void FFHaaliVideo::Free(bool CloseCodec) {
 		av_bitstream_filter_close(BitStreamFilter);
 }
 
-FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
-	FFMS_Index &Index, int Threads, FFMS_Sources SourceMode)
-: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track, Threads) {
-	BitStreamFilter = NULL;
-
-	pMMC = HaaliOpenFile(SourceFile, SourceMode);
-
+FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, FFMS_Sources SourceMode)
+: Res(FFSourceResources<FFMS_VideoSource>(this)), FFMS_VideoSource(SourceFile, Index, Track, Threads)
+, pMMC(HaaliOpenFile(SourceFile, SourceMode))
+, BitStreamFilter(NULL)
+{
 	CComPtr<IEnumUnknown> pEU;
 	if (!SUCCEEDED(pMMC->EnumTracks(&pEU)))
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
@@ -78,7 +90,7 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track,
 	// Calculate the average framerate
 	if (Frames.size() >= 2) {
 		double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
-		VP.FPSDenominator = (unsigned int)(PTSDiff  / (double)1000 / (double)(Frames.size() - 1) + 0.5);
+		VP.FPSDenominator = (unsigned int)(PTSDiff / 1000.0 / (double)(Frames.size() - 1) + 0.5);
 		VP.FPSNumerator = 1000000;
 	}
 
@@ -206,6 +218,11 @@ ReSeek:
 
 	LastFrameNum = n;
 	return OutputFrame(DecodeFrame);
+}
+}
+
+FFMS_VideoSource *CreateHaaliVideoSource(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, FFMS_Sources SourceMode) {
+    return new FFHaaliVideo(SourceFile, Track, Index, Threads, SourceMode);
 }
 
 #endif // HAALISOURCE

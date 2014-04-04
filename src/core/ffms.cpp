@@ -18,27 +18,29 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#include <sstream>
-#include <iomanip>
 #include "ffms.h"
-#include "videosource.h"
+
 #include "audiosource.h"
 #include "indexing.h"
+#include "haalicommon.h"
+#include "videosource.h"
+#include "videoutils.h"
 
 extern "C" {
 #include <libavutil/pixdesc.h>
 }
 
+#include <sstream>
+#include <iomanip>
 
 #ifdef FFMS_WIN_DEBUG
 #	include <windows.h>
 #endif
 
-static bool FFmpegInited	= false;
+static bool FFmpegInited = false;
 bool HasHaaliMPEG = false;
 bool HasHaaliOGG = false;
 bool GlobalUseUTF8Paths = false;
-
 
 #ifdef FFMS_WIN_DEBUG
 
@@ -75,19 +77,14 @@ void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl)
 
 #endif
 
-FFMS_API(void) FFMS_Init(int CPUFeatures, int UseUTF8Paths) {
+FFMS_API(void) FFMS_Init(int, int UseUTF8Paths) {
 	if (!FFmpegInited) {
 		av_register_all();
 		RegisterCustomParsers();
 #ifdef _WIN32
-		if (UseUTF8Paths) {
-			GlobalUseUTF8Paths = true;
-		}
-		else {
-			GlobalUseUTF8Paths = false;
-		}
+		GlobalUseUTF8Paths = !!UseUTF8Paths;
 #else
-		GlobalUseUTF8Paths = false;
+		(void)UseUTF8Paths;
 #endif
 #ifdef FFMS_WIN_DEBUG
 		av_log_set_callback(av_log_windebug_callback);
@@ -122,17 +119,17 @@ FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int 
 	try {
 		switch (Index->Decoder) {
 			case FFMS_SOURCE_LAVF:
-				return new FFLAVFVideo(SourceFile, Track, *Index, Threads, SeekMode);
+				return CreateLavfVideoSource(SourceFile, Track, *Index, Threads, SeekMode);
 			case FFMS_SOURCE_MATROSKA:
-				return new FFMatroskaVideo(SourceFile, Track, *Index, Threads);
+				return CreateMatroskaVideoSource(SourceFile, Track, *Index, Threads);
 #ifdef HAALISOURCE
 			case FFMS_SOURCE_HAALIMPEG:
 				if (HasHaaliMPEG)
-					return new FFHaaliVideo(SourceFile, Track, *Index, Threads, FFMS_SOURCE_HAALIMPEG);
+					return CreateHaaliVideoSource(SourceFile, Track, *Index, Threads, FFMS_SOURCE_HAALIMPEG);
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali MPEG/TS source unavailable");
 			case FFMS_SOURCE_HAALIOGG:
 				if (HasHaaliOGG)
-					return new FFHaaliVideo(SourceFile, Track, *Index, Threads, FFMS_SOURCE_HAALIOGG);
+					return CreateHaaliVideoSource(SourceFile, Track, *Index, Threads, FFMS_SOURCE_HAALIOGG);
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali OGG/OGM source unavailable");
 #endif
 			default:
@@ -148,17 +145,17 @@ FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int 
 	try {
 		switch (Index->Decoder) {
 			case FFMS_SOURCE_LAVF:
-				return new FFLAVFAudio(SourceFile, Track, *Index, DelayMode);
+				return CreateLavfAudioSource(SourceFile, Track, *Index, DelayMode);
 			case FFMS_SOURCE_MATROSKA:
-				return new FFMatroskaAudio(SourceFile, Track, *Index, DelayMode);
+				return CreateMatroskaAudioSource(SourceFile, Track, *Index, DelayMode);
 #ifdef HAALISOURCE
 			case FFMS_SOURCE_HAALIMPEG:
 				if (HasHaaliMPEG)
-					return new FFHaaliAudio(SourceFile, Track, *Index, FFMS_SOURCE_HAALIMPEG, DelayMode);
+					return CreateHaaliAudioSource(SourceFile, Track, *Index, FFMS_SOURCE_HAALIMPEG, DelayMode);
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali MPEG/TS source unavailable");
 			case FFMS_SOURCE_HAALIOGG:
 				if (HasHaaliOGG)
-					return new FFHaaliAudio(SourceFile, Track, *Index, FFMS_SOURCE_HAALIOGG, DelayMode);
+					return CreateHaaliAudioSource(SourceFile, Track, *Index, FFMS_SOURCE_HAALIOGG, DelayMode);
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali OGG/OGM source unavailable");
 #endif
 			default:
@@ -330,7 +327,7 @@ FFMS_API(int) FFMS_GetNumFrames(FFMS_Track *T) {
 }
 
 FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFMS_Track *T, int Frame) {
-	return &(*T)[T->RealFrameNumber(Frame)];
+	return T->GetFrameInfo(static_cast<size_t>(Frame));
 }
 
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track) {
@@ -382,7 +379,7 @@ static void ReplaceString(std::string &s, std::string from, std::string to) {
 		s.replace(idx, from.length(), to);
 }
 
-FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int FNSize, void *Private) {
+FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int, void *Private) {
 	std::string s = static_cast<char *>(Private);
 
 	ReplaceString(s, "%sourcefile%", SourceFile);
@@ -406,7 +403,7 @@ FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorIn
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int Demuxer, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
-		return FFMS_Indexer::CreateIndexer(SourceFile, static_cast<FFMS_Sources>(Demuxer));
+		return CreateIndexer(SourceFile, static_cast<FFMS_Sources>(Demuxer));
 	} catch (FFMS_Exception &e) {
 		e.CopyOut(ErrorInfo);
 		return NULL;
@@ -438,15 +435,12 @@ FFMS_API(void) FFMS_CancelIndexing(FFMS_Indexer *Indexer) {
 
 FFMS_API(FFMS_Index *) FFMS_ReadIndex(const char *IndexFile, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
-	FFMS_Index *Index = new FFMS_Index();
 	try {
-		Index->ReadIndex(IndexFile);
+		return new FFMS_Index(IndexFile);
 	} catch (FFMS_Exception &e) {
-		delete Index;
 		e.CopyOut(ErrorInfo);
 		return NULL;
 	}
-	return Index;
 }
 
 FFMS_API(int) FFMS_IndexBelongsToFile(FFMS_Index *Index, const char *SourceFile, FFMS_ErrorInfo *ErrorInfo) {

@@ -22,10 +22,24 @@
 
 #include "audiosource.h"
 
-FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index, FFMS_Sources SourceMode, int DelayMode)
-: FFMS_AudioSource(SourceFile, Index, Track) {
-	pMMC = HaaliOpenFile(SourceFile, SourceMode);
+#include "haalicommon.h"
 
+namespace {
+class FFHaaliAudio : public FFMS_AudioSource {
+	CComPtr<IMMContainer> pMMC;
+	CComPtr<IMMFrame> pMMF;
+
+	bool ReadPacket(AVPacket *);
+	void Seek();
+
+public:
+	FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index, FFMS_Sources SourceMode, int DelayMode);
+};
+
+FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index, FFMS_Sources SourceMode, int DelayMode)
+: FFMS_AudioSource(SourceFile, Index, Track)
+, pMMC(HaaliOpenFile(SourceFile, SourceMode))
+{
 	CComPtr<IEnumUnknown> pEU;
 	if (!SUCCEEDED(pMMC->EnumTracks(&pEU)))
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
@@ -90,6 +104,11 @@ void FFHaaliAudio::Seek() {
 		int64_t LastPTS = Frames[PacketNumber].PTS;
 		while (LastPTS == Frames[PacketNumber].PTS) DecodeNextBlock();
 	}
+}
+}
+
+FFMS_AudioSource *CreateHaaliAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, FFMS_Sources SourceMode, int DelayMode) {
+	return new FFHaaliAudio(SourceFile, Track, Index, SourceMode, DelayMode);
 }
 
 #endif // HAALISOURCE

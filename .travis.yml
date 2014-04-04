@@ -1,0 +1,22 @@
+language: cpp
+compiler:
+  - gcc
+  - clang
+env:
+  - FFMPEG=git://git.videolan.org/ffmpeg.git
+  - FFMPEG=git://git.libav.org/libav.git
+install:
+  - sudo apt-get install yasm
+  - git clone $FFMPEG --depth=1 ffmpeg
+  - cd ffmpeg
+  - ./configure --disable-avfilter --disable-devices --disable-doc --disable-encoders --disable-filters --disable-hwaccels --disable-muxers --disable-network --enable-avresample
+  - make -j2
+  - sudo make install
+  - cd ..
+script:
+  - ./configure --enable-static --disable-shared
+  - make CXXFLAGS='-Wall -Wextra -Wno-missing-field-initializers -Werror' -j2 -k
+notifications:
+  email:
+    - on_success: change
+    - on_failure: change
