@@ -202,7 +202,7 @@ FFMS_Index *FFHaaliIndexer::DoIndexing() {
 		av_free(TempPacket.data);
 	}
 
-	TrackIndices->Sort();
+	TrackIndices->Finalize(VideoContexts);
 	return TrackIndices.release();
 }
 }

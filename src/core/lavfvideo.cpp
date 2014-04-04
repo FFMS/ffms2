@@ -58,6 +58,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 
 	CodecContext = FormatContext->streams[VideoTrack]->codec;
 	CodecContext->thread_count = DecodingThreads;
+	CodecContext->has_b_frames = Frames.MaxBFrames;
 
 	Codec = avcodec_find_decoder(CodecContext->codec_id);
 	if (Codec == NULL)

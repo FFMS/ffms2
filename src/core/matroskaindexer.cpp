@@ -155,27 +155,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 		}
 	}
 
-	for (size_t i = 0; i < TrackIndices->size(); ++i) {
-		FFMS_Track& track = (*TrackIndices)[i];
-		if (track.TT != FFMS_TYPE_VIDEO) continue;
-
-		if (VideoContexts[i].CodecContext->has_b_frames) {
-			track.MaxBFrames = VideoContexts[i].CodecContext->has_b_frames;
-			continue;
-		}
-
-		// Whether or not has_b_frames gets set during indexing seems
-		// to vary based on version of FFmpeg/Libav, so do an extra
-		// check for b-frames if it's 0.
-		for (size_t f = 0; f < track.size(); ++f) {
-			if (track[f].FrameType == AV_PICTURE_TYPE_B) {
-				track.MaxBFrames = 1;
-				break;
-			}
-		}
-	}
-
-	TrackIndices->Sort();
+	TrackIndices->Finalize(VideoContexts);
 	return TrackIndices.release();
 }
 }

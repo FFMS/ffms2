@@ -177,7 +177,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 		av_free_packet(&Packet);
 	}
 
-	TrackIndices->Sort();
+	TrackIndices->Finalize(VideoContexts);
 	return TrackIndices.release();
 }
 

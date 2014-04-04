@@ -66,6 +66,7 @@ FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 
 	HCodecContext = InitializeCodecContextFromHaaliInfo(pBag);
 	CodecContext = HCodecContext;
+	CodecContext->has_b_frames = Frames.MaxBFrames;
 
 	const AVCodec *Codec = NULL;
 	std::swap(Codec, CodecContext->codec);

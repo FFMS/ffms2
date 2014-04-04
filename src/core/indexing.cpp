@@ -124,9 +124,28 @@ void FFMS_Index::Release() {
 		delete this;
 }
 
-void FFMS_Index::Sort() {
-	for (FFMS_Index::iterator Cur = begin(); Cur != end(); ++Cur)
-		Cur->FinalizeTrack();
+void FFMS_Index::Finalize(std::vector<SharedVideoContext> const& video_contexts) {
+	for (size_t i = 0, end = size(); i != end; ++i) {
+		FFMS_Track& track = (*this)[i];
+		track.FinalizeTrack();
+
+		if (track.TT != FFMS_TYPE_VIDEO) continue;
+
+		if (video_contexts[i].CodecContext->has_b_frames) {
+			track.MaxBFrames = video_contexts[i].CodecContext->has_b_frames;
+			continue;
+		}
+
+		// Whether or not has_b_frames gets set during indexing seems
+		// to vary based on version of FFmpeg/Libav, so do an extra
+		// check for b-frames if it's 0.
+		for (size_t f = 0; f < track.size(); ++f) {
+			if (track[f].FrameType == AV_PICTURE_TYPE_B) {
+				track.MaxBFrames = 1;
+				break;
+			}
+		}
+	}
 }
 
 bool FFMS_Index::CompareFileSignature(const char *Filename) {

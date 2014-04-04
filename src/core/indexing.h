@@ -65,7 +65,7 @@ public:
 	int64_t Filesize;
 	uint8_t Digest[20];
 
-	void Sort();
+	void Finalize(std::vector<SharedVideoContext> const& video_contexts);
 	bool CompareFileSignature(const char *Filename);
 	void WriteIndex(const char *IndexFile);
 
