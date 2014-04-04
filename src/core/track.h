@@ -23,6 +23,7 @@
 
 #include "ffms.h"
 
+#include <cstddef>
 #include <vector>
 
 class ZipFile;
