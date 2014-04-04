@@ -258,7 +258,7 @@ longlong MatroskaReader::Scan(MatroskaReader *self, ulonglong start, unsigned si
 		int c = *self->file->Read(i, 1);
 		cmp = ((cmp << 8) | c) & 0xffffffff;
 		if (cmp == signature)
-			return static_cast<longlong>(i) - 4;
+			return static_cast<longlong>(i) - 3;
 	}
 
 	return -1;
@@ -321,11 +321,9 @@ void MatroskaReaderContext::ReadFrame(uint64_t FilePos, size_t InputFrameSize, T
 		for (;;) {
 			int ReadBytes = cs_ReadData(CS, CSBuffer, sizeof(CSBuffer));
 			if (ReadBytes == 0) break;
-			if (ReadBytes < 0) {
-				std::ostringstream buf;
-				buf << "Error decompressing data: " << cs_GetLastError(CS);
-				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-			}
+			if (ReadBytes < 0)
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+					std::string("Error decompressing data: ") + cs_GetLastError(CS));
 
 			Append(CSBuffer, ReadBytes);
 		}

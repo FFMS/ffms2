@@ -41,3 +41,10 @@
 /src/index/*.o
 /src/index/*.exe
 /src/index/ffmsindex
+
+# /src/vapoursynth/
+/src/vapoursynth/.deps
+/src/vapoursynth/.libs
+/src/vapoursynth/.dirstamp
+/src/vapoursynth/*.o
+/src/vapoursynth/*.lo

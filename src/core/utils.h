@@ -21,10 +21,6 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <vector>
-#include <sstream>
-#include <fstream>
-#include <cstdio>
 #include "ffms.h"
 #include "matroskaparser.h"
 
@@ -42,23 +38,9 @@ extern "C" {
 // must be included after ffmpeg headers
 #include "ffmscompat.h"
 
-#ifdef HAALISOURCE
-#	define WIN32_LEAN_AND_MEAN
-#	define _WIN32_DCOM
-#	include <windows.h>
-#	include <tchar.h>
-#	include <atlbase.h>
-#	include <dshow.h>
-#	include <initguid.h>
-#	include "CoParser.h"
-#	include "guids.h"
-#endif
-
-#ifdef __MINGW32__
-#include <ext/stdio_filebuf.h>
-#endif
-
-#define FFMS_GET_VECTOR_PTR(v) (((v).size() ? &(v)[0] : NULL))
+#include <cstdio>
+#include <string>
+#include <vector>
 
 const int64_t ffms_av_nopts_value = static_cast<int64_t>(UINT64_C(0x8000000000000000));
 
@@ -78,15 +60,15 @@ typedef struct FFMS_BITMAPINFOHEADER {
 } FFMS_BITMAPINFOHEADER;
 
 class FFMS_Exception : public std::exception {
-private:
 	std::string _Message;
 	int _ErrorType;
 	int _SubType;
+
 public:
 	FFMS_Exception(int ErrorType, int SubType, const char *Message = "");
 	FFMS_Exception(int ErrorType, int SubType, const std::string &Message);
-	~FFMS_Exception() throw ();
-	const std::string &GetErrorMessage() const;
+	~FFMS_Exception() throw() { }
+	const std::string &GetErrorMessage() const { return _Message; }
 	int CopyOut(FFMS_ErrorInfo *ErrorInfo) const;
 };
 
@@ -160,24 +142,10 @@ typedef unknown_size<AVAudioResampleContext, avresample_alloc_context, avresampl
 typedef struct {} FFResampleContext;
 #endif
 
-inline void DeleteHaaliCodecContext(AVCodecContext *CodecContext) {
-	av_freep(&CodecContext->extradata);
-	av_freep(&CodecContext);
-}
 inline void DeleteMatroskaCodecContext(AVCodecContext *CodecContext) {
 	avcodec_close(CodecContext);
 	av_freep(&CodecContext);
 }
-
-struct ffms_fstream : public std::fstream {
-#ifdef __MINGW32__
-private:
-	__gnu_cxx::stdio_filebuf<char> filebuf;
-public:
-	bool is_open() const { return filebuf.is_open(); }
-#endif
-	ffms_fstream(const char *filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out);
-};
 
 struct TrackCompressionContext : private noncopyable {
 	CompressedStream *CS;
@@ -194,19 +162,8 @@ bool AudioFMTIsFloat(AVSampleFormat FMT);
 void InitNullPacket(AVPacket &pkt);
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);
 
-#ifdef HAALISOURCE
-unsigned vtSize(VARIANT &vt);
-void vtCopy(VARIANT& vt,void *dest);
-FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag);
-#endif
-
 void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext);
-FILE *ffms_fopen(const char *filename, const char *mode);
 std::wstring widen_path(const char *s);
-size_t ffms_mbstowcs (wchar_t *wcstr, const char *mbstr, size_t max);
-#ifdef HAALISOURCE
-CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceMode);
-#endif // HAALISOURCE
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
 
 void FlushBuffers(AVCodecContext *CodecContext);

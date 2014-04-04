@@ -21,10 +21,11 @@
 #ifndef WAVE64WRITER_H
 #define	WAVE64WRITER_H
 
+#include "filehandle.h"
+
 #include <stdint.h>
-#include <iostream>
-#include <fstream>
-#include "utils.h"
+
+struct AVFrame;
 
 // this is to avoid depending on windows.h etc.
 typedef struct FFMS_WAVEFORMATEX {
@@ -38,7 +39,7 @@ typedef struct FFMS_WAVEFORMATEX {
 } FFMS_WAVEFORMATEX;
 
 class Wave64Writer {
-	ffms_fstream WavFile;
+	FileHandle WavFile;
 	uint64_t BytesWritten;
 	uint32_t SamplesPerSec;
 	uint16_t BytesPerSample;

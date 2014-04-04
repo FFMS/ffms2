@@ -41,13 +41,6 @@
 
 #if defined(_WIN32) && !defined(__MINGW64_VERSION_MAJOR)
 #	define snprintf _snprintf
-#	ifdef __MINGW32__
-#		define fseeko fseeko64
-#		define ftello ftello64
-#	else
-#		define fseeko _fseeki64
-#		define ftello _ftelli64
-#	endif
 #endif
 
 // Compatibility with older/newer ffmpegs

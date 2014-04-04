@@ -19,6 +19,10 @@
 //  THE SOFTWARE.
 
 #include "wave64writer.h"
+
+#include "filehandle.h"
+#include "utils.h"
+
 #include <cstring>
 
 #define WAVE_FORMAT_IEEE_FLOAT 0x0003
@@ -45,16 +49,13 @@ static const uint8_t Guiddata[16]={
 };
 
 Wave64Writer::Wave64Writer(const char *Filename, uint16_t BytesPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat)
-: WavFile(Filename, std::ios::out | std::ios::binary | std::ios::trunc)
+: WavFile(Filename, "wb", FFMS_ERROR_WAVE_WRITER, FFMS_ERROR_FILE_WRITE)
 , BytesWritten(0)
 , SamplesPerSec(SamplesPerSec)
 , BytesPerSample(BytesPerSample)
 , Channels(Channels)
 , IsFloat(IsFloat)
 {
-	if (!WavFile.is_open())
-		throw "Failed to open destination file for writing";
-
 	WriteHeader(true, IsFloat);
 }
 
@@ -80,11 +81,10 @@ void Wave64Writer::WriteHeader(bool Initial, bool IsFloat) {
 	memset(Header, 0, sizeof(Header));
 
 	memcpy(Header + 0, GuidRIFF, 16);
-	if (Initial) {
+	if (Initial)
 		Header[2] = 0x7F00000000000000ull;
-	} else {
+	else
 		Header[2] = BytesWritten + sizeof(Header);
-	}
 
 	memcpy(Header + 3, GuidWAVE, 16);
 	memcpy(Header + 5, Guidfmt, 16);
@@ -99,23 +99,23 @@ void Wave64Writer::WriteHeader(bool Initial, bool IsFloat) {
 	else
 		Header[13] = BytesWritten + 24;
 
-	std::streampos CPos = WavFile.tellp();
-	WavFile.seekp(0, std::ios::beg);
-	WavFile.write(reinterpret_cast<const char *>(Header), sizeof(Header));
+	int64_t pos = WavFile.Tell();
+	WavFile.Seek(0, SEEK_SET);
+	WavFile.Write(reinterpret_cast<const char *>(Header), sizeof(Header));
 	if (!Initial)
-		WavFile.seekp(CPos, std::ios::beg);
+		WavFile.Seek(pos, SEEK_SET);
 }
 
 void Wave64Writer::WriteData(AVFrame const& Frame) {
-	uint64_t Length = (uint64_t) Frame.nb_samples * BytesPerSample * Channels;
+	size_t Length = (size_t)Frame.nb_samples * BytesPerSample * Channels;
 	if (Channels > 1 && av_sample_fmt_is_planar(static_cast<AVSampleFormat>(Frame.format))) {
 		for (int32_t sample = 0; sample < Frame.nb_samples; ++sample) {
 			for (int32_t channel = 0; channel < Channels; ++channel)
-				WavFile.write(reinterpret_cast<char *>(&Frame.extended_data[channel][sample * BytesPerSample]), BytesPerSample);
+				WavFile.Write(reinterpret_cast<char *>(&Frame.extended_data[channel][sample * BytesPerSample]), BytesPerSample);
 		}
 	}
 	else {
-		WavFile.write(reinterpret_cast<char *>(Frame.extended_data[0]), Length);
+		WavFile.Write(reinterpret_cast<char *>(Frame.extended_data[0]), Length);
 	}
 	BytesWritten += Length;
 }

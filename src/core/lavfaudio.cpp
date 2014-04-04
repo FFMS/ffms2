@@ -19,7 +19,24 @@
 //  THE SOFTWARE.
 
 #include "audiosource.h"
+
 #include <cassert>
+
+namespace {
+class FFLAVFAudio : public FFMS_AudioSource {
+	AVFormatContext *FormatContext;
+	int64_t LastValidTS;
+
+	bool ReadPacket(AVPacket *);
+	void FreePacket(AVPacket *Packet) { av_free_packet(Packet); }
+	void Seek();
+
+	int64_t FrameTS(size_t Packet) const;
+
+public:
+	FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
+	~FFLAVFAudio();
+};
 
 FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode)
 : FFMS_AudioSource(SourceFile, Index, Track)
@@ -101,7 +118,8 @@ bool FFLAVFAudio::ReadPacket(AVPacket *Packet) {
 	}
 	return false;
 }
+}
 
-void FFLAVFAudio::FreePacket(AVPacket *Packet) {
-	av_free_packet(Packet);
+FFMS_AudioSource *CreateLavfAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode) {
+	return new FFLAVFAudio(SourceFile, Track, Index, DelayMode);
 }

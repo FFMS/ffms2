@@ -21,6 +21,24 @@
 #include "videosource.h"
 
 #include "codectype.h"
+#include "matroskareader.h"
+
+namespace {
+class FFMatroskaVideo : public FFMS_VideoSource {
+	MatroskaFile *MF;
+	MatroskaReaderContext MC;
+	std::auto_ptr<TrackCompressionContext> TCC;
+	char ErrorMessage[256];
+	FFSourceResources<FFMS_VideoSource> Res;
+	size_t PacketNumber;
+
+	void DecodeNextFrame();
+	void Free(bool CloseCodec);
+
+public:
+	FFMatroskaVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads);
+	FFMS_Frame *GetFrame(int n);
+};
 
 void FFMatroskaVideo::Free(bool CloseCodec) {
 	TCC.reset();
@@ -42,11 +60,9 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	TrackInfo *TI = NULL;
 
 	MF = mkv_OpenEx(&MC.Reader, 0, 0, ErrorMessage, sizeof(ErrorMessage));
-	if (MF == NULL) {
-		std::ostringstream buf;
-		buf << "Can't parse Matroska file: " << ErrorMessage;
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
+	if (MF == NULL)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("Can't parse Matroska file: ") + ErrorMessage);
 
 	TI = mkv_GetTrackInfo(MF, VideoTrack);
 
@@ -62,6 +78,7 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 			"Video codec not found");
 
 	InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);
+	CodecContext->has_b_frames = Frames.MaxBFrames;
 
 	if (avcodec_open2(CodecContext, Codec, NULL) < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
@@ -111,7 +128,7 @@ void FFMatroskaVideo::DecodeNextFrame() {
 		// The additional indirection is because the packets are stored in
 		// presentation order and not decoding order, this is unnoticeable
 		// in the other sources where less is done manually
-		const TFrameInfo &FI = Frames[Frames[PacketNumber].OriginalPos];
+		const FrameInfo &FI = Frames[Frames[PacketNumber].OriginalPos];
 		MC.ReadFrame(FI.FilePos, FI.FrameSize, TCC.get());
 
 		Packet.data = MC.Buffer;
@@ -157,4 +174,9 @@ FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
 
 	LastFrameNum = n;
 	return OutputFrame(DecodeFrame);
+}
+}
+
+FFMS_VideoSource *CreateMatroskaVideoSource(const char *SourceFile, int Track, FFMS_Index &Index, int Threads) {
+    return new FFMatroskaVideo(SourceFile, Track, Index, Threads);
 }

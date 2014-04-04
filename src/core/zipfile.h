@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 The FFmpegSource Project
+//  Copyright (c) 2014 Thomas Goyne <tgoyne@gmail.com>
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -18,31 +18,38 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-extern "C" {
-#include <libavutil/mem.h>
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
-#include <libswscale/swscale.h>
-#include <libavutil/pixdesc.h>
-}
-// must be included after ffmpeg headers
-#include "ffmscompat.h"
+#include "filehandle.h"
 
 #include <vector>
+#include <zlib.h>
 
-#include "ffms.h"
+class ZipFile {
+	FileHandle file;
+	std::vector<char> buffer;
+	z_stream z;
+	enum {
+		Initial,
+		Inflate,
+		Deflate
+	} state;
 
+public:
+	ZipFile(const char *filename, const char *mode);
+	~ZipFile();
 
-// swscale and pp-related functions
-int64_t GetSWSCPUFlags();
-SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, PixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags);
-AVColorSpace GetAssumedColorSpace(int Width, int Height);
+	void Read(void *buffer, size_t size);
+	int Write(const void *buffer, size_t size);
+	void Finish();
 
-// timebase-related functions
-void CorrectNTSCRationalFramerate(int *Num, int *Den);
-void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase);
+	template<typename T>
+	T Read() {
+		T ret = T();
+		Read(&ret, sizeof(T));
+		return ret;
+	}
 
-// our implementation of avcodec_find_best_pix_fmt()
-PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelFormat Src);
-
-void RegisterCustomParsers();
+	template<typename T>
+	void Write(T const& value) {
+		Write(&value, sizeof value);
+	}
+};
