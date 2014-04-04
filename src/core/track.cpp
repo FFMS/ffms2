@@ -101,10 +101,8 @@ FFMS_Track::FFMS_Track(ZipFile &stream) {
 	for (size_t i = 0; i < FrameCount; ++i)
 		Frames.push_back(ReadFrame(stream, i == 0 ? temp : Frames.back(), TT));
 
-	size_t RealCount = static_cast<size_t>(stream.Read<uint64_t>());
-	RealFrameNumbers.reserve(RealCount);
-	for (size_t i = 0; i < RealCount; ++i)
-		RealFrameNumbers.push_back(stream.Read<uint32_t>() + 1 + (i == 0 ? 0 : RealFrameNumbers.back()));
+	if (TT == FFMS_TYPE_VIDEO)
+		GeneratePublicInfo();
 }
 
 void FFMS_Track::Write(ZipFile &stream) const {
@@ -121,16 +119,9 @@ void FFMS_Track::Write(ZipFile &stream) const {
 	FrameInfo temp = {0};
 	for (size_t i = 0; i < size(); ++i)
 		WriteFrame(stream, Frames[i], i == 0 ? temp : Frames[i - 1], TT);
-
-	stream.Write<uint64_t>(RealFrameNumbers.size());
-	for (size_t i = 0; i < RealFrameNumbers.size(); ++i)
-		stream.Write<uint32_t>(RealFrameNumbers[i] - 1 - (i == 0 ? 0 : RealFrameNumbers[i - 1]));
 }
 
 void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, uint32_t FrameSize, bool Hidden) {
-	if (!Hidden)
-		RealFrameNumbers.push_back(Frames.size());
-
 	FrameInfo f = {PTS, FilePos, 0, 0, FrameSize, 0, FrameType, RepeatPict, KeyFrame, Hidden};
 	Frames.push_back(f);
 }
@@ -239,6 +230,9 @@ void FFMS_Track::MaybeReorderFrames() {
 }
 
 void FFMS_Track::MaybeHideFrames() {
+	// Awful handling for interlaced H.264: if the file alternates between
+	// valid and invalid file positions, hide all the frames with invalid file
+	// positions.
 	bool prev_valid_pos = Frames[0].FilePos >= 0;
 	for (size_t i = 1; i < size(); ++i) {
 		bool valid_pos = Frames[i].FilePos >= 0;
@@ -261,7 +255,7 @@ void FFMS_Track::MaybeHideFrames() {
 		RealFrameNumbers.resize(RealFrameNumbers.size() - Offset);
 }
 
-void FFMS_Track::SortByPTS() {
+void FFMS_Track::FinalizeTrack() {
 	// With some formats (such as Vorbis) a bad final packet results in a
 	// frame with PTS 0, which we don't want to sort to the beginning
 	if (size() > 2 && front().PTS >= back().PTS)
@@ -274,6 +268,7 @@ void FFMS_Track::SortByPTS() {
 		return;
 
 	MaybeReorderFrames();
+	MaybeHideFrames();
 
 	sort(Frames.begin(), Frames.end(), PTSComparison);
 
@@ -286,20 +281,22 @@ void FFMS_Track::SortByPTS() {
 	for (size_t i = 0; i < size(); i++)
 		Frames[ReorderTemp[i]].OriginalPos = i;
 
-	MaybeHideFrames();
+	GeneratePublicInfo();
+}
+
+void FFMS_Track::GeneratePublicInfo() {
+	RealFrameNumbers.reserve(size());
+	PublicFrameInfo.reserve(size());
+	for (size_t i = 0; i < size(); ++i) {
+		if (Frames[i].Hidden) continue;
+		RealFrameNumbers.push_back(i);
+
+		FFMS_FrameInfo info = {Frames[i].PTS, Frames[i].RepeatPict, Frames[i].KeyFrame};
+		PublicFrameInfo.push_back(info);
+	}
 }
 
 const FFMS_FrameInfo *FFMS_Track::GetFrameInfo(size_t N) const {
-	if (TT != FFMS_TYPE_VIDEO) return NULL;
-
-	if (PublicFrameInfo.empty()) {
-		PublicFrameInfo.reserve(VisibleFrameCount());
-		for (size_t i = 0; i < size(); ++i) {
-			if (Frames[i].Hidden) continue;
-			FFMS_FrameInfo info = {Frames[i].PTS, Frames[i].RepeatPict, Frames[i].KeyFrame};
-			PublicFrameInfo.push_back(info);
-		}
-	}
-
-	return N < PublicFrameInfo.size() ? &PublicFrameInfo[N] : NULL;
+	if (N >= RealFrameNumbers.size()) return NULL;
+	return &PublicFrameInfo[RealFrameNumbers[N]];
 }

@@ -46,10 +46,11 @@ private:
 	typedef std::vector<FrameInfo> frame_vec;
 	frame_vec Frames;
 	std::vector<int> RealFrameNumbers;
-	mutable std::vector<FFMS_FrameInfo> PublicFrameInfo;
+	std::vector<FFMS_FrameInfo> PublicFrameInfo;
 
 	void MaybeReorderFrames();
 	void MaybeHideFrames();
+	void GeneratePublicInfo();
 
 public:
 	FFMS_TrackType TT;
@@ -61,7 +62,7 @@ public:
 	void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, uint32_t FrameSize = 0, bool Invisible = false);
 	void AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0, uint32_t FrameSize = 0);
 
-	void SortByPTS();
+	void FinalizeTrack();
 
 	int FindClosestVideoKeyFrame(int Frame) const;
 	int FrameFromPTS(int64_t PTS) const;

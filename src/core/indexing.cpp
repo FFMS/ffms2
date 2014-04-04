@@ -126,7 +126,7 @@ void FFMS_Index::Release() {
 
 void FFMS_Index::Sort() {
 	for (FFMS_Index::iterator Cur = begin(); Cur != end(); ++Cur)
-		Cur->SortByPTS();
+		Cur->FinalizeTrack();
 }
 
 bool FFMS_Index::CompareFileSignature(const char *Filename) {
