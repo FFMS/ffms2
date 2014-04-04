@@ -291,7 +291,7 @@ void FFMS_Track::GeneratePublicInfo() {
 		if (Frames[i].Hidden) continue;
 		RealFrameNumbers.push_back(i);
 
-		FFMS_FrameInfo info = {Frames[i].PTS, Frames[i].RepeatPict, Frames[i].KeyFrame};
+		FFMS_FrameInfo info = {Frames[i].PTS, Frames[i].RepeatPict, Frames[Frames[i].OriginalPos].KeyFrame};
 		PublicFrameInfo.push_back(info);
 	}
 }
