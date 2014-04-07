@@ -228,31 +228,15 @@ void FFMS_Track::MaybeReorderFrames() {
 }
 
 void FFMS_Track::MaybeHideFrames() {
-	if (size() < 2) return;
-
-	// Awful handling for interlaced H.264: if the file alternates between
-	// valid and invalid file positions, hide all the frames with invalid file
-	// positions.
-	bool prev_valid_pos = Frames[0].FilePos >= 0;
+	// Awful handling for interlaced H.264: each frame is output twice, so hide
+	// frames with an invalid file position and PTS equal to the previous one
 	for (size_t i = 1; i < size(); ++i) {
-		bool valid_pos = Frames[i].FilePos >= 0;
-		if (valid_pos == prev_valid_pos)
-			return;
-		prev_valid_pos = valid_pos;
-	}
+		FrameInfo const& prev = Frames[i - 1];
+		FrameInfo& cur = Frames[i];
 
-	int Offset = 0;
-	for (size_t i = 0; i < size(); ++i) {
-		if (Frames[i].FilePos < 0 && !Frames[i].Hidden) {
-			Frames[i].Hidden = true;
-			++Offset;
-		}
-		else if (Offset)
-			RealFrameNumbers[i - Offset] = RealFrameNumbers[i];
+		if (prev.FilePos >= 0 && (cur.FilePos == -1 || cur.FilePos == prev.FilePos) && cur.PTS == prev.PTS)
+			cur.Hidden = true;
 	}
-
-	if (Offset)
-		RealFrameNumbers.resize(RealFrameNumbers.size() - Offset);
 }
 
 void FFMS_Track::FinalizeTrack() {
@@ -297,6 +281,6 @@ void FFMS_Track::GeneratePublicInfo() {
 }
 
 const FFMS_FrameInfo *FFMS_Track::GetFrameInfo(size_t N) const {
-	if (N >= RealFrameNumbers.size()) return NULL;
-	return &PublicFrameInfo[RealFrameNumbers[N]];
+	if (N >= PublicFrameInfo.size()) return NULL;
+	return &PublicFrameInfo[N];
 }
