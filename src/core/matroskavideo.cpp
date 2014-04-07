@@ -163,7 +163,7 @@ FFMS_Frame *FFMatroskaVideo::GetFrame(int n) {
 	}
 
 	do {
-		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n || HasSeeked)
+		if (CurrentFrame + FFMS_CALCULATE_DELAY * CodecContext->ticks_per_frame >= n || HasSeeked)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;
