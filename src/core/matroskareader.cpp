@@ -302,7 +302,7 @@ static void safe_aligned_reallocz(T *&ptr, size_t old_size, size_t new_size) {
 
 void MatroskaReaderContext::Append(const void *Data, size_t Length) {
 	if (BufferSize < Length + FrameSize + FF_INPUT_BUFFER_PADDING_SIZE) {
-		size_t NewSize = (FrameSize + Length) * 2;
+		size_t NewSize = (FrameSize + Length) * 2 + FF_INPUT_BUFFER_PADDING_SIZE;
 		safe_aligned_reallocz(Buffer, BufferSize, NewSize);
 		BufferSize = NewSize;
 	}
