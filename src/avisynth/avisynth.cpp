@@ -25,15 +25,10 @@
 #include "avsutils.h"
 
 static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	FFMS_Init(0, Args[7].AsBool(false));
-
-	char ErrorMsg[1024];
-	FFMS_ErrorInfo E;
-	E.Buffer = ErrorMsg;
-	E.BufferSize = sizeof(ErrorMsg);
-
 	if (!Args[0].Defined())
 		Env->ThrowError("FFIndex: No source specified");
+
+	FFMS_Init(0, Args[7].AsBool(false));
 
 	const char *Source = Args[0].AsString();
 	const char *CacheFile = Args[1].AsString("");
@@ -66,6 +61,7 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 	else
 		Env->ThrowError("FFIndex: Invalid demuxer requested");
 
+	ErrorInfo E;
 	FFMS_Index *Index = FFMS_ReadIndex(CacheFile, &E);
 	if (OverWrite || !Index || (Index && FFMS_IndexBelongsToFile(Index, Source, 0) != FFMS_ERROR_SUCCESS)) {
 		FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(Source, Demuxer, &E);
@@ -90,11 +86,6 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 
 static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	FFMS_Init(0, Args[15].AsBool(false));
-
-	char ErrorMsg[1024];
-	FFMS_ErrorInfo E;
-	E.Buffer = ErrorMsg;
-	E.BufferSize = sizeof(ErrorMsg);
 
 	if (!Args[0].Defined())
 		Env->ThrowError("FFVideoSource: No source specified");
@@ -133,6 +124,7 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	if (!_stricmp(Source, Timecodes))
 		Env->ThrowError("FFVideoSource: Timecodes will overwrite the source");
 
+	ErrorInfo E;
 	FFMS_Index *Index = NULL;
 	std::string DefaultCache;
 	if (Cache) {
@@ -194,11 +186,6 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	FFMS_Init(0, Args[5].AsBool(false));
 
-	char ErrorMsg[1024];
-	FFMS_ErrorInfo E;
-	E.Buffer = ErrorMsg;
-	E.BufferSize = sizeof(ErrorMsg);
-
 	if (!Args[0].Defined())
 		Env->ThrowError("FFAudioSource: No source specified");
 
@@ -212,6 +199,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	if (Track <= -2)
 		Env->ThrowError("FFAudioSource: No audio track selected");
 
+	ErrorInfo E;
 	FFMS_Index *Index = NULL;
 	std::string DefaultCache;
 	if (Cache) {

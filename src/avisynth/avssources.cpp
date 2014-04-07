@@ -20,10 +20,9 @@
 
 #include "avssources.h"
 #include "avsutils.h"
+
 #include <libavutil/common.h>
 #include <cmath>
-
-
 
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
@@ -36,11 +35,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 	this->RFFMode = RFFMode;
 	this->VarPrefix = VarPrefix;
 
-	char ErrorMsg[1024];
-	FFMS_ErrorInfo E;
-	E.Buffer = ErrorMsg;
-	E.BufferSize = sizeof(ErrorMsg);
-
+	ErrorInfo E;
 	V = FFMS_CreateVideoSource(SourceFile, Track, Index, Threads, SeekMode, &E);
 	if (!V)
 		Env->ThrowError("FFVideoSource: %s", E.Buffer);
@@ -178,11 +173,7 @@ void AvisynthVideoSource::InitOutputFormat(
 	int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 	const char *ConvertToFormatName, IScriptEnvironment *Env) {
 
-	char ErrorMsg[1024];
-	FFMS_ErrorInfo E;
-	E.Buffer = ErrorMsg;
-	E.BufferSize = sizeof(ErrorMsg);
-
+	ErrorInfo E;
 	const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
 	const FFMS_Frame *F = FFMS_GetFrame(V, 0, &E);
 	if (!F)
@@ -314,13 +305,9 @@ void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst,
 PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 	n = FFMIN(FFMAX(n,0), VI.num_frames - 1);
 
-	char ErrorMsg[1024];
-	FFMS_ErrorInfo E;
-	E.Buffer = ErrorMsg;
-	E.BufferSize = sizeof(ErrorMsg);
-
 	PVideoFrame Dst = Env->NewVideoFrame(VI);
 
+	ErrorInfo E;
 	if (RFFMode > 0) {
 		const FFMS_Frame *Frame = FFMS_GetFrame(V, FFMIN(FieldList[n].Top, FieldList[n].Bottom), &E);
 		if (Frame == NULL)
@@ -366,11 +353,7 @@ AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS
 										 int AdjustDelay, const char *VarPrefix, IScriptEnvironment* Env) {
 	memset(&VI, 0, sizeof(VI));
 
-	char ErrorMsg[1024];
-	FFMS_ErrorInfo E;
-	E.Buffer = ErrorMsg;
-	E.BufferSize = sizeof(ErrorMsg);
-
+	ErrorInfo E;
 	A = FFMS_CreateAudioSource(SourceFile, Track, Index, AdjustDelay, &E);
 	if (!A)
 		Env->ThrowError("FFAudioSource: %s", E.Buffer);
@@ -400,11 +383,7 @@ AvisynthAudioSource::~AvisynthAudioSource() {
 }
 
 void AvisynthAudioSource::GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env) {
-	char ErrorMsg[1024];
-	FFMS_ErrorInfo E;
-	E.Buffer = ErrorMsg;
-	E.BufferSize = sizeof(ErrorMsg);
-
+	ErrorInfo E;
 	if (FFMS_GetAudio(A, Buf, Start, Count, &E))
 		Env->ThrowError("FFAudioSource: %s", E.Buffer);
 }

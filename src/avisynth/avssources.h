@@ -26,10 +26,15 @@
 #include "avisynth.h"
 #include "ffms.h"
 
-
+struct ErrorInfo : FFMS_ErrorInfo {
+	char ErrorBuffer[1024];
+	ErrorInfo() {
+		Buffer = ErrorBuffer;
+		BufferSize = sizeof(ErrorBuffer);
+	}
+};
 
 class AvisynthVideoSource : public IClip {
-private:
 	struct FrameFields {
 		int Top;
 		int Bottom;
@@ -61,7 +66,6 @@ public:
 };
 
 class AvisynthAudioSource : public IClip {
-private:
 	VideoInfo VI;
 	FFMS_AudioSource *A;
 public:
