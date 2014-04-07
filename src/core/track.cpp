@@ -228,6 +228,8 @@ void FFMS_Track::MaybeReorderFrames() {
 }
 
 void FFMS_Track::MaybeHideFrames() {
+	if (size() < 2) return;
+
 	// Awful handling for interlaced H.264: if the file alternates between
 	// valid and invalid file positions, hide all the frames with invalid file
 	// positions.
