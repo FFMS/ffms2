@@ -230,7 +230,7 @@ FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
 		// but what we currently know is the frame number of the first packet
 		// we fed into the decoder, and these can be different with open-gop or
 		// aggressive (non-keyframe) seeking.
-		int Pos = Frames[CurrentFrame].FilePos;
+		int64_t Pos = Frames[CurrentFrame].FilePos;
 		if (CurrentFrame > 0 && Pos != -1) {
 			int Prev = CurrentFrame - 1;
 			while (Prev >= 0 && Frames[Prev].FilePos != -1 && Frames[Prev].FilePos > Pos)
