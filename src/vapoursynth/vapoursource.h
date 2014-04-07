@@ -25,7 +25,6 @@ extern "C" {
 #include <libavutil/avutil.h>
 }
 
-#include <vector>
 #include "VapourSynth.h"
 #include "ffms.h"
 #include "ffmscompat.h"

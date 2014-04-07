@@ -34,8 +34,6 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-typedef std::pair<int, int> IntPair;
-
 static void BitBlt(uint8_t* dstp, int dst_pitch, const uint8_t* srcp, int src_pitch, int row_size, int height) {
     if (src_pitch == dst_pitch && dst_pitch == row_size) {
         memcpy(dstp, srcp, row_size * height);
@@ -278,8 +276,7 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	TargetFormats.push_back(-1);
 
 	// This trick is required to first get the "best" default format and then set only that format as the output
-	if (FFMS_SetOutputFormatV2(V, &TargetFormats[0],
-		ResizeToWidth, ResizeToHeight, Resizer, &E))
+	if (FFMS_SetOutputFormatV2(V, &TargetFormats[0], ResizeToWidth, ResizeToHeight, Resizer, &E))
 		throw std::runtime_error(std::string("Source: No suitable output format found"));
 
 	F = FFMS_GetFrame(V, 0, &E);
