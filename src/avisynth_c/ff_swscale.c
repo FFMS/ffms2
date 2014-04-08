@@ -19,6 +19,7 @@
 //  THE SOFTWARE.
 
 #include <libswscale/swscale.h>
+#include <libavcodec/avcodec.h>
 #include <malloc.h>
 #include "ff_filters.h"
 #include "avs_common.h"
@@ -120,8 +121,10 @@ AVS_Value FFSWScale_create( AVS_ScriptEnvironment *env, AVS_Value child, int dst
     if( (dst_pix_fmt == PIX_FMT_YUV420P || dst_pix_fmt == PIX_FMT_YUYV422 || dst_pix_fmt == PIX_FMT_YUV422P) && (filter->fi->vi.width&1) )
         return avs_new_value_error( "SWScale: mod 2 output width required" );
 
-    filter->context = ffms_sws_get_context( filter->orig_width, filter->orig_height, src_format, filter->fi->vi.width, filter->fi->vi.height,
-         dst_pix_fmt, resizer, get_sws_assumed_color_space( filter->fi->vi.width, filter->fi->vi.height ), -1 );
+    filter->context = ffms_sws_get_context( filter->orig_width, filter->orig_height, src_format,
+        get_sws_assumed_color_space( filter->fi->vi.width, filter->fi->vi.height ), AVCOL_RANGE_UNSPECIFIED,
+        filter->fi->vi.width, filter->fi->vi.height, dst_pix_fmt,
+        get_sws_assumed_color_space( filter->fi->vi.width, filter->fi->vi.height ), AVCOL_RANGE_UNSPECIFIED, resizer );
     if( !filter->context )
     {
         free( filter );

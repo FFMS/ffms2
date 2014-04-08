@@ -22,12 +22,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <libswscale/swscale.h>
-#include <ffms.h>
-
-#if LIBSWSCALE_VERSION_INT >= AV_VERSION_INT(0, 12, 0)
-#define USE_AVOPT_SWSCALE 1
 #include <libavutil/opt.h>
-#endif
+#include <ffms.h>
 
 enum AVPixelFormat csp_name_to_pix_fmt_25( const char *csp_name, enum AVPixelFormat def )
 {
@@ -159,29 +155,32 @@ char *ffms_avs_sprintf2( char *buf, size_t buf_len, const char *format, ... )
     return buf;
 }
 
-struct SwsContext *ffms_sws_get_context( int src_width, int src_height, int src_pix_fmt, int dst_width,
-                                         int dst_height, int dst_pix_fmt, int64_t flags, int csp, int crange )
+struct SwsContext *ffms_sws_get_context( int src_width, int src_height, int src_pix_fmt, int src_csp, int src_crange,
+                                         int dst_width, int dst_height, int dst_pix_fmt, int dst_csp, int dst_crange, int64_t flags )
 {
-#if USE_AVOPT_SWSCALE
     struct SwsContext *ctx = sws_alloc_context();
     if( !ctx )
         return NULL;
 
     // The intention here is to never change the color range.
     // 0 = limited range, 1 = full range
-    int range = crange == FFMS_CR_JPEG;
+    int src_range = src_crange == FFMS_CR_JPEG;
+    int dst_range = dst_crange == FFMS_CR_JPEG;
 
     av_opt_set_int( ctx, "sws_flags", flags, 0 );
     av_opt_set_int( ctx, "srcw", src_width, 0 );
     av_opt_set_int( ctx, "srch", src_height, 0 );
     av_opt_set_int( ctx, "dstw", dst_width, 0 );
     av_opt_set_int( ctx, "dsth", dst_height, 0 );
-    av_opt_set_int( ctx, "src_range", range, 0 );
-    av_opt_set_int( ctx, "dst_range", range, 0 );
+    av_opt_set_int( ctx, "src_range", src_range, 0 );
+    av_opt_set_int( ctx, "dst_range", dst_range, 0 );
     av_opt_set_int( ctx, "src_format", src_pix_fmt, 0 );
     av_opt_set_int( ctx, "dst_format", dst_pix_fmt, 0 );
 
-    sws_setColorspaceDetails( ctx, sws_getCoefficients( csp ), range, sws_getCoefficients( csp ), range, 0, 1<<16, 1<<16 );
+    sws_setColorspaceDetails( ctx,
+                              sws_getCoefficients( src_csp ), src_range,
+                              sws_getCoefficients( dst_csp ), dst_range,
+                              0, 1<<16, 1<<16 );
     if( sws_init_context( ctx, NULL, NULL ) < 0 )
     {
         sws_freeContext( ctx );
@@ -189,9 +188,6 @@ struct SwsContext *ffms_sws_get_context( int src_width, int src_height, int src_
     }
 
     return ctx;
-#else
-    return sws_getContext( src_width, src_height, src_pix_fmt, dst_width, dst_height, dst_pix_fmt, flags, NULL, NULL, NULL );
-#endif
 }
 
 int get_sws_assumed_color_space( int width, int height )
