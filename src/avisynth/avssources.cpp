@@ -27,13 +27,13 @@
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
-		const char *ConvertToFormatName, const char *VarPrefix, IScriptEnvironment* Env) {
-
+		const char *ConvertToFormatName, const char *VarPrefix, IScriptEnvironment* Env)
+: FPSNum(FPSNum)
+, FPSDen(FPSDen)
+, RFFMode(RFFMode)
+, VarPrefix(VarPrefix)
+{
 	memset(&VI, 0, sizeof(VI));
-	this->FPSNum = FPSNum;
-	this->FPSDen = FPSDen;
-	this->RFFMode = RFFMode;
-	this->VarPrefix = VarPrefix;
 
 	ErrorInfo E;
 	V = FFMS_CreateVideoSource(SourceFile, Track, Index, Threads, SeekMode, &E);
@@ -369,7 +369,6 @@ AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS
 
 	const FFMS_AudioProperties *AP = FFMS_GetAudioProperties(A);
 	VI.nchannels = AP->Channels;
-
 	VI.num_audio_samples = AP->NumSamples;
 	VI.audio_samples_per_second = AP->SampleRate;
 
