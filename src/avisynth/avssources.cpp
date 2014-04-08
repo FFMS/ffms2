@@ -18,11 +18,11 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
+#define NOMINMAX
 #include "avssources.h"
 #include "avsutils.h"
 
-#include <libavutil/common.h>
-#include <cmath>
+#include <algorithm>
 
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
@@ -65,7 +65,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 		for (int i = 0; i < VP->NumFrames; i++) {
 			int RepeatPict = FFMS_GetFrameInfo(VTrack, i)->RepeatPict;
 			NumFields += RepeatPict + 1;
-			RepeatMin = FFMIN(RepeatMin, RepeatPict);
+			RepeatMin = std::min(RepeatMin, RepeatPict);
 		}
 
 		for (int i = 0; i < VP->NumFrames; i++) {
@@ -312,21 +312,21 @@ void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst,
 }
 
 PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
-	n = FFMIN(FFMAX(n,0), VI.num_frames - 1);
+	n = std::min(std::max(n,0), VI.num_frames - 1);
 
 	PVideoFrame Dst = Env->NewVideoFrame(VI);
 
 	ErrorInfo E;
 	if (RFFMode > 0) {
-		const FFMS_Frame *Frame = FFMS_GetFrame(V, FFMIN(FieldList[n].Top, FieldList[n].Bottom), &E);
+		const FFMS_Frame *Frame = FFMS_GetFrame(V, std::min(FieldList[n].Top, FieldList[n].Bottom), &E);
 		if (Frame == NULL)
 			Env->ThrowError("FFVideoSource: %s", E.Buffer);
 		if (FieldList[n].Top == FieldList[n].Bottom) {
 			OutputFrame(Frame, Dst, Env);
 		} else {
-			int FirstField = FFMIN(FieldList[n].Top, FieldList[n].Bottom) == FieldList[n].Bottom;
+			int FirstField = std::min(FieldList[n].Top, FieldList[n].Bottom) == FieldList[n].Bottom;
 			OutputField(Frame, Dst, FirstField, Env);
-			Frame = FFMS_GetFrame(V, FFMAX(FieldList[n].Top, FieldList[n].Bottom), &E);
+			Frame = FFMS_GetFrame(V, std::max(FieldList[n].Top, FieldList[n].Bottom), &E);
 			if (Frame == NULL)
 				Env->ThrowError("FFVideoSource: %s", E.Buffer);
 			OutputField(Frame, Dst, !FirstField, Env);
