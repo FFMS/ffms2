@@ -232,7 +232,7 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
     if( filter->rff_mode > 0 && dst_height != frame->EncodedHeight )
         return avs_new_value_error( "FFVideoSource: Vertical scaling not allowed in RFF mode" );
 
-    if( filter->rff_mode > 0 && dst_pix_fmt != PIX_FMT_NV12 )
+    if( filter->rff_mode > 0 && dst_pix_fmt != PIX_FMT_NV21 )
         return avs_new_value_error( "FFVideoSource: Only the default output colorspace can be used in RFF mode" );
 
     // Set color information
