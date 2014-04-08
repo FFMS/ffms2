@@ -25,9 +25,6 @@
 
 struct SwsContext;
 
-int64_t avs_to_ff_cpu_flags( long avisynth_flags );
-int avs_to_pp_cpu_flags( long avisynth_flags );
-int64_t avs_to_sws_cpu_flags( long avisynth_flags );
 enum  AVPixelFormat csp_name_to_pix_fmt_25( const char *csp_name, enum AVPixelFormat def );
 enum  AVPixelFormat csp_name_to_pix_fmt_26( const char *csp_name, enum AVPixelFormat def );
 enum  AVPixelFormat vi_to_pix_fmt_25( const AVS_VideoInfo *vi );

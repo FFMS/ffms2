@@ -29,44 +29,6 @@
 #include <libavutil/opt.h>
 #endif
 
-int64_t avs_to_ff_cpu_flags( long avisynth_flags )
-{
-    int64_t flags = 0;
-    if( avisynth_flags & AVS_CPU_MMX )
-        flags |= FFMS_CPU_CAPS_MMX;
-    if( avisynth_flags & AVS_CPU_INTEGER_SSE )
-        flags |= FFMS_CPU_CAPS_MMX2;
-    if( avisynth_flags & AVS_CPU_3DNOW_EXT )
-        flags |= FFMS_CPU_CAPS_3DNOW;
-    if( avisynth_flags & AVS_CPU_SSE2 )
-        flags |= FFMS_CPU_CAPS_SSE2;
-    return flags;
-}
-
-int avs_to_pp_cpu_flags( long avisynth_flags )
-{
-    int flags = 0;
-    return flags;
-}
-
-int64_t avs_to_sws_cpu_flags( long avisynth_flags )
-{
-    int64_t flags = 0;
-#ifdef SWS_CPU_CAPS_MMX
-    if( avisynth_flags & AVS_CPU_MMX )
-        flags |= SWS_CPU_CAPS_MMX;
-    if( avisynth_flags & AVS_CPU_INTEGER_SSE )
-        flags |= SWS_CPU_CAPS_MMX2;
-    if( avisynth_flags & AVS_CPU_3DNOW_EXT )
-        flags |= SWS_CPU_CAPS_3DNOW;
-#ifdef SWS_CPU_CAPS_SSE2
-    if( avisynth_flags & AVS_CPU_SSE2 )
-        flags |= SWS_CPU_CAPS_SSE2;
-#endif // SWS_CPU_CAPS_SSE2
-#endif // SWS_CPU_CAPS_MMX
-    return flags;
-}
-
 enum AVPixelFormat csp_name_to_pix_fmt_25( const char *csp_name, enum AVPixelFormat def )
 {
     if( !csp_name || !strcmp( csp_name, "" ) )
