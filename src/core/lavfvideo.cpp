@@ -25,10 +25,27 @@ class FFLAVFVideo : public FFMS_VideoSource {
 	AVFormatContext *FormatContext;
 	int SeekMode;
 	FFSourceResources<FFMS_VideoSource> Res;
+	bool SeekByPos;
 
 	void DecodeNextFrame(int64_t *PTS, int64_t *Pos);
 	bool SeekTo(int n, int SeekOffset);
 	void Free(bool CloseCodec);
+
+	int Seek(int n) {
+		int ret = -1;
+		if (!SeekByPos || Frames[n].FilePos < 0) {
+			ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].PTS, AVSEEK_FLAG_BACKWARD);
+			if (ret >= 0)
+				return ret;
+		}
+
+		if (Frames[n].FilePos >= 0) {
+			ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].FilePos, AVSEEK_FLAG_BYTE);
+			if (ret >= 0)
+				SeekByPos = true;
+		}
+		return ret;
+	}
 
 public:
 	FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode);
@@ -47,12 +64,13 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 , FormatContext(NULL)
 , SeekMode(SeekMode)
 , Res(this)
+, SeekByPos(false)
 {
 	AVCodec *Codec = NULL;
 
 	LAVFOpenFile(SourceFile, FormatContext);
 
-	if (SeekMode >= 0 && Frames.size() > 1 && av_seek_frame(FormatContext, VideoTrack, Frames[0].PTS, AVSEEK_FLAG_BACKWARD) < 0)
+	if (SeekMode >= 0 && Frames.size() > 1 && Seek(0) < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Video track is unseekable");
 
@@ -147,7 +165,7 @@ bool FFLAVFVideo::SeekTo(int n, int SeekOffset) {
 
 		if (SeekMode == 0) {
 			if (n < CurrentFrame) {
-				av_seek_frame(FormatContext, VideoTrack, Frames[0].PTS, AVSEEK_FLAG_BACKWARD);
+				Seek(0);
 				FlushBuffers(CodecContext);
 				CurrentFrame = 0;
 				DelayCounter = 0;
@@ -156,7 +174,7 @@ bool FFLAVFVideo::SeekTo(int n, int SeekOffset) {
 		} else {
 			// 10 frames is used as a margin to prevent excessive seeking since the predicted best keyframe isn't always selected by avformat
 			if (n < CurrentFrame || TargetFrame > CurrentFrame + 10 || (SeekMode == 3 && n > CurrentFrame + 10)) {
-				av_seek_frame(FormatContext, VideoTrack, Frames[TargetFrame].PTS, AVSEEK_FLAG_BACKWARD);
+				Seek(TargetFrame);
 				FlushBuffers(CodecContext);
 				DelayCounter = 0;
 				InitialDecode = 1;
