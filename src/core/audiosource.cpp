@@ -240,15 +240,17 @@ FFMS_ResampleOptions *FFMS_AudioSource::CreateResampleOptions() const {
 }
 
 void FFMS_AudioSource::ResampleAndCache(CacheIterator pos) {
-	AudioBlock& block = *Cache.insert(pos, AudioBlock(CurrentSample, DecodeFrame->nb_samples));
-	block.Data.reserve(DecodeFrame->nb_samples * BytesPerSample);
+	AudioBlock& block = *pos;
+	size_t old_size = block.Data.size();
+	size_t new_req = DecodeFrame->nb_samples * BytesPerSample;
+	block.Data.reserve(old_size + new_req);
 
 #ifdef WITH_AVRESAMPLE
 	block.Data.resize(block.Data.capacity());
 
-	uint8_t *OutPlanes[1] = { static_cast<uint8_t *>(&block.Data[0]) };
+	uint8_t *OutPlanes[1] = { static_cast<uint8_t *>(&block.Data[old_size]) };
 	avresample_convert(ResampleContext,
-		OutPlanes, block.Data.size(), DecodeFrame->nb_samples,
+		OutPlanes, new_req, DecodeFrame->nb_samples,
 		DecodeFrame->extended_data, DecodeFrame->nb_samples * av_get_bytes_per_sample(CodecContext->sample_fmt), DecodeFrame->nb_samples);
 #else
 	int width = av_get_bytes_per_sample(CodecContext->sample_fmt);
@@ -262,10 +264,21 @@ void FFMS_AudioSource::ResampleAndCache(CacheIterator pos) {
 }
 
 void FFMS_AudioSource::CacheBlock(CacheIterator &pos) {
+	// If the previous block has the same Start sample as this one, then
+	// we got multiple frames of audio out of a single package and should
+	// combine them
+	CacheIterator block = pos;
+	if (pos == Cache.begin() || (--block)->Start != CurrentSample)
+		block = Cache.insert(pos, AudioBlock(CurrentSample));
+
+	block->Samples += DecodeFrame->nb_samples;
+
 	if (NeedsResample)
-		ResampleAndCache(pos);
-	else
-		Cache.insert(pos, AudioBlock(CurrentSample, DecodeFrame->nb_samples, DecodeFrame->extended_data[0], DecodeFrame->nb_samples * BytesPerSample));
+		ResampleAndCache(block);
+	else {
+		const uint8_t *data = DecodeFrame->extended_data[0];
+		block->Data.insert(block->Data.end(), data, data + DecodeFrame->nb_samples * BytesPerSample);
+	}
 
 	if (Cache.size() >= MaxCacheBlocks) {
 		// Kill the oldest one
@@ -397,7 +410,7 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 			if (CurrentSample > Start)
 				throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_CODEC, "Seeking is severely broken");
 
-			// The block we want is now in the cache immediate before it
+			// The block we want is now in the cache immediately before it
 			--it;
 		}
 	}

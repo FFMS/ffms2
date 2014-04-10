@@ -34,18 +34,9 @@ struct FFMS_AudioSource {
 		int64_t Samples;
 		std::vector<uint8_t> Data;
 
-		AudioBlock(int64_t Start, int64_t Samples, uint8_t *SrcData, size_t SrcBytes)
+		AudioBlock(int64_t Start)
 		: Start(Start)
-		, Samples(Samples)
-		, Data(SrcData, SrcData + SrcBytes)
-		{
-			static int64_t Now = 0;
-			Age = Now++;
-		}
-
-		AudioBlock(int64_t Start, int64_t Samples)
-		: Start(Start)
-		, Samples(Samples)
+		, Samples(0)
 		{
 			static int64_t Now = 0;
 			Age = Now++;
