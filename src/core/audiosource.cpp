@@ -379,7 +379,7 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 				FrameInfo f;
 				f.SampleStart = Start;
 				size_t NewPacketNumber = std::distance(Frames.begin(), std::lower_bound(Frames.begin(), Frames.end(), f, SampleStartComp));
-				NewPacketNumber = std::max<size_t>(0, NewPacketNumber - SeekOffset - 15);
+				NewPacketNumber = NewPacketNumber > SeekOffset + 15 ? NewPacketNumber - SeekOffset - 15 : 0;
 				while (NewPacketNumber > 0 && !Frames[NewPacketNumber].KeyFrame) --NewPacketNumber;
 
 				// Only seek forward if it'll actually result in moving forward
