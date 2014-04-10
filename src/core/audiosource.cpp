@@ -388,8 +388,12 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 			if (SeekOffset >= 0 && (Start < CurrentSample || Start > CurrentSample + DecodeFrame->nb_samples * 5)) {
 				FrameInfo f;
 				f.SampleStart = Start;
-				size_t NewPacketNumber = std::distance(Frames.begin(), std::lower_bound(Frames.begin(), Frames.end(), f, SampleStartComp));
-				NewPacketNumber = NewPacketNumber > SeekOffset + 15 ? NewPacketNumber - SeekOffset - 15 : 0;
+				size_t NewPacketNumber = std::distance(
+					Frames.begin(),
+					std::lower_bound(Frames.begin(), Frames.end(), f, SampleStartComp));
+				NewPacketNumber = NewPacketNumber > static_cast<size_t>(SeekOffset + 15)
+				                ? NewPacketNumber - SeekOffset - 15
+				                : 0;
 				while (NewPacketNumber > 0 && !Frames[NewPacketNumber].KeyFrame) --NewPacketNumber;
 
 				// Only seek forward if it'll actually result in moving forward
