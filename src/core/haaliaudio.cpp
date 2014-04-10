@@ -29,8 +29,15 @@ class FFHaaliAudio : public FFMS_AudioSource {
 	CComPtr<IMMContainer> pMMC;
 	CComPtr<IMMFrame> pMMF;
 
+	std::string SourceFile;
+	FFMS_Sources SourceMode;
+
 	bool ReadPacket(AVPacket *);
 	void Seek();
+
+	void ReopenFile() {
+		pMMC = HaaliOpenFile(SourceFile.c_str(), SourceMode);
+	}
 
 public:
 	FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index, FFMS_Sources SourceMode, int DelayMode);
@@ -39,6 +46,8 @@ public:
 FFHaaliAudio::FFHaaliAudio(const char *SourceFile, int Track, FFMS_Index &Index, FFMS_Sources SourceMode, int DelayMode)
 : FFMS_AudioSource(SourceFile, Index, Track)
 , pMMC(HaaliOpenFile(SourceFile, SourceMode))
+, SourceFile(SourceFile)
+, SourceMode(SourceMode)
 {
 	CComPtr<IEnumUnknown> pEU;
 	if (!SUCCEEDED(pMMC->EnumTracks(&pEU)))

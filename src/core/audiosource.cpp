@@ -90,7 +90,6 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 	// Decode the first packet to ensure all properties are initialized
 	// Don't cache it since it might be in the wrong format
-	// Instead, leave it in DecodeFrame and it'll get cached later
 	while (DecodeFrame->nb_samples == 0)
 		DecodeNextBlock();
 
@@ -149,10 +148,6 @@ void FFMS_AudioSource::CacheBeginning() {
 	// Nothing to do if the cache is already populated
 	if (!Cache.empty()) return;
 
-	// The first frame is already decoded, so add it to the cache
-	CacheIterator it = Cache.end();
-	CacheBlock(it);
-
 	// The first packet after a seek is often decoded incorrectly, which
 	// makes it impossible to ever correctly seek back to the beginning, so
 	// store the first block now
@@ -192,10 +187,6 @@ void FFMS_AudioSource::CacheBeginning() {
 }
 
 void FFMS_AudioSource::SetOutputFormat(const FFMS_ResampleOptions *opt) {
-	if (!Cache.empty())
-		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_USER,
-			"Cannot change the output format after audio decoding has begun");
-
 	if (opt->SampleRate != AP.SampleRate)
 		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
 			"Sample rate changes are currently unsupported.");
@@ -205,6 +196,12 @@ void FFMS_AudioSource::SetOutputFormat(const FFMS_ResampleOptions *opt) {
 		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
 			"FFMS was not built with resampling enabled. The only supported conversion is interleaving planar audio.");
 #endif
+
+	// Cache stores audio in the output format, so clear it and reopen the file
+	Cache.clear();
+	PacketNumber = 0;
+	ReopenFile();
+	FlushBuffers(CodecContext);
 
 	BytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(opt->SampleFormat)) * av_get_channel_layout_nb_channels(opt->ChannelLayout);
 	NeedsResample =

@@ -81,6 +81,10 @@ struct FFMS_AudioSource {
 	// Read the next packet from the file
 	virtual bool ReadPacket(AVPacket *) = 0;
 	virtual void FreePacket(AVPacket *) { }
+
+    // Close and reopen the source file to seek back to the beginning. Only
+	// needs to do anything for formats that can't seek to the beginning otherwise.
+	virtual void ReopenFile() { }
 protected:
 	// First sample which is stored in the decoding buffer
 	int64_t CurrentSample;

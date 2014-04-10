@@ -26,12 +26,33 @@ namespace {
 class FFLAVFAudio : public FFMS_AudioSource {
 	AVFormatContext *FormatContext;
 	int64_t LastValidTS;
+	std::string SourceFile;
 
 	bool ReadPacket(AVPacket *);
 	void FreePacket(AVPacket *Packet) { av_free_packet(Packet); }
 	void Seek();
 
 	int64_t FrameTS(size_t Packet) const;
+
+	void ReopenFile() {
+		avcodec_close(CodecContext);
+		avformat_close_input(&FormatContext);
+
+		LAVFOpenFile(SourceFile.c_str(), FormatContext);
+		CodecContext.reset(FormatContext->streams[TrackNumber]->codec);
+		OpenCodec();
+	}
+
+	void OpenCodec() {
+		AVCodec *Codec = avcodec_find_decoder(CodecContext->codec_id);
+		if (!Codec)
+			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+				"Audio codec not found");
+
+		if (avcodec_open2(CodecContext, Codec, NULL) < 0)
+			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+				"Could not open audio codec");
+	}
 
 public:
 	FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
@@ -42,21 +63,15 @@ FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, i
 : FFMS_AudioSource(SourceFile, Index, Track)
 , FormatContext(NULL)
 , LastValidTS(ffms_av_nopts_value)
+, SourceFile(SourceFile)
 {
 	LAVFOpenFile(SourceFile, FormatContext);
 
 	CodecContext.reset(FormatContext->streams[TrackNumber]->codec);
 	assert(CodecContext);
 
-	AVCodec *Codec = avcodec_find_decoder(CodecContext->codec_id);
 	try {
-		if (!Codec)
-			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-				"Audio codec not found");
-
-		if (avcodec_open2(CodecContext, Codec, NULL) < 0)
-			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-				"Could not open audio codec");
+		OpenCodec();
 	}
 	catch (...) {
 		avformat_close_input(&FormatContext);
