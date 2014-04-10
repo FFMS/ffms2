@@ -26,6 +26,7 @@ class FFLAVFVideo : public FFMS_VideoSource {
 	int SeekMode;
 	FFSourceResources<FFMS_VideoSource> Res;
 	bool SeekByPos;
+	int PosOffset;
 
 	void DecodeNextFrame(int64_t *PTS, int64_t *Pos);
 	bool SeekTo(int n, int SeekOffset);
@@ -40,9 +41,26 @@ class FFLAVFVideo : public FFMS_VideoSource {
 		}
 
 		if (Frames[n].FilePos >= 0) {
-			ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].FilePos, AVSEEK_FLAG_BYTE);
+			ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].FilePos + PosOffset, AVSEEK_FLAG_BYTE);
 			if (ret >= 0)
 				SeekByPos = true;
+		}
+		return ret;
+	}
+
+	int ReadFrame(AVPacket *pkt) {
+		int ret = av_read_frame(FormatContext, pkt);
+		if (ret >= 0 || ret == AVERROR(EOF)) return ret;
+
+		// Lavf reports the beginning of the actual video data as the packet's
+		// position, but the reader requires the header, so we end up seeking
+		// to the wrong position. Wait until a read actual fails to adjust the
+		// seek targets, so that if this ever gets fixed upstream our workaround
+		// doesn't re-break it.
+		if (strcmp(FormatContext->iformat->name, "yuv4mpegpipe") == 0) {
+			PosOffset = -6;
+			Seek(CurrentFrame);
+			return av_read_frame(FormatContext, pkt);
 		}
 		return ret;
 	}
@@ -65,9 +83,8 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 , SeekMode(SeekMode)
 , Res(this)
 , SeekByPos(false)
+, PosOffset(0)
 {
-	AVCodec *Codec = NULL;
-
 	LAVFOpenFile(SourceFile, FormatContext);
 
 	if (SeekMode >= 0 && Frames.size() > 1 && Seek(0) < 0)
@@ -78,7 +95,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	CodecContext->thread_count = DecodingThreads;
 	CodecContext->has_b_frames = Frames.MaxBFrames;
 
-	Codec = avcodec_find_decoder(CodecContext->codec_id);
+	AVCodec *Codec = avcodec_find_decoder(CodecContext->codec_id);
 	if (Codec == NULL)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Video codec not found");
@@ -133,7 +150,7 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime, int64_t *Pos) {
 	AVPacket Packet;
 	InitNullPacket(Packet);
 
-	while (av_read_frame(FormatContext, &Packet) >= 0) {
+	while (ReadFrame(&Packet) >= 0) {
 		if (Packet.stream_index != VideoTrack) {
 			av_free_packet(&Packet);
 			continue;
