@@ -29,8 +29,6 @@ ZipFile::ZipFile(const char *filename, const char *mode)
 	buffer.resize(65536);
 
 	memset(&z, 0, sizeof(z));
-	if (deflateInit(&z, 9) != Z_OK)
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to initialize zlib");
 }
 
 ZipFile::~ZipFile() {
