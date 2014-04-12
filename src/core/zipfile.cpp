@@ -77,7 +77,7 @@ int ZipFile::Write(const void *data, size_t size) {
 		state = Initial;
 	}
 	if (state != Deflate) {
-		if (deflateInit(&z, 9) != Z_OK)
+		if (deflateInit(&z, 5) != Z_OK)
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to initialize zlib");
 		state = Deflate;
 	}
