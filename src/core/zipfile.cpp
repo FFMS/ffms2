@@ -56,6 +56,8 @@ void ZipFile::Read(void *data, size_t size) {
 			z.next_in = reinterpret_cast<Bytef*>(&buffer[0]);
 			z.avail_in = file.Read(&buffer[0], buffer.size());
 		}
+		if (!z.avail_in && !file.Tell())
+			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to read data: File is empty");
 
 		switch (inflate(&z, Z_SYNC_FLUSH)) {
 		case Z_NEED_DICT:

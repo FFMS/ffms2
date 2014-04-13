@@ -180,7 +180,6 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 FFMS_Index::FFMS_Index(const char *IndexFile)
 : RefCount(1)
 {
-	// todo: check if crashes on empty index file
 	ZipFile zf(IndexFile, "rb");
 
 	// Read the index file header
