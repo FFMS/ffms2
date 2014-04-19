@@ -187,7 +187,7 @@ int FFMS_Track::RealFrameNumber(int Frame) const {
 }
 
 int FFMS_Track::VisibleFrameCount() const {
-	return RealFrameNumbers.size();
+	return TT == FFMS_TYPE_AUDIO ? Frames.size() : RealFrameNumbers.size();
 }
 
 void FFMS_Track::MaybeReorderFrames() {
