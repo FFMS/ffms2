@@ -568,7 +568,7 @@ The callback function's arguments are as follows:</p>
 <p>Returns a pointer to the <tt>FFMS_Indexer</tt> on success. Returns <tt>NULL</tt> and sets <tt>ErrorMsg</tt> on failure.</p>
 
 <h3>FFMS_CreateIndexerWithDemuxer - creates an indexer object for the given file, using the given source module</h3>
-<pre>FFMS_Indexer *FFMS_CreateIndexer(const char *SourceFile, int Demuxer, FFMS_ErrorInfo *ErrorInfo)</pre>
+<pre>FFMS_Indexer *FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int Demuxer, FFMS_ErrorInfo *ErrorInfo)</pre>
 <p>Creates a <tt>FFMS_Indexer</tt> object for the given <tt>SourceFile</tt> using the given <tt>Demuxer</tt> (as enumerated in <tt>FFMS_Sources</tt>) and returns a pointer to it. See Indexing and You for details on how to use the indexer.<br />
 The chosen demuxer gets used for both indexing and decoding later on. Only force one if you know what you're doing. Picking a demuxer that doesn't work on your file will not cause automatic fallback on lavf or automatic probing; it'll just cause indexer creation to fail.</p>
 <h4>Return values</h4>
