@@ -14,7 +14,7 @@ install:
   - sudo make install
   - cd ..
 script:
-  - ./configure --enable-static --disable-shared
+  - ./configure --enable-static --disable-shared || cat config.log
   - make CXXFLAGS='-Wall -Wextra -Wno-missing-field-initializers -Werror' -j2 -k
 notifications:
   email:
