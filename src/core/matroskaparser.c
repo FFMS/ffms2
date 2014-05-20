@@ -159,6 +159,8 @@ struct MatroskaFile {
   int	      bufpos; // current read position in buffer
   int	      buflen; // valid bytes in buffer
 
+  void	      *cpbuf;
+
   // error reporting
   char	      errmsg[128];
   jmp_buf     jb;
@@ -414,6 +416,9 @@ static void   myvsnprintf(char *dest,unsigned dsize,const char *fmt,va_list ap) 
 
 static void   errorjmp(MatroskaFile *mf,const char *fmt, ...) {
   va_list   ap;
+
+  mf->cache->memfree(mf->cache, mf->cpbuf);
+  mf->cpbuf = NULL;
 
   va_start(ap, fmt);
   myvsnprintf(mf->errmsg,sizeof(mf->errmsg),fmt,ap);
@@ -1373,10 +1378,14 @@ static void parseTrackEntry(MatroskaFile *mf,ulonglong toplen) {
     case 0x63a2: // CodecPrivate
       if (cp)
 	errorjmp(mf,"Duplicate CodecPrivate");
-      if (len>262144) // 256KB
-	errorjmp(mf,"CodecPrivate is too large: %d",(int)len);
       cplen = (unsigned)len;
-      cp = alloca(cplen);
+      if (len > 262144) { // 256KB
+	cp = mf->cpbuf = mf->cache->memalloc(mf->cache, cplen);
+	if (!cp)
+	  errorjmp(mf,"Out of memory");
+      }
+      else
+	cp = alloca(cplen);
       readbytes(mf,cp,(int)cplen);
       break;
     case 0x258688: // CodecName
@@ -1557,9 +1566,12 @@ static void parseTrackEntry(MatroskaFile *mf,ulonglong toplen) {
 
 static void parseTracks(MatroskaFile *mf,ulonglong toplen) {
   mf->seen.Tracks = 1;
+  mf->cpbuf = NULL;
   FOREACH(mf,toplen)
     case 0xae: // TrackEntry
       parseTrackEntry(mf,len);
+      mf->cache->memfree(mf->cache, mf->cpbuf);
+      mf->cpbuf = NULL;
       break;
   ENDFOR(mf);
 }
