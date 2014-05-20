@@ -234,7 +234,7 @@ const void *MatroskaReader::Read(ulonglong pos, size_t count) {
 }
 
 int MatroskaReader::ISRead(MatroskaReader *self, ulonglong pos, void *buffer, int count) {
-	if (pos == self->file->Size())
+	if (pos >= self->file->Size())
 		return 0;
 
 	ulonglong remaining = self->file->Size() - pos;
