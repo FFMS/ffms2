@@ -112,6 +112,11 @@ AC_SUBST(pkgconfigdir)
 
 PKG_CHECK_MODULES(LIBAV, [libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 ])
 CPPFLAGS="$CPPFLAGS -D__STDC_CONSTANT_MACROS"
+
+dnl As of 0eec06ed8747923faa6a98e474f224d922dc487d ffmpeg only adds -lrt to lavc's
+dnl LIBS, but lavu needs it, so move it to the end if it's present
+LIBAV_LIBS=$(echo $LIBAV_LIBS | sed 's/\(.*\) -lrt\(.*\)/\1\2 -lrt/')
+
 AC_SUBST([LIBAV_CFLAGS])
 AC_SUBST([LIBAV_LIBS])
 
