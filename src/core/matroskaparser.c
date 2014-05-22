@@ -1379,7 +1379,7 @@ static void parseTrackEntry(MatroskaFile *mf,ulonglong toplen) {
       if (cp)
 	errorjmp(mf,"Duplicate CodecPrivate");
       cplen = (unsigned)len;
-      if (len > 262144) { // 256KB
+      if (len > 1024) {
 	cp = mf->cpbuf = mf->cache->memalloc(mf->cache, cplen);
 	if (!cp)
 	  errorjmp(mf,"Out of memory");
@@ -1504,7 +1504,9 @@ static void parseTrackEntry(MatroskaFile *mf,ulonglong toplen) {
       errorjmp(mf, "invalid compressed data in CodecPrivate");
 
     ncplen = zs.total_out;
-    ncp = alloca(ncplen);
+    ncp = ncplen > 1024 ? mf->cache->memalloc(mf->cache, ncplen) : alloca(ncplen);
+    if (ncp == NULL)
+      errorjmp(mf,"Out of memory");
 
     inflateReset(&zs);
 
@@ -1513,13 +1515,24 @@ static void parseTrackEntry(MatroskaFile *mf,ulonglong toplen) {
     zs.next_out = ncp;
     zs.avail_out = ncplen;
 
-    if (inflate(&zs, Z_FINISH) != Z_STREAM_END)
+    if (inflate(&zs, Z_FINISH) != Z_STREAM_END) {
+      if (ncplen > 1024)
+	mf->cache->memfree(mf->cache, ncp);
       errorjmp(mf, "inflate failed");
+    }
 
     inflateEnd(&zs);
 
     cp = (char *)ncp;
     cplen = ncplen;
+
+    if (mf->cpbuf) {
+	mf->cache->memfree(mf->cache, mf->cpbuf);
+	mf->cpbuf = NULL;
+    }
+
+    if (ncplen > 1024)
+	mf->cpbuf = cp;
   }
 #endif
 
