@@ -203,6 +203,9 @@ AS_IF([test x$enable_avresample != xno],
       [libavresample="libavresample"
        AC_DEFINE([WITH_AVRESAMPLE], [1], [Use avresample])])
 
+dnl See similar thing for LIBAV_LIBS
+AVRESAMPLE_LIBS=$(echo $AVRESAMPLE_LIBS | sed 's/\(.*\) -lrt\(.*\)/\1\2 -lrt/')
+
 AC_SUBST([AVRESAMPLE_CFLAGS])
 AC_SUBST([AVRESAMPLE_LIBS])
 AC_SUBST([libavresample])
