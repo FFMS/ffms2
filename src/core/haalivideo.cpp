@@ -26,9 +26,9 @@
 namespace {
 class FFHaaliVideo : public FFMS_VideoSource {
 	FFCodecContext HCodecContext;
+	FFSourceResources<FFMS_VideoSource> Res;
 	CComPtr<IMMContainer> pMMC;
 	AVBitStreamFilterContext *BitStreamFilter;
-	FFSourceResources<FFMS_VideoSource> Res;
 
 	void DecodeNextFrame(int64_t *AFirstStartTime);
 	void Free(bool CloseCodec);
@@ -46,7 +46,8 @@ void FFHaaliVideo::Free(bool CloseCodec) {
 }
 
 FFHaaliVideo::FFHaaliVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, FFMS_Sources SourceMode)
-: Res(this), FFMS_VideoSource(SourceFile, Index, Track, Threads)
+: FFMS_VideoSource(SourceFile, Index, Track, Threads)
+, Res(this)
 , pMMC(HaaliOpenFile(SourceFile, SourceMode))
 , BitStreamFilter(NULL)
 {
