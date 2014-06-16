@@ -559,7 +559,7 @@ int FFMS_GetNumTracks(FFMS_Index *Index);
 ```
 Returns the total number of tracks in the media file represented by the given `FFMS_Index`.
 
-### FFMS_GetNumTracksI - gets the number of tracks in a given indexer</h3>
+### FFMS_GetNumTracksI - gets the number of tracks in a given indexer
 ```c++
 int FFMS_GetNumTracksI(FFMS_Indexer *Indexer);
 ```
@@ -998,8 +998,8 @@ typedef struct {
   int CropLeft;
   int CropRight;
   int TopFieldFirst;
-  int ColorSpace; <span class="deprecated">[DEPRECATED]</span>
-  int ColorRange; <span class="deprecated">[DEPRECATED]</span>
+  int ColorSpace; // [DEPRECATED]
+  int ColorRange; // [DEPRECATED]
   double FirstTime;
   double LastTime;
 } FFMS_VideoProperties;
