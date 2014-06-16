@@ -182,6 +182,7 @@ Note that the index file written has an internal version number; if you have a v
 If you want to verify that a given index file actually is an index of the source file you think it is, use `FFMS_IndexBelongsToFile`.
 
 ## Function Reference
+
 Most functions that can fail in one way or another (as well as some that should be able to but currently don't) support error reporting using the `ErrorInfo` parameter.
 Example:
 ```c++
@@ -199,7 +200,10 @@ if (frame == NULL) {
   /* etc... */
 }
 ```
-How many characters you want to allocate to the error message is up to you; if you allocate too few the messages will get truncated. 1024 should be enough for anyone.
+How many characters you want to allocate to the error message is up to you; if you allocate too few the messages will get truncated.
+1024 should be enough for anyone.
+
+[errorhandling]: #function-reference
 
 ### FFMS_Init - initializes the library
 ```c++
@@ -293,7 +297,7 @@ For a list of valid values, see the Constants and Preprocessor Definitions secti
 `FFMS_SEEK_LINEAR_NO_RW` may come in handy if you want to open images.
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
-See above.
+See [Error handling][errorhandling].
 
 #### Return values
 Returns a pointer to the created `FFMS_VideoSource` object on success.
@@ -358,7 +362,7 @@ The frame number to get. Frame numbering starts from zero, and hence the first f
 Requesting a frame number beyond the stream end or before the stream start (i.e. negative) may cause undefined behavior.
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
-See above.
+See [Error handling][errorhandling].
 
 #### Return values
 Returns a pointer to the `FFMS_Frame` on success. Returns `NULL` and sets `ErrorMsg` on failure.
@@ -397,7 +401,7 @@ Like video frame numbers, sample numbers start from zero and hence the last samp
 Requesting samples beyond the stream end or before the stream start may result in undefined behavior.
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
-See above.
+See [Error handling][errorhandling].
 
 #### Return values
 Returns 0 on success.
@@ -444,7 +448,7 @@ The desired image resizing algorithm, represented by an integer as enumerated in
 You must choose one even if you're not actually rescaling the image, because the video may change resolution mid-stream and then you will be using a resizer whether you want it or not (you will only know that the resolution changed after you actually decoded a frame with a new resolution), and it may also get used for rescaling subsampled chroma planes.
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
-See above.
+See [Error handling][errorhandling].
 
 #### Return values
 Returns 0 on success.
@@ -485,7 +489,7 @@ The desired input colorrange, or FFMS_CR_UNSPECIFIED to leave it unchanged.
 The desired input pixel format; see `FFMS_GetPixFmt`. `FFMS_GetPixFmt("")` will leave the pixel format unchanged.
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
-See above.
+See [Error handling][errorhandling].
 
 #### Return values
 Returns 0 on success.
@@ -537,7 +541,7 @@ The track type to look for.
 See `FFMS_TrackType` in the Constants and Preprocessor Definitions" section for valid values.
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
-See above.
+See [Error handling][errorhandling].
 
 #### Return values
 Returns the track number (an integer greater than or equal to 0) on success.
@@ -618,7 +622,7 @@ See `FFMS_GetFrame` for information about frame numbers.
 Requesting information about a frame before the start or after the end of the video track may result in undefined behavior, so don't do that.
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
-See above.
+See [Error handling][errorhandling].
 
 #### Return values
 Returns a pointer to the `FFMS_FrameInfo` struct on success.
@@ -643,7 +647,7 @@ A pointer to the `FFMS_Index` object that represents the media file containing t
 The track number, as seen by the relevant demuxer (see `FFMS_GetNumTracks`, `FFMS_GetTrackType`, `FFMS_GetFirstTrackOfType` and their variants).
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
-See above.
+See [Error handling][errorhandling].
 
 #### Return values
 Returns the `FFMS_Track` on success.
@@ -683,7 +687,7 @@ Can be a relative or absolute path.
 The file will be truncated and overwritten if it already exists.
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
-See above.
+See [Error handling][errorhandling].
 
 #### Return values
 Returns 0 on success.
@@ -737,7 +741,7 @@ A pointer of your choice that will be passed as an argument to the progress repo
 See *Callbacks* below for details.
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
-See above.
+See [Error handling][errorhandling].
 
 #### Callbacks
 This function has two potential callbacks.
