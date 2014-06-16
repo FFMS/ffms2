@@ -378,7 +378,7 @@ See [Error handling][errorhandling].
 Returns a pointer to the `FFMS_Frame` on success. Returns `NULL` and sets `ErrorMsg` on failure.
 
 The returned frame is owned by the given `FFMS_VideoSource`, and remains valid until the video source is destroyed, a different frame is requested from the video source, or the video source's input or output format is changed.
-Note that while FFMS_GetFrame tends to return the same pointer with each call, it is not safe to rely on this as the output frame will sometimes be reallocated.
+Note that while `FFMS_GetFrame` tends to return the same pointer with each call, it is not safe to rely on this as the output frame will sometimes be reallocated.
 
 ### FFMS_GetFrameByTime - retrieves a video frame at a given timestamp
 [GetFrameByTime]: #ffms_getframebytime---retrieves-a-video-frame-at-a-given-timestamp
@@ -760,7 +760,7 @@ A pointer of your choice that will be passed as an argument to the audio filenam
 See *Callbacks* below for details.
 If `DumpMask` is 0, you may pass `NULL` here.
 If you are using `FFMS_DefaultAudioFilename`, you must pass a format string here.
-See the Audio Filename Format Strings section for details.
+See the [Audio Filename Format Strings section](#audio-filename-format-strings) for details.
 
 ##### `int ErrorHandling`
 Depending on the setting audio decoding errors will have different results.
@@ -780,6 +780,8 @@ See *Callbacks* below for details.
 See [Error handling][errorhandling].
 
 #### Callbacks
+[MakeIndex_Callbacks]: #callbacks
+
 This function has two potential callbacks.
 One can, if you so desire, call your code back intermittently so you can see how the indexing is progressing.
 This is accomplished using a function pointer to a function with the following signature:
@@ -833,7 +835,7 @@ See `FFMS_MakeIndex` for a description of its arguments.
 FFMS_Indexer *FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo);
 ```
 Creates a `FFMS_Indexer` object for the given `SourceFile` and returns a pointer to it.
-See Indexing and You for details on how to use the indexer.
+See [Indexing and You](#indexing-and-you) for details on how to use the indexer.
 Is basically a shorthand for `FFMS_CreateIndexerWithDemuxer(SourceFile, FFMS_SOURCE_DEFAULT, ErrorInfo)`.
 
 #### Return values
@@ -846,7 +848,7 @@ Returns `NULL` and sets `ErrorMsg` on failure.
 FFMS_Indexer *FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int Demuxer, FFMS_ErrorInfo *ErrorInfo);
 ```
 Creates a `FFMS_Indexer` object for the given `SourceFile` using the given `Demuxer` (as enumerated in `FFMS_Sources`) and returns a pointer to it.
-See Indexing and You for details on how to use the indexer.
+See [Indexing and You](#indexing-and-you) for details on how to use the indexer.
 
 The chosen demuxer gets used for both indexing and decoding later on.
 Only force one if you know what you're doing.
@@ -1321,8 +1323,8 @@ enum FFMS_AudioDelayModes {
 Describes the different audio delay handling modes.
 See `FFMS_CreateAudioSource` for a detailed explanation.
 
-### FFMS_ColorSpace
-[ColorSpace]: #ffms_colorspace
+### FFMS_ColorSpaces
+[ColorSpaces]: #ffms_colorspaces
 ```c++
 enum FFMS_ColorSpaces {
   FFMS_CS_RGB         = 0,
