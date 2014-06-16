@@ -159,27 +159,27 @@ Before opening a media file with FFMS2, you **must** index it.
 This is to ensure that keyframe positions, timecode data and other interesting things are known so that frame-accurate seeking is easily possible.
 
 There are two ways to index a media file.
-The first one is really a backwards compatibility thing and uses `FFMS_MakeIndex`.
+The first one is really a backwards compatibility thing and uses [FFMS_MakeIndex][MakeIndex].
 You call the function with the source filename, a binary mask representing which audio tracks you want to index (all video tracks are always automatically indexed since the operation can't fail and takes no additional time), another binary mask representing which audio tracks you want to dump to Wave64 files on disk, an optional progress reporting callback and a likewise optional audio dump filename generation callback; and it will create an index object.
 With this method there is no way of telling ahead of time how many tracks the file has and hence the only two masks that are useful in practice are 0 (index nothing) and -1 (index everything).
 If you want to index only certain tracks you will have to redo the indexing after examining the index.
 This indexing method may be used if you only want to index video tracks, or if you want all the audio tracks regardless of how many they are, or if you already know the track layout of the file you're going to open.
 
 The other method is a bit more sophisticated.
-First, you create an indexer object using `FFMS_CreateIndexer` and the source filename.
-You can then examine the indexer using `FFMS_GetNumTracksI`, `FFMS_GetTrackTypeI` and `FFMS_GetCodecNameI` to determine how many tracks there are and what their respective types are.
-When you have done so, you call `FFMS_DoIndexing`, which is exactly like `FFMS_MakeIndex` except you pass it the indexer object instead of the source filename.
+First, you create an indexer object using [FFMS_CreateIndexer][CreateIndexer] and the source filename.
+You can then examine the indexer using [FFMS_GetNumTracksI][GetNumTracksI], [FFMS_GetTrackTypeI][GetTrackTypeI] and [FFMS_GetCodecNameI][GetCodecNameI] to determine how many tracks there are and what their respective types are.
+When you have done so, you call [FFMS_DoIndexing][DoIndexing], which is exactly like [FFMS_MakeIndex][MakeIndex] except you pass it the indexer object instead of the source filename.
 Since you now know the track layout, you are free to pass a more restrictive track mask to index only the tracks relevant to your interests.
-As with `FFMS_MakeIndex`, all video tracks are always indexed; the trackmask only applies to audio tracks.
-If you change your mind and decide there are no tracks interesting to you in the file, call `FFMS_CancelIndexing`.
-Both `FFMS_DoIndexing` and `FFMS_CancelIndexing` destroys the indexer object and frees its memory.
+As with [FFMS_MakeIndex][MakeIndex], all video tracks are always indexed; the trackmask only applies to audio tracks.
+If you change your mind and decide there are no tracks interesting to you in the file, call [FFMS_CancelIndexing][CancelIndexing].
+Both [FFMS_DoIndexing][DoIndexing] and [FFMS_CancelIndexing][CancelIndexing] destroys the indexer object and frees its memory.
 
-When you have indexed the file you can write the index object to a disk file using `FFMS_WriteIndex`, which is useful if you expect to open the same file more than once, since it saves you from reindexing it every time.
+When you have indexed the file you can write the index object to a disk file using [FFMS_WriteIndex][WriteIndex], which is useful if you expect to open the same file more than once, since it saves you from reindexing it every time.
 It can be particularly time-saving with very large files or files with a lot of audio tracks, since both of those can take quite some time to index.
 
-To create an index object from a saved disk file, use `FFMS_ReadIndex`.
+To create an index object from a saved disk file, use [FFMS_ReadIndex][ReadIndex].
 Note that the index file written has an internal version number; if you have a version of FFMS2 that isn't the same as the one that created the index, it will most likely not accept the index at all (the read function will fail).
-If you want to verify that a given index file actually is an index of the source file you think it is, use `FFMS_IndexBelongsToFile`.
+If you want to verify that a given index file actually is an index of the source file you think it is, use [FFMS_IndexBelongsToFile][IndexBelongsToFile].
 
 ## Function Reference
 
@@ -263,7 +263,7 @@ Alternatively, just copy the relevant constant definitions into your own code an
 ```c++
 void FFMS_SetLogLevel(int Level);
 ```
-Sets FFmpeg's logging/message level; see `FFMS_GetLogLevel()` for details.
+Sets FFmpeg's logging/message level; see [FFMS_GetLogLevel][GetLogLevel] for details.
 
 ### FFMS_CreateVideoSource - creates a video source object
 [CreateVideoSource]: #ffms_createvideosource---creates-a-video-source-object
@@ -283,7 +283,7 @@ The source file to open. Can be an absolute or relative path.
 
 ##### `int Track`
 The track number of the video track to open, as seen by the relevant demuxer.
-See `FFMS_GetNumTracks`, `FFMS_GetTrackType`, `FFMS_GetFirstTrackOfType` and their variants for further information on how to determine this.
+See [FFMS_GetNumTracks][GetNumTracks], [FFMS_GetTrackType][GetTrackType], [FFMS_GetFirstTrackOfType][GetFirstTrackOfType] and their variants for further information on how to determine this.
 
 ##### `FFMS_Index *Index`
 A pointer to a FFMS_Index object containing indexing information for the track you want to open.
@@ -294,10 +294,10 @@ Anything less than 1 will use threads equal to the number of CPU cores.
 Values >1 have no effect if FFmpeg was not compiled with threading support.
 
 ##### `int SeekMode`
+For a list of valid values, see [FFMS_SeekMode][SeekMode].
 Controls how seeking (random access) is handled and hence affects frame accuracy.
 You will almost always want to use `FFMS_SEEK_NORMAL`.
 Has no effect on Matroska files, where the equivalent of `FFMS_SEEK_NORMAL` is always used.
-For a list of valid values, see the Constants and Preprocessor Definitions section.
 `FFMS_SEEK_LINEAR_NO_RW` may come in handy if you want to open images.
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
@@ -313,7 +313,7 @@ Returns `NULL` and sets `ErrorMsg` on failure.
 FFMS_AudioSource *FFMS_CreateAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, int DelayMode,
     FFMS_ErrorInfo *ErrorInfo);
 ```
-Does exactly the same thing as `FFMS_CreateVideoSource`, but for audio tracks.
+Does exactly the same thing as [FFMS_CreateVideoSource][CreateVideoSource], but for audio tracks.
 Except for DelayMode, arguments and return values are identical.
 
 #### Arguments
@@ -336,14 +336,14 @@ Possible arguments are:
 void FFMS_DestroyVideoSource(FFMS_VideoSource *V);
 void FFMS_DestroyAudioSource(FFMS_AudioSource *A);
 ```
-Deallocates the given `FFMS_VideoSource` or `FFMS_AudioSource` object and frees the memory allocated by `FFMS_CreateVideoSource` or `FFMS_CreateAudioSource`, respectively.
+Deallocates the given `FFMS_VideoSource` or `FFMS_AudioSource` object and frees the memory allocated by [FFMS_CreateVideoSource][CreateVideoSource] or [FFMS_CreateAudioSource][CreateAudioSource], respectively.
 
 ### FFMS_GetVideoProperties - retrieves video properties
 [GetVideoProperties]: #ffms_getvideoproperties---retrieves-video-properties
 ```c++
 const FFMS_VideoProperties *FFMS_GetVideoProperties(FFMS_VideoSource *V);
 ```
-Retreives the video properties from the given `FFMS_VideoSource` object and stores them in a `FFMS_VideoProperties` struct (see the Data Structures section below).
+Retreives the video properties from the given `FFMS_VideoSource` object and stores them in a [FFMS_VideoProperties][VideoProperties] struct.
 Returns a pointer to said struct.
 
 ### FFMS_GetAudioProperties - retrieves audio properties
@@ -351,16 +351,17 @@ Returns a pointer to said struct.
 ```c++
 const FFMS_AudioProperties *FFMS_GetAudioProperties(FFMS_AudioSource *A);
 ```
-Does the exact same thing as `FFMS_GetVideoProperties`, but for an `FFMS_AudioSource` object.
+Does the exact same thing as [FFMS_GetVideoProperties][GetVideoProperties], but for an `FFMS_AudioSource` object.
+See [FFMS_AudioProperties][AudioProperties].
 
 ### FFMS_GetFrame - retrieves a given video frame
 [GetFrame]: #ffms_getframe---retrieves-a-given-video-frame
 ```c++
 const FFMS_Frame *FFMS_GetFrame(FFMS_VideoSource *V, int n, FFMS_ErrorInfo *ErrorInfo);
 ```
-Gets and decodes a video frame from the video stream represented by the given `FFMS_VideoSource` object and stores it in a `FFMS_Frame` struct.
-The colorspace and resolution of the frame can be changed by calling `FFMS_SetOutputFormatV2` with the appropriate parameters before calling this function.
-Note that this function is not thread-safe (you can only request one frame at a time from a given `FFMS_VideoSource` object) and that the returned pointer to the FFMS_Frame is a *const* pointer.
+Gets and decodes a video frame from the video stream represented by the given `FFMS_VideoSource` object and stores it in a [FFMS_Frame][Frame] struct.
+The colorspace and resolution of the frame can be changed by calling [FFMS_SetOutputFormatV2][SetOutputFormatV2] with the appropriate parameters before calling this function.
+Note that this function is not thread-safe (you can only request one frame at a time from a given `FFMS_VideoSource` object) and that the returned pointer to the `FFMS_Frame` is a `const` pointer.
 
 #### Arguments
 
@@ -385,7 +386,7 @@ Note that while `FFMS_GetFrame` tends to return the same pointer with each call,
 ```c++
 const FFMS_Frame *FFMS_GetFrameByTime(FFMS_VideoSource *V, double Time, FFMS_ErrorInfo *ErrorInfo);
 ```
-Does the exact same thing as `FFMS_GetFrame` except instead of giving it a frame number you give it a timestamp in seconds, and it will retrieve the frame that starts closest to that timestamp.
+Does the exact same thing as [FFMS_GetFrame][GetFrame] except instead of giving it a frame number you give it a timestamp in seconds, and it will retrieve the frame that starts closest to that timestamp.
 This function exists for the people who are too lazy to build and traverse a mapping between frame numbers and timestamps themselves.
 
 ### FFMS_GetAudio - decodes a number of audio samples
@@ -403,7 +404,7 @@ A pointer to the `FFMS_AudioSource` object that represents the audio stream you 
 
 ##### `void *Buf`
 A pointer to the buffer where the decoded samples will end up.
-You are responsible for allocating and freeing this buffer yourself, so you better check the `FFMS_AudioProperties` for the sample format, number of channels, channel layout etc first, so you know how much memory you need to allocate.
+You are responsible for allocating and freeing this buffer yourself, so you better check the [FFMS_AudioProperties][GetAudioProperties] for the sample format, number of channels, channel layout etc first, so you know how much memory you need to allocate.
 The formula to calculate the required size of the buffer is (obviously) `num_bytes = bytes_per_sample * num_channels * num_samples`.
 
 ##### `int64_t Start, int64_t Count`
@@ -425,10 +426,10 @@ Returns non-0 and sets `ErrorMsg` on failure.
 int FFMS_SetOutputFormatV2(FFMS_VideoSource *V, int *TargetFormats, int Width, int Height, int Resizer,
     FFMS_ErrorInfo *ErrorInfo);
 ```
-Sets the colorspace and frame dimensions to be used for output of frames from the given `FFMS_VideoSource` by all further calls to `FFMS_GetFrame` and `FFMS_GetFrameByTime`, until next time you call `FFMS_SetOutputFormatV2` or `FFMS_ResetOutputFormatV`.
+Sets the colorspace and frame dimensions to be used for output of frames from the given `FFMS_VideoSource` by all further calls to [FFMS_GetFrame][GetFrame] and [FFMS_GetFrameByTime][GetFrameByTime], until next time you call `FFMS_SetOutputFormatV2` or [FFMS_ResetOutputFormatV][ResetOutputFormatV].
 You can change the output format at any time without having to reinitialize the `FFMS_VideoSource` object or anything else.
 Can be used to convert the video to grayscale or monochrome if you are so inclined.
-If you provided a list of more than one colorspace/pixelformat, you should probably check the `FFMS_Frame` properties afterwards to see which one got selected.
+If you provided a list of more than one colorspace/pixelformat, you should probably check the [FFMS_Frame][Frame] properties afterwards to see which one got selected.
 And remember to do so for EVERY frame or you may get a nasty surprise.
 Added in version 2.16.3.0 and replaces `FFMS_SetOutputFormatV`.
 
@@ -441,7 +442,7 @@ A pointer to the `FFMS_VideoSource` object that represents the video stream you 
 The desired output colorspace(s).
 It is a -1 terminated list of acceptable output colorspace to choose from.
 The destination that gives the least lossy conversion from the source colorspace will automatically be selected, **on a frame basis**.
-To get the integer constant representing a given colorspace, see `FFMS_GetPixFmt`.
+To get the integer constant representing a given colorspace, see [FFMS_GetPixFmt][GetPixFmt].
 
 Example:
 ```c++
@@ -457,7 +458,7 @@ If you do not want to resize just pass the input dimensions.
 Passing invalid dimensions (like 0 or negative) has undefined behavior.
 
 ##### `int Resizer`
-The desired image resizing algorithm, represented by an integer as enumerated in `FFMS_Resizers` (see the Constants and Preprocessor Definitions section).
+The desired image resizing algorithm, represented by an integer as enumerated in [FFMS_Resizers][Resizers].
 You must choose one even if you're not actually rescaling the image, because the video may change resolution mid-stream and then you will be using a resizer whether you want it or not (you will only know that the resolution changed after you actually decoded a frame with a new resolution), and it may also get used for rescaling subsampled chroma planes.
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
@@ -474,7 +475,7 @@ void FFMS_ResetOutputFormatV(FFMS_VideoSource *V);
 ```
 Resets the output format for the given `FFMS_VideoSource` object so that no conversion takes place.
 Note that the results of this function may vary wildly, particularly if the video changes resolution mid-stream.
-If you call it, you'd better call `FFMS_GetFrame` afterwards and examine the properties to see what you actually ended up with.
+If you call it, you'd better call [FFMS_GetFrame][GetFrame] afterwards and examine the properties to see what you actually ended up with.
 
 ### FFMS_SetInputFormatV - override the source format for video frames
 [SetInputFormatV]: #ffms_setinputformatv---override-the-source-format-for-video-frames
@@ -482,11 +483,11 @@ If you call it, you'd better call `FFMS_GetFrame` afterwards and examine the pro
 int FFMS_SetInputFormatV(FFMS_VideoSource *V, int ColorSpace, int ColorRange, int PixelFormat,
     FFMS_ErrorInfo *ErrorInfo);
 ```
-Override the source colorspace passed to SWScale for conversions and resizing for all further calls to `FFMS_GetFrame` and `FFMS_GetFrameByTime`, until next time you call `FFMS_SetInputFormatV` or `FFMS_ResetInputFormatV`.
+Override the source colorspace passed to SWScale for conversions and resizing for all further calls to [FFMS_GetFrame][GetFrame] and [FFMS_GetFrameByTime][GetFrameByTime], until next time you call `FFMS_SetInputFormatV` or [FFMS_ResetInputFormatV][ResetInputFormatV].
 You can change the input format at any time without having to reinitialize the `FFMS_VideoSource` object or anything else.
 This is intended primarily for compatibility with programs which use the wrong YUV colorspace when converting to or from RGB, but can also be useful for files which have incorrect colorspace flags.
 Values passed are not checked for sanity; if you wish you may tell FFMS2 to pretend that a RGB files is actually YUV using this function, but doing so is unlikely to have useful results.
-This function only has an effect if the output format is also set with `FFMS_SetOutputFormatV2`.
+This function only has an effect if the output format is also set with [FFMS_SetOutputFormatV2][SetOutpurFormatV2].
 Added in version 2.17.1.0.
 
 #### Arguments
@@ -496,12 +497,14 @@ A pointer to the `FFMS_VideoSource` object that represents the video stream you 
 
 ##### `int ColorSpace`
 The desired input colorspace, or FFMS_CS_UNSPECIFIED to leave it unchanged.
+See [FFMS_ColorSpaces][ColorSpaces].
 
 ##### `int ColorRange`
 The desired input colorrange, or FFMS_CR_UNSPECIFIED to leave it unchanged.
+See [FFMS_ColorRanges][ColorRanges].
 
 ##### `int PixelFormat`
-The desired input pixel format; see `FFMS_GetPixFmt`. `FFMS_GetPixFmt("")` will leave the pixel format unchanged.
+The desired input pixel format; see [FFMS_GetPixFmt][GetPixFmt]. `FFMS_GetPixFmt("")` will leave the pixel format unchanged.
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
 See [Error handling][errorhandling].
@@ -529,28 +532,28 @@ Deallocates the given `FFMS_Index` object and frees the memory that was allocate
 ```c++
 int FFMS_GetSourceType(FFMS_Index *Index);
 ```
-Checks which source module (libavformat, Haali's Matroska parsing library, or Haali's DirectShow splitter) was used when opening the file represented by the given `FFMS_Index` and returns an integer (as enumerated in `FFMS_Sources`; see the Constants and Preprocessor Definitions section below) that represents it.
+Checks which source module (libavformat, Haali's Matroska parsing library, or Haali's DirectShow splitter) was used when opening the file represented by the given `FFMS_Index` and returns an integer (as enumerated in [FFMS_Sources][Sources]) that represents it.
 
 ### FFMS_GetSourceTypeI - gets which source module was used to open the given indexer
 [GetSourceTypeI]: #ffms_getsourcetypei---gets-which-source-module-was-used-to-open-the-given-indexer
 ```c++
 int FFMS_GetSourceTypeI(FFMS_Index *Indexer);
 ```
-Does the same thing as `FFMS_GetSourceType`, but takes an indexer instead of an index.
+Does the same thing as [FFMS_GetSourceType][GetSourceType], but takes an indexer instead of an index.
 
 ### FFMS_GetErrorHandling - gets which error handling mode was used when creating the given index
 [GetErrorHandling]: #ffms_geterrorhandling---gets-which-error-handling-mode-was-used-when-creating-the-given-index
 ```c++
 int FFMS_GetErrorHandling(FFMS_Index *Index);
 ```
-Returns the value of the ErrorHandling parameter which was passed to FFMS_DoIndexing or FFMS_MakeIndex.
+Returns the value of the ErrorHandling parameter which was passed to [FFMS_DoIndexing][DoIndexing] or [FFMS_MakeIndex][MakeIndex].
 
 ### FFMS_GetFirstTrackOfType - gets the track number of the first track of a given type
 [GetFirstTrackOfType]: #ffms_getfirsttrackoftype---gets-the-track-number-of-the-first-track-of-a-given-type
 ```c++
 int FFMS_GetFirstTrackOfType(FFMS_Index *Index, int TrackType, FFMS_ErrorInfo *ErrorInfo);
 ```
-Finds the first track of the given `FFMS_TrackType` in the given `FFMS_Index` and returns its track number, suitable for use as an argument to `FFMS_CreateVideoSource` or `FFMS_CreateAudioSource`, as well as to some other functions.
+Finds the first track of the given [FFMS_TrackType][TrackType] in the given `FFMS_Index` and returns its track number, suitable for use as an argument to [FFMS_CreateVideoSource][CreateVideoSource] or [FFMS_CreateAudioSource][CreateAudioSource], as well as to some other functions.
 
 #### Arguments
 
@@ -559,7 +562,7 @@ A pointer to the `FFMS_Index` object that represents the media file you want to 
 
 ##### `int TrackType`
 The track type to look for.
-See `FFMS_TrackType` in the Constants and Preprocessor Definitions" section for valid values.
+See [FFMS_TrackType][TrackType].
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
 See [Error handling][errorhandling].
@@ -573,7 +576,7 @@ Returns a negative integer and sets ErrorMsg on failure (i.e. if no track of the
 ```c++
 int FFMS_GetFirstIndexedTrackOfType(FFMS_Index *Index, int TrackType, FFMS_ErrorInfo *ErrorInfo);
 ```
-Does the exact same thing as `FFMS_GetFirstTrackOfType` but ignores tracks that have not been indexed.
+Does the exact same thing as [FFMS_GetFirstTrackOfType][GetFirstTrackOfType] but ignores tracks that have not been indexed.
 
 ### FFMS_GetNumTracks - gets the number of tracks in a given index
 [GetNumTracks]: #ffms_getnumtracks---gets-the-number-of-tracks-in-a-given-index
@@ -588,23 +591,23 @@ Returns the total number of tracks in the media file represented by the given `F
 int FFMS_GetNumTracksI(FFMS_Indexer *Indexer);
 ```
 Returns the total number of tracks in the media file represented by the given `FFMS_Indexer`.
-In other words, does the same thing as `FFMS_GetNumTracks` but does not require indexing the entire file first.
+In other words, does the same thing as [FFMS_GetNumTracks][GetNumTracks] but does not require indexing the entire file first.
 
 ### FFMS_GetTrackType - gets the track type of a given track
 [GetTrackType]: #ffms_gettracktype---gets-the-track-type-of-a-given-track
 ```c++
 int FFMS_GetTrackType(FFMS_Track *T);
 ```
-Returns an integer representing the `FFMS_TrackType` (see the Constants and Preprocessor Definitions section) of the track represented by the given `FFMS_Track` object.
+Returns an integer representing the [FFMS_TrackType][TrackType] of the track represented by the given `FFMS_Track` object.
 
 ### FFMS_GetTrackTypeI - gets the track type of a given track
 [GetTrackTypeI]: #ffms_gettracktypei---gets-the-track-type-of-a-given-track
 ```c++
 int FFMS_GetTrackTypeI(FFMS_Indexer *Indexer, int Track);
 ```
-Returns an integer representing the `FFMS_TrackType` (see the Constants and Preprocessor Definitions section) of the track number `Track` in the media file represented by the given `FFMS_Indexer`.
-In other words, does the same thing as `FFMS_GetTrackType`, but does not require having indexed the file first.
-If you have indexed the file, use `FFMS_GetTrackType` instead since the `FFMS_Indexer` object is destructed when the index is created.
+Returns an integer representing the [FFMS_TrackType][TrackType] of the track number `Track` in the media file represented by the given `FFMS_Indexer`.
+In other words, does the same thing as [FFMS_GetTrackType][GetTrackType], but does not require having indexed the file first.
+If you have indexed the file, use [FFMS_GetTrackType][GetTrackType] instead since the `FFMS_Indexer` object is destructed when the index is created.
 Note that specifying an invalid track number may lead to undefined behavior.
 
 ### FFMS_GetCodecNameI - gets the name of the codec used for a given track
@@ -637,8 +640,7 @@ A return value of 0 indicates the track has not been indexed.
 ```c++
 const FFMS_FrameInfo *FFMS_GetFrameInfo(FFMS_Track *T, int Frame);
 ```
-Gets information about the given frame (identified by its frame number) from the indexing information in the given `FFMS_Track` and stores it in a `FFMS_FrameInfo` struct.
-See the Data Structures section below for more information.
+Gets information about the given frame (identified by its frame number) from the indexing information in the given `FFMS_Track` and stores it in a [FFMS_FrameInfo][FrameInfo] struct.
 Using this function on a `FFMS_Track` representing a non-video track has undefined behavior.
 
 #### Arguments
@@ -648,14 +650,14 @@ A pointer to the `FFMS_Track` object that represents the video track containing 
 
 ##### `int Frame`
 The frame number to get information about.
-See `FFMS_GetFrame` for information about frame numbers.
+See [FFMS_GetFrame][GetFrame] for information about frame numbers.
 Requesting information about a frame before the start or after the end of the video track may result in undefined behavior, so don't do that.
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
 See [Error handling][errorhandling].
 
 #### Return values
-Returns a pointer to the `FFMS_FrameInfo` struct on success.
+Returns a pointer to the [FFMS_FrameInfo][FrameInfo] struct on success.
 Returns `NULL` and sets `ErrorMsg` on failure.
 
 ### FFMS_GetTrackFromIndex - retrieves track info from an index
@@ -664,8 +666,8 @@ Returns `NULL` and sets `ErrorMsg` on failure.
 FFMS_Track *FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track);
 ```
 Gets track data for the given track number from the given `FFMS_Index` object, stores it in a `FFMS_Track` object and returns a pointer to it.
-Use this function if you don't want to (or cannot) open the track with `FFMS_CreateVideoSource` or `FFMS_CreateAudioSource` first.
-If you already have a `FFMS_VideoSource` or `FFMS_AudioSource` object it's safer to use `FFMS_GetTrackFromVideo` or `FFMS_GetTrackFromAudio` (see below) instead.
+Use this function if you don't want to (or cannot) open the track with [FFMS_CreateVideoSource][CreateVideoSource] or [FFMS_CreateAudioSource][CreateAudioSource] first.
+If you already have a `FFMS_VideoSource` or `FFMS_AudioSource` object it's safer to use [FFMS_GetTrackFromVideo][GetTrackFromVideo] or [FFMS_GetTrackFromAudio][GetTrackFromAudio] instead.
 Note that specifying a nonexistent or invalid track number leads to undefined behavior (usually an access violation).
 Also note that the returned `FFMS_Track` object is only valid until its parent `FFMS_Index` object is destroyed.
 
@@ -675,14 +677,14 @@ Also note that the returned `FFMS_Track` object is only valid until its parent `
 A pointer to the `FFMS_Index` object that represents the media file containing the track whose index information you want to get.
 
 ##### `int Track`
-The track number, as seen by the relevant demuxer (see `FFMS_GetNumTracks`, `FFMS_GetTrackType`, `FFMS_GetFirstTrackOfType` and their variants).
+The track number, as seen by the relevant demuxer (see [FFMS_GetNumTracks][GetNumTracks], [FFMS_GetTrackType][GetTrackType], [FFMS_GetFirstTrackOfType][GetFirstTrackOfType] and their variants).
 
 ##### `FFMS_ErrorInfo *ErrorInfo`
 See [Error handling][errorhandling].
 
 #### Return values
 Returns the `FFMS_Track` on success.
-Note that requesting indexing information for a track that has not been indexed will not cause an error, it will just return an empty `FFMS_Track` (check for >0 frames using `FFMS_GetNumFrames` to see if the returned object actually contains indexing information).
+Note that requesting indexing information for a track that has not been indexed will not cause an error, it will just return an empty `FFMS_Track` (check for >0 frames using [FFMS_GetNumFrames][GetNumFrames] to see if the returned object actually contains indexing information).
 
 ### FFMS_GetTrackFromVideo, FFMS_GetTrackFromAudio - retrieves track info from audio or video source
 [GetTrackFromVideo]: #ffms_gettrackfromvideo-ffms_gettrackfromaudio---retrieves-track-info-from-audio-or-video-source
@@ -692,7 +694,7 @@ FFMS_Track *FFMS_GetTrackFromVideo(FFMS_VideoSource *V);
 FFMS_Track *FFMS_GetTrackFromAudio(FFMS_AudioSource *A);
 ```
 Gets information about the track represented by the given `FFMS_VideoSource` or `FFMS_AudioSource` object and returns a pointer to a `FFMS_Track` object containing said information.
-It's generally safer to use these functions instead of `FFMS_GetTrackFromIndex`, since unlike that function they cannot cause access violations if you specified an nonexistent tracknumber, return a `FFMS_Track` that doesn't actually contain any indexing information, or return an object that ceases to be valid when the index is destroyed.
+It's generally safer to use these functions instead of [FFMS_GetTrackFromIndex][GetTrackFromIndex], since unlike that function they cannot cause access violations if you specified an nonexistent tracknumber, return a `FFMS_Track` that doesn't actually contain any indexing information, or return an object that ceases to be valid when the index is destroyed.
 Note that the returned `FFMS_Track` object is only valid until its parent `FFMS_VideoSource` or `FFMS_AudioSource` object is destroyed.
 
 ### FFMS_GetTimeBase - retrieves the time base for the given track
@@ -700,8 +702,8 @@ Note that the returned `FFMS_Track` object is only valid until its parent `FFMS_
 ```c++
 const FFMS_TrackTimeBase *FFMS_GetTimeBase(FFMS_Track *T);
 ```
-Finds the basic time unit for the track represented by the given `FFMS_Track`, stores it in a `FFMS_TrackTimeBase` struct and returns a pointer to said struct.
-See the Data Structures section for information about the time base; note that it is only meaningful for video tracks.
+Finds the basic time unit for the track represented by the given `FFMS_Track`, stores it in a [FFMS_TrackTimeBase][TrackTimeBase] struct and returns a pointer to said struct.
+Note that it is only meaningful for video tracks.
 
 ### FFMS_WriteTimecodes - writes timecodes for the given track to disk
 [WriteTimecodes]: #ffms_writetimecodes---writes-timecodes-for-the-given-track-to-disk
@@ -752,19 +754,19 @@ Decoding a track means it will automatically be indexed regardless of what the `
 ##### `TAudioNameCallback ANC`
 A function pointer to a callback function that will generate the filename(s) for the dumped audio tracks.
 To get the default filename(s), pass `&FFMS_DefaultAudioFilename`.
-See *Callbacks* below for details if you want to write your own function.
+See [Callbacks][MakeIndex_Callbacks] below for details if you want to write your own function.
 If the `DumpMask` is 0, you may pass `NULL` here.
 
 ##### `void *ANCPrivate`
 A pointer of your choice that will be passed as an argument to the audio filename generation callback function.
-See *Callbacks* below for details.
+See [Callbacks][MakeIndex_Callbacks] below for details.
 If `DumpMask` is 0, you may pass `NULL` here.
 If you are using `FFMS_DefaultAudioFilename`, you must pass a format string here.
 See the [Audio Filename Format Strings section](#audio-filename-format-strings) for details.
 
 ##### `int ErrorHandling`
 Depending on the setting audio decoding errors will have different results.
-Use the FFMS_IEH_* constants to select the between the possible behaviors.
+See [FFMS_IndexErrorHandling][IndexErrorHandling] for valid values.
 FFMS_IEH_STOP_TRACK should be the best default to just make it work.
 Has no effect if the `DumpMask` is non-zero, in which case audio decoding errors will always cause the indexing to fail.
 
@@ -810,7 +812,7 @@ See the implementation of `GenAudioFilename` in ffmsindex.cpp for an example on 
 The callback function's arguments are as follows:
  - `const char *SourceFile` - The name of the source media file.
  - `int Track` - The track number of the audio track being dumped.
- - `const FFMS_AudioProperties *AP` - A pointer to the `FFMS_AudioProperties` struct containing information about the audio track being dumped.
+ - `const FFMS_AudioProperties *AP` - A pointer to the [FFMS_AudioProperties][AudioProperties] struct containing information about the audio track being dumped.
    Note that the `LastTime` field is not defined since the last timestamp has not yet been encountered during indexing.
  - `char *FileName` - A pointer to the string to which the callback function should write the generated filename (see above).
  - `int FNSize` - The length of the `FileName` string.
@@ -847,7 +849,7 @@ Returns `NULL` and sets `ErrorMsg` on failure.
 ```c++
 FFMS_Indexer *FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int Demuxer, FFMS_ErrorInfo *ErrorInfo);
 ```
-Creates a `FFMS_Indexer` object for the given `SourceFile` using the given `Demuxer` (as enumerated in `FFMS_Sources`) and returns a pointer to it.
+Creates a `FFMS_Indexer` object for the given `SourceFile` using the given `Demuxer` (as enumerated in [FFMS_Sources][Sources]) and returns a pointer to it.
 See [Indexing and You](#indexing-and-you) for details on how to use the indexer.
 
 The chosen demuxer gets used for both indexing and decoding later on.
@@ -865,17 +867,17 @@ FFMS_Index *FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask,
   TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate,
   FFMS_ErrorInfo *ErrorInfo);
 ```
-Does the exact same thing as `FFMS_MakeIndex`, but takes an indexer object instead of a source filename.
-Return values and arguments are identical to `FFMS_MakeIndex`; see that function for details.
+Does the exact same thing as [FFMS_MakeIndex][MakeIndex], but takes an indexer object instead of a source filename.
+Return values and arguments are identical to [FFMS_MakeIndex][MakeIndex]; see that function for details.
 See the Indexing and You section for more details about indexing.
-Note that calling this function destroys the `FFMS_Indexer` object and frees the memory allocated by `FFMS_CreateIndexer` (even if indexing fails for any reason).
+Note that calling this function destroys the `FFMS_Indexer` object and frees the memory allocated by [FFMS_CreateIndexer][CreateIndexer] (even if indexing fails for any reason).
 
 ### FFMS_CancelIndexing - destroys the given indexer object
 [CancelIndexing]: #ffms_cancelindexing---destroys-the-given-indexer-object
 ```c++
 void FFMS_CancelIndexing(FFMS_Indexer *Indexer);
 ```
-Destroys the given `FFMS_Indexer` object and frees the memory allocated by `FFMS_CreateIndexer`.
+Destroys the given `FFMS_Indexer` object and frees the memory allocated by [FFMS_CreateIndexer][CreateIndexer].
 
 ### FFMS_ReadIndex - reads an index file from disk
 [ReadIndex]: #ffms_readindex---reads-an-index-file-from-disk
@@ -891,7 +893,7 @@ Returns the `FFMS_Index` on success; returns `NULL` and sets `ErrorMsg` on failu
 int FFMS_IndexBelongsToFile(FFMS_Index *Index, const char *SourceFile, FFMS_ErrorInfo *ErrorInfo);
 ```
 Makes a heuristic (but very reliable) guess about whether the given `FFMS_Index` is an index of the given `SourceFile` or not.
-Useful to determine if the index object you just read with `FFMS_ReadIndex` is actually relevant to your interests, since the only two ways to pair up index files with source files are a) trust the user blindly, or b) comparing the filenames; neither is very reliable.
+Useful to determine if the index object you just read with [FFMS_ReadIndex][ReadIndex] is actually relevant to your interests, since the only two ways to pair up index files with source files are a) trust the user blindly, or b) comparing the filenames; neither is very reliable.
 
 #### Arguments
 
@@ -918,7 +920,7 @@ Returns 0 on success; returns non-0 and sets `ErrorMsg` on failure.
 ```c++
 int FFMS_GetPixFmt(const char *Name);
 ```
-Translates a given colorspace/pixel format `Name` to an integer constant representing it, suitable for passing to `FFMS_SetOutputFormatV2` (after some manipulation, see that function for details).
+Translates a given colorspace/pixel format `Name` to an integer constant representing it, suitable for passing to [FFMS_SetOutputFormatV2][SetOutputFormatV2] (after some manipulation, see that function for details).
 This function exists so that you don't have to include a FFmpeg header file in every single program you ever write.
 For a list of colorspaces and their names, see `libavutil/pixfmt.h`.
 To get the name of a colorspace, strip the leading `PIX_FMT_` and convert the remainder to lowercase.
@@ -939,14 +941,14 @@ Returns the integer constant representing `PIX_FMT_NONE` (that is, -1) on failur
 ```c++
 int FFMS_GetPresentSources();
 ```
-Checks which source modules the library was compiled with and returns an integer by binary OR'ing the relevant constants from `FFMS_Sources` together.
+Checks which source modules the library was compiled with and returns an integer by binary OR'ing the relevant constants from [FFMS_Sources][Sources] together.
 
 ### FFMS_GetEnabledSources - checks what source modules are actually available for use
 [GetEnabledSources]: #ffms_getenabledsources---checks-what-source-modules-are-actually-available-for-use
 ```c++
 int FFMS_GetEnabledSources();
 ```
-Does the same thing as `FFMS_GetPresentSources` but checks what source modules are actually available for use instead of which ones are compiled in.
+Does the same thing as [FFMS_GetPresentSources][GetPresentSources] but checks what source modules are actually available for use instead of which ones are compiled in.
 
 ### FFMS_GetVersion - returns FFMS_VERSION constant
 [GetVersion]: #ffms_getversion---returns-ffms_version-constant
@@ -994,7 +996,7 @@ The fields are:
    Note that must not necessarily be the same for all frames in a stream.
  - `int EncodedPixelFormat` - The original pixel format of the frame, as encoded in the compressed file.
  - `int ScaledWidth; int ScaledHeight;` - The output resolution of the frame (in pixels), i.e. the resolution of what is actually stored in the `Data` field.
-   Same as `FFMS_VideoProperties->Width/Height`, but unlike that struct, this one gets updated automatically when you call `FFMS_GetFrame`, so you don't have to call `FFMS_GetVideoProperties` all the time to see if someone changed the output format while you weren't looking.
+   Same as `FFMS_VideoProperties->Width/Height`, but unlike that struct, this one gets updated automatically when you call [FFMS_GetFrame][GetFrame], so you don't have to call [FFMS_GetVideoProperties][GetVideoProperties] all the time to see if someone changed the output format while you weren't looking.
  - `int ConvertedPixelFormat` - The output pixel format of the frame, i.e. the pixel format of what is actually stored in the `Data` field.
  - `int KeyFrame` - Nonzero if the frame is a keyframe, 0 otherwise.
  - `int RepeatPict` - An integer repesenting the RFF flag for this frame; i.e. the frame shall be displayed for `1+RepeatPict` time units, where the time units are expressed in the special RFF timebase available in `FFMS_VideoProperties->RFFDenominator` and `FFMS_VideoProperties->RFFNumerator`.
@@ -1005,9 +1007,9 @@ The fields are:
  - `char PictType` - A single character denoting coding type (I/B/P etc) of the compressed frame.
    See the Constants and Preprocessor Definitions section for more information about what the different letters mean.
  - `int ColorSpace` - Identifies the YUV color coefficients used in the frame.
-   Same as in the MPEG-2 specs; see the `FFMS_ColorSpaces` enum.
+   Same as in the MPEG-2 specs; see the [FFMS_ColorSpaces][ColorSpaces] enum.
  - `int ColorRange` - Identifies the luma range of the frame.
-   See the `FFMS_ColorRanges` enum.
+   See the [FFMS_ColorRanges][ColorRanges] enum.
 
 ### FFMS_TrackTimeBase
 [TrackTimeBase]: #ffms_tracktimebase
@@ -1075,10 +1077,10 @@ The fields are:
    Note that like the SAR, this is a metadata setting and you are free to ignore it, but if you want things to display 100% correctly you should honor it.
  - `int TopFieldFirst` - Nonzero if the stream has the top field first, zero if it has the bottom field first.
  - `int ColorSpace` - Identifies the YUV color coefficients used in the stream.
-   Same as in the MPEG-2 specs; see the `FFMS_ColorSpaces` enum.
+   Same as in the MPEG-2 specs; see the [FFMS_ColorSpaces][ColorSpaces] enum.
    The ColorSpace property in FFMS_Frame should be instead of this, as this can vary between frames.
  - `int ColorRange` - Identifies the luma range of the stream.
-   See the `FFMS_ColorRanges` enum.
+   See the [FFMS_ColorRanges][ColorRanges] enum.
    The ColorRange property in FFMS_Frame should be instead of this, as this can vary between frames.
  - `double FirstTime; double LastTime;` - The first and last timestamp of the stream respectively, in seconds.
    Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.
@@ -1100,7 +1102,7 @@ typedef struct {
 A struct containing metadata about an audio track.
 The fields are:
  - `int SampleFormat` - An integer that represents the audio sample format.
-    See `FFMS_SampleFormat` in the Constants and Preprocessor Definitions section.
+    See [FFMS_SampleFormat][SampleFormat].
  - `int SampleRate` - The audio samplerate, in samples per second.
  - `int BitsPerSample` - The number of bits per audio sample.
    Note that this signifies the number of bits actually used to *code* each sample, not the number of bits used to *store* each sample, and may hence be different from what the `SampleFormat` would imply.
@@ -1108,7 +1110,7 @@ The fields are:
  - `int Channels` - The number of audio channels.
  - `int64_t ChannelLayout` - The channel layout of the audio stream.
    Constructed by binary OR'ing the relevant integers from `FFMS_AudioChannel` together, which means that if the audio has the channel `FFMS_CH_EXAMPLE`, the operation `(ChannelOrder & FFMS_CH_EXAMPLE)` will evaluate to true.
-   The samples are interleaved in the order the channels are listed in the `FFMS_AudioChannel` enum; see that part of the Constants and Preprocessor Definitions sections for more details.
+   The samples are interleaved in the order the channels are listed in the [FFMS_AudioChannel][AudioChannel] enum.
  - `int64_t NumSamples` - The number of samples in the audio track.
  - `double FirstTime; double LastTime;` - The first and last timestamp of the stream respectively, in milliseconds.
    Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.
@@ -1195,7 +1197,7 @@ enum FFMS_SeekMode {
   FFMS_SEEK_AGGRESSIVE    = 3
 };
 ```
-Used in `FFMS_CreateVideoSource` to control the way seeking is handled.
+Used in [FFMS_CreateVideoSource][CreateVideoSource] to control the way seeking is handled.
 Explanation of the values:
  - `FFMS_SEEK_LINEAR_NO_RW` - Linear access without rewind; i.e. will throw an error if each successive requested frame number isn't bigger than the last one.
    Only intended for opening images but might work on well with some obscure video format.
@@ -1238,7 +1240,7 @@ enum FFMS_TrackType {
 };
 ```
 Used for determining the type of a given track. Note that there are currently no functions to handle any type of track other than `FFMS_TYPE_VIDEO` and `FFMS_TYPE_AUDIO`.
-See `FFMS_GetTrackType`, `FFMS_GetFirstTrackOfType` and their variants.
+See [FFMS_GetTrackType][GetTrackType], [FFMS_GetFirstTrackOfType][GetFirstTrackOfType] and their variants.
 
 ### FFMS_SampleFormat
 [SampleFormat]: #ffms_sampleformat
@@ -1308,7 +1310,7 @@ enum FFMS_Resizers {
   FFMS_RESIZER_SPLINE         = 0x400
 };
 ```
-Describes various image resizing algorithms, as used in the arguments to `FFMS_SetOutputFormatV2`.
+Describes various image resizing algorithms, as used in the arguments to [FFMS_SetOutputFormatV2][SetOutputFormatV2].
 The names should be self-explanatory.
 
 ### FFMS_AudioDelayModes
@@ -1321,7 +1323,7 @@ enum FFMS_AudioDelayModes {
 };
 ```
 Describes the different audio delay handling modes.
-See `FFMS_CreateAudioSource` for a detailed explanation.
+See [FFMS_CreateAudioSource][CreateAudioSource] for a detailed explanation.
 
 ### FFMS_ColorSpaces
 [ColorSpaces]: #ffms_colorspaces
