@@ -128,7 +128,8 @@ int main (...) {
   pixfmts[0] = FFMS_GetPixFmt("bgra");
   pixfmts[1] = -1;
 
-  if (FFMS_SetOutputFormatV2(videosource, pixfmts, propframe->EncodedWidth, propframe->EncodedHeight, FFMS_RESIZER_BICUBIC, &errinfo)) {
+  if (FFMS_SetOutputFormatV2(videosource, pixfmts, propframe->EncodedWidth, propframe->EncodedHeight,
+                             FFMS_RESIZER_BICUBIC, &errinfo)) {
     /* handle error */
   }
 
