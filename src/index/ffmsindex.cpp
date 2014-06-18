@@ -35,145 +35,132 @@ extern "C" {
 
 namespace {
 
-int TrackMask;
-int DumpMask;
-int Verbose;
-int IgnoreErrors;
-int Demuxer;
-bool Overwrite;
-bool PrintProgress;
-bool WriteTC;
-bool WriteKF;
-std::string InputFile;
+int TrackMask = 0;
+int DumpMask = 0;
+int Verbose = 0;
+int IgnoreErrors = 0;
+int Demuxer = FFMS_SOURCE_DEFAULT;
+bool Overwrite = false;
+bool PrintProgress = true;
+bool WriteTC = false;
+bool WriteKF = false;
+const char *InputFile = 0;
 std::string CacheFile;
 std::string AudioFile;
 
-FFMS_Index *Index;
+FFMS_Index *Index = NULL;
 
-void PrintUsage () {
-	using namespace std;
-	cout << "FFmpegSource2 indexing app" << endl
-	     << "Usage: ffmsindex [options] inputfile [outputfile]" << endl
-	     << "If no output filename is specified, inputfile.ffindex will be used." << endl << endl
-	     << "Options:" << endl
-	     << "-f        Force overwriting of existing index file, if any (default: no)" << endl
-	     << "-v        Set FFmpeg verbosity level. Can be repeated for more verbosity. (default: no messages printed)" << endl
-	     << "-p        Disable progress reporting. (default: progress reporting on)" << endl
-	     << "-c        Write timecodes for all video tracks to outputfile_track00.tc.txt (default: no)" << endl
-	     << "-k        Write keyframes for all video tracks to outputfile_track00.kf.txt (default: no)" << endl
-	     << "-t N      Set the audio indexing mask to N (-1 means index all tracks, 0 means index none, default: 0)" << endl
-	     << "-d N      Set the audio decoding mask to N (mask syntax same as -t, default: 0)" << endl
-	     << "-a NAME   Set the audio output base filename to NAME (default: input filename)" << endl
-	     << "-s N      Set audio decoding error handling. See the documentation for details. (default: 0)" << endl
-		 << "-m NAME   Force the use of demuxer NAME (default, lavf, matroska, haalimpeg, haaliogg)" << endl;
+struct Error {
+	std::string msg;
+	Error(const char *msg) : msg(msg) { }
+	Error(const char *msg, FFMS_ErrorInfo const& e) : msg(msg) {
+		this->msg.append(e.Buffer);
+	}
+};
+
+void PrintUsage() {
+	std::cout <<
+		"FFmpegSource2 indexing app\n"
+		"Usage: ffmsindex [options] inputfile [outputfile]\n"
+		"If no output filename is specified, inputfile.ffindex will be used.\n"
+		"\n"
+		"Options:\n"
+		"-f        Force overwriting of existing index file, if any (default: no)\n"
+		"-v        Set FFmpeg verbosity level. Can be repeated for more verbosity. (default: no messages printed)\n"
+		"-p        Disable progress reporting. (default: progress reporting on)\n"
+		"-c        Write timecodes for all video tracks to outputfile_track00.tc.txt (default: no)\n"
+		"-k        Write keyframes for all video tracks to outputfile_track00.kf.txt (default: no)\n"
+		"-t N      Set the audio indexing mask to N (-1 means index all tracks, 0 means index none, default: 0)\n"
+		"-d N      Set the audio decoding mask to N (mask syntax same as -t, default: 0)\n"
+		"-a NAME   Set the audio output base filename to NAME (default: input filename)\n"
+		"-s N      Set audio decoding error handling. See the documentation for details. (default: 0)\n"
+		"-m NAME   Force the use of demuxer NAME (default, lavf, matroska, haalimpeg, haaliogg)"
+		<< std::endl;
 }
 
-void ParseCMDLine (int argc, char *argv[]) {
+void ParseCMDLine(int argc, char *argv[]) {
 	if (argc <= 1) {
 		PrintUsage();
-		throw "";
+		throw Error("");
 	}
 
-	// defaults
-	InputFile = "";
-	CacheFile = "";
-	AudioFile = "";
-	TrackMask = 0;
-	DumpMask  = 0;
-	Verbose = 0;
-	Demuxer = FFMS_SOURCE_DEFAULT;
-	Overwrite = false;
-	IgnoreErrors = false;
-	PrintProgress = true;
+	for (int i = 1; i < argc; ++i) {
+		const char *Option = argv[i];
+#define OPTION_ARG(flag) i + 1 < argc ? argv[i+1] : throw Error("Error: missing argument for -" flag)
 
-	// argv[0] = name of program
-	int i = 1;
-
-	while (i < argc) {
-		std::string Option = argv[i];
-		std::string OptionArg = "";
-		if (i+1 < argc)
-			OptionArg = argv[i+1];
-
-		if (!Option.compare("-f")) {
+		if (!strcmp(Option, "-f")) {
 			Overwrite = true;
-		} else if (!Option.compare("-v")) {
+		} else if (!strcmp(Option, "-v")) {
 			Verbose++;
-		} else if (!Option.compare("-p")) {
+		} else if (!strcmp(Option, "-p")) {
 			PrintProgress = false;
-		} else if (!Option.compare("-c")) {
+		} else if (!strcmp(Option, "-c")) {
 			WriteTC = true;
-		} else if (!Option.compare("-k")) {
+		} else if (!strcmp(Option, "-k")) {
 			WriteKF = true;
-		} else if (!Option.compare("-t")) {
-			TrackMask = atoi(OptionArg.c_str());
+		} else if (!strcmp(Option, "-t")) {
+			TrackMask = atoi(OPTION_ARG("t"));
 			i++;
-		} else if (!Option.compare("-d")) {
-			DumpMask = atoi(OptionArg.c_str());
+		} else if (!strcmp(Option, "-d")) {
+			DumpMask = atoi(OPTION_ARG("d"));
 			i++;
-		} else if (!Option.compare("-a")) {
-			AudioFile = OptionArg;
+		} else if (!strcmp(Option, "-a")) {
+			AudioFile = OPTION_ARG("a");
 			i++;
-		} else if (!Option.compare("-s")) {
-			IgnoreErrors = atoi(OptionArg.c_str());
+		} else if (!strcmp(Option, "-s")) {
+			IgnoreErrors = atoi(OPTION_ARG("s"));
 			i++;
-		} else if (!Option.compare("-m")) {
-			if (!OptionArg.compare("default"))
+		} else if (!strcmp(Option, "-m")) {
+			const char *arg = OPTION_ARG("m");
+			if (!strcmp(arg, "default"))
 				Demuxer = FFMS_SOURCE_DEFAULT;
-			else if (!OptionArg.compare("lavf"))
+			else if (!strcmp(arg, "lavf"))
 				Demuxer = FFMS_SOURCE_LAVF;
-			else if (!OptionArg.compare("matroska"))
+			else if (!strcmp(arg, "matroska"))
 				Demuxer = FFMS_SOURCE_MATROSKA;
-			else if (!OptionArg.compare("haalimpeg"))
+			else if (!strcmp(arg, "haalimpeg"))
 				Demuxer = FFMS_SOURCE_HAALIMPEG;
-			else if (!OptionArg.compare("haaliogg"))
+			else if (!strcmp(arg, "haaliogg"))
 				Demuxer = FFMS_SOURCE_HAALIOGG;
 			else
-				std::cout << "Warning: invalid argument to -m (" << OptionArg << "), using default instead" << std::endl;
+				std::cout << "Warning: invalid argument to -m (" << arg << "), using default instead" << std::endl;
 
 			i++;
-		} else if (InputFile.empty()) {
-			InputFile = argv[i];
+		} else if (!InputFile) {
+			InputFile = Option;
 		} else if (CacheFile.empty()) {
-			CacheFile = argv[i];
+			CacheFile = Option;
 		} else {
-			std::cout << "Warning: ignoring unknown option " << argv[i] << std::endl;
+			std::cout << "Warning: ignoring unknown option " << Option << std::endl;
 		}
-
-		i++;
 	}
 
 	if (IgnoreErrors < 0 || IgnoreErrors > 3)
-		throw "Error: invalid error handling mode";
-	if (InputFile.empty())
-		throw "Error: no input file specified";
+		throw Error("Error: invalid error handling mode");
+	if (!InputFile)
+		throw Error("Error: no input file specified");
 
 	if (CacheFile.empty()) {
 		CacheFile = InputFile;
 		CacheFile.append(".ffindex");
 	}
-	AudioFile.append("%s.%d2.w64");
+	AudioFile.append("%s.%02d.w64");
 }
 
 int FFMS_CC UpdateProgress(int64_t Current, int64_t Total, void *Private) {
 	if (!PrintProgress)
 		return 0;
 
-	using namespace std;
-	int *LastPercentage = (int *)Private;
 	int Percentage = int((double(Current)/double(Total)) * 100);
 
-	if (Percentage <= *LastPercentage)
-		return 0;
+	if (Private) {
+		int *LastPercentage = (int *)Private;
+		if (Percentage <= *LastPercentage)
+			return 0;
+		*LastPercentage = Percentage;
+	}
 
-	*LastPercentage = Percentage;
-
-	/*if (Percentage < 10)
-		cout << "\b\b";
-	else
-		cout << "\b\b\b"; */
-
-	cout << "Indexing, please wait... " << Percentage << "% \r" << flush;
+	std::cout << "Indexing, please wait... " << Percentage << "% \r" << std::flush;
 
 	return 0;
 }
@@ -182,7 +169,16 @@ int FFMS_CC GenAudioFilename(const char *SourceFile, int Track, const FFMS_Audio
 	return snprintf(FileName, FileName ? FNSize : 0, AudioFile.c_str(), SourceFile, Track) + 1;
 }
 
-void DoIndexing () {
+std::string DumpFilename(FFMS_Track *Track, int TrackNum, const char *Suffix, std::string const& CacheName) {
+	if (FFMS_GetTrackType(Track) != FFMS_TYPE_VIDEO || !FFMS_GetNumFrames(Track))
+		return "";
+
+	char tn[3];
+	snprintf(tn, 3, "%02d", TrackNum);
+	return CacheFile + "_track" + tn + Suffix;
+}
+
+void DoIndexing() {
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
 	E.Buffer = ErrorMsg;
@@ -191,85 +187,68 @@ void DoIndexing () {
 	int Progress = 0;
 
 	Index = FFMS_ReadIndex(CacheFile.c_str(), &E);
-	if (Overwrite || Index == NULL) {
+	if (!Overwrite && Index)
+		throw Error("Error: index file already exists, use -f if you are sure you want to overwrite it.");
+
+	UpdateProgress(0, 100, 0);
+	FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(InputFile, Demuxer, &E);
+	if (Indexer == NULL)
+		throw Error("\nFailed to initialize indexing: ", E);
+
+	Index = FFMS_DoIndexing(Indexer, TrackMask, DumpMask, &GenAudioFilename, NULL, IgnoreErrors, UpdateProgress, &Progress, &E);
+	if (Index == NULL)
+		throw Error("\nIndexing error: ", E);
+
+	UpdateProgress(100, 100, 0);
+
+	if (WriteTC) {
 		if (PrintProgress)
-			std::cout << "Indexing, please wait... 0% \r" << std::flush;
-		FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(InputFile.c_str(), Demuxer, &E);
-		if (Indexer == NULL) {
-			std::string Err = "\nFailed to initialize indexing: ";
-			Err.append(E.Buffer);
-			throw Err;
-		}
-		Index = FFMS_DoIndexing(Indexer, TrackMask, DumpMask, &GenAudioFilename, NULL, IgnoreErrors, UpdateProgress, &Progress, &E);
-		if (Index == NULL) {
-			std::string Err = "\nIndexing error: ";
-			Err.append(E.Buffer);
-			throw Err;
-		}
-
-		if (Progress != 100 && PrintProgress)
-			std::cout << "Indexing, please wait... 100%" << std::endl << std::flush;
-
-		if (WriteTC) {
-			if (PrintProgress)
-				std::cout << "Writing timecodes... ";
-			int NumTracks = FFMS_GetNumTracks(Index);
-			for (int t = 0; t < NumTracks; t++) {
-				FFMS_Track *Track = FFMS_GetTrackFromIndex(Index, t);
-				if (FFMS_GetTrackType(Track) == FFMS_TYPE_VIDEO && FFMS_GetNumFrames(Track)) {
-					char tn[3];
-					snprintf(tn, 3, "%02d", t);
-					std::string TCFilename = CacheFile;
-					TCFilename = TCFilename + "_track" + tn + ".tc.txt";
-					if (FFMS_WriteTimecodes(Track, TCFilename.c_str(), &E))
-						std::cout << std::endl << "Failed to write timecodes file "
-							<< TCFilename << ": " << E.Buffer << std::endl << std:: flush;
-				}
+			std::cout << "Writing timecodes... ";
+		int NumTracks = FFMS_GetNumTracks(Index);
+		for (int t = 0; t < NumTracks; t++) {
+			FFMS_Track *Track = FFMS_GetTrackFromIndex(Index, t);
+			std::string Filename = DumpFilename(Track, t, ".tc.txt", CacheFile);
+			if (!Filename.empty()) {
+				if (FFMS_WriteTimecodes(Track, Filename.c_str(), &E))
+					std::cout << std::endl << "Failed to write timecodes file "
+						<< Filename << ": " << E.Buffer << std::endl;
 			}
-			if (PrintProgress)
-				std::cout << "done." << std::endl << std::flush;
 		}
-
-		if (WriteKF) {
-			if (PrintProgress)
-				std::cout << "Writing keyframes... ";
-			int NumTracks = FFMS_GetNumTracks(Index);
-			for (int t = 0; t < NumTracks; t++) {
-				FFMS_Track *Track = FFMS_GetTrackFromIndex(Index, t);
-				if (FFMS_GetTrackType(Track) == FFMS_TYPE_VIDEO && FFMS_GetNumFrames(Track)) {
-					char tn[3];
-					snprintf(tn, 3, "%02d", t);
-
-					std::ofstream kf((CacheFile + "_track" + tn + ".kf.txt").c_str());
-					kf << "# keyframe format v1" << std::endl;
-					kf << "fps 0" << std::endl;
-
-					int FrameCount = FFMS_GetNumFrames(Track);
-					for (int CurFrameNum = 0; CurFrameNum < FrameCount; CurFrameNum++) {
-						if (FFMS_GetFrameInfo(Track, CurFrameNum)->KeyFrame)
-							kf << CurFrameNum << std::endl;
-					}
-				}
-			}
-			if (PrintProgress)
-				std::cout << "done.    " << std::endl << std::flush;
-		}
-
 		if (PrintProgress)
-			std::cout << "Writing index... ";
-
-		if (FFMS_WriteIndex(CacheFile.c_str(), Index, &E)) {
-			std::string Err = "Error writing index: ";
-			Err.append(E.Buffer);
-			throw Err;
-		}
-
-		if (PrintProgress)
-			std::cout << "done." << std::endl << std::flush;
-
-	} else {
-		throw "Error: index file already exists, use -f if you are sure you want to overwrite it.";
+			std::cout << "done." << std::endl;
 	}
+
+	if (WriteKF) {
+		if (PrintProgress)
+			std::cout << "Writing keyframes... ";
+		int NumTracks = FFMS_GetNumTracks(Index);
+		for (int t = 0; t < NumTracks; t++) {
+			FFMS_Track *Track = FFMS_GetTrackFromIndex(Index, t);
+			std::string Filename = DumpFilename(Track, t, ".kf.txt", CacheFile);
+			if (!Filename.empty()) {
+				std::ofstream kf(Filename.c_str());
+				kf << "# keyframe format v1\n"
+				      "fps 0\n";
+
+				int FrameCount = FFMS_GetNumFrames(Track);
+				for (int CurFrameNum = 0; CurFrameNum < FrameCount; CurFrameNum++) {
+					if (FFMS_GetFrameInfo(Track, CurFrameNum)->KeyFrame)
+						kf << CurFrameNum << "\n";
+				}
+			}
+		}
+		if (PrintProgress)
+			std::cout << "done.    " << std::endl;
+	}
+
+	if (PrintProgress)
+		std::cout << "Writing index... ";
+
+	if (FFMS_WriteIndex(CacheFile.c_str(), Index, &E))
+		throw Error("Error writing index: ", E);
+
+	if (PrintProgress)
+		std::cout << "done." << std::endl;
 }
 
 } // namespace {
@@ -308,14 +287,9 @@ int main(int argc, char *argv[]) {
 #endif /* defined(_WIN32) && !defined(__MINGW32__) */
 	try {
 		ParseCMDLine(argc, argv);
-	} catch (const char *Error) {
-		std::cout << std::endl << Error << std::endl;
-		return 1;
-	} catch (std::string Error) {
-		std::cout << std::endl << Error << std::endl;
-		return 1;
-	} catch (...) {
-		std::cout << std::endl << "Unknown error" << std::endl;
+	}
+	catch (Error const& e) {
+		std::cout << e.msg << std::endl;
 		return 1;
 	}
 
@@ -338,27 +312,11 @@ int main(int argc, char *argv[]) {
 
 	try {
 		DoIndexing();
-	} catch (const char *Error) {
-		std::cout << Error << std::endl;
-		if (Index)
-			FFMS_DestroyIndex(Index);
-		return 1;
-	} catch (std::string Error) {
-		std::cout << std::endl << Error << std::endl;
-		if (Index)
-			FFMS_DestroyIndex(Index);
-		return 1;
-	} catch (...) {
-		std::cout << std::endl << "Unknown error" << std::endl;
-		if (Index)
-			FFMS_DestroyIndex(Index);
+	}
+	catch (Error const& e) {
+		std::cout << e.msg << std::endl;
 		return 1;
 	}
 
-	if (Index)
-		FFMS_DestroyIndex(Index);
-#ifdef _WIN32
-	CoUninitialize();
-#endif
 	return 0;
 }
