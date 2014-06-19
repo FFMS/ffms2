@@ -8,7 +8,7 @@ ZLIB_GIT='git://github.com/madler/zlib.git'
 OPENCORE_AMR_GIT='git://git.code.sf.net/p/opencore-amr/code'
 
 usage() {
-  echo 'usage: build-win-deps.sh [ffmpeg|libav]'
+  echo 'usage: build-win-deps.sh [ffmpeg|libav] <toolchain>'
   echo ''
   echo 'Build files will be placed in the directory the script is run from (so'
   echo 'you may want to run it from outside of the ffms2 tree).'
@@ -26,6 +26,8 @@ platform='Win32'
 if [[ $LIB =~ amd64 ]]; then
   platform='x64'
 fi
+
+toolchain=${2:-msvc}
 
 clone_or_update() {
   if [ -d $1 ]; then
@@ -165,7 +167,7 @@ ffmpeg_common_flags="        \
   --extra-cflags=-D_SYSCRT   \
   --extra-cflags=-wd4005     \
   --extra-cflags=-wd4189     \
-  --toolchain=msvc           \
+  --toolchain=$toolchain     \
   --prefix=$work_dir/junk"
 
 cd $work_dir/$fork
