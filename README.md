@@ -4,10 +4,10 @@
 
 The library is written in C++, but the public API is pure C, so if you can link to a C library, you can use FFMS2. The source is available under the MIT license, but the license of the binaries depends on how libav was compiled. There are optional components that require a GPL libav, and if those are compiled in FFMS2 itself becomes covered by the GPL as well. The official Windows builds are GPLv3 for this reason.
 
-For more information on using the library, see the [API documentation](http://htmlpreview.github.io/?https://github.com/FFMS/ffms2/blob/master/doc/ffms2-api.html) and the [changelog](http://htmlpreview.github.io/?https://github.com/FFMS/ffms2/blob/master/doc/ffms2-changelog.html).
+For more information on using the library, see the [API documentation](doc/ffms2-api.md) and the [changelog](doc/ffms2-changelog.md).
 
 ## Avisynth plugin
-For the end user, the most visible use of FFMS is the implementation of an [Avisynth](http://www.avisynth.org) source plugin that uses the FFMS library to open media files. This plugin is a part of the FFMS2 project and is available for download here; for documentation see the [user guide](http://htmlpreview.github.io/?https://github.com/FFMS/ffms2/blob/master/doc/ffms2-avisynth.html).
+For the end user, the most visible use of FFMS is the implementation of an [Avisynth](http://www.avisynth.org) source plugin that uses the FFMS library to open media files. This plugin is a part of the FFMS2 project and is available for download here; for documentation see the [user guide](doc/ffms2-avisynth.md).
 
 ### Features
 In addition to being able to open almost any common audio or video format, the Avisynth plugin has a number of more or less unique properties that other Avisynth source filters lack:
