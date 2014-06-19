@@ -169,7 +169,7 @@ int FFMS_CC GenAudioFilename(const char *SourceFile, int Track, const FFMS_Audio
 	return snprintf(FileName, FileName ? FNSize : 0, AudioFile.c_str(), SourceFile, Track) + 1;
 }
 
-std::string DumpFilename(FFMS_Track *Track, int TrackNum, const char *Suffix, std::string const& CacheName) {
+std::string DumpFilename(FFMS_Track *Track, int TrackNum, const char *Suffix) {
 	if (FFMS_GetTrackType(Track) != FFMS_TYPE_VIDEO || !FFMS_GetNumFrames(Track))
 		return "";
 
@@ -207,7 +207,7 @@ void DoIndexing() {
 		int NumTracks = FFMS_GetNumTracks(Index);
 		for (int t = 0; t < NumTracks; t++) {
 			FFMS_Track *Track = FFMS_GetTrackFromIndex(Index, t);
-			std::string Filename = DumpFilename(Track, t, ".tc.txt", CacheFile);
+			std::string Filename = DumpFilename(Track, t, ".tc.txt");
 			if (!Filename.empty()) {
 				if (FFMS_WriteTimecodes(Track, Filename.c_str(), &E))
 					std::cout << std::endl << "Failed to write timecodes file "
@@ -224,7 +224,7 @@ void DoIndexing() {
 		int NumTracks = FFMS_GetNumTracks(Index);
 		for (int t = 0; t < NumTracks; t++) {
 			FFMS_Track *Track = FFMS_GetTrackFromIndex(Index, t);
-			std::string Filename = DumpFilename(Track, t, ".kf.txt", CacheFile);
+			std::string Filename = DumpFilename(Track, t, ".kf.txt");
 			if (!Filename.empty()) {
 				std::ofstream kf(Filename.c_str());
 				kf << "# keyframe format v1\n"
