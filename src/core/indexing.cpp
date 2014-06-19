@@ -338,12 +338,12 @@ void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 
 		int Format = av_get_packed_sample_fmt(AudioContext.CodecContext->sample_fmt);
 
-		std::vector<char> WName(FNSize);
+		std::vector<char> WName(FNSize + 1);
 		(*ANC)(SourceFile.c_str(), Track, &AP, &WName[0], FNSize, ANCPrivate);
-		std::string WN(&WName[0]);
+		WName.back() = 0;
 		try {
 			AudioContext.W64Writer =
-				new Wave64Writer(WN.c_str(),
+				new Wave64Writer(WName.data(),
 					av_get_bytes_per_sample(AudioContext.CodecContext->sample_fmt),
 					AudioContext.CodecContext->channels,
 					AudioContext.CodecContext->sample_rate,
