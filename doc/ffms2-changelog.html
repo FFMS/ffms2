@@ -1,31 +1,33 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<title>
-FFmpegSource2 Changelog
-</title>
+<title>FFmpegSource2 Changelog</title>
 <link href="style.css" media="screen" rel="Stylesheet" type="text/css" />
 </head>
 <body>
 <div class="maincontent">
 <h1>FFmpegSource2 Changelog</h1>
 <ul>
-<li>2.20<ul>
-<li>Add support for Opus in MKV when ffmpeg/libav are built with libopus (qyot27)</li>
-<li>vapoursource: Provide _AbsoluteTime metadata (Daemon404)</li>
-<li>Fix a pile of small things found by Coverity (Daemon404)</li>
-<li>Add support for HEVC in MKV (qyot27)</li>
-<li>Fix infinite loop on garbage data at the beginning of AAC files (Plorkyeran)</li>
-<li>Deal with the never-ending bitrot from FFmpeg/Libav API changes (Daemon404, Plorkyeran)</li>
-<li>Make indexes not arch-specific and trivially smaller (Plorkyeran)</li>
-<li>Fix bug where the first b-frame was replaced with the frame before it with open-gop h.264 (Plorkyeran)</li>
-<li>Fix seeking issues with open-gop h.264 (Plorkyeran)</li>
-<li>Fix corruption when seeking in interlaced h.264 (Plorkyeran)</li>
-<li>Add support for multiple frames per audio packet as FFmpeg seems to have started doing that (Plorkyeran)</li>
-<li>Fix seeking in Y4M files (Plorkyeran)</li>
-</ul>
-</li>
+  <li>2.20
+    <ul>
+      <li>Add support for Opus in MKV when ffmpeg/libav are built with libopus (qyot27)
+      <li>vapoursource: Provide _AbsoluteTime metadata (Daemon404)
+      <li>Fix a pile of small things found by Coverity (Daemon404)
+      <li>Add support for HEVC in MKV (qyot27)
+      <li>Fix infinite loop on garbage data at the beginning of AAC files (Plorkyeran)
+      <li>Deal with the never-ending bitrot from FFmpeg/Libav API changes (Daemon404, Plorkyeran)
+      <li>Make indexes not arch-specific and trivially smaller (Plorkyeran)
+      <li>Fix bug where the first b-frame was replaced with the frame before it with open-gop h.264 (Plorkyeran)
+      <li>Fix seeking issues with open-gop h.264 (Plorkyeran)
+      <li>Fix corruption when seeking in interlaced h.264 (Plorkyeran)
+      <li>Add support for multiple frames per audio packet as FFmpeg seems to have started doing that (Plorkyeran)
+      <li>Fix seeking in Y4M files (Plorkyeran)
+      <li>Fix dumping audio while indexing files
+      <li>Add support for Matroska files with extremely large CodecPrivate sections
+      <li>Speed up indexing Matroska files a bit
+    </ul>
+  </li>
 
 <li>2.18<ul>
 <li>Fix regression (r483) with rffmode that caused it to error out even if using the default output colorspace. (TheRyuu)</li>
