@@ -18,6 +18,9 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
+#include "ffms.h"
+#include "ffmscompat.h"
+
 extern "C" {
 #include <libavutil/log.h>
 }
@@ -27,11 +30,10 @@ extern "C" {
 #endif
 
 #include <cstdlib>
-#include <iostream>
+#include <cstring>
 #include <fstream>
+#include <iostream>
 #include <string>
-#include "ffms.h"
-#include "ffmscompat.h"
 
 namespace {
 
