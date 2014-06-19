@@ -325,7 +325,7 @@ FFMS_Indexer::FFMS_Indexer(const char *Filename)
 
 void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track) {
 	// Delay writer creation until after an audio frame has been decoded. This ensures that all parameters are known when writing the headers.
-	if (DecodeFrame->nb_samples) return;
+	if (!DecodeFrame->nb_samples) return;
 
 	if (!AudioContext.W64Writer) {
 		FFMS_AudioProperties AP;
