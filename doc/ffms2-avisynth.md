@@ -11,14 +11,7 @@ If you are religious you may consider this the second coming.
 Donate if you like this software.
 Collecting weird clips from the internet and making them play takes more time than you'd think.
 
-<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
-<p>
-<input type="hidden" name="cmd" value="_s-xclick" />
-<input type="hidden" name="hosted_button_id" value="6944567" />
-<input type="image" src="https://www.paypal.com/en_GB/i/btn/btn_donate_LG.gif" name="submit" alt="PayPal - The safer, easier way to pay online." />
-<img alt="" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1" />
-</p>
-</form>
+[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=fredrik%2emellbin%40gmail%2ecom&lc=US&item_name=IVTC%2eORG&no_note=0&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHostedGuest)
 
 ## Limitations
 
