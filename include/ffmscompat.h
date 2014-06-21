@@ -41,13 +41,6 @@
 
 #if defined(_WIN32) && !defined(__MINGW64_VERSION_MAJOR)
 #	define snprintf _snprintf
-#	ifdef __MINGW32__
-#		define fseeko fseeko64
-#		define ftello ftello64
-#	else
-#		define fseeko _fseeki64
-#		define ftello _ftelli64
-#	endif
 #endif
 
 // Compatibility with older/newer ffmpegs
@@ -72,7 +65,11 @@
 #       undef CodecID
 #   endif
 #   if VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 54, 28, 0, 54, 59, 100)
-static void avcodec_free_frame(AVFrame **frame) { av_freep(frame); }
+static void av_frame_free(AVFrame **frame) { av_freep(frame); }
+#       define av_frame_unref avcodec_get_frame_defaults
+#   elif VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 55, 28, 1, 55, 45, 101)
+#       define av_frame_free avcodec_free_frame
+#       define av_frame_unref avcodec_get_frame_defaults
 #   endif
 #endif
 

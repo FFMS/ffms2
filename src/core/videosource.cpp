@@ -19,32 +19,35 @@
 //  THE SOFTWARE.
 
 #include "videosource.h"
+
+#include "indexing.h"
 #include "numthreads.h"
+#include "videoutils.h"
 
-void FFMS_VideoSource::GetFrameCheck(int n) {
-	if (n < 0 || n >= VP.NumFrames)
-		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_INVALID_ARGUMENT,
-			"Out of bounds frame requested");
-}
-
-static void CopyAVPictureFields(AVPicture &Picture, FFMS_Frame &Dst) {
+namespace {
+void CopyAVPictureFields(AVPicture &Picture, FFMS_Frame &Dst) {
 	for (int i = 0; i < 4; i++) {
 		Dst.Data[i] = Picture.data[i];
 		Dst.Linesize[i] = Picture.linesize[i];
 	}
 }
 
-
 // this might look stupid, but we have actually had crashes caused by not checking like this.
-static void SanityCheckFrameForData(AVFrame *Frame) {
+void SanityCheckFrameForData(AVFrame *Frame) {
 	for (int i = 0; i < 4; i++) {
-		if (Frame->data[i] != NULL && Frame->linesize[i] > 0)
+		if (Frame->data[i] != NULL && Frame->linesize[i] != 0)
 			return;
 	}
 
 	throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC, "Insanity detected: decoder returned an empty frame");
 }
+}
 
+void FFMS_VideoSource::GetFrameCheck(int n) {
+	if (n < 0 || n >= VP.NumFrames)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_INVALID_ARGUMENT,
+			"Out of bounds frame requested");
+}
 
 FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	SanityCheckFrameForData(Frame);
@@ -315,10 +318,9 @@ void FFMS_VideoSource::SetVideoProperties() {
 	VP.ColorSpace = CodecContext->colorspace;
 	VP.ColorRange = CodecContext->color_range;
 	// these pixfmt's are deprecated but still used
-	if (
-		CodecContext->pix_fmt == PIX_FMT_YUVJ420P
-		|| CodecContext->pix_fmt == PIX_FMT_YUVJ422P
-		|| CodecContext->pix_fmt == PIX_FMT_YUVJ444P
+	if (CodecContext->pix_fmt == PIX_FMT_YUVJ420P ||
+		CodecContext->pix_fmt == PIX_FMT_YUVJ422P ||
+		CodecContext->pix_fmt == PIX_FMT_YUVJ444P
 		)
 		VP.ColorRange = AVCOL_RANGE_JPEG;
 
@@ -328,7 +330,7 @@ void FFMS_VideoSource::SetVideoProperties() {
 
 	if (CodecContext->width <= 0 || CodecContext->height <= 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-		"Codec returned zero size video");
+			"Codec returned zero size video");
 
 	// attempt to correct framerate to the proper NTSC fraction, if applicable
 	CorrectNTSCRationalFramerate(&VP.FPSNumerator, &VP.FPSDenominator);

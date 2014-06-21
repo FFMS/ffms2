@@ -21,136 +21,24 @@
 #include "indexing.h"
 
 #include "codectype.h"
+#include "track.h"
+#include "wave64writer.h"
+#include "zipfile.h"
 
 #include <algorithm>
-#include <fstream>
-#include <iostream>
 #include <limits>
 #include <numeric>
+#include <sstream>
 
 extern "C" {
 #include <libavutil/avutil.h>
 #include <libavutil/sha.h>
-
-#include <zlib.h>
 }
 
-#undef max
-
 #define INDEXID 0x53920873
-#ifdef __MINGW64__
-	#define ARCH 1
-#elif defined(__MINGW32__)
-	#define ARCH 2
-#elif defined(_WIN64)
-	#define ARCH 6
-#elif defined(_WIN32)
-	#define ARCH 3
-#elif defined(__i386__) //*nix 32bit
-	#define ARCH 4
-#else //*nix 64bit
-	#define ARCH 5
-#endif
 
 extern bool HasHaaliMPEG;
 extern bool HasHaaliOGG;
-
-namespace {
-struct IndexHeader {
-	uint32_t Id;
-	uint32_t Version;
-	uint32_t Arch;
-	uint32_t Tracks;
-	uint32_t Decoder;
-	uint32_t ErrorHandling;
-	uint32_t LAVUVersion;
-	uint32_t LAVFVersion;
-	uint32_t LAVCVersion;
-	uint32_t LSWSVersion;
-	int64_t FileSize;
-	uint8_t FileSignature[20];
-};
-
-struct TrackHeader {
-	uint32_t TT;
-	uint32_t Frames;
-	int64_t Num;
-	int64_t Den;
-	uint32_t UseDTS;
-	uint32_t HasTS;
-	uint32_t NumInvisible;
-};
-
-struct zipped_file {
-	ffms_fstream *Index;
-	z_stream *stream;
-	unsigned char in_buffer[65536];
-
-	template<class T>
-	void read(T *out) {
-		if (!out) return;
-
-		stream->next_out = reinterpret_cast<unsigned char *>(out);
-		stream->avail_out = sizeof(T);
-		do {
-			if (!stream->avail_in) {
-				Index->read(reinterpret_cast<char *>(in_buffer), sizeof(in_buffer));
-				stream->next_in = in_buffer;
-				stream->avail_in = static_cast<uInt>(Index->gcount());
-			}
-
-			switch (inflate(stream, Z_SYNC_FLUSH)) {
-				case Z_NEED_DICT:
-					inflateEnd(stream);
-					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to read data: Dictionary error.");
-				case Z_DATA_ERROR:
-					inflateEnd(stream);
-					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to read data: Data error.");
-				case Z_MEM_ERROR:
-					inflateEnd(stream);
-					throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to read data: Memory error.");
-				case Z_STREAM_END:
-					inflateEnd(stream);
-					if (stream->avail_out > 0)
-						throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to read data: Stream ended early");
-			}
-		} while (stream->avail_out);
-	}
-
-	template<class T>
-	void write(T const& in) {
-		stream->next_in = reinterpret_cast<unsigned char *>(const_cast<T*>(&in));
-		stream->avail_in = sizeof(T);
-		do {
-			Bytef out[65536];
-			stream->avail_out = sizeof(out);
-			stream->next_out = out;
-			deflate(stream, Z_NO_FLUSH);
-			uInt have = sizeof(out) - stream->avail_out;
-			if (have) Index->write(reinterpret_cast<char *>(out), have);
-		} while (stream->avail_out == 0);
-	}
-
-	void finish() {
-		stream->next_in = 0;
-		stream->avail_in = 0;
-
-		int ret;
-		do {
-			do {
-				Bytef out[65536];
-				stream->avail_out = sizeof(out);
-				stream->next_out = out;
-				ret = deflate(stream, Z_FINISH);
-				uInt have = sizeof(out) - stream->avail_out;
-				if (have) Index->write(reinterpret_cast<char *>(out), have);
-			} while (stream->avail_out == 0);
-		} while (ret != Z_STREAM_END);
-		deflateEnd(stream);
-	}
-};
-
-}
 
 SharedVideoContext::SharedVideoContext(bool FreeCodecContext)
 : FreeCodecContext(FreeCodecContext)
@@ -192,248 +80,10 @@ SharedAudioContext::~SharedAudioContext() {
 	delete TCC;
 }
 
-TFrameInfo::TFrameInfo(int64_t PTS, int64_t SampleStart, unsigned int SampleCount, int RepeatPict, bool KeyFrame, int64_t FilePos, unsigned int FrameSize, int FrameType)
-: SampleStart(SampleStart)
-, SampleCount(SampleCount)
-, FilePos(FilePos)
-, FrameSize(FrameSize)
-, OriginalPos(0)
-, FrameType(FrameType)
-{
-	this->PTS = PTS;
-	this->RepeatPict = RepeatPict;
-	this->KeyFrame = KeyFrame;
-}
-
-void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, unsigned int FrameSize, bool Invisible) {
-	if (Invisible)
-		InvisibleFrames.push_back(Frames.size() - InvisibleFrames.size());
-
-	Frames.push_back(TFrameInfo(PTS, 0, 0, RepeatPict, KeyFrame, FilePos, FrameSize, FrameType));
-}
-
-void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t SampleStart, int64_t SampleCount, bool KeyFrame, int64_t FilePos, unsigned int FrameSize) {
-	if (SampleCount > 0)
-		Frames.push_back(TFrameInfo(PTS, SampleStart, static_cast<unsigned int>(SampleCount), 0, KeyFrame, FilePos, FrameSize, 0));
-}
-
-void FFMS_Track::WriteTimecodes(const char *TimecodeFile) const {
-	ffms_fstream Timecodes(TimecodeFile, std::ios::out | std::ios::trunc);
-
-	if (!Timecodes.is_open())
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			std::string("Failed to open '") + TimecodeFile + "' for writing");
-
-	Timecodes << "# timecode format v2\n";
-
-	for (size_t i = 0; i < size(); ++i) {
-		if (!binary_search(InvisibleFrames.begin(), InvisibleFrames.end(), i))
-			Timecodes << std::fixed << ((Frames[i].PTS * TB.Num) / (double)TB.Den) << "\n";
-	}
-}
-
-static bool PTSComparison(TFrameInfo FI1, TFrameInfo FI2) {
-	return FI1.PTS < FI2.PTS;
-}
-
-int FFMS_Track::FrameFromPTS(int64_t PTS) const {
-	TFrameInfo F;
-	F.PTS = PTS;
-
-	iterator Pos = std::lower_bound(begin(), end(), F, PTSComparison);
-	if (Pos == end() || Pos->PTS != PTS)
-		return -1;
-	return std::distance(begin(), Pos);
-}
-
-int FFMS_Track::FrameFromPos(int64_t Pos) const {
-	for (size_t i = 0; i < size(); i++)
-		if (Frames[i].FilePos == Pos)
-			return i;
-	return -1;
-}
-
-int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) const {
-	TFrameInfo F;
-	F.PTS = PTS;
-
-	iterator Pos = std::lower_bound(begin(), end(), F, PTSComparison);
-	if (Pos == end())
-		return size() - 1;
-	int Frame = std::distance(begin(), Pos);
-	if (Pos == begin() || FFABS(Pos->PTS - PTS) <= FFABS((Pos - 1)->PTS - PTS))
-		return Frame;
-	return Frame - 1;
-}
-
-int FFMS_Track::FindClosestVideoKeyFrame(int Frame) const {
-	Frame = FFMIN(FFMAX(Frame, 0), static_cast<int>(size()) - 1);
-	for (; Frame > 0 && !Frames[Frame].KeyFrame; Frame--) ;
-	for (; Frame > 0 && !Frames[Frames[Frame].OriginalPos].KeyFrame; Frame--) ;
-	return Frame;
-}
-
-int FFMS_Track::RealFrameNumber(int Frame) const {
-	return Frame + distance(
-		InvisibleFrames.begin(),
-		upper_bound(InvisibleFrames.begin(), InvisibleFrames.end(), static_cast<size_t>(Frame)));
-}
-
-int FFMS_Track::VisibleFrameCount() const {
-	return Frames.size() - InvisibleFrames.size();
-}
-
-void FFMS_Track::MaybeReorderFrames() {
-	// First check if we need to do anything
-	bool has_b_frames = false;
-	for (size_t i = 1; i < size(); ++i) {
-		// If the timestamps are already out of order, then they actually are
-		// presentation timestamps and we don't need to do anything
-		if (Frames[i].PTS < Frames[i - 1].PTS)
-			return;
-
-		if (Frames[i].FrameType == AV_PICTURE_TYPE_B) {
-			has_b_frames = true;
-
-			// Reordering files with multiple b-frames is currently not
-			// supported
-			if (Frames[i - 1].FrameType == AV_PICTURE_TYPE_B)
-				return;
-		}
-	}
-
-	// Don't need to do anything if there are no b-frames as presentation order
-	// equals decoding order
-	if (!has_b_frames)
-		return;
-
-	// Swap the presentation time stamps of each b-frame with that of the frame
-	// before it
-	for (size_t i = 1; i < size(); ++i) {
-		if (Frames[i].FrameType == AV_PICTURE_TYPE_B)
-			std::swap(Frames[i].PTS, Frames[i - 1].PTS);
-	}
-}
-
-void FFMS_Track::MaybeHideFrames() {
-	bool prev_valid_pos = Frames[0].FilePos >= 0;
-	for (size_t i = 1; i < size(); ++i) {
-		bool valid_pos = Frames[i].FilePos >= 0;
-		if (valid_pos == prev_valid_pos)
-			return;
-		prev_valid_pos = valid_pos;
-	}
-
-	for (size_t i = 0; i < size(); ++i) {
-		if (Frames[i].FilePos < 0)
-			InvisibleFrames.push_back(i - InvisibleFrames.size());
-	}
-}
-
-void FFMS_Track::SortByPTS() {
-	// With some formats (such as Vorbis) a bad final packet results in a
-	// frame with PTS 0, which we don't want to sort to the beginning
-	if (size() > 2 && front().PTS >= back().PTS)
-		Frames.pop_back();
-
-	for (size_t i = 0; i < size(); i++)
-		Frames[i].OriginalPos = i;
-
-	if (TT != FFMS_TYPE_VIDEO || size() < 2)
-		return;
-
-	MaybeReorderFrames();
-
-	sort(Frames.begin(), Frames.end(), PTSComparison);
-
-	std::vector<size_t> ReorderTemp;
-	ReorderTemp.resize(size());
-
-	for (size_t i = 0; i < size(); i++)
-		ReorderTemp[i] = Frames[i].OriginalPos;
-
-	for (size_t i = 0; i < size(); i++)
-		Frames[ReorderTemp[i]].OriginalPos = i;
-
-	MaybeHideFrames();
-}
-
-void FFMS_Track::Write(zipped_file *stream) const {
-	TrackHeader TH = { (uint32_t)TT, (uint32_t)size(), TB.Num, TB.Den, UseDTS, HasTS, (uint32_t)InvisibleFrames.size() };
-	stream->write(TH);
-
-	if (empty()) return;
-
-	stream->write(Frames[0]);
-	for (size_t i = 1; i < size(); ++i) {
-		TFrameInfo temp = Frames[i];
-		temp.FilePos -= Frames[i - 1].FilePos;
-		temp.OriginalPos -= Frames[i - 1].OriginalPos;
-		temp.PTS -= Frames[i - 1].PTS;
-		temp.SampleStart -= Frames[i - 1].SampleStart;
-		stream->write(temp);
-	}
-
-	if (InvisibleFrames.empty()) return;
-
-	stream->write(InvisibleFrames[0]);
-	for (size_t i = 1; i < InvisibleFrames.size(); ++i) {
-		size_t temp = InvisibleFrames[i] - InvisibleFrames[i - 1];
-		stream->write(temp);
-	}
-}
-
-FFMS_Track::FFMS_Track() {
-	this->TT = FFMS_TYPE_UNKNOWN;
-	this->TB.Num = 0;
-	this->TB.Den = 0;
-	this->UseDTS = false;
-	this->HasTS = true;
-}
-
-FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS, bool HasTS) {
-	this->TT = TT;
-	this->TB.Num = Num;
-	this->TB.Den = Den;
-	this->UseDTS = UseDTS;
-	this->HasTS = HasTS;
-}
-
-FFMS_Track::FFMS_Track(zipped_file &Stream) {
-	TrackHeader TH;
-	Stream.read(&TH);
-
-	TT = static_cast<FFMS_TrackType>(TH.TT);
-	TB.Num = TH.Num;
-	TB.Den = TH.Den;
-	UseDTS = !!TH.UseDTS;
-	HasTS  = !!TH.HasTS;
-
-	Frames.resize(TH.Frames);
-	for (size_t i = 0; i < TH.Frames; ++i) {
-		Stream.read(&Frames[i]);
-
-		if (i > 0) {
-			Frames[i].FilePos = Frames[i].FilePos + Frames[i - 1].FilePos;
-			Frames[i].OriginalPos = Frames[i].OriginalPos + Frames[i - 1].OriginalPos;
-			Frames[i].PTS = Frames[i].PTS + Frames[i - 1].PTS;
-			Frames[i].SampleStart = Frames[i].SampleStart + Frames[i - 1].SampleStart;
-		}
-	}
-
-	InvisibleFrames.resize(TH.NumInvisible);
-	for (size_t i = 0; i < TH.NumInvisible; ++i)
-		Stream.read(&InvisibleFrames[i]);
-	partial_sum(InvisibleFrames.begin(), InvisibleFrames.end(), InvisibleFrames.begin());
-}
-
 void ffms_free_sha(AVSHA **ctx) { av_freep(ctx); }
 
 void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]) {
-	FILE *SFile = ffms_fopen(Filename,"rb");
-	if (!SFile)
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			std::string("Failed to open '") + Filename + "' for hashing");
+	FileHandle file(Filename, "rb", FFMS_ERROR_INDEX, FFMS_ERROR_FILE_READ);
 
 #if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 51, 43, 0, 51, 75, 100)
 	unknown_size<AVSHA, av_sha_alloc, ffms_free_sha> ctx;
@@ -443,56 +93,59 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 #endif
 	av_sha_init(ctx, 160);
 
-	std::vector<uint8_t> FileBuffer(1024*1024);
 	try {
-		size_t BytesRead = fread(&FileBuffer[0], 1, FileBuffer.size(), SFile);
-		if (ferror(SFile) && !feof(SFile))
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-				std::string("Failed to read '") + Filename + "' for hashing");
+		file.Seek(0, SEEK_END);
+		*Filesize = file.Tell();
 
-		av_sha_update(ctx, &FileBuffer[0], BytesRead);
+		file.Seek(0, SEEK_SET);
+		std::vector<char> FileBuffer(static_cast<size_t>(std::min<int64_t>(1024*1024, *Filesize)));
+		size_t BytesRead = file.Read(&FileBuffer[0], FileBuffer.size());
+		av_sha_update(ctx, reinterpret_cast<const uint8_t*>(&FileBuffer[0]), BytesRead);
 
-		fseeko(SFile, -(int)FileBuffer.size(), SEEK_END);
-		BytesRead = fread(&FileBuffer[0], 1, FileBuffer.size(), SFile);
-		if (ferror(SFile) && !feof(SFile)) {
-			std::ostringstream buf;
-			buf << "Failed to seek with offset " << FileBuffer.size() << " from file end in '" << Filename << "' for hashing";
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
+		if (*Filesize > static_cast<int64_t>(FileBuffer.size())) {
+			file.Seek(-(int)FileBuffer.size(), SEEK_END);
+			BytesRead = file.Read(&FileBuffer[0], FileBuffer.size());
+			av_sha_update(ctx, reinterpret_cast<const uint8_t*>(&FileBuffer[0]), BytesRead);
 		}
-
-		av_sha_update(ctx, &FileBuffer[0], BytesRead);
-
-		fseeko(SFile, 0, SEEK_END);
-		if (ferror(SFile))
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-				std::string("Failed to seek to end of '") + Filename + "' for hashing");
-
-		*Filesize = ftello(SFile);
 	}
 	catch (...) {
-		fclose(SFile);
 		av_sha_final(ctx, Digest);
 		throw;
 	}
-	fclose(SFile);
 	av_sha_final(ctx, Digest);
 }
 
-
-int FFMS_Index::AddRef() {
-	return ++RefCount;
+void FFMS_Index::AddRef() {
+	++RefCount;
 }
 
-int FFMS_Index::Release() {
-	int Temp = --RefCount;
-	if (!RefCount)
+void FFMS_Index::Release() {
+	if (--RefCount == 0)
 		delete this;
-	return Temp;
 }
 
-void FFMS_Index::Sort() {
-	for (FFMS_Index::iterator Cur = begin(); Cur != end(); ++Cur)
-		Cur->SortByPTS();
+void FFMS_Index::Finalize(std::vector<SharedVideoContext> const& video_contexts) {
+	for (size_t i = 0, end = size(); i != end; ++i) {
+		FFMS_Track& track = (*this)[i];
+		track.FinalizeTrack();
+
+		if (track.TT != FFMS_TYPE_VIDEO) continue;
+
+		if (video_contexts[i].CodecContext->has_b_frames) {
+			track.MaxBFrames = video_contexts[i].CodecContext->has_b_frames;
+			continue;
+		}
+
+		// Whether or not has_b_frames gets set during indexing seems
+		// to vary based on version of FFmpeg/Libav, so do an extra
+		// check for b-frames if it's 0.
+		for (size_t f = 0; f < track.size(); ++f) {
+			if (track[f].FrameType == AV_PICTURE_TYPE_B) {
+				track.MaxBFrames = 1;
+				break;
+			}
+		}
+	}
 }
 
 bool FFMS_Index::CompareFileSignature(const char *Filename) {
@@ -503,96 +156,63 @@ bool FFMS_Index::CompareFileSignature(const char *Filename) {
 }
 
 void FFMS_Index::WriteIndex(const char *IndexFile) {
-	ffms_fstream IndexStream(IndexFile, std::ios::out | std::ios::binary | std::ios::trunc);
-
-	if (!IndexStream.is_open())
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			std::string("Failed to open '") + IndexFile + "' for writing");
-
-	z_stream stream;
-	memset(&stream, 0, sizeof(z_stream));
-	if (deflateInit(&stream, 9) != Z_OK) {
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to initialize zlib");
-	}
+	ZipFile zf(IndexFile, "wb");
 
 	// Write the index file header
-	IndexHeader IH;
-	IH.Id = INDEXID;
-	IH.Version = FFMS_VERSION;
-	IH.Arch = ARCH;
-	IH.Tracks = size();
-	IH.Decoder = Decoder;
-	IH.ErrorHandling = ErrorHandling;
-	IH.LAVUVersion = avutil_version();
-	IH.LAVFVersion = avformat_version();
-	IH.LAVCVersion = avcodec_version();
-	IH.LSWSVersion = swscale_version();
-	IH.FileSize = Filesize;
-	memcpy(IH.FileSignature, Digest, sizeof(Digest));
+	zf.Write<uint32_t>(INDEXID);
+	zf.Write<uint32_t>(FFMS_VERSION);
+	zf.Write<uint32_t>(size());
+	zf.Write<uint32_t>(Decoder);
+	zf.Write<uint32_t>(ErrorHandling);
+	zf.Write<uint32_t>(avutil_version());
+	zf.Write<uint32_t>(avformat_version());
+	zf.Write<uint32_t>(avcodec_version());
+	zf.Write<uint32_t>(swscale_version());
+	zf.Write<int64_t>(Filesize);
+	zf.Write(Digest);
 
-	zipped_file zf = { &IndexStream, &stream };
-	zf.write(IH);
+	for (size_t i = 0; i < size(); ++i)
+		at(i).Write(zf);
 
-	for (unsigned int i = 0; i < IH.Tracks; i++)
-		at(i).Write(&zf);
-
-	zf.finish();
+	zf.Finish();
 }
 
-void FFMS_Index::ReadIndex(const char *IndexFile) {
-	ffms_fstream Index(IndexFile, std::ios::in | std::ios::binary);
-
-	if (!Index.is_open())
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			std::string("Failed to open '") + IndexFile + "' for reading");
-
-	Index.seekg(0, std::ios::end);
-	if (!Index.tellg())
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			std::string("'") + IndexFile + "' is not a valid index file");
-
-	Index.seekg(0, std::ios::beg);
-	z_stream stream;
-	memset(&stream, 0, sizeof(z_stream));
-	if (inflateInit(&stream) != Z_OK)
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			"Failed to initialize zlib");
+FFMS_Index::FFMS_Index(const char *IndexFile)
+: RefCount(1)
+{
+	ZipFile zf(IndexFile, "rb");
 
 	// Read the index file header
-	zipped_file inf = { &Index, &stream };
-	IndexHeader IH;
-	inf.read(&IH);
-
-	if (IH.Id != INDEXID)
+	if (zf.Read<uint32_t>() != INDEXID)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("'") + IndexFile + "' is not a valid index file");
 
-	if (IH.Version != FFMS_VERSION)
+	if (zf.Read<uint32_t>() != FFMS_VERSION)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("'") + IndexFile + "' is not the expected index version");
 
-	if (IH.Arch != ARCH)
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			std::string("'") + IndexFile + "' was not made with this FFMS2 binary");
+	uint32_t Tracks = zf.Read<uint32_t>();
+	Decoder = zf.Read<uint32_t>();
+	ErrorHandling = zf.Read<uint32_t>();
 
-	if (IH.LAVUVersion != avutil_version() || IH.LAVFVersion != avformat_version() ||
-		IH.LAVCVersion != avcodec_version() || IH.LSWSVersion != swscale_version())
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			std::string("A different FFmpeg build was used to create '") + IndexFile + "'");
-
-	if (!(IH.Decoder & FFMS_GetEnabledSources()))
+	if (!(Decoder & FFMS_GetEnabledSources()))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_NOT_AVAILABLE,
 			"The source which this index was created with is not available");
 
-	ErrorHandling = IH.ErrorHandling;
-	Decoder = IH.Decoder;
-	Filesize = IH.FileSize;
-	memcpy(Digest, IH.FileSignature, sizeof(Digest));
+	if (zf.Read<uint32_t>() != avutil_version() ||
+		zf.Read<uint32_t>() != avformat_version() ||
+		zf.Read<uint32_t>() != avcodec_version() ||
+		zf.Read<uint32_t>() != swscale_version())
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("A different FFmpeg build was used to create '") + IndexFile + "'");
 
+	Filesize = zf.Read<int64_t>();
+	zf.Read(Digest, sizeof(Digest));
+
+	reserve(Tracks);
 	try {
-		for (unsigned int i = 0; i < IH.Tracks; i++) {
-			push_back(FFMS_Track(inf));
-		}
+		for (size_t i = 0; i < Tracks; ++i)
+			push_back(FFMS_Track(zf));
 	}
 	catch (FFMS_Exception const&) {
 		throw;
@@ -603,19 +223,13 @@ void FFMS_Index::ReadIndex(const char *IndexFile) {
 	}
 }
 
-FFMS_Index::FFMS_Index() : RefCount(1) {
-}
-
-FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20]) : RefCount(1), Filesize(Filesize) {
+FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling)
+: RefCount(1)
+, Decoder(Decoder)
+, ErrorHandling(ErrorHandling)
+, Filesize(Filesize)
+{
 	memcpy(this->Digest, Digest, sizeof(this->Digest));
-}
-
-void FFMS_Indexer::SetIndexMask(int IndexMask) {
-	this->IndexMask = IndexMask;
-}
-
-void FFMS_Indexer::SetDumpMask(int DumpMask) {
-	this->DumpMask = DumpMask;
 }
 
 void FFMS_Indexer::SetErrorHandling(int ErrorHandling) {
@@ -636,7 +250,7 @@ void FFMS_Indexer::SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate
 	this->ANCPrivate = ANCPrivate;
 }
 
-FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Demuxer) {
+FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer) {
 	AVFormatContext *FormatContext = NULL;
 
 	if (avformat_open_input(&FormatContext, Filename, NULL, NULL) != 0)
@@ -648,23 +262,23 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Dem
 		// Do matroska indexing instead?
 		if (!strncmp(FormatContext->iformat->name, "matroska", 8)) {
 			avformat_close_input(&FormatContext);
-			return new FFMatroskaIndexer(Filename);
+			return CreateMatroskaIndexer(Filename);
 		}
 
 #ifdef HAALISOURCE
 		// Do haali ts indexing instead?
 		if (HasHaaliMPEG && (!strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts"))) {
 			avformat_close_input(&FormatContext);
-			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
+			return CreateHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
 		}
 
 		if (HasHaaliOGG && !strcmp(FormatContext->iformat->name, "ogg")) {
 			avformat_close_input(&FormatContext);
-			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
+			return CreateHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
 		}
 #endif
 
-		return new FFLAVFIndexer(Filename, FormatContext);
+		return CreateLavfIndexer(Filename, FormatContext);
 	}
 
 	// someone forced a demuxer, use it
@@ -678,19 +292,19 @@ FFMS_Indexer *FFMS_Indexer::CreateIndexer(const char *Filename, FFMS_Sources Dem
 
 	switch (Demuxer) {
 		case FFMS_SOURCE_LAVF:
-			return new FFLAVFIndexer(Filename, FormatContext);
+			return CreateLavfIndexer(Filename, FormatContext);
 #ifdef HAALISOURCE
 		case FFMS_SOURCE_HAALIOGG:
 			if (!HasHaaliOGG)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali's Ogg parser is not available");
-			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
+			return CreateHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
 		case FFMS_SOURCE_HAALIMPEG:
 			if (!HasHaaliMPEG)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali's MPEG PS/TS parser is not available");
-			return new FFHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
+			return CreateHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
 #endif
 		case FFMS_SOURCE_MATROSKA:
-			return new FFMatroskaIndexer(Filename);
+			return CreateMatroskaIndexer(Filename);
 		default:
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_INVALID_ARGUMENT, "Invalid demuxer requested");
 	}
@@ -709,13 +323,9 @@ FFMS_Indexer::FFMS_Indexer(const char *Filename)
 	FFMS_Index::CalculateFileSignature(Filename, &Filesize, Digest);
 }
 
-FFMS_Indexer::~FFMS_Indexer() {
-
-}
-
 void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track) {
 	// Delay writer creation until after an audio frame has been decoded. This ensures that all parameters are known when writing the headers.
-	if (DecodeFrame->nb_samples) return;
+	if (!DecodeFrame->nb_samples) return;
 
 	if (!AudioContext.W64Writer) {
 		FFMS_AudioProperties AP;
@@ -728,12 +338,12 @@ void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 
 		int Format = av_get_packed_sample_fmt(AudioContext.CodecContext->sample_fmt);
 
-		std::vector<char> WName(FNSize);
+		std::vector<char> WName(FNSize + 1);
 		(*ANC)(SourceFile.c_str(), Track, &AP, &WName[0], FNSize, ANCPrivate);
-		std::string WN(&WName[0]);
+		WName.back() = 0;
 		try {
 			AudioContext.W64Writer =
-				new Wave64Writer(WN.c_str(),
+				new Wave64Writer(WName.data(),
 					av_get_bytes_per_sample(AudioContext.CodecContext->sample_fmt),
 					AudioContext.CodecContext->channels,
 					AudioContext.CodecContext->sample_rate,
@@ -747,7 +357,7 @@ void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 	AudioContext.W64Writer->WriteData(*DecodeFrame);
 }
 
-int64_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices) {
+uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices) {
 	AVCodecContext *CodecContext = Context.CodecContext;
 	int64_t StartSample = Context.CurrentSample;
 	int Read = 0;
@@ -782,7 +392,7 @@ int64_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioC
 	}
 	Packet->size += Read;
 	Packet->data -= Read;
-	return Context.CurrentSample - StartSample;
+	return static_cast<uint32_t>(Context.CurrentSample - StartSample);
 }
 
 void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {

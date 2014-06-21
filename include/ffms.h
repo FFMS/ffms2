@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (19 << 16) | (0 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (20 << 16) | (0 << 8) | 0)
 
 #include <stdint.h>
 
@@ -58,7 +58,7 @@
 #endif
 
 #ifndef FFMS_DEPRECATED
-// Define as empty if the compilter doesn't support deplcation attributes or
+// Define as empty if the compiler doesn't support deprecation attributes or
 // if we're building FFMS2 itself
 #	define FFMS_DEPRECATED
 #endif
@@ -228,7 +228,10 @@ typedef enum FFMS_ColorSpaces {
 	FFMS_CS_FCC			= 4,
 	FFMS_CS_BT470BG		= 5,
 	FFMS_CS_SMPTE170M	= 6,
-	FFMS_CS_SMPTE240M	= 7
+	FFMS_CS_SMPTE240M	= 7,
+	FFMS_CS_YCOCG		= 8,
+	FFMS_CS_BT2020_NCL	= 9,
+	FFMS_CS_BT2020_CL	= 10
 } FFMS_ColorSpaces;
 
 typedef enum FFMS_ColorRanges {

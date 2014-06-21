@@ -18,18 +18,19 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
+#include "ffms.h"
+#include "vapoursource.h"
+
 #include <cstdio>
 #include <cstring>
 #include <string>
-#include "ffms.h"
-#include "vapoursource.h"
 
 // assume windows is the only OS with a case insensitive filesystem
 #ifndef _WIN32
 #define _stricmp strcmp
 #endif
 
-static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi)  {
+static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, const VSAPI *vsapi)  {
 	FFMS_Init(0,  1);
 
 	char ErrorMsg[1024];
@@ -59,48 +60,33 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *userData, VSCor
 		CacheFile = DefaultCache.c_str();
 	}
 
-	if (!AudioFile || !strcmp(AudioFile, "")) {
-		vsapi->setError(out, "Index: Specifying an empty audio filename is not allowed");
-		return;
-	}
+	if (!AudioFile || !strcmp(AudioFile, ""))
+		return vsapi->setError(out, "Index: Specifying an empty audio filename is not allowed");
 
-	int Demuxer;
-	if (!DemuxerStr)
-		Demuxer = FFMS_SOURCE_DEFAULT;
-	else if (!strcmp(DemuxerStr, "lavf"))
-		Demuxer = FFMS_SOURCE_LAVF;
-	else if (!strcmp(DemuxerStr, "matroska"))
-		Demuxer = FFMS_SOURCE_MATROSKA;
-	else if (!strcmp(DemuxerStr, "haalimpeg"))
-		Demuxer = FFMS_SOURCE_HAALIMPEG;
-	else if (!strcmp(DemuxerStr, "haaliogg"))
-		Demuxer = FFMS_SOURCE_HAALIOGG;
-	else {
-		vsapi->setError(out, "Index: Invalid demuxer requested");
-		return;
+	int Demuxer = FFMS_SOURCE_DEFAULT;
+	if (DemuxerStr) {
+		if (!strcmp(DemuxerStr, "lavf"))
+			Demuxer = FFMS_SOURCE_LAVF;
+		else if (!strcmp(DemuxerStr, "matroska"))
+			Demuxer = FFMS_SOURCE_MATROSKA;
+		else if (!strcmp(DemuxerStr, "haalimpeg"))
+			Demuxer = FFMS_SOURCE_HAALIMPEG;
+		else if (!strcmp(DemuxerStr, "haaliogg"))
+			Demuxer = FFMS_SOURCE_HAALIOGG;
+		else
+			return vsapi->setError(out, "Index: Invalid demuxer requested");
 	}
 
 	FFMS_Index *Index = FFMS_ReadIndex(CacheFile, &E);
 	if (OverWrite || !Index || (Index && FFMS_IndexBelongsToFile(Index, Source, 0) != FFMS_ERROR_SUCCESS)) {
 		FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(Source, Demuxer, &E);
-		if (!Indexer) {
-			std::string buf = "Index: ";
-			buf += E.Buffer;
-			vsapi->setError(out, buf.c_str());
-			return;
-		}
-		if (!(Index = FFMS_DoIndexing(Indexer, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, ErrorHandling, NULL, NULL, &E))) {
-			std::string buf = "Index: ";
-			buf += E.Buffer;
-			vsapi->setError(out, buf.c_str());
-			return;
-		}
+		if (!Indexer)
+			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
+		if (!(Index = FFMS_DoIndexing(Indexer, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, ErrorHandling, NULL, NULL, &E)))
+			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
 		if (FFMS_WriteIndex(CacheFile, Index, &E)) {
 			FFMS_DestroyIndex(Index);
-			std::string buf = "Index: ";
-			buf += E.Buffer;
-			vsapi->setError(out, buf.c_str());
-			return;
+			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
 		}
 		FFMS_DestroyIndex(Index);
 		if (!OverWrite)
@@ -113,7 +99,7 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *userData, VSCor
 	}
 }
 
-static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi)  {
+static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core, const VSAPI *vsapi)  {
 	FFMS_Init(0,  1);
 
 	char ErrorMsg[1024];
@@ -149,44 +135,25 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *userData, VSCo
 		Resizer = "BICUBIC";
 	int Format = (int)vsapi->propGetInt(in, "format", 0, &err);
 
-	if (FPSDen < 1) {
-		vsapi->setError(out, "Source: FPS denominator needs to be 1 or higher");
-		return;
-	}
-
-	if (Track <= -2) {
-		vsapi->setError(out, "Source: No video track selected");
-		return;
-	}
-
-	if (SeekMode < -1 || SeekMode > 3) {
-		vsapi->setError(out, "Source: Invalid seekmode selected");
-		return;
-	}
-
-	if (RFFMode < 0 || RFFMode > 2) {
-		vsapi->setError(out, "Source: Invalid RFF mode selected");
-		return;
-	}
-
-	if (RFFMode > 0 && FPSNum > 0) {
-		vsapi->setError(out, "Source: RFF modes may not be combined with CFR conversion");
-		return;
-	}
-
-	if (Timecodes && !_stricmp(Source, Timecodes)) {
-		vsapi->setError(out, "Source: Timecodes will overwrite the source");
-		return;
-	}
+	if (FPSDen < 1)
+		return vsapi->setError(out, "Source: FPS denominator needs to be 1 or higher");
+	if (Track <= -2)
+		return vsapi->setError(out, "Source: No video track selected");
+	if (SeekMode < -1 || SeekMode > 3)
+		return vsapi->setError(out, "Source: Invalid seekmode selected");
+	if (RFFMode < 0 || RFFMode > 2)
+		return vsapi->setError(out, "Source: Invalid RFF mode selected");
+	if (RFFMode > 0 && FPSNum > 0)
+		return vsapi->setError(out, "Source: RFF modes may not be combined with CFR conversion");
+	if (Timecodes && !_stricmp(Source, Timecodes))
+		return vsapi->setError(out, "Source: Timecodes will overwrite the source");
 
 	FFMS_Index *Index = NULL;
 	std::string DefaultCache;
 	if (Cache) {
 		if (CacheFile && *CacheFile) {
-			if (!_stricmp(Source, CacheFile)) {
-				vsapi->setError(out, "Source: Cache will overwrite the source");
-				return;
-			}
+			if (!_stricmp(Source, CacheFile))
+				return vsapi->setError(out, "Source: Cache will overwrite the source");
 			Index = FFMS_ReadIndex(CacheFile, &E);
 		} else {
 			DefaultCache = Source;
@@ -203,47 +170,34 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *userData, VSCo
 	}
 
 	if (!Index) {
-		if (!(Index = FFMS_MakeIndex(Source, 0, 0, NULL, NULL, true, NULL, NULL, &E))) {
-			std::string buf = "Source: ";
-			buf += E.Buffer;
-			vsapi->setError(out, buf.c_str());
-			return;
-		}
+		if (!(Index = FFMS_MakeIndex(Source, 0, 0, NULL, NULL, true, NULL, NULL, &E)))
+			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
 
 		if (Cache)
 			if (FFMS_WriteIndex(CacheFile, Index, &E)) {
 				FFMS_DestroyIndex(Index);
-				std::string buf = "Source: ";
-				buf += E.Buffer;
-				vsapi->setError(out, buf.c_str());
-				return;
+				return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
 			}
 	}
 
 	if (Track == -1)
 		Track = FFMS_GetFirstIndexedTrackOfType(Index, FFMS_TYPE_VIDEO, &E);
-	if (Track < 0) {
-		vsapi->setError(out, "Source: No video track found");
-		return;
-	}
+	if (Track < 0)
+		return vsapi->setError(out, "Source: No video track found");
 
 	if (Timecodes && strcmp(Timecodes, "")) {
 		if (FFMS_WriteTimecodes(FFMS_GetTrackFromIndex(Index, Track), Timecodes, &E)) {
 			FFMS_DestroyIndex(Index);
-			std::string buf = "Source: ";
-			buf += E.Buffer;
-			vsapi->setError(out, buf.c_str());
-			return;
+			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
 		}
 	}
 
 	VSVideoSource *vs;
 	try {
 		vs = new VSVideoSource(Source, Track, Index, FPSNum, FPSDen, Threads, SeekMode, RFFMode, Width, Height, Resizer, Format, vsapi, core);
-	} catch (std::exception &e) {
+	} catch (std::exception const& e) {
 		FFMS_DestroyIndex(Index);
-		vsapi->setError(out, e.what());
-		return;
+		return vsapi->setError(out, e.what());
 	}
 
 	vsapi->createFilter(in, out, "Source", VSVideoSource::Init, VSVideoSource::GetFrame, VSVideoSource::Free, fmSerial, 0,vs, core);
@@ -251,16 +205,16 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *userData, VSCo
 	FFMS_DestroyIndex(Index);
 }
 
-static void VS_CC GetLogLevel(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
+static void VS_CC GetLogLevel(const VSMap *, VSMap *out, void *, VSCore *, const VSAPI *vsapi) {
 	vsapi->propSetInt(out, "level", FFMS_GetLogLevel(), 0);
 }
 
-static void VS_CC SetLogLevel(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
+static void VS_CC SetLogLevel(const VSMap *in, VSMap *out, void *, VSCore *, const VSAPI *vsapi) {
 	FFMS_SetLogLevel((int)vsapi->propGetInt(in, "level", 0, 0));
 	vsapi->propSetInt(out, "level", FFMS_GetLogLevel(), 0);
 }
 
-static void VS_CC GetVersion(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
+static void VS_CC GetVersion(const VSMap *, VSMap *out, void *, VSCore *, const VSAPI *vsapi) {
 	int Version = FFMS_GetVersion();
 	char buf[100];
 	sprintf(buf, "%d.%d.%d.%d", Version >> 24, (Version & 0xFF0000) >> 16, (Version & 0xFF00) >> 8, Version & 0xFF);

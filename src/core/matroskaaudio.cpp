@@ -19,20 +19,33 @@
 //  THE SOFTWARE.
 
 #include "audiosource.h"
+
 #include "codectype.h"
+#include "matroskareader.h"
+
 #include <cassert>
+
+namespace {
+class FFMatroskaAudio : public FFMS_AudioSource {
+	MatroskaFile *MF;
+	MatroskaReaderContext MC;
+	TrackInfo *TI;
+	std::auto_ptr<TrackCompressionContext> TCC;
+	char ErrorMessage[256];
+
+	bool ReadPacket(AVPacket *);
+
+public:
+	FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
+	~FFMatroskaAudio();
+};
 
 FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode)
 : FFMS_AudioSource(SourceFile, Index, Track)
+, MC(SourceFile)
 , TI(NULL)
 {
-	if (!(MC.ST.fp = ffms_fopen(SourceFile, "rb")))
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			std::string("Can't open '") + SourceFile + "': " + strerror(errno));
-
-	setvbuf(MC.ST.fp, NULL, _IOFBF, CACHESIZE);
-
-	if (!(MF = mkv_OpenEx(&MC.ST.base, 0, 0, ErrorMessage, sizeof(ErrorMessage))))
+	if (!(MF = mkv_OpenEx(&MC.Reader, 0, 0, ErrorMessage, sizeof(ErrorMessage))))
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Can't parse Matroska file: ") + ErrorMessage);
 
@@ -67,12 +80,16 @@ FFMatroskaAudio::~FFMatroskaAudio() {
 }
 
 bool FFMatroskaAudio::ReadPacket(AVPacket *Packet) {
-	unsigned int FrameSize = CurrentFrame->FrameSize;
-	ReadFrame(CurrentFrame->FilePos, FrameSize, TCC.get(), MC);
+	MC.ReadFrame(CurrentFrame->FilePos, CurrentFrame->FrameSize, TCC.get());
 	InitNullPacket(*Packet);
 	Packet->data = MC.Buffer;
-	Packet->size = FrameSize;
+	Packet->size = MC.FrameSize;
 	Packet->flags = CurrentFrame->KeyFrame ? AV_PKT_FLAG_KEY : 0;
 
 	return true;
+}
+}
+
+FFMS_AudioSource *CreateMatroskaAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode) {
+    return new FFMatroskaAudio(SourceFile, Track, Index, DelayMode);
 }

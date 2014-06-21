@@ -21,32 +21,41 @@
 #include "indexing.h"
 
 #include "codectype.h"
-#include "matroskaparser.h"
+#include "matroskareader.h"
+#include "track.h"
 
+namespace {
+class FFMatroskaIndexer : public FFMS_Indexer {
+	MatroskaFile *MF;
+	MatroskaReaderContext MC;
+	AVCodec *Codec[32];
 
-FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename) : FFMS_Indexer(Filename) {
+public:
+	FFMatroskaIndexer(const char *Filename);
+    ~FFMatroskaIndexer() {
+        mkv_Close(MF);
+    }
+
+	FFMS_Index *DoIndexing();
+
+	int GetNumberOfTracks() { return mkv_GetNumTracks(MF); }
+	FFMS_TrackType GetTrackType(int Track) { return HaaliTrackTypeToFFTrackType(mkv_GetTrackInfo(MF, Track)->Type); }
+	const char *GetTrackCodec(int Track) { return Codec[Track] ? Codec[Track]->name : NULL; }
+	const char *GetFormatName() { return "matroska"; }
+	FFMS_Sources GetSourceType() { return FFMS_SOURCE_MATROSKA; }
+};
+
+FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename)
+: FFMS_Indexer(Filename)
+, MC(Filename)
+{
+	memset(Codec, 0, sizeof(Codec));
+
 	char ErrorMessage[256];
-
-	for (int i = 0; i < 32; i++) {
-		Codec[i] = NULL;
-	}
-
-	InitStdIoStream(&MC.ST);
-	MC.ST.fp = ffms_fopen(Filename, "rb");
-	if (MC.ST.fp == NULL) {
-		std::ostringstream buf;
-		buf << "Can't open '" << Filename << "': " << strerror(errno);
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
-
-	setvbuf(MC.ST.fp, NULL, _IOFBF, CACHESIZE);
-
-	MF = mkv_OpenEx(&MC.ST.base, 0, 0, ErrorMessage, sizeof(ErrorMessage));
-	if (MF == NULL) {
-		std::ostringstream buf;
-		buf << "Can't parse Matroska file: " << ErrorMessage;
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-	}
+	MF = mkv_OpenEx(&MC.Reader, 0, 0, ErrorMessage, sizeof(ErrorMessage));
+	if (MF == NULL)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("Can't parse Matroska file: ") + ErrorMessage);
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++) {
 		TrackInfo *TI = mkv_GetTrackInfo(MF, i);
@@ -54,17 +63,11 @@ FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename) : FFMS_Indexer(Filena
 	}
 }
 
-FFMatroskaIndexer::~FFMatroskaIndexer() {
-	mkv_Close(MF);
-}
-
 FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 	std::vector<SharedAudioContext> AudioContexts(mkv_GetNumTracks(MF), SharedAudioContext(true));
 	std::vector<SharedVideoContext> VideoContexts(mkv_GetNumTracks(MF), SharedVideoContext(true));
 
-	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest));
-	TrackIndices->Decoder = FFMS_SOURCE_MATROSKA;
-	TrackIndices->ErrorHandling = ErrorHandling;
+	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest, FFMS_SOURCE_MATROSKA, ErrorHandling));
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++) {
 		TrackInfo *TI = mkv_GetTrackInfo(MF, i);
@@ -114,7 +117,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 
 	while (mkv_ReadFrame(MF, 0, &Track, &StartTime, &EndTime, &FilePos, &FrameSize, &FrameFlags) == 0) {
 		// Update progress
-		if (IC && (*IC)(ftello(MC.ST.fp), Filesize, ICPrivate))
+		if (IC && (*IC)(FilePos, Filesize, ICPrivate))
 			throw FFMS_Exception(FFMS_ERROR_CANCELLED, FFMS_ERROR_USER, "Cancelled by user");
 
 		unsigned int CompressedFrameSize = FrameSize;
@@ -126,9 +129,9 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 				TCC = VideoContexts[Track].TCC;
 			else
 				TCC = AudioContexts[Track].TCC;
-			ReadFrame(FilePos, FrameSize, TCC, MC);
+			MC.ReadFrame(FilePos, FrameSize, TCC);
 			TempPacket.data = MC.Buffer;
-			TempPacket.size = FrameSize;
+			TempPacket.size = MC.FrameSize;
 			TempPacket.flags = FrameFlags & FRAME_KF ? AV_PKT_FLAG_KEY : 0;
 		}
 
@@ -145,34 +148,18 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 				CompressedFrameSize, Invisible);
 		} else if (TrackType == TT_AUDIO && (IndexMask & (1 << Track))) {
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
-			int64_t SampleCount = IndexAudioPacket(Track, &TempPacket, AudioContexts[Track], *TrackIndices);
+			uint32_t SampleCount = IndexAudioPacket(Track, &TempPacket, AudioContexts[Track], *TrackIndices);
 
 			(*TrackIndices)[Track].AddAudioFrame(StartTime, StartSample,
 				SampleCount, (FrameFlags & FRAME_KF) != 0, FilePos, CompressedFrameSize);
 		}
 	}
 
-	TrackIndices->Sort();
+	TrackIndices->Finalize(VideoContexts);
 	return TrackIndices.release();
 }
-
-int FFMatroskaIndexer::GetNumberOfTracks() {
-	return mkv_GetNumTracks(MF);
 }
 
-FFMS_TrackType FFMatroskaIndexer::GetTrackType(int Track) {
-	return HaaliTrackTypeToFFTrackType(mkv_GetTrackInfo(MF, Track)->Type);
+FFMS_Indexer *CreateMatroskaIndexer(const char *Filename) {
+	return new FFMatroskaIndexer(Filename);
 }
-
-const char *FFMatroskaIndexer::GetTrackCodec(int Track) {
-	return Codec[Track] ? Codec[Track]->name : NULL;
-}
-
-const char *FFMatroskaIndexer::GetFormatName() {
-	return "matroska";
-}
-
-FFMS_Sources FFMatroskaIndexer::GetSourceType() {
-	return FFMS_SOURCE_MATROSKA;
-}
-

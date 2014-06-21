@@ -18,29 +18,24 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
+#define NOMINMAX
 #include "avssources.h"
 #include "avsutils.h"
-#include <libavutil/common.h>
-#include <cmath>
 
-
+#include <algorithm>
 
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
-		const char *ConvertToFormatName, const char *VarPrefix, IScriptEnvironment* Env) {
-
+		const char *ConvertToFormatName, const char *VarPrefix, IScriptEnvironment* Env)
+: FPSNum(FPSNum)
+, FPSDen(FPSDen)
+, RFFMode(RFFMode)
+, VarPrefix(VarPrefix)
+{
 	memset(&VI, 0, sizeof(VI));
-	this->FPSNum = FPSNum;
-	this->FPSDen = FPSDen;
-	this->RFFMode = RFFMode;
-	this->VarPrefix = VarPrefix;
 
-	char ErrorMsg[1024];
-	FFMS_ErrorInfo E;
-	E.Buffer = ErrorMsg;
-	E.BufferSize = sizeof(ErrorMsg);
-
+	ErrorInfo E;
 	V = FFMS_CreateVideoSource(SourceFile, Track, Index, Threads, SeekMode, &E);
 	if (!V)
 		Env->ThrowError("FFVideoSource: %s", E.Buffer);
@@ -70,7 +65,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 		for (int i = 0; i < VP->NumFrames; i++) {
 			int RepeatPict = FFMS_GetFrameInfo(VTrack, i)->RepeatPict;
 			NumFields += RepeatPict + 1;
-			RepeatMin = FFMIN(RepeatMin, RepeatPict);
+			RepeatMin = std::min(RepeatMin, RepeatPict);
 		}
 
 		for (int i = 0; i < VP->NumFrames; i++) {
@@ -178,11 +173,7 @@ void AvisynthVideoSource::InitOutputFormat(
 	int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 	const char *ConvertToFormatName, IScriptEnvironment *Env) {
 
-	char ErrorMsg[1024];
-	FFMS_ErrorInfo E;
-	E.Buffer = ErrorMsg;
-	E.BufferSize = sizeof(ErrorMsg);
-
+	ErrorInfo E;
 	const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
 	const FFMS_Frame *F = FFMS_GetFrame(V, 0, &E);
 	if (!F)
@@ -273,64 +264,69 @@ void AvisynthVideoSource::InitOutputFormat(
 	}
 }
 
+static void BlitPlane(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env, int Plane) {
+	int PlaneId = 1 << Plane;
+	Env->BitBlt(Dst->GetWritePtr(PlaneId), Dst->GetPitch(PlaneId),
+		Frame->Data[Plane], Frame->Linesize[Plane],
+		Dst->GetRowSize(PlaneId), Dst->GetHeight(PlaneId));
+}
+
 void AvisynthVideoSource::OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env) {
 	if (VI.pixel_type == VideoInfo::CS_I420) {
-		Env->BitBlt(Dst->GetWritePtr(PLANAR_Y), Dst->GetPitch(PLANAR_Y), Frame->Data[0], Frame->Linesize[0], Dst->GetRowSize(PLANAR_Y), Dst->GetHeight(PLANAR_Y));
-		Env->BitBlt(Dst->GetWritePtr(PLANAR_U), Dst->GetPitch(PLANAR_U), Frame->Data[1], Frame->Linesize[1], Dst->GetRowSize(PLANAR_U), Dst->GetHeight(PLANAR_U));
-		Env->BitBlt(Dst->GetWritePtr(PLANAR_V), Dst->GetPitch(PLANAR_V), Frame->Data[2], Frame->Linesize[2], Dst->GetRowSize(PLANAR_V), Dst->GetHeight(PLANAR_V));
+		BlitPlane(Frame, Dst, Env, 0);
+		BlitPlane(Frame, Dst, Env, 1);
+		BlitPlane(Frame, Dst, Env, 2);
 	} else if (VI.IsYUY2()) {
-		Env->BitBlt(Dst->GetWritePtr(), Dst->GetPitch(), Frame->Data[0], Frame->Linesize[0], Dst->GetRowSize(), Dst->GetHeight());
+		BlitPlane(Frame, Dst, Env, 0);
 	} else { // RGB
-		Env->BitBlt(Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1), -Dst->GetPitch(), Frame->Data[0], Frame->Linesize[0], Dst->GetRowSize(), Dst->GetHeight());
+		Env->BitBlt(
+			Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1), -Dst->GetPitch(),
+			Frame->Data[0], Frame->Linesize[0],
+			Dst->GetRowSize(), Dst->GetHeight());
 	}
+}
+
+static void BlitField(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env, int Plane, int Field) {
+	int PlaneId = 1 << Plane;
+	Env->BitBlt(
+		Dst->GetWritePtr(PlaneId) + Dst->GetPitch(PlaneId) * Field, Dst->GetPitch(PlaneId) * 2,
+		Frame->Data[Plane] + Frame->Linesize[Plane] * Field, Frame->Linesize[Plane] * 2,
+		Dst->GetRowSize(PlaneId), Dst->GetHeight(PlaneId) / 2);
 }
 
 void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst, int Field, IScriptEnvironment *Env) {
 	const FFMS_Frame *SrcPicture = (Frame);
 
 	if (VI.pixel_type == VideoInfo::CS_I420) {
-		if (Field) {
-			Env->BitBlt(Dst->GetWritePtr(PLANAR_Y), Dst->GetPitch(PLANAR_Y) * 2, SrcPicture->Data[0], SrcPicture->Linesize[0] * 2, Dst->GetRowSize(PLANAR_Y), Dst->GetHeight(PLANAR_Y) / 2);
-			Env->BitBlt(Dst->GetWritePtr(PLANAR_U), Dst->GetPitch(PLANAR_U) * 2, SrcPicture->Data[1], SrcPicture->Linesize[1] * 2, Dst->GetRowSize(PLANAR_U), Dst->GetHeight(PLANAR_U) / 2);
-			Env->BitBlt(Dst->GetWritePtr(PLANAR_V), Dst->GetPitch(PLANAR_V) * 2, SrcPicture->Data[2], SrcPicture->Linesize[2] * 2, Dst->GetRowSize(PLANAR_V), Dst->GetHeight(PLANAR_V) / 2);
-		} else {
-			Env->BitBlt(Dst->GetWritePtr(PLANAR_Y) + Dst->GetPitch(PLANAR_Y), Dst->GetPitch(PLANAR_Y) * 2, SrcPicture->Data[0] + SrcPicture->Linesize[0], SrcPicture->Linesize[0] * 2, Dst->GetRowSize(PLANAR_Y), Dst->GetHeight(PLANAR_Y) / 2);
-			Env->BitBlt(Dst->GetWritePtr(PLANAR_U) + Dst->GetPitch(PLANAR_U), Dst->GetPitch(PLANAR_U) * 2, SrcPicture->Data[1] + SrcPicture->Linesize[1], SrcPicture->Linesize[1] * 2, Dst->GetRowSize(PLANAR_U), Dst->GetHeight(PLANAR_U) / 2);
-			Env->BitBlt(Dst->GetWritePtr(PLANAR_V) + Dst->GetPitch(PLANAR_V), Dst->GetPitch(PLANAR_V) * 2, SrcPicture->Data[2] + SrcPicture->Linesize[2], SrcPicture->Linesize[2] * 2, Dst->GetRowSize(PLANAR_V), Dst->GetHeight(PLANAR_V) / 2);
-		}
+		BlitField(Frame, Dst, Env, 0, Field);
+		BlitField(Frame, Dst, Env, 1, Field);
+		BlitField(Frame, Dst, Env, 2, Field);
 	} else if (VI.IsYUY2()) {
-		if (Field)
-			Env->BitBlt(Dst->GetWritePtr(), Dst->GetPitch() * 2, SrcPicture->Data[0], SrcPicture->Linesize[0] * 2, Dst->GetRowSize(), Dst->GetHeight() / 2);
-		else
-			Env->BitBlt(Dst->GetWritePtr() + Dst->GetPitch(), Dst->GetPitch() * 2, SrcPicture->Data[0] + SrcPicture->Linesize[0], SrcPicture->Linesize[0] * 2, Dst->GetRowSize(), Dst->GetHeight() / 2);
+		BlitField(Frame, Dst, Env, 0, Field);
 	} else { // RGB
-		if (Field)
-			Env->BitBlt(Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1), -Dst->GetPitch() * 2, SrcPicture->Data[0], SrcPicture->Linesize[0] * 2, Dst->GetRowSize(), Dst->GetHeight() / 2);
-		else
-			Env->BitBlt(Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 2), -Dst->GetPitch() * 2, SrcPicture->Data[0] + SrcPicture->Linesize[0], SrcPicture->Linesize[0] * 2, Dst->GetRowSize(), Dst->GetHeight() / 2);
+        Env->BitBlt(
+			Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1 - Field), -Dst->GetPitch() * 2,
+			SrcPicture->Data[0] + SrcPicture->Linesize[0] * Field, SrcPicture->Linesize[0] * 2,
+			Dst->GetRowSize(), Dst->GetHeight() / 2);
 	}
 }
 
 PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
-	n = FFMIN(FFMAX(n,0), VI.num_frames - 1);
-
-	char ErrorMsg[1024];
-	FFMS_ErrorInfo E;
-	E.Buffer = ErrorMsg;
-	E.BufferSize = sizeof(ErrorMsg);
+	n = std::min(std::max(n,0), VI.num_frames - 1);
 
 	PVideoFrame Dst = Env->NewVideoFrame(VI);
 
+	ErrorInfo E;
 	if (RFFMode > 0) {
-		const FFMS_Frame *Frame = FFMS_GetFrame(V, FFMIN(FieldList[n].Top, FieldList[n].Bottom), &E);
+		const FFMS_Frame *Frame = FFMS_GetFrame(V, std::min(FieldList[n].Top, FieldList[n].Bottom), &E);
 		if (Frame == NULL)
 			Env->ThrowError("FFVideoSource: %s", E.Buffer);
 		if (FieldList[n].Top == FieldList[n].Bottom) {
 			OutputFrame(Frame, Dst, Env);
 		} else {
-			int FirstField = FFMIN(FieldList[n].Top, FieldList[n].Bottom) == FieldList[n].Bottom;
+			int FirstField = std::min(FieldList[n].Top, FieldList[n].Bottom) == FieldList[n].Bottom;
 			OutputField(Frame, Dst, FirstField, Env);
-			Frame = FFMS_GetFrame(V, FFMAX(FieldList[n].Top, FieldList[n].Bottom), &E);
+			Frame = FFMS_GetFrame(V, std::max(FieldList[n].Top, FieldList[n].Bottom), &E);
 			if (Frame == NULL)
 				Env->ThrowError("FFVideoSource: %s", E.Buffer);
 			OutputField(Frame, Dst, !FirstField, Env);
@@ -366,18 +362,13 @@ AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS
 										 int AdjustDelay, const char *VarPrefix, IScriptEnvironment* Env) {
 	memset(&VI, 0, sizeof(VI));
 
-	char ErrorMsg[1024];
-	FFMS_ErrorInfo E;
-	E.Buffer = ErrorMsg;
-	E.BufferSize = sizeof(ErrorMsg);
-
+	ErrorInfo E;
 	A = FFMS_CreateAudioSource(SourceFile, Track, Index, AdjustDelay, &E);
 	if (!A)
 		Env->ThrowError("FFAudioSource: %s", E.Buffer);
 
 	const FFMS_AudioProperties *AP = FFMS_GetAudioProperties(A);
 	VI.nchannels = AP->Channels;
-
 	VI.num_audio_samples = AP->NumSamples;
 	VI.audio_samples_per_second = AP->SampleRate;
 
@@ -400,11 +391,7 @@ AvisynthAudioSource::~AvisynthAudioSource() {
 }
 
 void AvisynthAudioSource::GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env) {
-	char ErrorMsg[1024];
-	FFMS_ErrorInfo E;
-	E.Buffer = ErrorMsg;
-	E.BufferSize = sizeof(ErrorMsg);
-
+	ErrorInfo E;
 	if (FFMS_GetAudio(A, Buf, Start, Count, &E))
 		Env->ThrowError("FFAudioSource: %s", E.Buffer);
 }

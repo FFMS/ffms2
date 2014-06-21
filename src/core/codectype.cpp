@@ -81,7 +81,7 @@ static const CodecTags mkv_codec_tags[] = {
 	{"V_MPEG4/ISO/SP"      , FFMS_ID(MPEG4)},
 	{"V_MPEG4/ISO/AVC"     , FFMS_ID(H264)},
 	{"V_MPEG4/MS/V3"       , FFMS_ID(MSMPEG4V3)},
-#if VERSION_CHECK(LIBAVFORMAT_VERSION_INT, >=, 55, 24, 0, 55, 38, 101)
+#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >=, 55, 24, 0, 55, 38, 101)
 	{"V_MPEGH/ISO/HEVC"    , FFMS_ID(HEVC)},
 #endif
 	{"V_REAL/RV10"         , FFMS_ID(RV10)},
@@ -405,35 +405,33 @@ const char *GetLAVCSampleFormatName(AVSampleFormat s) {
 
 FFMS_CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC, unsigned int BitsPerSample) {
 	/* Look up native codecs */
-	for(int i = 0; mkv_codec_tags[i].id != FFMS_ID(NONE); i++){
-		if(!strncmp(mkv_codec_tags[i].str, Codec,
-			strlen(mkv_codec_tags[i].str))) {
+	for (int i = 0; mkv_codec_tags[i].id != FFMS_ID(NONE); i++){
+		if (!strncmp(mkv_codec_tags[i].str, Codec, strlen(mkv_codec_tags[i].str))) {
+			// Uncompressed and exotic format fixup
+			// This list is incomplete
+			FFMS_CodecID CID = mkv_codec_tags[i].id;
+			switch (CID) {
+				case FFMS_ID(PCM_S16LE):
+					switch (BitsPerSample) {
+						case 8: CID = FFMS_ID(PCM_S8); break;
+						case 16: CID = FFMS_ID(PCM_S16LE); break;
+						case 24: CID = FFMS_ID(PCM_S24LE); break;
+						case 32: CID = FFMS_ID(PCM_S32LE); break;
+					}
+					break;
+				case FFMS_ID(PCM_S16BE):
+					switch (BitsPerSample) {
+						case 8: CID = FFMS_ID(PCM_S8); break;
+						case 16: CID = FFMS_ID(PCM_S16BE); break;
+						case 24: CID = FFMS_ID(PCM_S24BE); break;
+						case 32: CID = FFMS_ID(PCM_S32BE); break;
+					}
+					break;
+				default:
+					break;
+			}
 
-				// Uncompressed and exotic format fixup
-				// This list is incomplete
-				FFMS_CodecID CID = mkv_codec_tags[i].id;
-				switch (CID) {
-					case FFMS_ID(PCM_S16LE):
-						switch (BitsPerSample) {
-							case 8: CID = FFMS_ID(PCM_S8); break;
-							case 16: CID = FFMS_ID(PCM_S16LE); break;
-							case 24: CID = FFMS_ID(PCM_S24LE); break;
-							case 32: CID = FFMS_ID(PCM_S32LE); break;
-						}
-						break;
-					case FFMS_ID(PCM_S16BE):
-						switch (BitsPerSample) {
-							case 8: CID = FFMS_ID(PCM_S8); break;
-							case 16: CID = FFMS_ID(PCM_S16BE); break;
-							case 24: CID = FFMS_ID(PCM_S24BE); break;
-							case 32: CID = FFMS_ID(PCM_S32BE); break;
-						}
-						break;
-					default:
-						break;
-				}
-
-				return CID;
+			return CID;
 		}
 	}
 

@@ -19,20 +19,32 @@
 //  THE SOFTWARE.
 
 #include "audiosource.h"
+
 #include <cassert>
 
-FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode)
-: FFMS_AudioSource(SourceFile, Index, Track)
-, FormatContext(NULL)
-, LastValidTS(AV_NOPTS_VALUE)
-{
-	LAVFOpenFile(SourceFile, FormatContext);
+namespace {
+class FFLAVFAudio : public FFMS_AudioSource {
+	AVFormatContext *FormatContext;
+	int64_t LastValidTS;
+	std::string SourceFile;
 
-	CodecContext.reset(FormatContext->streams[TrackNumber]->codec);
-	assert(CodecContext);
+	bool ReadPacket(AVPacket *);
+	void FreePacket(AVPacket *Packet) { av_free_packet(Packet); }
+	void Seek();
 
-	AVCodec *Codec = avcodec_find_decoder(CodecContext->codec_id);
-	try {
+	int64_t FrameTS(size_t Packet) const;
+
+	void ReopenFile() {
+		avcodec_close(CodecContext);
+		avformat_close_input(&FormatContext);
+
+		LAVFOpenFile(SourceFile.c_str(), FormatContext);
+		CodecContext.reset(FormatContext->streams[TrackNumber]->codec);
+		OpenCodec();
+	}
+
+	void OpenCodec() {
+		AVCodec *Codec = avcodec_find_decoder(CodecContext->codec_id);
 		if (!Codec)
 			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 				"Audio codec not found");
@@ -40,6 +52,26 @@ FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, i
 		if (avcodec_open2(CodecContext, Codec, NULL) < 0)
 			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 				"Could not open audio codec");
+	}
+
+public:
+	FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
+	~FFLAVFAudio();
+};
+
+FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode)
+: FFMS_AudioSource(SourceFile, Index, Track)
+, FormatContext(NULL)
+, LastValidTS(ffms_av_nopts_value)
+, SourceFile(SourceFile)
+{
+	LAVFOpenFile(SourceFile, FormatContext);
+
+	CodecContext.reset(FormatContext->streams[TrackNumber]->codec);
+	assert(CodecContext);
+
+	try {
+		OpenCodec();
 	}
 	catch (...) {
 		avformat_close_input(&FormatContext);
@@ -64,7 +96,7 @@ int64_t FFLAVFAudio::FrameTS(size_t Packet) const {
 
 void FFLAVFAudio::Seek() {
 	size_t TargetPacket = GetSeekablePacketNumber(Frames, PacketNumber);
-	LastValidTS = AV_NOPTS_VALUE;
+	LastValidTS = ffms_av_nopts_value;
 
 	int Flags = Frames.HasTS ? AVSEEK_FLAG_BACKWARD : AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_BYTE;
 
@@ -84,14 +116,14 @@ bool FFLAVFAudio::ReadPacket(AVPacket *Packet) {
 	while (av_read_frame(FormatContext, Packet) >= 0) {
 		if (Packet->stream_index == TrackNumber) {
 			// Required because not all audio packets, especially in ogg, have a pts. Use the previous valid packet's pts instead.
-			if (Packet->pts == AV_NOPTS_VALUE)
+			if (Packet->pts == ffms_av_nopts_value)
 				Packet->pts = LastValidTS;
 			else
 				LastValidTS = Packet->pts;
 
 			// This only happens if a really shitty demuxer seeks to a packet without pts *hrm* ogg *hrm* so read until a valid pts is reached
 			int64_t PacketTS = Frames.HasTS ? Packet->pts : Packet->pos;
-			if (PacketTS != AV_NOPTS_VALUE) {
+			if (PacketTS != ffms_av_nopts_value) {
 				while (PacketNumber > 0 && FrameTS(PacketNumber) > PacketTS) --PacketNumber;
 				while (FrameTS(PacketNumber) < PacketTS) ++PacketNumber;
 				return true;
@@ -101,7 +133,8 @@ bool FFLAVFAudio::ReadPacket(AVPacket *Packet) {
 	}
 	return false;
 }
+}
 
-void FFLAVFAudio::FreePacket(AVPacket *Packet) {
-	av_free_packet(Packet);
+FFMS_AudioSource *CreateLavfAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode) {
+	return new FFLAVFAudio(SourceFile, Track, Index, DelayMode);
 }

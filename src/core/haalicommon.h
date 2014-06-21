@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 The FFmpegSource Project
+//  Copyright (c) 2014 Thomas Goyne <tgoyne@gmail.com>
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -18,31 +18,32 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-extern "C" {
-#include <libavutil/mem.h>
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
-#include <libswscale/swscale.h>
-#include <libavutil/pixdesc.h>
-}
-// must be included after ffmpeg headers
-#include "ffmscompat.h"
+#pragma once
 
-#include <vector>
+#ifdef HAALISOURCE
 
 #include "ffms.h"
 
+extern "C" {
+#include <libavformat/avformat.h>
+}
 
-// swscale and pp-related functions
-int64_t GetSWSCPUFlags();
-SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, PixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags);
-AVColorSpace GetAssumedColorSpace(int Width, int Height);
+#define WIN32_LEAN_AND_MEAN
+#define _WIN32_DCOM
+#include <windows.h>
+#include <atlbase.h>
+#include <dshow.h>
+#include <initguid.h>
+#include "CoParser.h"
+#include "guids.h"
 
-// timebase-related functions
-void CorrectNTSCRationalFramerate(int *Num, int *Den);
-void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase);
+class FFCodecContext;
 
-// our implementation of avcodec_find_best_pix_fmt()
-PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelFormat Src);
+inline void DeleteHaaliCodecContext(AVCodecContext *CodecContext) {
+	av_freep(&CodecContext->extradata);
+	av_freep(&CodecContext);
+}
 
-void RegisterCustomParsers();
+FFCodecContext InitializeCodecContextFromHaaliInfo(CComQIPtr<IPropertyBag> pBag);
+CComPtr<IMMContainer> HaaliOpenFile(const char *SourceFile, FFMS_Sources SourceMode);
+#endif // HAALISOURCE

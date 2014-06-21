@@ -20,7 +20,55 @@
 
 #include "videosource.h"
 
+namespace {
+class FFLAVFVideo : public FFMS_VideoSource {
+	AVFormatContext *FormatContext;
+	int SeekMode;
+	FFSourceResources<FFMS_VideoSource> Res;
+	bool SeekByPos;
+	int PosOffset;
 
+	void DecodeNextFrame(int64_t *PTS, int64_t *Pos);
+	bool SeekTo(int n, int SeekOffset);
+	void Free(bool CloseCodec);
+
+	int Seek(int n) {
+		int ret = -1;
+		if (!SeekByPos || Frames[n].FilePos < 0) {
+			ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].PTS, AVSEEK_FLAG_BACKWARD);
+			if (ret >= 0)
+				return ret;
+		}
+
+		if (Frames[n].FilePos >= 0) {
+			ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].FilePos + PosOffset, AVSEEK_FLAG_BYTE);
+			if (ret >= 0)
+				SeekByPos = true;
+		}
+		return ret;
+	}
+
+	int ReadFrame(AVPacket *pkt) {
+		int ret = av_read_frame(FormatContext, pkt);
+		if (ret >= 0 || ret == AVERROR(EOF)) return ret;
+
+		// Lavf reports the beginning of the actual video data as the packet's
+		// position, but the reader requires the header, so we end up seeking
+		// to the wrong position. Wait until a read actual fails to adjust the
+		// seek targets, so that if this ever gets fixed upstream our workaround
+		// doesn't re-break it.
+		if (strcmp(FormatContext->iformat->name, "yuv4mpegpipe") == 0) {
+			PosOffset = -6;
+			Seek(CurrentFrame);
+			return av_read_frame(FormatContext, pkt);
+		}
+		return ret;
+	}
+
+public:
+	FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode);
+	FFMS_Frame *GetFrame(int n);
+};
 
 void FFLAVFVideo::Free(bool CloseCodec) {
 	if (CloseCodec)
@@ -33,20 +81,21 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 : FFMS_VideoSource(SourceFile, Index, Track, Threads)
 , FormatContext(NULL)
 , SeekMode(SeekMode)
-, Res(FFSourceResources<FFMS_VideoSource>(this))
+, Res(this)
+, SeekByPos(false)
+, PosOffset(0)
 {
-	AVCodec *Codec = NULL;
-
 	LAVFOpenFile(SourceFile, FormatContext);
 
-	if (SeekMode >= 0 && Frames.size() > 1 && av_seek_frame(FormatContext, VideoTrack, Frames[0].PTS, AVSEEK_FLAG_BACKWARD) < 0)
+	if (SeekMode >= 0 && Frames.size() > 1 && Seek(0) < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Video track is unseekable");
 
 	CodecContext = FormatContext->streams[VideoTrack]->codec;
 	CodecContext->thread_count = DecodingThreads;
+	CodecContext->has_b_frames = Frames.MaxBFrames;
 
-	Codec = avcodec_find_decoder(CodecContext->codec_id);
+	AVCodec *Codec = avcodec_find_decoder(CodecContext->codec_id);
 	if (Codec == NULL)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Video codec not found");
@@ -76,7 +125,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 		double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
 		double TD = (double)(Frames.TB.Den);
 		double TN = (double)(Frames.TB.Num);
-		VP.FPSDenominator = (unsigned int)(((double)1000000) / (double)((Frames.size() - 1) / ((PTSDiff * TN/TD) / (double)1000)));
+		VP.FPSDenominator = (unsigned int)(PTSDiff * TN/TD * 1000.0 / (Frames.size() - 1));
 		VP.FPSNumerator = 1000000;
 	}
 
@@ -101,7 +150,7 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime, int64_t *Pos) {
 	AVPacket Packet;
 	InitNullPacket(Packet);
 
-	while (av_read_frame(FormatContext, &Packet) >= 0) {
+	while (ReadFrame(&Packet) >= 0) {
 		if (Packet.stream_index != VideoTrack) {
 			av_free_packet(&Packet);
 			continue;
@@ -133,7 +182,7 @@ bool FFLAVFVideo::SeekTo(int n, int SeekOffset) {
 
 		if (SeekMode == 0) {
 			if (n < CurrentFrame) {
-				av_seek_frame(FormatContext, VideoTrack, Frames[0].PTS, AVSEEK_FLAG_BACKWARD);
+				Seek(0);
 				FlushBuffers(CodecContext);
 				CurrentFrame = 0;
 				DelayCounter = 0;
@@ -142,7 +191,7 @@ bool FFLAVFVideo::SeekTo(int n, int SeekOffset) {
 		} else {
 			// 10 frames is used as a margin to prevent excessive seeking since the predicted best keyframe isn't always selected by avformat
 			if (n < CurrentFrame || TargetFrame > CurrentFrame + 10 || (SeekMode == 3 && n > CurrentFrame + 10)) {
-				av_seek_frame(FormatContext, VideoTrack, Frames[TargetFrame].PTS, AVSEEK_FLAG_BACKWARD);
+				Seek(TargetFrame);
 				FlushBuffers(CodecContext);
 				DelayCounter = 0;
 				InitialDecode = 1;
@@ -173,7 +222,7 @@ FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
 			Seek = false;
 		}
 
-		if (CurrentFrame + FFMS_CALCULATE_DELAY >= n || HasSeeked)
+		if (CurrentFrame + FFMS_CALCULATE_DELAY * CodecContext->ticks_per_frame >= n || HasSeeked)
 			CodecContext->skip_frame = AVDISCARD_DEFAULT;
 		else
 			CodecContext->skip_frame = AVDISCARD_NONREF;
@@ -207,12 +256,29 @@ FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
 				// No idea where we are so go back a bit further
 				SeekOffset -= 10;
 				Seek = true;
+				continue;
 			}
-			else
-				CurrentFrame = Frames.ClosestFrameFromPTS(StartTime);
+			CurrentFrame = Frames.ClosestFrameFromPTS(StartTime);
+		}
+
+		// We want to know the frame number that we just got out of the decoder,
+		// but what we currently know is the frame number of the first packet
+		// we fed into the decoder, and these can be different with open-gop or
+		// aggressive (non-keyframe) seeking.
+		int64_t Pos = Frames[CurrentFrame].FilePos;
+		if (CurrentFrame > 0 && Pos != -1) {
+			int Prev = CurrentFrame - 1;
+			while (Prev >= 0 && Frames[Prev].FilePos != -1 && Frames[Prev].FilePos > Pos)
+				--Prev;
+			CurrentFrame = Prev + 1;
 		}
 	} while (++CurrentFrame <= n);
 
 	LastFrameNum = n;
 	return OutputFrame(DecodeFrame);
+}
+}
+
+FFMS_VideoSource *CreateLavfVideoSource(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode) {
+	return new FFLAVFVideo(SourceFile, Track, Index, Threads, SeekMode);
 }
