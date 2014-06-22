@@ -4,7 +4,7 @@ AUTOMAKE_OPTIONS = foreign
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = ffms2.pc
 
-dist_doc_DATA = doc/ffms2-api.html doc/ffms2-changelog.html doc/style.css
+dist_doc_DATA = doc/ffms2-api.md doc/ffms2-changelog.md
 
 AM_CPPFLAGS = -I. -I$(top_srcdir)/include -I$(top_srcdir)/src/config @LIBAV_CFLAGS@ @ZLIB_CPPFLAGS@ -include config.h
 
