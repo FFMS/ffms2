@@ -373,10 +373,10 @@ static std::string IntToStr(int i, int zp = 0) {
 	return s.str();
 }
 
-static void ReplaceString(std::string &s, std::string from, std::string to) {
+static void ReplaceString(std::string &s, const char *from, std::string const& to) {
 	std::string::size_type idx;
 	while ((idx = s.find(from)) != std::string::npos)
-		s.replace(idx, from.length(), to);
+		s.replace(idx, strlen(from), to);
 }
 
 FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int, void *Private) {
