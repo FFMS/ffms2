@@ -20,8 +20,8 @@ BEGIN
             VALUE "InternalName", "ffmsindex.exe\0"
             VALUE "OriginalFilename", "ffmsindex.exe\0"
             VALUE "CompanyName", "Open Source Software community\0"
-            VALUE "LegalCopyright", "Copyright (C) Project contributors 2012\0"
-            VALUE "Comments", "http://code.google.com/p/ffmpegsource/\0"
+            VALUE "LegalCopyright", FFMS_COPYRIGHT
+            VALUE "Comments", "https://github.com/FFMS/ffms2/\0"
         END
     END
     BLOCK "VarFileInfo"
