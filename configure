@@ -468,7 +468,7 @@ if [ "$SYS" = "MINGW" ] ; then
 #define FFMS_VERSION $ffms_version
 #define FFMS_VERSION_STRING "${ffms_version}\0"
 #define FFMS_DESCRIPTION "${ffms_name}\0"
-#define FFMS_COPYRIGHT "Copyright (C) Project contributors 2012-${last_commit_year}\0"
+#define FFMS_COPYRIGHT "Copyright (C) Project contributors 2009-${last_commit_year}\0"
 EOF
 
     if [ "$shared" = "yes" ] ; then   
