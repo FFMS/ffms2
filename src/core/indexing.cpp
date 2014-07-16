@@ -131,7 +131,7 @@ void FFMS_Index::Finalize(std::vector<SharedVideoContext> const& video_contexts)
 
 		if (track.TT != FFMS_TYPE_VIDEO) continue;
 
-		if (video_contexts[i].CodecContext->has_b_frames) {
+		if (video_contexts[i].CodecContext && video_contexts[i].CodecContext->has_b_frames) {
 			track.MaxBFrames = video_contexts[i].CodecContext->has_b_frames;
 			continue;
 		}
