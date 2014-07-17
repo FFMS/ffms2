@@ -85,7 +85,7 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 }
 
 static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	FFMS_Init(0, Args[15].AsBool(false));
+	FFMS_Init(0, Args[14].AsBool(false));
 
 	if (!Args[0].Defined())
 		Env->ThrowError("FFVideoSource: No source specified");
