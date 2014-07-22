@@ -139,7 +139,7 @@ die() {
     exit 1
 }
 
-rm -f config.h config.mak config.log ffms2.pc ffmsdll.rc.h ffmsindexexe.rc.h conftest*
+rm -f config.h config.mak config.log ffms2.pc rcinfo.h ffmsdll.rc.h ffmsindexexe.rc.h conftest*
 
 prefix='/usr/local'
 exec_prefix='${prefix}'
@@ -463,12 +463,15 @@ if [ "$SYS" = "MINGW" ] ; then
     ffms_name="FFmpegSource Index"
     cpp_check "" "" "defined(_WIN64)" && ffms_name="$ffms_name x64"
 
-    cat > ffmsindexexe.rc.h << EOF
-#define FFMS_NAME "${ffms_name}\0"
+    cat > rcinfo.h << EOF
 #define FFMS_VERSION $ffms_version
 #define FFMS_VERSION_STRING "${ffms_version}\0"
-#define FFMS_DESCRIPTION "${ffms_name}\0"
 #define FFMS_COPYRIGHT "Copyright (C) Project contributors 2009-${last_commit_year}\0"
+EOF
+
+    cat > ffmsindexexe.rc.h << EOF
+#define FFMS_NAME "${ffms_name}\0"
+#define FFMS_DESCRIPTION "${ffms_name}\0"
 EOF
 
     if [ "$shared" = "yes" ] ; then   
@@ -482,11 +485,8 @@ EOF
 
         cat > ffmsdll.rc.h << EOF
 #define FFMS_NAME "${ffms_name}\0"
-#define FFMS_VERSION $ffms_version
-#define FFMS_VERSION_STRING "${ffms_version}\0"
 #define FFMS_DESCRIPTION "${ffms_name}\0"
 #define FFMS_FILE "${ffms_file}\0"
-#define FFMS_COPYRIGHT "Copyright (C) Project contributors 2009-${last_commit_year}\0"
 EOF
     fi
 fi
