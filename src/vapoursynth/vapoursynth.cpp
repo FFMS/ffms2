@@ -80,8 +80,10 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
 	FFMS_Index *Index = FFMS_ReadIndex(CacheFile, &E);
 	if (OverWrite || !Index || (Index && FFMS_IndexBelongsToFile(Index, Source, 0) != FFMS_ERROR_SUCCESS)) {
 		FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(Source, Demuxer, &E);
-		if (!Indexer)
+		if (!Indexer) {
+			FFMS_DestroyIndex(Index);
 			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
+		}
 		if (!(Index = FFMS_DoIndexing(Indexer, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, ErrorHandling, NULL, NULL, &E)))
 			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
 		if (FFMS_WriteIndex(CacheFile, Index, &E)) {
@@ -182,8 +184,10 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
 
 	if (Track == -1)
 		Track = FFMS_GetFirstIndexedTrackOfType(Index, FFMS_TYPE_VIDEO, &E);
-	if (Track < 0)
+	if (Track < 0) {
+		FFMS_DestroyIndex(Index);
 		return vsapi->setError(out, "Source: No video track found");
+	}
 
 	if (Timecodes && strcmp(Timecodes, "")) {
 		if (FFMS_WriteTimecodes(FFMS_GetTrackFromIndex(Index, Track), Timecodes, &E)) {

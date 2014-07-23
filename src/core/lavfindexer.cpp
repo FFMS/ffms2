@@ -133,31 +133,32 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 		}
 
 		int Track = Packet.stream_index;
+		FFMS_Track &TrackInfo = (*TrackIndices)[Track];
 		bool KeyFrame = !!(Packet.flags & AV_PKT_FLAG_KEY);
 		ReadTS(Packet, LastValidTS[Track], (*TrackIndices)[Track].UseDTS);
 
 		if (FormatContext->streams[Track]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-			int64_t PTS = LastValidTS[Track];
+			int64_t PTS = TrackInfo.UseDTS ? Packet.dts : Packet.pts;
 			if (PTS == ffms_av_nopts_value) {
 				if (Packet.duration == 0)
 					throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
 						"Invalid initial pts, dts, and duration");
 
-				if ((*TrackIndices)[Track].empty())
+				if (TrackInfo.empty())
 					PTS = 0;
 				else
-					PTS = (*TrackIndices)[Track].back().PTS + LastDuration[Track];
+					PTS = TrackInfo.back().PTS + LastDuration[Track];
 
-				(*TrackIndices)[Track].HasTS = false;
-				LastDuration[Track] = Packet.duration;
+				TrackInfo.HasTS = false;
 			}
+			LastDuration[Track] = Packet.duration;
 
 			int RepeatPict = -1;
 			int FrameType = 0;
 			bool Invisible = false;
 			ParseVideoPacket(VideoContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible);
 
-			(*TrackIndices)[Track].AddVideoFrame(PTS, RepeatPict, KeyFrame,
+			TrackInfo.AddVideoFrame(PTS, RepeatPict, KeyFrame,
 				FrameType, Packet.pos, 0, Invisible);
 		}
 		else if (FormatContext->streams[Track]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
@@ -165,12 +166,12 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			// timestamps, while for audio they're used if any have timestamps,
 			// as it's pretty common for only some packets to have timestamps
 			if (LastValidTS[Track] != ffms_av_nopts_value)
-				(*TrackIndices)[Track].HasTS = true;
+				TrackInfo.HasTS = true;
 
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
 			uint32_t SampleCount = IndexAudioPacket(Track, &Packet, AudioContexts[Track], *TrackIndices);
 
-			(*TrackIndices)[Track].AddAudioFrame(LastValidTS[Track],
+			TrackInfo.AddAudioFrame(LastValidTS[Track],
 				StartSample, SampleCount, KeyFrame, Packet.pos);
 		}
 
