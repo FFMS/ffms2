@@ -422,8 +422,8 @@ if [ "$pic" = "yes" ] ; then
 fi
 
 if [ "$debug" != "yes" -a "$gprof" != "yes" ]; then
-    CFLAGS="$CFLAGS -s -fomit-frame-pointer"
-    CXXFLAGS="$CXXFLAGS -s -fomit-frame-pointer"
+    CFLAGS="$CFLAGS -fomit-frame-pointer"
+    CXXFLAGS="$CXXFLAGS -fomit-frame-pointer"
     LDFLAGS="$LDFLAGS -s"
 fi
 if [ "$debug" = "yes" ]; then
