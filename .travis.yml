@@ -14,8 +14,8 @@ install:
   - sudo make install
   - cd ..
 script:
-  - ./configure || cat config.log
-  - make V=1 CXXFLAGS='-Wall -Wextra -Wno-missing-field-initializers -Werror' -j2 -k
+  - ./configure --extra-cxxflags='-Wall -Wextra -Wno-missing-field-initializers -Werror' || cat config.log
+  - make V=1 -j2 -k
 notifications:
   email:
     - on_success: change
