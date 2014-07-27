@@ -369,10 +369,14 @@ fi
 
 if [ -z "$FFMPEG_LIBS" -a -z "$FFMPEG_CFLAGS" ]; then
     FFMPEG_LIBS="-lavformat -lavcodec -lswscale -lavresample"
-    for lib in -lavcore -lavutil -lm -lz -lbz2 -lpthread -lavifil32; do
+    for lib in -lavcore -lavutil -lm -lz -lbz2 -lpthread -lavifil32 -lrt; do
         cc_check "" $lib && FFMPEG_LIBS="$FFMPEG_LIBS $lib"
     done
 fi
+
+# As of 0eec06ed8747923faa6a98e474f224d922dc487d ffmpeg only adds -lrt to lavc's
+# dnl LIBS, but lavu needs it, so move it to the end if it's present
+FFMPEG_LIBS=$(echo $FFMPEG_LIBS | sed 's/\(.*\) -lrt\(.*\)/\1\2 -lrt/')
 
 echo "checking whether linking with FFmpeg or Libav... "
 ffmpegORlibav="Libav"
