@@ -173,12 +173,12 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
     else
         pix_fmts[ 4 ] = -1;
 
-    // PIX_FMT_NV12 is misused as a return value different to the defined ones in the function
-    enum PixelFormat dst_pix_fmt = ffms_avs_lib->csp_name_to_pix_fmt( csp_name, PIX_FMT_NV12 );
+    // PIX_FMT_NV21 is misused as a return value different to the defined ones in the function
+    enum PixelFormat dst_pix_fmt = ffms_avs_lib->csp_name_to_pix_fmt( csp_name, PIX_FMT_NV21 );
     if( dst_pix_fmt == PIX_FMT_NONE )
         return avs_new_value_error( "FFVideoSource: Invalid colorspace name specified" );
 
-    if( dst_pix_fmt != PIX_FMT_NV12 )
+    if( dst_pix_fmt != PIX_FMT_NV21 )
     {
         pix_fmts[ 0 ] = dst_pix_fmt;
         pix_fmts[ 1 ] = -1;

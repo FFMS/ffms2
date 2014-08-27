@@ -81,11 +81,6 @@ void PrintUsage() {
 }
 
 void ParseCMDLine(int argc, char *argv[]) {
-	if (argc <= 1) {
-		PrintUsage();
-		throw Error("");
-	}
-
 	for (int i = 1; i < argc; ++i) {
 		const char *Option = argv[i];
 #define OPTION_ARG(flag) i + 1 < argc ? argv[i+1] : throw Error("Error: missing argument for -" flag)
@@ -288,6 +283,11 @@ int wmain(int argc, wchar_t *_argv[]) {
 int main(int argc, char *argv[]) {
 #endif /* defined(_WIN32) && !defined(__MINGW32__) */
 	try {
+		if (argc <= 1) {
+			PrintUsage();
+			return 0;
+		}
+
 		ParseCMDLine(argc, argv);
 	}
 	catch (Error const& e) {
