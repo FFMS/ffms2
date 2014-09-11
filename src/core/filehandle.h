@@ -24,18 +24,23 @@
 #include <stdint.h>
 #include <string>
 
+extern "C" {
+#include <libavformat/avio.h>
+}
+
 class FileHandle {
-	FILE *f;
+	AVIOContext *avio;
 	std::string filename;
 	int error_source;
 	int error_cause;
 
 public:
 	FileHandle(const char *filename, const char *mode, int error_source, int error_cause);
-	~FileHandle() { fclose(f); }
+	~FileHandle() { avio_close(avio); }
 
 	void Seek(int64_t offset, int origin);
 	int64_t Tell();
+	int64_t Size();
 
 	size_t Read(char *buffer, size_t size);
 	size_t Write(const char *buffer, size_t size);

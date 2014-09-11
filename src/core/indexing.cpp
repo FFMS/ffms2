@@ -94,16 +94,13 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 	av_sha_init(ctx, 160);
 
 	try {
-		file.Seek(0, SEEK_END);
-		*Filesize = file.Tell();
-
-		file.Seek(0, SEEK_SET);
+		*Filesize = file.Size();
 		std::vector<char> FileBuffer(static_cast<size_t>(std::min<int64_t>(1024*1024, *Filesize)));
 		size_t BytesRead = file.Read(&FileBuffer[0], FileBuffer.size());
 		av_sha_update(ctx, reinterpret_cast<const uint8_t*>(&FileBuffer[0]), BytesRead);
 
 		if (*Filesize > static_cast<int64_t>(FileBuffer.size())) {
-			file.Seek(-(int)FileBuffer.size(), SEEK_END);
+			file.Seek(*Filesize - (int)FileBuffer.size(), SEEK_SET);
 			BytesRead = file.Read(&FileBuffer[0], FileBuffer.size());
 			av_sha_update(ctx, reinterpret_cast<const uint8_t*>(&FileBuffer[0]), BytesRead);
 		}
