@@ -70,15 +70,15 @@ int64_t FileHandle::Tell() {
 }
 
 size_t FileHandle::Read(char *buffer, size_t size) {
-	int count = avio_read(avio, (unsigned char *) buffer, size);
+	int count = avio_read(avio, (unsigned char *)buffer, size);
 	if (count < 0)
 		throw FFMS_Exception(error_source, FFMS_ERROR_FILE_READ,
 			"Failed to read from '" + filename + "'");
-	return (size_t) count;
+	return (size_t)count;
 }
 
 size_t FileHandle::Write(const char *buffer, size_t size) {
-	avio_write(avio, (const unsigned char *) buffer, size);
+	avio_write(avio, (const unsigned char *)buffer, size);
 	avio_flush(avio);
 	if (avio->error < 0)
 		throw FFMS_Exception(error_source, FFMS_ERROR_FILE_WRITE,
@@ -96,24 +96,15 @@ int64_t FileHandle::Size() {
 
 int FileHandle::Printf(const char *fmt, ...) {
 	va_list args;
-	size_t cursize = 100;
-	const size_t maxsize = 1024 * 1024;
-	std::vector<char> OutBuffer(cursize);
-
 	va_start(args, fmt);
 
+	std::vector<char> OutBuffer(100);
 	int ret = -1;
-	while (true) {
-		if (cursize > maxsize)
-			return -1;
-
-		ret = vsnprintf(reinterpret_cast<char *>(&OutBuffer[0]), OutBuffer.capacity(), fmt, args);
-		if (ret < 0 || ret == (int) cursize) {
-			cursize += 100;
-			OutBuffer.resize(cursize);
-		} else {
+	while (OutBuffer.size() < 1024 * 1024) {
+		ret = vsnprintf(reinterpret_cast<char *>(&OutBuffer[0]), OutBuffer.size(), fmt, args);
+		if (ret > 0 && ret < (int)OutBuffer.size())
 			break;
-		}
+		OutBuffer.resize(OutBuffer.size() * 2);
 	}
 
 	va_end(args);
@@ -121,8 +112,5 @@ int FileHandle::Printf(const char *fmt, ...) {
 	avio_write(avio, reinterpret_cast<const unsigned char *>(&OutBuffer[0]), ret);
 	avio_flush(avio);
 
-	if (avio->error < 0)
-		return avio->error;
-	else
-		return ret;
+	return avio->error < 0 ? avio->error : ret;
 }
