@@ -210,6 +210,7 @@ AC_SUBST([AVRESAMPLE_CFLAGS])
 AC_SUBST([AVRESAMPLE_LIBS])
 AC_SUBST([libavresample])
 
+src_core_libffms2_la_LDFLAGS=""
 AC_MSG_CHECKING([whether -Wl,-Bsymbolic is needed])
 if test "$enable_shared" = yes; then
     _LDFLAGS="$LDFLAGS"
@@ -219,19 +220,21 @@ if test "$enable_shared" = yes; then
         LDFLAGS="$LDFLAGS -Wl,-Bsymbolic"
         TEST_LIBAV([bsymbolic])
         if test "$bsymbolic" = "yes"; then
-            LDFLAGS="$_LDFLAGS -Wl,-Bsymbolic"
+            src_core_libffms2_la_LDFLAGS="$src_core_libffms2_la_LDFLAGS -Wl-Bsymbolic"
         else
             AC_MSG_RESULT($bsymbolic)
             AC_MSG_FAILURE([cannot build ffms2 as a shared library])
         fi
     else
         bsymbolic=no
-        LDFLAGS="$_LDFLAGS"
     fi
-    LDFLAGS="$LDFLAGS -version-info $VERSION_INFO"
+    LDFLAGS="$_LDFLAGS"
+    src_core_libffms2_la_LDFLAGS="$src_core_libffms2_la_LDFLAGS -version-info $VERSION_INFO"
 else
     bsymbolic=no
 fi
+AC_SUBST([src_core_libffms2_la_LDFLAGS])
+
 CFLAGS="$_CFLAGS -std=c99"
 CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 -DFFMS_EXPORTS"
 LIBS="$_LIBS"

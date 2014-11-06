@@ -634,6 +634,7 @@ am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
 LTUNDEF
+src_core_libffms2_la_LDFLAGS
 libavresample
 AVRESAMPLE_LIBS
 AVRESAMPLE_CFLAGS
@@ -16863,6 +16864,7 @@ AVRESAMPLE_LIBS=$(echo $AVRESAMPLE_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
 
 
 
+src_core_libffms2_la_LDFLAGS=""
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether -Wl,-Bsymbolic is needed" >&5
 $as_echo_n "checking whether -Wl,-Bsymbolic is needed... " >&6; }
 if test "$enable_shared" = yes; then
@@ -16929,7 +16931,7 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
         if test "$bsymbolic" = "yes"; then
-            LDFLAGS="$_LDFLAGS -Wl,-Bsymbolic"
+            src_core_libffms2_la_LDFLAGS="$src_core_libffms2_la_LDFLAGS -Wl-Bsymbolic"
         else
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: $bsymbolic" >&5
 $as_echo "$bsymbolic" >&6; }
@@ -16940,12 +16942,14 @@ See \`config.log' for more details" "$LINENO" 5; }
         fi
     else
         bsymbolic=no
-        LDFLAGS="$_LDFLAGS"
     fi
-    LDFLAGS="$LDFLAGS -version-info $VERSION_INFO"
+    LDFLAGS="$_LDFLAGS"
+    src_core_libffms2_la_LDFLAGS="$src_core_libffms2_la_LDFLAGS -version-info $VERSION_INFO"
 else
     bsymbolic=no
 fi
+
+
 CFLAGS="$_CFLAGS -std=c99"
 CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 -DFFMS_EXPORTS"
 LIBS="$_LIBS"

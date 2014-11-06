@@ -160,6 +160,10 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+src_core_libffms2_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(src_core_libffms2_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
 PROGRAMS = $(bin_PROGRAMS)
 am_src_index_ffmsindex_OBJECTS = src/index/ffmsindex.$(OBJEXT)
 src_index_ffmsindex_OBJECTS = $(am_src_index_ffmsindex_OBJECTS)
@@ -397,6 +401,7 @@ program_transform_name = @program_transform_name@
 psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+src_core_libffms2_la_LDFLAGS = @src_core_libffms2_la_LDFLAGS@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
@@ -615,7 +620,7 @@ src/vapoursynth/vapoursynth.lo: src/vapoursynth/$(am__dirstamp) \
 	src/vapoursynth/$(DEPDIR)/$(am__dirstamp)
 
 src/core/libffms2.la: $(src_core_libffms2_la_OBJECTS) $(src_core_libffms2_la_DEPENDENCIES) $(EXTRA_src_core_libffms2_la_DEPENDENCIES) src/core/$(am__dirstamp)
-	$(AM_V_CXXLD)$(CXXLINK) -rpath $(libdir) $(src_core_libffms2_la_OBJECTS) $(src_core_libffms2_la_LIBADD) $(LIBS)
+	$(AM_V_CXXLD)$(src_core_libffms2_la_LINK) -rpath $(libdir) $(src_core_libffms2_la_OBJECTS) $(src_core_libffms2_la_LIBADD) $(LIBS)
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \

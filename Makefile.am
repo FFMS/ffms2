@@ -10,6 +10,7 @@ AM_CPPFLAGS = -I. -I$(top_srcdir)/include -I$(top_srcdir)/src/config @LIBAV_CFLA
 AM_CXXFLAGS = -std=c++11
 
 lib_LTLIBRARIES = src/core/libffms2.la
+src_core_libffms2_la_LDFLAGS = @src_core_libffms2_la_LDFLAGS@
 src_core_libffms2_la_LIBADD = @LIBAV_LIBS@ @AVRESAMPLE_LIBS@ @ZLIB_LDFLAGS@ -lz @LTUNDEF@
 src_core_libffms2_la_SOURCES = \
 	src/core/audiosource.cpp \
