@@ -72,9 +72,6 @@
     <ClCompile Include="..\src\core\matroskaparser.c">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\core\numthreads.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\core\utils.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
@@ -147,9 +144,6 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\matroskaparser.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\numthreads.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\utils.h">

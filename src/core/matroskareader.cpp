@@ -46,7 +46,7 @@ public:
 std::string errmsg() {
 	LPWSTR lpstr = NULL;
 
-	if(FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, reinterpret_cast<LPWSTR>(&lpstr), 0, NULL) == NULL)
+	if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, reinterpret_cast<LPWSTR>(&lpstr), 0, NULL) == NULL)
 		return "Unknown Error";
 
 	int len = WideCharToMultiByte(CP_UTF8, 0, lpstr, -1, NULL, 0, NULL, NULL);
@@ -66,16 +66,12 @@ class FileMapping {
 	HandleCloser file_mapping;
 	longlong file_size;
 
-	ulonglong mapping_start;
-	ulonglong mapping_length;
-	const uint8_t *buffer;
+	ulonglong mapping_start = 0;
+	ulonglong mapping_length = 0;
+	const uint8_t *buffer = nullptr;
 
 public:
-	FileMapping(const char *path)
-	: mapping_start(0)
-	, mapping_length(0)
-	, buffer(NULL)
-	{
+	FileMapping(const char *path) {
 		HandleCloser file = CreateFileW(widen_path(path).c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
 		if (file == INVALID_HANDLE_VALUE)
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
@@ -141,16 +137,13 @@ class FileMapping {
 	FileDescriptor fd;
 	longlong file_size;
 
-	ulonglong mapping_start;
-	ulonglong mapping_length;
-	const uint8_t *buffer;
+	ulonglong mapping_start = 0;
+	ulonglong mapping_length = 0;
+	const uint8_t *buffer = nullptr;
 
 public:
 	FileMapping(const char *path)
 	: fd(path)
-	, mapping_start(0)
-	, mapping_length(0)
-	, buffer(NULL)
 	{
 		struct stat st;
 		if (fstat(fd, &st) < 0)
@@ -167,10 +160,10 @@ public:
 	void Map(ulonglong start, size_t length) {
 		if (buffer && buffer != MAP_FAILED) {
 			munmap(const_cast<uint8_t *>(buffer), mapping_length);
-			buffer = NULL;
+			buffer = nullptr;
 		}
 
-		buffer = static_cast<uint8_t*>(mmap(NULL, static_cast<size_t>(length), PROT_READ, MAP_PRIVATE, fd, start));
+		buffer = static_cast<uint8_t*>(mmap(nullptr, static_cast<size_t>(length), PROT_READ, MAP_PRIVATE, fd, start));
 		if (buffer == MAP_FAILED)
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
 				std::string("mmap failed: ") + strerror(errno));
@@ -276,13 +269,7 @@ ulonglong MatroskaReader::Size() const {
 	return file->Size();
 }
 
-MatroskaReaderContext::MatroskaReaderContext(const char *filename)
-: BufferSize(0)
-, Reader(filename)
-, Buffer(NULL)
-, FrameSize(0)
-{
-}
+MatroskaReaderContext::MatroskaReaderContext(const char *filename) : Reader(filename) { }
 
 MatroskaReaderContext::~MatroskaReaderContext() {
 	if (Buffer)

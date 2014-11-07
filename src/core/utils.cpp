@@ -57,15 +57,12 @@ int FFMS_Exception::CopyOut(FFMS_ErrorInfo *ErrorInfo) const {
 }
 
 TrackCompressionContext::TrackCompressionContext(MatroskaFile *MF, TrackInfo *TI, unsigned int Track)
-: CS(NULL)
-, CompressedPrivateData(NULL)
-, CompressedPrivateDataSize(0)
-, CompressionMethod(TI->CompMethod)
+: CompressionMethod(TI->CompMethod)
 {
 	if (CompressionMethod == COMP_ZLIB) {
 		char ErrorMessage[512];
 		CS = cs_Create(MF, Track, ErrorMessage, sizeof(ErrorMessage));
-		if (CS == NULL) {
+		if (CS == nullptr) {
 			std::ostringstream buf;
 			buf << "Can't create MKV track decompressor: " << ErrorMessage;
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
@@ -96,7 +93,7 @@ void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo) {
 
 void InitNullPacket(AVPacket &pkt) {
 	av_init_packet(&pkt);
-	pkt.data = NULL;
+	pkt.data = nullptr;
 	pkt.size = 0;
 }
 
@@ -161,7 +158,7 @@ void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *
 
 		// Now skip copying the BITMAPINFOHEADER into the extradata, because lavc doesn't expect it to be there.
 		if (PrivateDataSize <= BIHSize) {
-			PrivateDataSrc = NULL;
+			PrivateDataSrc = nullptr;
 			PrivateDataSize = 0;
 		}
 		else {
@@ -214,13 +211,13 @@ std::wstring widen_path(const char *s) {
 // End of filename hackery.
 
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
-	if (avformat_open_input(&FormatContext, SourceFile, NULL, NULL) != 0)
+	if (avformat_open_input(&FormatContext, SourceFile, nullptr, nullptr) != 0)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Couldn't open '") + SourceFile + "'");
 
-	if (avformat_find_stream_info(FormatContext,NULL) < 0) {
+	if (avformat_find_stream_info(FormatContext,nullptr) < 0) {
 		avformat_close_input(&FormatContext);
-		FormatContext = NULL;
+		FormatContext = nullptr;
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			"Couldn't find stream information");
 	}
@@ -236,7 +233,7 @@ void FlushBuffers(AVCodecContext *CodecContext) {
 		const AVCodec *codec = CodecContext->codec;
 		avcodec_close(CodecContext);
 		// Whether or not codec is const varies between versions
-		if (avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), 0) < 0)
+		if (avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), nullptr) < 0)
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_CODEC,
 				"Couldn't re-open codec.");
 	}

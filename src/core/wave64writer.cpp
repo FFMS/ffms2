@@ -50,7 +50,6 @@ static const uint8_t Guiddata[16]={
 
 Wave64Writer::Wave64Writer(const char *Filename, uint16_t BytesPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat)
 : WavFile(Filename, "wb", FFMS_ERROR_WAVE_WRITER, FFMS_ERROR_FILE_WRITE)
-, BytesWritten(0)
 , SamplesPerSec(SamplesPerSec)
 , BytesPerSample(BytesPerSample)
 , Channels(Channels)

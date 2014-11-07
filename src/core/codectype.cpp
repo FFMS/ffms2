@@ -436,7 +436,7 @@ FFMS_CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int F
 	}
 
 	/* Video codecs for "avi in mkv" mode */
-	const AVCodecTag *const tags[] = { avformat_get_riff_video_tags(), 0 };
+	const AVCodecTag *const tags[] = { avformat_get_riff_video_tags(), nullptr };
 
 	if (!strcmp(Codec, "V_MS/VFW/FOURCC")) {
 		FFMS_BITMAPINFOHEADER *b = reinterpret_cast<FFMS_BITMAPINFOHEADER *>(CodecPrivate);

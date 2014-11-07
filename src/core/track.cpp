@@ -63,19 +63,8 @@ static void WriteFrame(ZipFile &stream, FrameInfo const& f, FrameInfo const& pre
 }
 }
 
-FFMS_Track::FFMS_Track()
-: TT(FFMS_TYPE_UNKNOWN)
-, MaxBFrames(0)
-, UseDTS(false)
-, HasTS(true)
-{
-	this->TB.Num = 0;
-	this->TB.Den = 0;
-}
-
 FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS, bool HasTS)
 : TT(TT)
-, MaxBFrames(0)
 , UseDTS(UseDTS)
 , HasTS(HasTS)
 {
@@ -120,14 +109,14 @@ void FFMS_Track::Write(ZipFile &stream) const {
 }
 
 void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, uint32_t FrameSize, bool Hidden) {
-	FrameInfo f = {PTS, FilePos, 0, 0, FrameSize, 0, FrameType, RepeatPict, KeyFrame, Hidden};
-	Frames.push_back(f);
+	Frames.push_back({PTS, FilePos, 0, 0, FrameSize, 0, FrameType, RepeatPict,
+		KeyFrame, Hidden});
 }
 
 void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos, uint32_t FrameSize) {
 	if (SampleCount > 0) {
-		FrameInfo f = {PTS, FilePos, SampleStart, SampleCount, FrameSize, 0, 0, 0, KeyFrame, false};
-		Frames.push_back(f);
+		Frames.push_back({PTS, FilePos, SampleStart, SampleCount, FrameSize,
+			0, 0, 0, KeyFrame, false});
 	}
 }
 
@@ -149,7 +138,7 @@ int FFMS_Track::FrameFromPTS(int64_t PTS) const {
 	FrameInfo F;
 	F.PTS = PTS;
 
-	iterator Pos = std::lower_bound(begin(), end(), F, PTSComparison);
+	auto Pos = std::lower_bound(begin(), end(), F, PTSComparison);
 	if (Pos == end() || Pos->PTS != PTS)
 		return -1;
 	return std::distance(begin(), Pos);
@@ -166,7 +155,7 @@ int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) const {
 	FrameInfo F;
 	F.PTS = PTS;
 
-	iterator Pos = std::lower_bound(begin(), end(), F, PTSComparison);
+	auto Pos = std::lower_bound(begin(), end(), F, PTSComparison);
 	if (Pos == end())
 		return size() - 1;
 	size_t Frame = std::distance(begin(), Pos);
@@ -281,6 +270,6 @@ void FFMS_Track::GeneratePublicInfo() {
 }
 
 const FFMS_FrameInfo *FFMS_Track::GetFrameInfo(size_t N) const {
-	if (N >= PublicFrameInfo.size()) return NULL;
+	if (N >= PublicFrameInfo.size()) return nullptr;
 	return &PublicFrameInfo[N];
 }

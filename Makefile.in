@@ -150,11 +150,10 @@ am_src_core_libffms2_la_OBJECTS = src/core/audiosource.lo \
 	src/core/lavfindexer.lo src/core/lavfvideo.lo \
 	src/core/matroskaaudio.lo src/core/matroskaindexer.lo \
 	src/core/matroskaparser.lo src/core/matroskareader.lo \
-	src/core/matroskavideo.lo src/core/numthreads.lo \
-	src/core/track.lo src/core/utils.lo src/core/videosource.lo \
-	src/core/videoutils.lo src/core/wave64writer.lo \
-	src/core/zipfile.lo src/vapoursynth/vapoursource.lo \
-	src/vapoursynth/vapoursynth.lo
+	src/core/matroskavideo.lo src/core/track.lo src/core/utils.lo \
+	src/core/videosource.lo src/core/videoutils.lo \
+	src/core/wave64writer.lo src/core/zipfile.lo \
+	src/vapoursynth/vapoursource.lo src/vapoursynth/vapoursynth.lo
 src_core_libffms2_la_OBJECTS = $(am_src_core_libffms2_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -443,8 +442,6 @@ src_core_libffms2_la_SOURCES = \
 	src/core/matroskareader.cpp \
 	src/core/matroskareader.h \
 	src/core/matroskavideo.cpp \
-	src/core/numthreads.cpp \
-	src/core/numthreads.h \
 	src/core/track.cpp \
 	src/core/track.h \
 	src/core/utils.cpp \
@@ -594,8 +591,6 @@ src/core/matroskareader.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/matroskavideo.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
-src/core/numthreads.lo: src/core/$(am__dirstamp) \
-	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/track.lo: src/core/$(am__dirstamp) \
 	src/core/$(DEPDIR)/$(am__dirstamp)
 src/core/utils.lo: src/core/$(am__dirstamp) \
@@ -711,7 +706,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/matroskaparser.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/matroskareader.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/matroskavideo.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/numthreads.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/track.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/utils.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/core/$(DEPDIR)/videosource.Plo@am__quote@

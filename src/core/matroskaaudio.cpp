@@ -30,10 +30,10 @@ class FFMatroskaAudio : public FFMS_AudioSource {
 	MatroskaFile *MF;
 	MatroskaReaderContext MC;
 	TrackInfo *TI;
-	std::auto_ptr<TrackCompressionContext> TCC;
+	std::unique_ptr<TrackCompressionContext> TCC;
 	char ErrorMessage[256];
 
-	bool ReadPacket(AVPacket *);
+	bool ReadPacket(AVPacket *) override;
 
 public:
 	FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
@@ -43,7 +43,7 @@ public:
 FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode)
 : FFMS_AudioSource(SourceFile, Index, Track)
 , MC(SourceFile)
-, TI(NULL)
+, TI(nullptr)
 {
 	if (!(MF = mkv_OpenEx(&MC.Reader, 0, 0, ErrorMessage, sizeof(ErrorMessage))))
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
@@ -55,7 +55,7 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &
 	if (TI->CompEnabled)
 		TCC.reset(new TrackCompressionContext(MF, TI, Track));
 
-	CodecContext.reset(avcodec_alloc_context3(NULL), DeleteMatroskaCodecContext);
+	CodecContext.reset(avcodec_alloc_context3(nullptr), DeleteMatroskaCodecContext);
 	assert(CodecContext);
 
 	AVCodec *Codec = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate, 0, TI->AV.Audio.BitDepth));
@@ -66,7 +66,7 @@ FFMatroskaAudio::FFMatroskaAudio(const char *SourceFile, int Track, FFMS_Index &
 
 	InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);
 
-	if (avcodec_open2(CodecContext, Codec, NULL) < 0) {
+	if (avcodec_open2(CodecContext, Codec, nullptr) < 0) {
 		mkv_Close(MF);
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC, "Could not open audio codec");
 	}

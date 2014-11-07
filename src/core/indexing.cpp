@@ -42,10 +42,6 @@ extern bool HasHaaliOGG;
 
 SharedVideoContext::SharedVideoContext(bool FreeCodecContext)
 : FreeCodecContext(FreeCodecContext)
-, CodecContext(NULL)
-, Parser(NULL)
-, BitStreamFilter(NULL)
-, TCC(NULL)
 {
 }
 
@@ -63,10 +59,6 @@ SharedVideoContext::~SharedVideoContext() {
 
 SharedAudioContext::SharedAudioContext(bool FreeCodecContext)
 : FreeCodecContext(FreeCodecContext)
-, CodecContext(NULL)
-, W64Writer(NULL)
-, CurrentSample(0)
-, TCC(NULL)
 {
 }
 
@@ -174,9 +166,7 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 	zf.Finish();
 }
 
-FFMS_Index::FFMS_Index(const char *IndexFile)
-: RefCount(1)
-{
+FFMS_Index::FFMS_Index(const char *IndexFile) {
 	ZipFile zf(IndexFile, "rb");
 
 	// Read the index file header
@@ -221,8 +211,7 @@ FFMS_Index::FFMS_Index(const char *IndexFile)
 }
 
 FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling)
-: RefCount(1)
-, Decoder(Decoder)
+: Decoder(Decoder)
 , ErrorHandling(ErrorHandling)
 , Filesize(Filesize)
 {
@@ -248,9 +237,9 @@ void FFMS_Indexer::SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate
 }
 
 FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer) {
-	AVFormatContext *FormatContext = NULL;
+	AVFormatContext *FormatContext = nullptr;
 
-	if (avformat_open_input(&FormatContext, Filename, NULL, NULL) != 0)
+	if (avformat_open_input(&FormatContext, Filename, nullptr, nullptr) != 0)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Can't open '") + Filename + "'");
 
@@ -308,14 +297,7 @@ FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer) {
 }
 
 FFMS_Indexer::FFMS_Indexer(const char *Filename)
-: IndexMask(0)
-, DumpMask(0)
-, ErrorHandling(FFMS_IEH_CLEAR_TRACK)
-, IC(0)
-, ICPrivate(0)
-, ANC(0)
-, ANCPrivate(0)
-, SourceFile(Filename)
+: SourceFile(Filename)
 {
 	FFMS_Index::CalculateFileSignature(Filename, &Filesize, Digest);
 }
@@ -327,7 +309,7 @@ void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 	if (!AudioContext.W64Writer) {
 		FFMS_AudioProperties AP;
 		FillAP(AP, AudioContext.CodecContext, (*Index)[Track]);
-		int FNSize = (*ANC)(SourceFile.c_str(), Track, &AP, NULL, 0, ANCPrivate);
+		int FNSize = (*ANC)(SourceFile.c_str(), Track, &AP, nullptr, 0, ANCPrivate);
 		if (FNSize <= 0) {
 			DumpMask = DumpMask & ~(1 << Track);
 			return;
@@ -393,7 +375,7 @@ uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudio
 }
 
 void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
-	std::map<int, FFMS_AudioProperties>::iterator it = LastAudioProperties.find(Track);
+	auto it = LastAudioProperties.find(Track);
 	if (it == LastAudioProperties.end()) {
 		FFMS_AudioProperties &AP = LastAudioProperties[Track];
 		AP.SampleRate = Context->sample_rate;

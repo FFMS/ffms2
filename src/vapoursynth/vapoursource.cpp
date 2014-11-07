@@ -112,7 +112,7 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 		E.BufferSize = sizeof(ErrorMsg);
 		std::string buf = "Source: ";
 
-		VSFrameRef *Dst = vsapi->newVideoFrame(vs->VI.format, vs->VI.width, vs->VI.height, NULL, core);
+		VSFrameRef *Dst = vsapi->newVideoFrame(vs->VI.format, vs->VI.width, vs->VI.height, nullptr, core);
 		VSMap *Props = vsapi->getFramePropsRW(Dst);
 
 		const FFMS_Frame *Frame;
@@ -139,10 +139,10 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 				((double)(TB->Num / 1000) *  FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, paReplace);
 		}
 
-		if (Frame == NULL) {
+		if (Frame == nullptr) {
 			buf += E.Buffer;
 			vsapi->setFilterError(buf.c_str(), frameCtx);
-			return NULL;
+			return nullptr;
 		}
 
 		// Set AR variables
@@ -163,7 +163,7 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 		return Dst;
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 void VS_CC VSVideoSource::Free(void *instanceData, VSCore *, const VSAPI *) {

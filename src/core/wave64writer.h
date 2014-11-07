@@ -40,7 +40,7 @@ typedef struct FFMS_WAVEFORMATEX {
 
 class Wave64Writer {
 	FileHandle WavFile;
-	uint64_t BytesWritten;
+	uint64_t BytesWritten = 0;
 	uint32_t SamplesPerSec;
 	uint16_t BytesPerSample;
 	uint16_t Channels;

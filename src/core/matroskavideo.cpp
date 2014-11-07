@@ -27,17 +27,17 @@ namespace {
 class FFMatroskaVideo : public FFMS_VideoSource {
 	MatroskaFile *MF;
 	MatroskaReaderContext MC;
-	std::auto_ptr<TrackCompressionContext> TCC;
+	std::unique_ptr<TrackCompressionContext> TCC;
 	char ErrorMessage[256];
 	FFSourceResources<FFMS_VideoSource> Res;
 	size_t PacketNumber;
 
 	void DecodeNextFrame();
-	void Free(bool CloseCodec);
+	void Free(bool CloseCodec) override;
 
 public:
 	FFMatroskaVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads);
-	FFMS_Frame *GetFrame(int n);
+	FFMS_Frame *GetFrame(int n) override;
 };
 
 void FFMatroskaVideo::Free(bool CloseCodec) {
@@ -51,16 +51,16 @@ void FFMatroskaVideo::Free(bool CloseCodec) {
 FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	FFMS_Index &Index, int Threads)
 : FFMS_VideoSource(SourceFile, Index, Track, Threads)
-, MF(NULL)
+, MF(nullptr)
 , MC(SourceFile)
 , Res(this)
 , PacketNumber(0)
 {
-	AVCodec *Codec = NULL;
-	TrackInfo *TI = NULL;
+	AVCodec *Codec = nullptr;
+	TrackInfo *TI = nullptr;
 
 	MF = mkv_OpenEx(&MC.Reader, 0, 0, ErrorMessage, sizeof(ErrorMessage));
-	if (MF == NULL)
+	if (MF == nullptr)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Can't parse Matroska file: ") + ErrorMessage);
 
@@ -69,18 +69,18 @@ FFMatroskaVideo::FFMatroskaVideo(const char *SourceFile, int Track,
 	if (TI->CompEnabled)
 		TCC.reset(new TrackCompressionContext(MF, TI, VideoTrack));
 
-	CodecContext = avcodec_alloc_context3(NULL);
+	CodecContext = avcodec_alloc_context3(nullptr);
 	CodecContext->thread_count = DecodingThreads;
 
 	Codec = avcodec_find_decoder(MatroskaToFFCodecID(TI->CodecID, TI->CodecPrivate));
-	if (Codec == NULL)
+	if (Codec == nullptr)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Video codec not found");
 
 	InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);
 	CodecContext->has_b_frames = Frames.MaxBFrames;
 
-	if (avcodec_open2(CodecContext, Codec, NULL) < 0)
+	if (avcodec_open2(CodecContext, Codec, nullptr) < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Could not open video codec");
 

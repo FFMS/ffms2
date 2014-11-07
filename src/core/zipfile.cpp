@@ -99,7 +99,7 @@ int ZipFile::Write(const void *data, size_t size) {
 }
 
 void ZipFile::Finish() {
-	while (Write(NULL, 0) != Z_STREAM_END) ;
+	while (Write(nullptr, 0) != Z_STREAM_END) ;
 	deflateEnd(&z);
 	state = Initial;
 }

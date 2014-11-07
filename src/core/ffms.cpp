@@ -45,15 +45,16 @@ bool GlobalUseUTF8Paths = false;
 #ifdef FFMS_WIN_DEBUG
 
 void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl) {
+	if (level > av_log_get_level())
+		return;
+
 	static int print_prefix=1;
 	static int count;
 	static char line[1024] = {0}, prev[1024] = {0};
-	AVClass* avc = ptr ? *(AVClass**)ptr : NULL;
-	if(level > av_log_get_level())
-		return;
+	auto avc = ptr ? *static_cast<AVClass **>(ptr) : nullptr;
 
 	int written = 0;
-	if(print_prefix && avc) {
+	if (print_prefix && avc) {
 		written = snprintf(line, sizeof(line), "[%s @ %p]", avc->item_name(ptr), ptr);
 	}
 
@@ -61,11 +62,11 @@ void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl)
 
 	print_prefix = line[written-1] == '\n';
 	line[sizeof(line) - 1] = 0;
-	if(print_prefix && !strcmp(line, prev)){
+	if (print_prefix && !strcmp(line, prev)) {
 		count++;
 		return;
 	}
-	if(count > 0){
+	if (count > 0) {
 		std::stringstream ss;
 		ss << "    Last message repeated " << count << " times\n";
 		OutputDebugStringA(ss.str().c_str());
@@ -96,9 +97,9 @@ FFMS_API(void) FFMS_Init(int, int UseUTF8Paths) {
 #ifdef HAALISOURCE
 		CComPtr<IMMContainer> pMMC;
 		HasHaaliMPEG = !FAILED(pMMC.CoCreateInstance(HAALI_MPEG_PARSER));
-		pMMC = NULL;
+		pMMC = nullptr;
 		HasHaaliOGG = !FAILED(pMMC.CoCreateInstance(HAALI_OGG_PARSER));
-		pMMC = NULL;
+		pMMC = nullptr;
 #endif
 		FFmpegInited = true;
 	}
@@ -138,7 +139,7 @@ FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int 
 		}
 	} catch (FFMS_Exception &e) {
 		e.CopyOut(ErrorInfo);
-		return NULL;
+		return nullptr;
 	}
 }
 
@@ -164,7 +165,7 @@ FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int 
 		}
 	} catch (FFMS_Exception &e) {
 		e.CopyOut(ErrorInfo);
-		return NULL;
+		return nullptr;
 	}
 }
 
@@ -190,17 +191,17 @@ FFMS_API(const FFMS_Frame *) FFMS_GetFrame(FFMS_VideoSource *V, int n, FFMS_Erro
 		return V->GetFrame(n);
 	} catch (FFMS_Exception &e) {
 		e.CopyOut(ErrorInfo);
-		return NULL;
+		return nullptr;
 	}
 }
 
 FFMS_API(const FFMS_Frame *) FFMS_GetFrameByTime(FFMS_VideoSource *V, double Time, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
-		return (FFMS_Frame *)V->GetFrameByTime(Time);
+		return V->GetFrameByTime(Time);
 	} catch (FFMS_Exception &e) {
 		e.CopyOut(ErrorInfo);
-		return NULL;
+		return nullptr;
 	}
 }
 
@@ -243,7 +244,7 @@ FFMS_API(void) FFMS_ResetInputFormatV(FFMS_VideoSource *V) {
 }
 
 FFMS_API(FFMS_ResampleOptions *) FFMS_CreateResampleOptions(FFMS_AudioSource *A) {
-	return A->CreateResampleOptions();
+	return A->CreateResampleOptions().release();
 }
 
 FFMS_API(void) FFMS_DestroyResampleOptions(FFMS_ResampleOptions *options) {
@@ -253,7 +254,7 @@ FFMS_API(void) FFMS_DestroyResampleOptions(FFMS_ResampleOptions *options) {
 FFMS_API(int) FFMS_SetOutputFormatA(FFMS_AudioSource *A, const FFMS_ResampleOptions *options, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
-		A->SetOutputFormat(options);
+		A->SetOutputFormat(*options);
 	} catch (FFMS_Exception &e) {
 		return e.CopyOut(ErrorInfo);
 	}
@@ -261,9 +262,8 @@ FFMS_API(int) FFMS_SetOutputFormatA(FFMS_AudioSource *A, const FFMS_ResampleOpti
 }
 
 FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {
-	if (Index == NULL)
-		return;
-	Index->Release();
+	if (Index)
+		Index->Release();
 }
 
 FFMS_API(int) FFMS_GetSourceType(FFMS_Index *Index) {
@@ -360,7 +360,7 @@ FFMS_API(int) FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, FFMS_
 FFMS_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
 	FFMS_Indexer *Indexer = FFMS_CreateIndexer(SourceFile, ErrorInfo);
 	if (!Indexer)
-		return NULL;
+		return nullptr;
 	return FFMS_DoIndexing(Indexer, IndexMask, DumpMask, ANC, ANCPrivate, ErrorHandling, IC, ICPrivate, ErrorInfo);
 }
 
@@ -384,14 +384,14 @@ FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const
 	std::string s = static_cast<char *>(Private);
 
 	ReplaceString(s, "%sourcefile%", SourceFile);
-	ReplaceString(s, "%trackn%", IntToStr(Track));
+	ReplaceString(s, "%trackn%", std::to_string(Track));
 	ReplaceString(s, "%trackzn%", IntToStr(Track, 2));
-	ReplaceString(s, "%samplerate%", IntToStr(AP->SampleRate));
-	ReplaceString(s, "%channels%", IntToStr(AP->Channels));
-	ReplaceString(s, "%bps%", IntToStr(AP->BitsPerSample));
-	ReplaceString(s, "%delay%", IntToStr(static_cast<int>(AP->FirstTime)));
+	ReplaceString(s, "%samplerate%", std::to_string(AP->SampleRate));
+	ReplaceString(s, "%channels%", std::to_string(AP->Channels));
+	ReplaceString(s, "%bps%", std::to_string(AP->BitsPerSample));
+	ReplaceString(s, "%delay%", std::to_string(static_cast<int>(AP->FirstTime)));
 
-	if (FileName != NULL)
+	if (FileName)
 		strcpy(FileName, s.c_str());
 
 	return s.length() + 1;
@@ -407,7 +407,7 @@ FFMS_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, i
 		return CreateIndexer(SourceFile, static_cast<FFMS_Sources>(Demuxer));
 	} catch (FFMS_Exception &e) {
 		e.CopyOut(ErrorInfo);
-		return NULL;
+		return nullptr;
 	}
 }
 
@@ -420,7 +420,7 @@ FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int
 	Indexer->SetProgressCallback(IC, ICPrivate);
 	Indexer->SetAudioNameCallback(ANC, ANCPrivate);
 
-	FFMS_Index *Index = NULL;
+	FFMS_Index *Index = nullptr;
 	try {
 		Index = Indexer->DoIndexing();
 	} catch (FFMS_Exception &e) {
@@ -440,7 +440,7 @@ FFMS_API(FFMS_Index *) FFMS_ReadIndex(const char *IndexFile, FFMS_ErrorInfo *Err
 		return new FFMS_Index(IndexFile);
 	} catch (FFMS_Exception &e) {
 		e.CopyOut(ErrorInfo);
-		return NULL;
+		return nullptr;
 	}
 }
 

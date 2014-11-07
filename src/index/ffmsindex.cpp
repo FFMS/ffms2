@@ -46,11 +46,11 @@ bool Overwrite = false;
 bool PrintProgress = true;
 bool WriteTC = false;
 bool WriteKF = false;
-const char *InputFile = 0;
+const char *InputFile = nullptr;
 std::string CacheFile;
 std::string AudioFile;
 
-FFMS_Index *Index = NULL;
+FFMS_Index *Index = nullptr;
 
 struct Error {
 	std::string msg;
@@ -187,16 +187,16 @@ void DoIndexing() {
 	if (!Overwrite && Index)
 		throw Error("Error: index file already exists, use -f if you are sure you want to overwrite it.");
 
-	UpdateProgress(0, 100, 0);
+	UpdateProgress(0, 100, nullptr);
 	FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(InputFile, Demuxer, &E);
-	if (Indexer == NULL)
+	if (Indexer == nullptr)
 		throw Error("\nFailed to initialize indexing: ", E);
 
-	Index = FFMS_DoIndexing(Indexer, TrackMask, DumpMask, &GenAudioFilename, NULL, IgnoreErrors, UpdateProgress, &Progress, &E);
-	if (Index == NULL)
+	Index = FFMS_DoIndexing(Indexer, TrackMask, DumpMask, &GenAudioFilename, nullptr, IgnoreErrors, UpdateProgress, &Progress, &E);
+	if (Index == nullptr)
 		throw Error("\nIndexing error: ", E);
 
-	UpdateProgress(100, 100, 0);
+	UpdateProgress(100, 100, nullptr);
 
 	if (WriteTC) {
 		if (PrintProgress)

@@ -31,7 +31,7 @@ class FileMapping;
 struct TrackCompressionContext;
 
 class MatroskaReader : public InputStream {
-	std::auto_ptr<FileMapping> file;
+	std::unique_ptr<FileMapping> file;
 	std::string error;
 
 	static int ISRead(MatroskaReader *st, ulonglong pos, void *buffer, int count);
@@ -51,14 +51,14 @@ public:
 };
 
 class MatroskaReaderContext {
-	size_t BufferSize;
+	size_t BufferSize = 0;
 
 	void Append(const void *Data, size_t Length);
 
 public:
 	MatroskaReader Reader;
-	uint8_t *Buffer;
-	size_t FrameSize;
+	uint8_t *Buffer = nullptr;
+	size_t FrameSize = 0;
 
 	MatroskaReaderContext(const char *filename);
 	~MatroskaReaderContext();

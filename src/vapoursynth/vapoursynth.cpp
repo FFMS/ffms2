@@ -39,7 +39,7 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
 	E.BufferSize = sizeof(ErrorMsg);
 	int err;
 
-	const char *Source = vsapi->propGetData(in, "source", 0, 0);
+	const char *Source = vsapi->propGetData(in, "source", 0, nullptr);
 	const char *CacheFile = vsapi->propGetData(in, "cachefile", 0, &err);
 	int IndexMask = (int)vsapi->propGetInt(in, "indexmask", 0, &err);
 	if (err)
@@ -78,13 +78,13 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
 	}
 
 	FFMS_Index *Index = FFMS_ReadIndex(CacheFile, &E);
-	if (OverWrite || !Index || (Index && FFMS_IndexBelongsToFile(Index, Source, 0) != FFMS_ERROR_SUCCESS)) {
+	if (OverWrite || !Index || (Index && FFMS_IndexBelongsToFile(Index, Source, nullptr) != FFMS_ERROR_SUCCESS)) {
 		FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(Source, Demuxer, &E);
 		if (!Indexer) {
 			FFMS_DestroyIndex(Index);
 			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
 		}
-		if (!(Index = FFMS_DoIndexing(Indexer, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, ErrorHandling, NULL, NULL, &E)))
+		if (!(Index = FFMS_DoIndexing(Indexer, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, ErrorHandling, nullptr, nullptr, &E)))
 			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
 		if (FFMS_WriteIndex(CacheFile, Index, &E)) {
 			FFMS_DestroyIndex(Index);
@@ -110,7 +110,7 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
 	E.BufferSize = sizeof(ErrorMsg);
 	int err;
 
-	const char *Source = vsapi->propGetData(in, "source", 0, 0);
+	const char *Source = vsapi->propGetData(in, "source", 0, nullptr);
 	int Track = (int)vsapi->propGetInt(in, "track", 0, &err);
 	if (err)
 		Track = -1;
@@ -150,7 +150,7 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
 	if (Timecodes && !_stricmp(Source, Timecodes))
 		return vsapi->setError(out, "Source: Timecodes will overwrite the source");
 
-	FFMS_Index *Index = NULL;
+	FFMS_Index *Index = nullptr;
 	std::string DefaultCache;
 	if (Cache) {
 		if (CacheFile && *CacheFile) {
@@ -164,15 +164,15 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
 			Index = FFMS_ReadIndex(CacheFile, &E);
 			// Reindex if the index doesn't match the file and its name wasn't
 			// explicitly given
-			if (Index && FFMS_IndexBelongsToFile(Index, Source, 0) != FFMS_ERROR_SUCCESS) {
+			if (Index && FFMS_IndexBelongsToFile(Index, Source, nullptr) != FFMS_ERROR_SUCCESS) {
 				FFMS_DestroyIndex(Index);
-				Index = 0;
+				Index = nullptr;
 			}
 		}
 	}
 
 	if (!Index) {
-		if (!(Index = FFMS_MakeIndex(Source, 0, 0, NULL, NULL, true, NULL, NULL, &E)))
+		if (!(Index = FFMS_MakeIndex(Source, 0, 0, nullptr, nullptr, true, nullptr, nullptr, &E)))
 			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
 
 		if (Cache)
@@ -214,7 +214,7 @@ static void VS_CC GetLogLevel(const VSMap *, VSMap *out, void *, VSCore *, const
 }
 
 static void VS_CC SetLogLevel(const VSMap *in, VSMap *out, void *, VSCore *, const VSAPI *vsapi) {
-	FFMS_SetLogLevel((int)vsapi->propGetInt(in, "level", 0, 0));
+	FFMS_SetLogLevel((int)vsapi->propGetInt(in, "level", 0, nullptr));
 	vsapi->propSetInt(out, "level", FFMS_GetLogLevel(), 0);
 }
 
@@ -227,9 +227,9 @@ static void VS_CC GetVersion(const VSMap *, VSMap *out, void *, VSCore *, const 
 
 VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin *plugin) {
 	configFunc("com.vapoursynth.ffms2", "ffms2", "FFmpegSource 2 for VapourSynth", VAPOURSYNTH_API_VERSION, 1, plugin);
-	registerFunc("Index", "source:data;cachefile:data:opt;indexmask:int:opt;dumpmask:int:opt;audiofile:data:opt;errorhandling:int:opt;overwrite:int:opt;demuxer:data:opt;", CreateIndex, NULL, plugin);
-	registerFunc("Source", "source:data;track:int:opt;cache:int:opt;cachefile:data:opt;fpsnum:int:opt;fpsden:int:opt;threads:int:opt;timecodes:data:opt;seekmode:int:opt;width:int:opt;height:int:opt;resizer:data:opt;format:int:opt;", CreateSource, NULL, plugin);
-	registerFunc("GetLogLevel", "", GetLogLevel, NULL, plugin);
-	registerFunc("SetLogLevel", "level:int;", SetLogLevel, NULL, plugin);
-	registerFunc("Version", "", GetVersion, NULL, plugin);
+	registerFunc("Index", "source:data;cachefile:data:opt;indexmask:int:opt;dumpmask:int:opt;audiofile:data:opt;errorhandling:int:opt;overwrite:int:opt;demuxer:data:opt;", CreateIndex, nullptr, plugin);
+	registerFunc("Source", "source:data;track:int:opt;cache:int:opt;cachefile:data:opt;fpsnum:int:opt;fpsden:int:opt;threads:int:opt;timecodes:data:opt;seekmode:int:opt;width:int:opt;height:int:opt;resizer:data:opt;format:int:opt;", CreateSource, nullptr, plugin);
+	registerFunc("GetLogLevel", "", GetLogLevel, nullptr, plugin);
+	registerFunc("SetLogLevel", "level:int;", SetLogLevel, nullptr, plugin);
+	registerFunc("Version", "", GetVersion, nullptr, plugin);
 }

@@ -36,9 +36,9 @@ static AVIOContext *ffms_fopen(const char *filename, const char *mode) {
 	if (smode.find('w') != std::string::npos)
 		flags |= AVIO_FLAG_WRITE;
 
-	ret = avio_open2(&ctx, filename, flags, NULL, NULL);
+	ret = avio_open2(&ctx, filename, flags, nullptr, nullptr);
 	if (ret < 0)
-		return NULL;
+		return nullptr;
 
 	return ctx;
 }

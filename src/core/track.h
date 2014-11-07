@@ -53,11 +53,11 @@ private:
 	void GeneratePublicInfo();
 
 public:
-	FFMS_TrackType TT;
-	FFMS_TrackTimeBase TB;
-	int MaxBFrames;
-	bool UseDTS;
-	bool HasTS;
+	FFMS_TrackType TT = FFMS_TYPE_UNKNOWN;
+	FFMS_TrackTimeBase TB = FFMS_TrackTimeBase{0, 0};
+	int MaxBFrames = 0;
+	bool UseDTS = false;
+	bool HasTS = false;
 
 	void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, uint32_t FrameSize = 0, bool Invisible = false);
 	void AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0, uint32_t FrameSize = 0);
@@ -99,7 +99,7 @@ public:
 	iterator begin() const { return Frames.begin(); }
 	iterator end() const { return Frames.end(); }
 
-	FFMS_Track();
+	FFMS_Track() = default;
 	FFMS_Track(ZipFile &Stream);
 	FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false, bool HasTS = true);
 };

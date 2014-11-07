@@ -39,8 +39,6 @@ src_core_libffms2_la_SOURCES = \
 	src/core/matroskareader.cpp \
 	src/core/matroskareader.h \
 	src/core/matroskavideo.cpp \
-	src/core/numthreads.cpp \
-	src/core/numthreads.h \
 	src/core/track.cpp \
 	src/core/track.h \
 	src/core/utils.cpp \

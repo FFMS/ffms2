@@ -36,13 +36,13 @@ public:
         mkv_Close(MF);
     }
 
-	FFMS_Index *DoIndexing();
+	FFMS_Index *DoIndexing() override;
 
-	int GetNumberOfTracks() { return mkv_GetNumTracks(MF); }
-	FFMS_TrackType GetTrackType(int Track) { return HaaliTrackTypeToFFTrackType(mkv_GetTrackInfo(MF, Track)->Type); }
-	const char *GetTrackCodec(int Track) { return Codec[Track] ? Codec[Track]->name : NULL; }
-	const char *GetFormatName() { return "matroska"; }
-	FFMS_Sources GetSourceType() { return FFMS_SOURCE_MATROSKA; }
+	int GetNumberOfTracks() override { return mkv_GetNumTracks(MF); }
+	FFMS_TrackType GetTrackType(int Track) override { return HaaliTrackTypeToFFTrackType(mkv_GetTrackInfo(MF, Track)->Type); }
+	const char *GetTrackCodec(int Track) override { return Codec[Track] ? Codec[Track]->name : nullptr; }
+	const char *GetFormatName() override { return "matroska"; }
+	FFMS_Sources GetSourceType() override { return FFMS_SOURCE_MATROSKA; }
 };
 
 FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename)
@@ -53,7 +53,7 @@ FFMatroskaIndexer::FFMatroskaIndexer(const char *Filename)
 
 	char ErrorMessage[256];
 	MF = mkv_OpenEx(&MC.Reader, 0, 0, ErrorMessage, sizeof(ErrorMessage));
-	if (MF == NULL)
+	if (MF == nullptr)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Can't parse Matroska file: ") + ErrorMessage);
 
@@ -67,7 +67,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 	std::vector<SharedAudioContext> AudioContexts(mkv_GetNumTracks(MF), SharedAudioContext(true));
 	std::vector<SharedVideoContext> VideoContexts(mkv_GetNumTracks(MF), SharedVideoContext(true));
 
-	std::auto_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest, FFMS_SOURCE_MATROSKA, ErrorHandling));
+	std::unique_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest, FFMS_SOURCE_MATROSKA, ErrorHandling));
 
 	for (unsigned int i = 0; i < mkv_GetNumTracks(MF); i++) {
 		TrackInfo *TI = mkv_GetTrackInfo(MF, i);
@@ -75,12 +75,12 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 
 		if (!Codec[i]) continue;
 
-		AVCodecContext *CodecContext = avcodec_alloc_context3(NULL);
+		AVCodecContext *CodecContext = avcodec_alloc_context3(nullptr);
 		InitializeCodecContextFromMatroskaTrackInfo(TI, CodecContext);
 
 		try {
 			if (TI->Type == TT_VIDEO && (VideoContexts[i].Parser = av_parser_init(Codec[i]->id))) {
-				if (avcodec_open2(CodecContext, Codec[i], NULL) < 0)
+				if (avcodec_open2(CodecContext, Codec[i], nullptr) < 0)
 					throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
 						"Could not open video codec");
 
@@ -91,7 +91,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 				VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
 			}
 			else if (IndexMask & (1 << i) && TI->Type == TT_AUDIO) {
-				if (avcodec_open2(CodecContext, Codec[i], NULL) < 0)
+				if (avcodec_open2(CodecContext, Codec[i], nullptr) < 0)
 					throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
 						"Could not open audio codec");
 
@@ -123,7 +123,7 @@ FFMS_Index *FFMatroskaIndexer::DoIndexing() {
 		unsigned int CompressedFrameSize = FrameSize;
 		unsigned char TrackType = mkv_GetTrackInfo(MF, Track)->Type;
 
-		TrackCompressionContext *TCC = NULL;
+		TrackCompressionContext *TCC = nullptr;
 		if (VideoContexts[Track].Parser || (TrackType == TT_AUDIO && (IndexMask & (1 << Track)))) {
 			if (TrackType == TT_VIDEO)
 				TCC = VideoContexts[Track].TCC;

@@ -32,7 +32,7 @@ extern "C" {
 SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, PixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags) {
 	Flags |= SWS_FULL_CHR_H_INT | SWS_FULL_CHR_H_INP | SWS_ACCURATE_RND | SWS_BITEXACT;
 	SwsContext *Context = sws_alloc_context();
-	if (!Context) return 0;
+	if (!Context) return nullptr;
 
 	// 0 = limited range, 1 = full range
 	int SrcRange = SrcColorRange == AVCOL_RANGE_JPEG;
@@ -53,9 +53,9 @@ SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColo
 		sws_getCoefficients(DstColorSpace), DstRange,
 		0, 1<<16, 1<<16);
 
-	if(sws_init_context(Context, 0, 0) < 0){
+	if(sws_init_context(Context, nullptr, nullptr) < 0){
 		sws_freeContext(Context);
-		return 0;
+		return nullptr;
 	}
 
 	return Context;
@@ -190,7 +190,7 @@ PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelForma
 		return Dsts[0];
 
 	// is the input in the output?
-	std::vector<PixelFormat>::const_iterator i = std::find(Dsts.begin(), Dsts.end(), Src);
+	auto i = std::find(Dsts.begin(), Dsts.end(), Src);
 	if (i != Dsts.end())
 		return Src;
 
@@ -234,7 +234,7 @@ int parse_vp8(AVCodecParserContext *s,
 	return buf_size;
 }
 
-AVCodecParser ffms_vp8_parser = { { FFMS_ID(VP8) }, 0, NULL, parse_vp8, NULL };
+AVCodecParser ffms_vp8_parser = { { FFMS_ID(VP8) }, 0, nullptr, parse_vp8, nullptr };
 }
 
 void RegisterCustomParsers() {

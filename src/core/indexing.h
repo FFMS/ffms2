@@ -31,10 +31,10 @@ class Wave64Writer;
 class SharedVideoContext {
 	bool FreeCodecContext;
 public:
-	AVCodecContext *CodecContext;
-	AVCodecParserContext *Parser;
-	AVBitStreamFilterContext *BitStreamFilter;
-	TrackCompressionContext *TCC;
+	AVCodecContext *CodecContext = nullptr;
+	AVCodecParserContext *Parser = nullptr;
+	AVBitStreamFilterContext *BitStreamFilter = nullptr;
+	TrackCompressionContext *TCC = nullptr;
 
 	SharedVideoContext(bool FreeCodecContext);
 	~SharedVideoContext();
@@ -43,17 +43,19 @@ public:
 class SharedAudioContext {
 	bool FreeCodecContext;
 public:
-	AVCodecContext *CodecContext;
-	Wave64Writer *W64Writer;
-	int64_t CurrentSample;
-	TrackCompressionContext *TCC;
+	AVCodecContext *CodecContext = nullptr;
+	Wave64Writer *W64Writer = nullptr;
+	int64_t CurrentSample = 0;
+	TrackCompressionContext *TCC = nullptr;
 
 	SharedAudioContext(bool FreeCodecContext);
 	~SharedAudioContext();
 };
 
-struct FFMS_Index : public std::vector<FFMS_Track>, private noncopyable {
-	int RefCount;
+struct FFMS_Index : public std::vector<FFMS_Track> {
+	int RefCount = 1;
+	FFMS_Index(FFMS_Index const&) = delete;
+	FFMS_Index& operator=(FFMS_Index const&) = delete;
 public:
 	static void CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]);
 
@@ -73,16 +75,18 @@ public:
 	FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling);
 };
 
-struct FFMS_Indexer : private noncopyable {
+struct FFMS_Indexer {
 	std::map<int, FFMS_AudioProperties> LastAudioProperties;
+	FFMS_Indexer(FFMS_Indexer const&) = delete;
+	FFMS_Indexer& operator=(FFMS_Indexer const&) = delete;
 protected:
-	int IndexMask;
-	int DumpMask;
-	int ErrorHandling;
-	TIndexCallback IC;
-	void *ICPrivate;
-	TAudioNameCallback ANC;
-	void *ANCPrivate;
+	int IndexMask = 0;
+	int DumpMask = 0;
+	int ErrorHandling = FFMS_IEH_CLEAR_TRACK;
+	TIndexCallback IC = nullptr;
+	void *ICPrivate = nullptr;
+	TAudioNameCallback ANC = nullptr;
+	void *ANCPrivate = nullptr;
 	std::string SourceFile;
 	ScopedFrame DecodeFrame;
 
