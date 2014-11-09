@@ -24,7 +24,7 @@
 
 extern "C" {
 #include <libavutil/avutil.h>
-};
+}
 
 namespace {
 class FFLAVFIndexer : public FFMS_Indexer {
