@@ -37,7 +37,10 @@ extern "C" {
 #endif
 
 static bool FFmpegInited = false;
+
+#ifdef _WIN32
 bool GlobalUseUTF8Paths = false;
+#endif
 
 #ifdef FFMS_WIN_DEBUG
 
