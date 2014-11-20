@@ -26,20 +26,16 @@
 #include <cstdio>
 
 static AVIOContext *ffms_fopen(const char *filename, const char *mode) {
-	AVIOContext *ctx;
-	std::string smode(mode);
 	int flags = 0;
-	int ret;
-
-	if (smode.find('r') != std::string::npos)
+	if (strchr(mode, 'r'))
 		flags |= AVIO_FLAG_READ;
-	if (smode.find('w') != std::string::npos)
+	if (strchr(mode, 'w'))
 		flags |= AVIO_FLAG_WRITE;
 
-	ret = avio_open2(&ctx, filename, flags, nullptr, nullptr);
+	AVIOContext *ctx;
+	int ret = avio_open2(&ctx, filename, flags, nullptr, nullptr);
 	if (ret < 0)
 		return nullptr;
-
 	return ctx;
 }
 
