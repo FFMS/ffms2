@@ -23,7 +23,10 @@
 #include "utils.h"
 
 #include <cstdarg>
-#include <cstdio>
+
+extern "C" {
+#include <libavformat/avio.h>
+}
 
 static AVIOContext *ffms_fopen(const char *filename, const char *mode) {
 	int flags = 0;
@@ -48,6 +51,10 @@ FileHandle::FileHandle(const char *filename, const char *mode, int error_source,
 	if (!avio)
 		throw FFMS_Exception(error_source, FFMS_ERROR_NO_FILE,
 			"Failed to open '" + this->filename + "'");
+}
+
+FileHandle::~FileHandle() {
+	avio_close(avio);
 }
 
 void FileHandle::Seek(int64_t offset, int origin) {

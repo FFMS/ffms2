@@ -20,13 +20,10 @@
 
 #pragma once
 
-#include <cstdio>
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 
-extern "C" {
-#include <libavformat/avio.h>
-}
+struct AVIOContext;
 
 class FileHandle {
 	AVIOContext *avio;
@@ -36,7 +33,7 @@ class FileHandle {
 
 public:
 	FileHandle(const char *filename, const char *mode, int error_source, int error_cause);
-	~FileHandle() { avio_close(avio); }
+	~FileHandle();
 
 	void Seek(int64_t offset, int origin);
 	int64_t Tell();
