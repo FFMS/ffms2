@@ -41,5 +41,9 @@ public:
 
 	size_t Read(char *buffer, size_t size);
 	size_t Write(const char *buffer, size_t size);
-	int Printf(const char *fmt, ...);
+	int Printf(const char *fmt, ...)
+#ifdef __GNUC__
+	__attribute__((format(printf, 2, 3)))
+#endif
+	;
 };
