@@ -68,8 +68,8 @@ public:
 };
 
 FFMS_Index *FFLAVFIndexer::DoIndexing() {
-	std::vector<SharedAudioContext> AudioContexts(FormatContext->nb_streams, SharedAudioContext(false));
-	std::vector<SharedVideoContext> VideoContexts(FormatContext->nb_streams, SharedVideoContext(false));
+	std::vector<SharedAudioContext> AudioContexts(FormatContext->nb_streams);
+	std::vector<SharedVideoContext> VideoContexts(FormatContext->nb_streams);
 
 	auto TrackIndices = make_unique<FFMS_Index>(Filesize, Digest, FFMS_SOURCE_LAVF, ErrorHandling);
 
