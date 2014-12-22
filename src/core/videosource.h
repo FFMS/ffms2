@@ -97,6 +97,5 @@ public:
 
 FFMS_VideoSource *CreateLavfVideoSource(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode);
 FFMS_VideoSource *CreateMatroskaVideoSource(const char *SourceFile, int Track, FFMS_Index &Index, int Threads);
-FFMS_VideoSource *CreateHaaliVideoSource(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, FFMS_Sources SourceMode);
 
 #endif

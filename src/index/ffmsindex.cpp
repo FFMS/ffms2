@@ -26,7 +26,7 @@ extern "C" {
 }
 
 #ifdef _WIN32
-#include <objbase.h>
+#include <winnls.h>
 #endif
 
 #include <cstdlib>
@@ -76,7 +76,7 @@ void PrintUsage() {
 		"-d N      Set the audio decoding mask to N (mask syntax same as -t, default: 0)\n"
 		"-a NAME   Set the audio output base filename to NAME (default: input filename)\n"
 		"-s N      Set audio decoding error handling. See the documentation for details. (default: 0)\n"
-		"-m NAME   Force the use of demuxer NAME (default, lavf, matroska, haalimpeg, haaliogg)"
+		"-m NAME   Force the use of demuxer NAME (default, lavf, matroska)"
 		<< std::endl;
 }
 
@@ -115,10 +115,6 @@ void ParseCMDLine(int argc, char *argv[]) {
 				Demuxer = FFMS_SOURCE_LAVF;
 			else if (!strcmp(arg, "matroska"))
 				Demuxer = FFMS_SOURCE_MATROSKA;
-			else if (!strcmp(arg, "haalimpeg"))
-				Demuxer = FFMS_SOURCE_HAALIMPEG;
-			else if (!strcmp(arg, "haaliogg"))
-				Demuxer = FFMS_SOURCE_HAALIOGG;
 			else
 				std::cout << "Warning: invalid argument to -m (" << arg << "), using default instead" << std::endl;
 
@@ -294,13 +290,6 @@ int main(int argc, char *argv[]) {
 		std::cout << e.msg << std::endl;
 		return 1;
 	}
-
-#ifdef _WIN32
-	if (FAILED(CoInitializeEx(NULL, COINIT_MULTITHREADED))) {
-		std::cout << "COM initialization failure" << std::endl;
-		return 1;
-	}
-#endif /* _WIN32 */
 
 	FFMS_Init(0, 1);
 

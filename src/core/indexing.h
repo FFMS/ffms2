@@ -116,6 +116,5 @@ FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer = FFMS_SO
 
 FFMS_Indexer *CreateLavfIndexer(const char *Filename, AVFormatContext *FormatContext);
 FFMS_Indexer *CreateMatroskaIndexer(const char *Filename);
-FFMS_Indexer *CreateHaaliIndexer(const char *Filename, FFMS_Sources SourceMode);
 
 #endif

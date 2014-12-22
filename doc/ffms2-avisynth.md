@@ -15,10 +15,6 @@ Collecting weird clips from the internet and making them play takes more time th
 
 ## Limitations
 
- - Requires [Haali's Media Splitter][haali] if you want to seek in OGM or MPEG PS/TS.
-   Trying to do non-linear access in those containers without it will end in tears.
- - Haali's splitter requires transport streams to but cut at packed boundaries.
-   Use [TsRemux][tsremux] to fix the stream if you get an error message complaining about this.
  - Because of LAVF's demuxer, most raw streams (such as elementary h264 and other mpeg video streams) will fail to work properly.
  - FFAudioSource() will have to remake any index implicitly created by FFVideoSource() and therefore code like
    ```
@@ -37,9 +33,6 @@ Collecting weird clips from the internet and making them play takes more time th
    AudioDub(FFVideoSource(X), FFAudioSource(X))
    ```
 
-[haali]: http://haali.su/mkv/
-[tsremux]: http://forum.doom9.org/showthread.php?t=125447
-
 ## Known issues
  - Interlaced H.264 is decoded in an odd way; each field gets its own full-height frame and the fieldrate is reported as the framerate, and furthermore one of the fields (odd or even) may "jump around".
    To get the correct behavior, you can try setting fpsnum and fpsden so that the framerate is halved (may or may not work).
@@ -47,6 +40,7 @@ Collecting weird clips from the internet and making them play takes more time th
  - Decoding some M2TS files using Haali's splitter will cause massive blocking and other corruption issues.
    You can work around the issue either by remuxing the file to MKV (using GDSMux (make sure you untick "minimize output file size" in the Global settings tab) or eac3to), or (if you will be doing linear decoding only) by setting `demuxer="lavf"` in `FFIndex` and using `seekmode=0` with `FFVideoSource`.
    The cause of this issue is unknown but being investigated.
+ - Regarding the previous, now that Haali's DirectShow splitter is gone, only lavf can be used for M2TS.  Does it still need `seekmode=0` or not?
 
 ## Compatibility
 
@@ -154,8 +148,6 @@ Forces FFMS to use a given demuxer, namely one of:
  - **default**: probe for the best source module, i.e. choose automatically.
  - **lavf**: use libavformat.
  - **matroska**: use Haali's Matroska parser. Obviously only works for Matroska and WebM files.
- - **haalimpeg**: use Haali's DirectShow MPEG TS/PS parser. Only works if Haali Media Splitter is installed and only on MPEG TS/PS files (.ts/.m2ts/.mpg/.mpeg).
- - **haaliogg:** use Haali's DirectShow Ogg parser. As above, only works if Haali Media Splitter is installed, and only on Ogg files (.ogg/.ogm).
 
 You should only use this parameter if you know exactly what you're doing and exactly why you want to force another demuxer.
 

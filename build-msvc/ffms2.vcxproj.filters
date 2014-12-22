@@ -30,17 +30,11 @@
     <ClCompile Include="..\src\core\audiosource.cpp">
       <Filter>Audio</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\core\haaliaudio.cpp">
-      <Filter>Audio</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\core\lavfaudio.cpp">
       <Filter>Audio</Filter>
     </ClCompile>
     <ClCompile Include="..\src\core\matroskaaudio.cpp">
       <Filter>Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\haaliindexer.cpp">
-      <Filter>Indexing</Filter>
     </ClCompile>
     <ClCompile Include="..\src\core\indexing.cpp">
       <Filter>Indexing</Filter>
@@ -50,9 +44,6 @@
     </ClCompile>
     <ClCompile Include="..\src\core\matroskaindexer.cpp">
       <Filter>Indexing</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\haalivideo.cpp">
-      <Filter>Video</Filter>
     </ClCompile>
     <ClCompile Include="..\src\core\lavfvideo.cpp">
       <Filter>Video</Filter>
@@ -117,9 +108,6 @@
     <ClCompile Include="..\src\core\filehandle.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\core\haalicommon.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\core\audiosource.h">
@@ -141,9 +129,6 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\include\ffmscompat.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\guids.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\matroskaparser.h">
@@ -192,9 +177,6 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\filehandle.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\haalicommon.h">
       <Filter>Utils</Filter>
     </ClInclude>
   </ItemGroup>
