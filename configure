@@ -353,9 +353,6 @@ else
     avs="no"
 fi
 
-#COM functions on windows
-cc_check "objbase.h" "-lole32" "CoUninitialize();" && LDFLAGS="$LDFLAGS -lole32"
-
 #find ffmpeg
 if ${cross_prefix}pkg-config --exists libavformat libavcodec libswscale libavutil libavresample 2>$DEVNULL; then
     FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavformat libavcodec libswscale libavutil libavresample)"

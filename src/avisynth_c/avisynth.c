@@ -79,10 +79,6 @@ static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value a
         demuxer = FFMS_SOURCE_LAVF;
     else if( !strcasecmp( demuxer_str, "matroska" ) )
         demuxer = FFMS_SOURCE_MATROSKA;
-    else if( !strcasecmp( demuxer_str, "haalimpeg" ) )
-        demuxer = FFMS_SOURCE_HAALIMPEG;
-    else if( !strcasecmp( demuxer_str, "haaliogg" ) )
-        demuxer = FFMS_SOURCE_HAALIOGG;
     else
         return avs_new_value_error( "FFIndex: Invalid demuxer requested" );
 

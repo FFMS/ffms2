@@ -15,10 +15,6 @@ CORE_CXX = src/core/audiosource.cpp     \
            src/core/codectype.cpp       \
            src/core/ffms.cpp            \
            src/core/filehandle.cpp      \
-           src/core/haaliaudio.cpp      \
-           src/core/haalicommon.cpp     \
-           src/core/haaliindexer.cpp    \
-           src/core/haalivideo.cpp      \
            src/core/indexing.cpp        \
            src/core/lavfaudio.cpp       \
            src/core/lavfindexer.cpp     \

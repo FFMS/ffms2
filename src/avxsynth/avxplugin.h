@@ -49,8 +49,6 @@
 // Win32 API macros, notably the types BYTE, DWORD, ULONG, etc.
 //#include <windef.h>
 
-// COM interface macros
-//#include <objbase.h>
 #endif // LINUXIZED_VERSION
 #include <stdio.h>
 
