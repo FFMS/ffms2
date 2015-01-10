@@ -37,10 +37,6 @@ Collecting weird clips from the internet and making them play takes more time th
  - Interlaced H.264 is decoded in an odd way; each field gets its own full-height frame and the fieldrate is reported as the framerate, and furthermore one of the fields (odd or even) may "jump around".
    To get the correct behavior, you can try setting fpsnum and fpsden so that the framerate is halved (may or may not work).
    This issue is caused by libavcodec.
- - Decoding some M2TS files using Haali's splitter will cause massive blocking and other corruption issues.
-   You can work around the issue either by remuxing the file to MKV (using GDSMux (make sure you untick "minimize output file size" in the Global settings tab) or eac3to), or (if you will be doing linear decoding only) by setting `demuxer="lavf"` in `FFIndex` and using `seekmode=0` with `FFVideoSource`.
-   The cause of this issue is unknown but being investigated.
- - Regarding the previous, now that Haali's DirectShow splitter is gone, only lavf can be used for M2TS.  Does it still need `seekmode=0` or not?
 
 ## Compatibility
 
@@ -147,7 +143,6 @@ Forces FFMS to use a given demuxer, namely one of:
 
  - **default**: probe for the best source module, i.e. choose automatically.
  - **lavf**: use libavformat.
- - **matroska**: use Haali's Matroska parser. Obviously only works for Matroska and WebM files.
 
 You should only use this parameter if you know exactly what you're doing and exactly why you want to force another demuxer.
 

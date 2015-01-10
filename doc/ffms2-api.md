@@ -492,7 +492,7 @@ Deallocates the given `FFMS_Index` object and frees the memory that was allocate
 ```c++
 int FFMS_GetSourceType(FFMS_Index *Index);
 ```
-Checks which source module (libavformat or Haali's Matroska parsing library) was used when opening the file represented by the given `FFMS_Index` and returns an integer (as enumerated in [FFMS_Sources][Sources]) that represents it.
+Checks which source module was used when opening the file represented by the given `FFMS_Index` and returns an integer (as enumerated in [FFMS_Sources][Sources]) that represents it.
 
 ### FFMS_GetSourceTypeI - gets which source module was used to open the given indexer
 [GetSourceTypeI]: #ffms_getsourcetypei---gets-which-source-module-was-used-to-open-the-given-indexer
@@ -1120,12 +1120,10 @@ Used to identify errors. Should be self-explanatory.
 enum FFMS_Sources {
   FFMS_SOURCE_DEFAULT     = 0x00,
   FFMS_SOURCE_LAVF        = 0x01,
-  FFMS_SOURCE_MATROSKA    = 0x02,
 };
 ```
 Identifies source modules.
  - `FFMS_SOURCE_LAVF` - libavformat (Libav/FFmpeg)
- - `FFMS_SOURCE_MATROSKA` - Haali's BSD-licensed native Matroska parsing library
 
 ### FFMS_CPUFeatures
 [CPUFeatures]: #ffms_cpufeatures

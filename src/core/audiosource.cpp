@@ -426,11 +426,6 @@ size_t GetSeekablePacketNumber(FFMS_Track const& Frames, size_t PacketNumber) {
 	// a PTS we can seek to which will let us figure out which packet we're
 	// on before we get to the packet we actually wanted
 
-	// MatroskaAudioSource doesn't need this, as it seeks by byte offset
-	// rather than PTS. LAVF theoretically can seek by byte offset, but we
-	// don't use it as not all demuxers support it and it's broken in some of
-	// those that claim to support it
-
 	// However much we might wish to, we can't seek to before packet zero
 	if (PacketNumber == 0) return PacketNumber;
 

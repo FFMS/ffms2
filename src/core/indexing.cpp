@@ -42,7 +42,6 @@ SharedVideoContext::SharedVideoContext(bool FreeCodecContext)
 , CodecContext(NULL)
 , Parser(NULL)
 , BitStreamFilter(NULL)
-, TCC(NULL)
 {
 }
 
@@ -55,7 +54,6 @@ SharedVideoContext::~SharedVideoContext() {
 	av_parser_close(Parser);
 	if (BitStreamFilter)
 		av_bitstream_filter_close(BitStreamFilter);
-	delete TCC;
 }
 
 SharedAudioContext::SharedAudioContext(bool FreeCodecContext)
@@ -63,7 +61,6 @@ SharedAudioContext::SharedAudioContext(bool FreeCodecContext)
 , CodecContext(NULL)
 , W64Writer(NULL)
 , CurrentSample(0)
-, TCC(NULL)
 {
 }
 
@@ -74,7 +71,6 @@ SharedAudioContext::~SharedAudioContext() {
 		if (FreeCodecContext)
 			av_freep(&CodecContext);
 	}
-	delete TCC;
 }
 
 void ffms_free_sha(AVSHA **ctx) { av_freep(ctx); }
@@ -253,12 +249,6 @@ FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer) {
 
 	// Demuxer was not forced, probe for the best one to use
 	if (Demuxer == FFMS_SOURCE_DEFAULT) {
-		// Do matroska indexing instead?
-		if (!strncmp(FormatContext->iformat->name, "matroska", 8)) {
-			avformat_close_input(&FormatContext);
-			return CreateMatroskaIndexer(Filename);
-		}
-
 		return CreateLavfIndexer(Filename, FormatContext);
 	}
 
@@ -269,8 +259,6 @@ FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer) {
 	switch (Demuxer) {
 		case FFMS_SOURCE_LAVF:
 			return CreateLavfIndexer(Filename, FormatContext);
-		case FFMS_SOURCE_MATROSKA:
-			return CreateMatroskaIndexer(Filename);
 		default:
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_INVALID_ARGUMENT, "Invalid demuxer requested");
 	}

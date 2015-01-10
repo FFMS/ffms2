@@ -133,7 +133,6 @@ typedef enum FFMS_Errors {
 typedef enum FFMS_Sources {
 	FFMS_SOURCE_DEFAULT		= 0x00,
 	FFMS_SOURCE_LAVF		= 0x01,
-	FFMS_SOURCE_MATROSKA	= 0x02,
 } FFMS_Sources;
 
 typedef enum FFMS_CPUFeatures {

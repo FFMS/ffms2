@@ -67,8 +67,6 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
 	if (DemuxerStr) {
 		if (!strcmp(DemuxerStr, "lavf"))
 			Demuxer = FFMS_SOURCE_LAVF;
-		else if (!strcmp(DemuxerStr, "matroska"))
-			Demuxer = FFMS_SOURCE_MATROSKA;
 		else
 			return vsapi->setError(out, "Index: Invalid demuxer requested");
 	}

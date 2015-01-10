@@ -111,8 +111,6 @@ FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int 
 		switch (Index->Decoder) {
 			case FFMS_SOURCE_LAVF:
 				return CreateLavfVideoSource(SourceFile, Track, *Index, Threads, SeekMode);
-			case FFMS_SOURCE_MATROSKA:
-				return CreateMatroskaVideoSource(SourceFile, Track, *Index, Threads);
 			default:
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Unsupported format");
 		}
@@ -127,8 +125,6 @@ FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int 
 		switch (Index->Decoder) {
 			case FFMS_SOURCE_LAVF:
 				return CreateLavfAudioSource(SourceFile, Track, *Index, DelayMode);
-			case FFMS_SOURCE_MATROSKA:
-				return CreateMatroskaAudioSource(SourceFile, Track, *Index, DelayMode);
 			default:
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Unsupported format");
 		}
@@ -442,14 +438,14 @@ FFMS_API(int) FFMS_GetPixFmt(const char *Name) {
 
 
 FFMS_API(int) FFMS_GetPresentSources() {
-	int Sources = FFMS_SOURCE_LAVF | FFMS_SOURCE_MATROSKA;
+	int Sources = FFMS_SOURCE_LAVF;
 	return Sources;
 }
 
 FFMS_API(int) FFMS_GetEnabledSources() {
 	if (!FFmpegInited)
 		return 0;
-	int Sources = FFMS_SOURCE_LAVF | FFMS_SOURCE_MATROSKA;
+	int Sources = FFMS_SOURCE_LAVF;
 	return Sources;
 }
 
