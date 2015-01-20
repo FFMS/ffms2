@@ -137,7 +137,7 @@ void FFMS_Track::WriteTimecodes(const char *TimecodeFile) const {
 	file.Printf("# timecode format v2\n");
 	for (size_t i = 0; i < size(); ++i) {
 		if (!Frames[i].Hidden)
-			file.Printf("%g\n", (Frames[i].PTS * TB.Num) / (double)TB.Den);
+			file.Printf("%.02f\n", (Frames[i].PTS * TB.Num) / (double)TB.Den);
 	}
 }
 
