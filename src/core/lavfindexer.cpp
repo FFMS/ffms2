@@ -76,9 +76,10 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 
 		if (FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
 			AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codec->codec_id);
-			if (!VideoCodec)
-				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
-					"Video codec not found");
+			if (!VideoCodec) {
+				IndexMask &= ~(1 << i);
+				continue;
+			}
 
 			if (avcodec_open2(FormatContext->streams[i]->codec, VideoCodec, NULL) < 0)
 				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
