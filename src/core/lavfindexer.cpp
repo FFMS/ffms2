@@ -74,9 +74,9 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 	auto TrackIndices = make_unique<FFMS_Index>(Filesize, Digest, FFMS_SOURCE_LAVF, ErrorHandling);
 
 	for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {
-		TrackIndices->push_back(FFMS_Track((int64_t)FormatContext->streams[i]->time_base.num * 1000,
+		TrackIndices->emplace_back((int64_t)FormatContext->streams[i]->time_base.num * 1000,
 			FormatContext->streams[i]->time_base.den,
-			static_cast<FFMS_TrackType>(FormatContext->streams[i]->codec->codec_type)));
+			static_cast<FFMS_TrackType>(FormatContext->streams[i]->codec->codec_type));
 
 		if (IndexMask.count(i) && FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
 			AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codec->codec_id);
