@@ -52,8 +52,6 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 		Demuxer = FFMS_SOURCE_DEFAULT;
 	else if (!strcmp(DemuxerStr, "lavf"))
 		Demuxer = FFMS_SOURCE_LAVF;
-	else if (!strcmp(DemuxerStr, "matroska"))
-		Demuxer = FFMS_SOURCE_MATROSKA;
 	else
 		Env->ThrowError("FFIndex: Invalid demuxer requested");
 
