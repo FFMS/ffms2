@@ -1,0 +1,18 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# But don't mess up Unix scripts in the process
+*.sh    eol=lf
+*.in    eol=lf
+*.am    eol=lf
+*.ac    eol=lf
+*.m4    eol=lf
+# Scripts that don't have extensions...
+/install-sh     eol=lf
+/compile        eol=lf
+/configure      eol=lf
+/config.guess   eol=lf
+/config.sub     eol=lf
+/depcomp        eol=lf
+/install-sh     eol=lf
+/missing        eol=lf
