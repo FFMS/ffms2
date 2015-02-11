@@ -9,7 +9,7 @@ $(foreach VAR,CC CXX AR RANLIB RC,\
     $(eval override $(VAR) = @printf " %s\t%s\n" $(VAR) "$$@"; $($(VAR))))
 endif
 
-CORE_C   = src/core/matroskaparser.c
+CORE_C   =
 
 CORE_CXX = src/core/audiosource.cpp     \
            src/core/codectype.cpp       \
@@ -19,10 +19,6 @@ CORE_CXX = src/core/audiosource.cpp     \
            src/core/lavfaudio.cpp       \
            src/core/lavfindexer.cpp     \
            src/core/lavfvideo.cpp       \
-           src/core/matroskaaudio.cpp   \
-           src/core/matroskaindexer.cpp \
-           src/core/matroskareader.cpp  \
-           src/core/matroskavideo.cpp   \
            src/core/numthreads.cpp      \
            src/core/track.cpp           \
            src/core/utils.cpp           \
