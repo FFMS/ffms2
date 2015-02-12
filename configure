@@ -415,6 +415,11 @@ if [ "$avs" = "yes" -o "$avx" = "yes" -o "$vapoursynth" = "yes" ] ; then
 fi
 fi
 
+if [ "$avs" = "yes" ] ; then
+    CFLAGS="$CFLAGS -DFFMS_CPLUGIN_SHARED"
+    CXXFLAGS="$CXXFLAGS -DFFMS_CPLUGIN_SHARED"
+fi
+
 if [ "$pic" = "yes" ] ; then
     CFLAGS="$CFLAGS -fPIC"
     CXXFLAGS="$CXXFLAGS -fPIC"

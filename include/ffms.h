@@ -82,6 +82,64 @@
 #	define FFMS_DEPRECATED_API(ret) FFMS_EXTERN_C FFMS_DEPRECATED ret FFMS_CC
 #endif // defined(_MSC_VER)
 
+// This is necessary so the C-plugin can talk to stuff that expects
+// an MSVC dll. There seems to be no easy way to do this with LDFLAGS
+// or manipulating stdcall(s), unfortunately.
+#if defined(FFMS_CPLUGIN_SHARED)
+#define FFMS_CancelIndexing _FFMS_CancelIndexing
+#define FFMS_CreateAudioSource _FFMS_CreateAudioSource
+#define FFMS_CreateIndexer _FFMS_CreateIndexer
+#define FFMS_CreateIndexerWithDemuxer _FFMS_CreateIndexerWithDemuxer
+#define FFMS_CreateResampleOptions _FFMS_CreateResampleOptions
+#define FFMS_CreateVideoSource _FFMS_CreateVideoSource
+#define FFMS_DefaultAudioFilename _FFMS_DefaultAudioFilename
+#define FFMS_DestroyAudioSource _FFMS_DestroyAudioSource
+#define FFMS_DestroyIndex _FFMS_DestroyIndex
+#define FFMS_DestroyResampleOptions _FFMS_DestroyResampleOptions
+#define FFMS_DestroyVideoSource _FFMS_DestroyVideoSource
+#define FFMS_DoIndexing _FFMS_DoIndexing
+#define FFMS_GetAudio _FFMS_GetAudio
+#define FFMS_GetAudioProperties _FFMS_GetAudioProperties
+#define FFMS_GetCodecNameI _FFMS_GetCodecNameI
+#define FFMS_GetEnabledSources _FFMS_GetEnabledSources
+#define FFMS_GetErrorHandling _FFMS_GetErrorHandling
+#define FFMS_GetFirstIndexedTrackOfType _FFMS_GetFirstIndexedTrackOfType
+#define FFMS_GetFirstTrackOfType _FFMS_GetFirstTrackOfType
+#define FFMS_GetFormatNameI _FFMS_GetFormatNameI
+#define FFMS_GetFrame _FFMS_GetFrame
+#define FFMS_GetFrameByTime _FFMS_GetFrameByTime
+#define FFMS_GetFrameInfo _FFMS_GetFrameInfo
+#define FFMS_GetLogLevel _FFMS_GetLogLevel
+#define FFMS_GetNumFrames _FFMS_GetNumFrames
+#define FFMS_GetNumTracks _FFMS_GetNumTracks
+#define FFMS_GetNumTracksI _FFMS_GetNumTracksI
+#define FFMS_GetPixFmt _FFMS_GetPixFmt
+#define FFMS_GetPresentSources _FFMS_GetPresentSources
+#define FFMS_GetSourceType _FFMS_GetSourceType
+#define FFMS_GetSourceTypeI _FFMS_GetSourceTypeI
+#define FFMS_GetTimeBase _FFMS_GetTimeBase
+#define FFMS_GetTrackFromAudio _FFMS_GetTrackFromAudio
+#define FFMS_GetTrackFromIndex _FFMS_GetTrackFromIndex
+#define FFMS_GetTrackFromVideo _FFMS_GetTrackFromVideo
+#define FFMS_GetTrackType _FFMS_GetTrackType
+#define FFMS_GetTrackTypeI _FFMS_GetTrackTypeI
+#define FFMS_GetVersion _FFMS_GetVersion
+#define FFMS_GetVideoProperties _FFMS_GetVideoProperties
+#define FFMS_IndexBelongsToFile _FFMS_IndexBelongsToFile
+#define FFMS_Init _FFMS_Init
+#define FFMS_MakeIndex _FFMS_MakeIndex
+#define FFMS_ReadIndex _FFMS_ReadIndex
+#define FFMS_ResetInputFormatV _FFMS_ResetInputFormatV
+#define FFMS_ResetOutputFormatV _FFMS_ResetOutputFormatV
+#define FFMS_SetInputFormatV _FFMS_SetInputFormatV
+#define FFMS_SetLogLevel _FFMS_SetLogLevel
+#define FFMS_SetOutputFormatA _FFMS_SetOutputFormatA
+#define FFMS_SetOutputFormatV2 _FFMS_SetOutputFormatV2
+#define FFMS_WriteIndex _FFMS_WriteIndex
+#define FFMS_WriteTimecodes _FFMS_WriteTimecodes
+#endif
+
+
 
 // we now return you to your regularly scheduled programming.
 
