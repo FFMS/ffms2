@@ -420,6 +420,11 @@ if [ "$avs" = "yes" ] ; then
     CXXFLAGS="$CXXFLAGS -DFFMS_CPLUGIN_SHARED"
 fi
 
+if [ "$avx" = "yes" -a "$avs" = "no" ] ; then
+    # the AvxSynth plugin doesn't need the LoadCPlugin line
+    sed '3s/^/#/' etc/FFMS2.avsi > etc/FFMS2-avx.avsi
+fi
+
 if [ "$pic" = "yes" ] ; then
     CFLAGS="$CFLAGS -fPIC"
     CXXFLAGS="$CXXFLAGS -fPIC"
