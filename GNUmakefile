@@ -128,6 +128,7 @@ else
 	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(libdir))
 ifeq ($(AVXSYNTH), yes)
 	install -d $(DESTDIR)$(avxplugindir)
+	install -m 644 etc/FFMS2.avsi $(DESTDIR)$(avxplugindir)
 	$(if $(SONAME), ln -f -s $(libdir)/$(SONAME) $(DESTDIR)$(avxplugindir)/libavxffms2.so)
 endif
 ifeq ($(VAPOURSYNTH), yes)
