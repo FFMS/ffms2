@@ -13,7 +13,7 @@ echo "  --enable-debug            adds -g, doesn't strip"
 echo "  --enable-gprof            adds -pg, doesn't strip"
 echo "  --enable-pic              build position-independent code"
 echo "  --enable-shared           build libffms2.so"
-echo "  --optlevel=olev           GCC optimization level [0-3, s, fast] (0)"
+echo "  --optlevel=olev           GCC optimization level [0-3, s, fast] (2)"
 echo "  --avx-plugindir=PLUGINDIR location of AvxSynth plugin directory,
                                      default is [libdir]/avxsynth"
 echo "  --vs-plugindir=PLUGINDIR  location of VapourSynth plugin directory,
@@ -166,7 +166,7 @@ CXXFLAGS="$CXXFLAGS -Wall -D__STDC_CONSTANT_MACROS"
 LDFLAGS="$LDFLAGS"
 SOFLAGS="$SOFLAGS"
 HAVE_GETOPT_LONG=1
-olev="0"
+olev="2"
 cross_prefix=""
 
 EXE=""
