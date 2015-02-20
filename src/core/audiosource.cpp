@@ -118,7 +118,6 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Audio delay compensation must be relative to a video track");
 
-	int64_t Delay = 0;
 	if (DelayMode == FFMS_DELAY_FIRST_VIDEO_TRACK) {
 		for (size_t i = 0; i < Index.size(); ++i) {
 			if (Index[i].TT == FFMS_TYPE_VIDEO && !Index[i].empty()) {
