@@ -115,7 +115,7 @@ CPPFLAGS="$CPPFLAGS -D__STDC_CONSTANT_MACROS"
 
 dnl As of 0eec06ed8747923faa6a98e474f224d922dc487d ffmpeg only adds -lrt to lavc's
 dnl LIBS, but lavu needs it, so move it to the end if it's present
-LIBAV_LIBS=$(echo $LIBAV_LIBS | sed 's/\(.*\) -lrt\(.*\)/\1\2 -lrt/')
+LIBAV_LIBS=$(echo $LIBAV_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
 
 AC_SUBST([LIBAV_CFLAGS])
 AC_SUBST([LIBAV_LIBS])
@@ -204,7 +204,7 @@ AS_IF([test x$enable_avresample != xno],
        AC_DEFINE([WITH_AVRESAMPLE], [1], [Use avresample])])
 
 dnl See similar thing for LIBAV_LIBS
-AVRESAMPLE_LIBS=$(echo $AVRESAMPLE_LIBS | sed 's/\(.*\) -lrt\(.*\)/\1\2 -lrt/')
+AVRESAMPLE_LIBS=$(echo $AVRESAMPLE_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
 
 AC_SUBST([AVRESAMPLE_CFLAGS])
 AC_SUBST([AVRESAMPLE_LIBS])
