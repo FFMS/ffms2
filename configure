@@ -16014,7 +16014,7 @@ $as_echo "yes" >&6; }
 fi
 CPPFLAGS="$CPPFLAGS -D__STDC_CONSTANT_MACROS"
 
-LIBAV_LIBS=$(echo $LIBAV_LIBS | sed 's/\(.*\) -lrt\(.*\)/\1\2 -lrt/')
+LIBAV_LIBS=$(echo $LIBAV_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
 
 
 
@@ -16245,7 +16245,7 @@ $as_echo "#define WITH_AVRESAMPLE 1" >>confdefs.h
 
 fi
 
-AVRESAMPLE_LIBS=$(echo $AVRESAMPLE_LIBS | sed 's/\(.*\) -lrt\(.*\)/\1\2 -lrt/')
+AVRESAMPLE_LIBS=$(echo $AVRESAMPLE_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
 
 
 
