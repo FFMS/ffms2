@@ -22,7 +22,6 @@
 
 #include "audiosource.h"
 #include "indexing.h"
-#include "haalicommon.h"
 #include "videosource.h"
 #include "videoutils.h"
 
@@ -38,8 +37,6 @@ extern "C" {
 #endif
 
 static bool FFmpegInited = false;
-bool HasHaaliMPEG = false;
-bool HasHaaliOGG = false;
 bool GlobalUseUTF8Paths = false;
 
 #ifdef FFMS_WIN_DEBUG
@@ -93,13 +90,6 @@ FFMS_API(void) FFMS_Init(int, int UseUTF8Paths) {
 #else
 		av_log_set_level(AV_LOG_QUIET);
 #endif
-#ifdef HAALISOURCE
-		CComPtr<IMMContainer> pMMC;
-		HasHaaliMPEG = !FAILED(pMMC.CoCreateInstance(HAALI_MPEG_PARSER));
-		pMMC = NULL;
-		HasHaaliOGG = !FAILED(pMMC.CoCreateInstance(HAALI_OGG_PARSER));
-		pMMC = NULL;
-#endif
 		FFmpegInited = true;
 	}
 }
@@ -121,18 +111,6 @@ FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int 
 		switch (Index->Decoder) {
 			case FFMS_SOURCE_LAVF:
 				return CreateLavfVideoSource(SourceFile, Track, *Index, Threads, SeekMode);
-			case FFMS_SOURCE_MATROSKA:
-				return CreateMatroskaVideoSource(SourceFile, Track, *Index, Threads);
-#ifdef HAALISOURCE
-			case FFMS_SOURCE_HAALIMPEG:
-				if (HasHaaliMPEG)
-					return CreateHaaliVideoSource(SourceFile, Track, *Index, Threads, FFMS_SOURCE_HAALIMPEG);
-				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali MPEG/TS source unavailable");
-			case FFMS_SOURCE_HAALIOGG:
-				if (HasHaaliOGG)
-					return CreateHaaliVideoSource(SourceFile, Track, *Index, Threads, FFMS_SOURCE_HAALIOGG);
-				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali OGG/OGM source unavailable");
-#endif
 			default:
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Unsupported format");
 		}
@@ -147,18 +125,6 @@ FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int 
 		switch (Index->Decoder) {
 			case FFMS_SOURCE_LAVF:
 				return CreateLavfAudioSource(SourceFile, Track, *Index, DelayMode);
-			case FFMS_SOURCE_MATROSKA:
-				return CreateMatroskaAudioSource(SourceFile, Track, *Index, DelayMode);
-#ifdef HAALISOURCE
-			case FFMS_SOURCE_HAALIMPEG:
-				if (HasHaaliMPEG)
-					return CreateHaaliAudioSource(SourceFile, Track, *Index, FFMS_SOURCE_HAALIMPEG, DelayMode);
-				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali MPEG/TS source unavailable");
-			case FFMS_SOURCE_HAALIOGG:
-				if (HasHaaliOGG)
-					return CreateHaaliAudioSource(SourceFile, Track, *Index, FFMS_SOURCE_HAALIOGG, DelayMode);
-				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali OGG/OGM source unavailable");
-#endif
 			default:
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Unsupported format");
 		}
@@ -472,21 +438,14 @@ FFMS_API(int) FFMS_GetPixFmt(const char *Name) {
 
 
 FFMS_API(int) FFMS_GetPresentSources() {
-	int Sources = FFMS_SOURCE_LAVF | FFMS_SOURCE_MATROSKA;
-#ifdef HAALISOURCE
-	Sources |= FFMS_SOURCE_HAALIMPEG | FFMS_SOURCE_HAALIOGG;
-#endif
+	int Sources = FFMS_SOURCE_LAVF;
 	return Sources;
 }
 
 FFMS_API(int) FFMS_GetEnabledSources() {
 	if (!FFmpegInited)
 		return 0;
-	int Sources = FFMS_SOURCE_LAVF | FFMS_SOURCE_MATROSKA;
-	if (HasHaaliMPEG)
-		Sources |= FFMS_SOURCE_HAALIMPEG;
-	if (HasHaaliOGG)
-		Sources |= FFMS_SOURCE_HAALIOGG;
+	int Sources = FFMS_SOURCE_LAVF;
 	return Sources;
 }
 

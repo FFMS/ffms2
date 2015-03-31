@@ -90,17 +90,6 @@ AC_LANG_POP([C++])
 
 CHECK_ZLIB
 
-AC_MSG_CHECKING([for CoUninitialize in -lole32])
-_LIBS="$LIBS"
-LIBS="-lole32 $LIBS"
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-               #include <objbase.h>
-               ]],[[
-                   CoUninitialize();
-                   return 0;
-               ]])], [AC_MSG_RESULT([yes])], [LIBS="$_LIBS"; AC_MSG_RESULT([no])])
-
-
 dnl Save CFLAGS and LIBS for later, as anything else we add will be from pkg-config
 dnl and thus should be separate in our .pc file.
 _CFLAGS="$CFLAGS"

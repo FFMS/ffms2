@@ -26,6 +26,4 @@ extern "C" {
 
 #include "ffmscompat.h"
 
-FFMS_TrackType HaaliTrackTypeToFFTrackType(int TT);
-FFMS_CodecID MatroskaToFFCodecID(char *Codec, void *CodecPrivate, unsigned int FourCC = 0, unsigned int BitsPerSample = 0);
 const char *GetLAVCSampleFormatName(AVSampleFormat s);

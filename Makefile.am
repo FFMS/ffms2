@@ -19,12 +19,6 @@ src_core_libffms2_la_SOURCES = \
 	src/core/ffms.cpp \
 	src/core/filehandle.cpp \
 	src/core/filehandle.h \
-	src/core/guids.h \
-	src/core/haaliaudio.cpp \
-	src/core/haalicommon.cpp \
-	src/core/haalicommon.h \
-	src/core/haaliindexer.cpp \
-	src/core/haalivideo.cpp \
 	src/core/indexing.cpp \
 	src/core/indexing.h \
 	src/core/lavfaudio.cpp \

@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (20 << 16) | (0 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (21 << 16) | (0 << 8) | 0)
 
 #include <stdint.h>
 
@@ -133,9 +133,6 @@ typedef enum FFMS_Errors {
 typedef enum FFMS_Sources {
 	FFMS_SOURCE_DEFAULT		= 0x00,
 	FFMS_SOURCE_LAVF		= 0x01,
-	FFMS_SOURCE_MATROSKA	= 0x02,
-	FFMS_SOURCE_HAALIMPEG	= 0x04,
-	FFMS_SOURCE_HAALIOGG	= 0x08
 } FFMS_Sources;
 
 typedef enum FFMS_CPUFeatures {

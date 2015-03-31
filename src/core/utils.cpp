@@ -56,34 +56,6 @@ int FFMS_Exception::CopyOut(FFMS_ErrorInfo *ErrorInfo) const {
 	return (_ErrorType << 16) | _SubType;
 }
 
-TrackCompressionContext::TrackCompressionContext(MatroskaFile *MF, TrackInfo *TI, unsigned int Track)
-: CS(NULL)
-, CompressedPrivateData(NULL)
-, CompressedPrivateDataSize(0)
-, CompressionMethod(TI->CompMethod)
-{
-	if (CompressionMethod == COMP_ZLIB) {
-		char ErrorMessage[512];
-		CS = cs_Create(MF, Track, ErrorMessage, sizeof(ErrorMessage));
-		if (CS == NULL) {
-			std::ostringstream buf;
-			buf << "Can't create MKV track decompressor: " << ErrorMessage;
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-		}
-	} else if (CompressionMethod == COMP_PREPEND) {
-		CompressedPrivateData		= TI->CompMethodPrivate;
-		CompressedPrivateDataSize	= TI->CompMethodPrivateSize;
-	} else {
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			"Can't create MKV track decompressor: unknown or unsupported compression method");
-	}
-}
-
-TrackCompressionContext::~TrackCompressionContext() {
-	if (CS)
-		cs_Destroy(CS);
-}
-
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo) {
 	if (ErrorInfo) {
 		ErrorInfo->ErrorType = FFMS_ERROR_SUCCESS;
@@ -145,47 +117,6 @@ void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
 
 	if (AP.ChannelLayout == 0)
 		AP.ChannelLayout = av_get_default_channel_layout(AP.Channels);
-}
-
-void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext) {
-	uint8_t *PrivateDataSrc = static_cast<uint8_t *>(TI->CodecPrivate);
-	size_t PrivateDataSize = TI->CodecPrivateSize;
-	size_t BIHSize = sizeof(FFMS_BITMAPINFOHEADER); // 40 bytes
-	if (!strncmp(TI->CodecID, "V_MS/VFW/FOURCC", 15) && PrivateDataSize >= BIHSize) {
-		// For some reason UTVideo requires CodecContext->codec_tag (i.e. the FourCC) to be set.
-		// Fine, it can't hurt to set it, so let's go find it.
-		// In a V_MS/VFW/FOURCC track, the codecprivate starts with a BITMAPINFOHEADER. If you treat that struct
-		// as an array of uint32_t, the biCompression member (that's the FourCC) can be found at offset 4.
-		// Therefore the following derp.
-		CodecContext->codec_tag = reinterpret_cast<uint32_t *>(PrivateDataSrc)[4];
-
-		// Now skip copying the BITMAPINFOHEADER into the extradata, because lavc doesn't expect it to be there.
-		if (PrivateDataSize <= BIHSize) {
-			PrivateDataSrc = NULL;
-			PrivateDataSize = 0;
-		}
-		else {
-			PrivateDataSrc += BIHSize;
-			PrivateDataSize -= BIHSize;
-		}
-	}
-	// I think you might need to do some special handling for A_MS/ACM extradata too,
-	// but I don't think anyone actually uses that.
-
-	if (PrivateDataSrc && PrivateDataSize > 0) {
-		CodecContext->extradata = static_cast<uint8_t *>(av_mallocz(PrivateDataSize + FF_INPUT_BUFFER_PADDING_SIZE));
-		CodecContext->extradata_size = PrivateDataSize;
-		memcpy(CodecContext->extradata, PrivateDataSrc, PrivateDataSize);
-	}
-
-	if (TI->Type == TT_VIDEO) {
-		CodecContext->coded_width = TI->AV.Video.PixelWidth;
-		CodecContext->coded_height = TI->AV.Video.PixelHeight;
-	} else if (TI->Type == TT_AUDIO) {
-		CodecContext->sample_rate = mkv_TruncFloat(TI->AV.Audio.SamplingFreq);
-		CodecContext->bits_per_coded_sample = TI->AV.Audio.BitDepth;
-		CodecContext->channels = TI->AV.Audio.Channels;
-	}
 }
 
 // All this filename chikanery that follows is supposed to make sure both local

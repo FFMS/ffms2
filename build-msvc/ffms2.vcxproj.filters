@@ -30,17 +30,8 @@
     <ClCompile Include="..\src\core\audiosource.cpp">
       <Filter>Audio</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\core\haaliaudio.cpp">
-      <Filter>Audio</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\core\lavfaudio.cpp">
       <Filter>Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\matroskaaudio.cpp">
-      <Filter>Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\haaliindexer.cpp">
-      <Filter>Indexing</Filter>
     </ClCompile>
     <ClCompile Include="..\src\core\indexing.cpp">
       <Filter>Indexing</Filter>
@@ -48,16 +39,7 @@
     <ClCompile Include="..\src\core\lavfindexer.cpp">
       <Filter>Indexing</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\core\matroskaindexer.cpp">
-      <Filter>Indexing</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\haalivideo.cpp">
-      <Filter>Video</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\core\lavfvideo.cpp">
-      <Filter>Video</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\matroskavideo.cpp">
       <Filter>Video</Filter>
     </ClCompile>
     <ClCompile Include="..\src\core\videosource.cpp">
@@ -67,9 +49,6 @@
       <Filter>API</Filter>
     </ClCompile>
     <ClCompile Include="..\src\core\codectype.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\matroskaparser.c">
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="..\src\core\numthreads.cpp">
@@ -105,9 +84,6 @@
     <ClCompile Include="..\src\vapoursynth\vapoursynth.cpp">
       <Filter>VapourSynth</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\core\matroskareader.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\core\track.cpp">
       <Filter>Indexing</Filter>
     </ClCompile>
@@ -115,9 +91,6 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="..\src\core\filehandle.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\haalicommon.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
@@ -134,19 +107,10 @@
     <ClInclude Include="..\include\ffms.h">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\core\coparser.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\core\codectype.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\include\ffmscompat.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\guids.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\matroskaparser.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\numthreads.h">
@@ -182,9 +146,6 @@
     <ClInclude Include="..\src\vapoursynth\VapourSynth.h">
       <Filter>VapourSynth</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\core\matroskareader.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\core\track.h">
       <Filter>Indexing</Filter>
     </ClInclude>
@@ -192,9 +153,6 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\filehandle.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\haalicommon.h">
       <Filter>Utils</Filter>
     </ClInclude>
   </ItemGroup>

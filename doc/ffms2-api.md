@@ -34,7 +34,6 @@ Building FFmpeg with MinGW and FFMS2 with VC++ requires building FFmpeg with `--
 You'll have to manually add the location which you installed the headers and libraries to to VC++'s search paths (and if you're building both 32-bit and 64-bit, be sure to add the correct ones).
 
 To build everything with VC++, run `build-win-deps.sh` from a msys shell to build all of the dependencies, then open the solution and hit build.
-If you're using an Express Edition, you'll need to undefine HAALISOURCE, as that requires ATL.
 If you're using a pre-2013 version of Visual Studio, you'll need [c99-to-c89][c99-to-c89] on your msys path to be able to compile FFmpeg.
 
 [libav]: http://www.libav.org
@@ -47,23 +46,8 @@ If you don't want to know anything about anything and just want to open some vid
 
 ```c++
 #include <ffms.h>
-#ifdef _WIN32
-#include <objbase.h>
-#endif
 
 int main (...) {
-  /* If you are on Windows you should first initialize COM, or all MPEG-TS/PS and OGM
-  files may return an error when you try to open them (if the library was built
-  with HAALISOURCE defined). All other formats will work normally. */
-#ifdef _WIN32
-  bool com_inited = false;
-  HRESULT res = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-  if (SUCCEEDED(res))
-    com_inited = true;
-  else if (res != RPC_E_CHANGED_MODE) {
-    /* com initialization failed, handle error */
-  }
-#endif
 
   /* Initialize the library itself. */
   FFMS_Init(0, 0);
@@ -144,10 +128,6 @@ int main (...) {
 
   /* now it's time to clean up */
   FFMS_DestroyVideoSource(videosource);
-#ifdef _WIN32
-  if (com_inited)
-    CoUninitialize();
-#endif
 
   return 0;
 }
@@ -212,26 +192,6 @@ void FFMS_Init(int Unused, int UseUTF8Paths);
 ```
 Initializes the FFMS2 library.
 This function must be called once at the start of your program, before doing any other FFMS2 function calls.
-
-If you are on Windows, you should also initialize COM before calling this function, since the library might have been built with `HAALISOURCE`.
-If it was indeed built with `HAALISOURCE` but you do not intialize COM, all MPEG-TS/PS and OGM files will cause an error when you try to open them.
-All other file types will work normally.
-Typically, you'd initialize COM something like the following:
-```c++
-#include <objbase.h>
-/* later on, in the actual code... */
-bool com_inited = false;
-HRESULT res = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-if (SUCCEEDED(res))
-  com_inited = true;
-else if (res != RPC_E_CHANGED_MODE) {
-  /* com initialization failed, handle error */
-}
-/* your code goes here */
-/* and after you're done: */
-if (com_inited)
-  CoUninitialize();
-```
 
 #### Arguments
 
@@ -532,7 +492,7 @@ Deallocates the given `FFMS_Index` object and frees the memory that was allocate
 ```c++
 int FFMS_GetSourceType(FFMS_Index *Index);
 ```
-Checks which source module (libavformat, Haali's Matroska parsing library, or Haali's DirectShow splitter) was used when opening the file represented by the given `FFMS_Index` and returns an integer (as enumerated in [FFMS_Sources][Sources]) that represents it.
+Checks which source module was used when opening the file represented by the given `FFMS_Index` and returns an integer (as enumerated in [FFMS_Sources][Sources]) that represents it.
 
 ### FFMS_GetSourceTypeI - gets which source module was used to open the given indexer
 [GetSourceTypeI]: #ffms_getsourcetypei---gets-which-source-module-was-used-to-open-the-given-indexer
@@ -1160,16 +1120,10 @@ Used to identify errors. Should be self-explanatory.
 enum FFMS_Sources {
   FFMS_SOURCE_DEFAULT     = 0x00,
   FFMS_SOURCE_LAVF        = 0x01,
-  FFMS_SOURCE_MATROSKA    = 0x02,
-  FFMS_SOURCE_HAALIMPEG   = 0x04,
-  FFMS_SOURCE_HAALIOGG    = 0x08
 };
 ```
 Identifies source modules.
  - `FFMS_SOURCE_LAVF` - libavformat (Libav/FFmpeg)
- - `FFMS_SOURCE_MATROSKA` - Haali's BSD-licensed native Matroska parsing library
- - `FFMS_SOURCE_HAALIMPEG` - Haali's closed-source DirectShow splitter (MPEG TS/PS)
- - `FFMS_SOURCE_HAALIOGG` - Haali's closed-source DirectShow splitter (Ogg/OGM)
 
 ### FFMS_CPUFeatures
 [CPUFeatures]: #ffms_cpufeatures
