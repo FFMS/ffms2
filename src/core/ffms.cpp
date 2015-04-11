@@ -367,10 +367,10 @@ FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorIn
 	return FFMS_CreateIndexerWithDemuxer(SourceFile, FFMS_SOURCE_DEFAULT, ErrorInfo);
 }
 
-FFMS_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int Demuxer, FFMS_ErrorInfo *ErrorInfo) {
+FFMS_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
-		return CreateIndexer(SourceFile, static_cast<FFMS_Sources>(Demuxer));
+		return CreateIndexer(SourceFile);
 	} catch (FFMS_Exception &e) {
 		e.CopyOut(ErrorInfo);
 		return nullptr;

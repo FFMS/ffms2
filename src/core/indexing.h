@@ -114,7 +114,7 @@ public:
 	virtual const char *GetFormatName() = 0;
 };
 
-FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer = FFMS_SOURCE_DEFAULT);
+FFMS_Indexer *CreateIndexer(const char *Filename);
 
 FFMS_Indexer *CreateLavfIndexer(const char *Filename, AVFormatContext *FormatContext);
 
