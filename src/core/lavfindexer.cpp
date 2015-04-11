@@ -160,7 +160,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			ParseVideoPacket(VideoContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible);
 
 			TrackInfo.AddVideoFrame(PTS, RepeatPict, KeyFrame,
-				FrameType, Packet.pos, 0, Invisible);
+				FrameType, Packet.pos, Invisible);
 		}
 		else if (FormatContext->streams[Track]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
 			// For video seeking timestamps are used only if all packets have

@@ -33,7 +33,6 @@ struct FrameInfo {
 	int64_t FilePos;
 	int64_t SampleStart;
 	uint32_t SampleCount;
-	uint32_t FrameSize;
 	size_t OriginalPos;
 	int FrameType;
 	int RepeatPict;
@@ -59,8 +58,8 @@ public:
 	bool UseDTS = false;
 	bool HasTS = false;
 
-	void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, uint32_t FrameSize = 0, bool Invisible = false);
-	void AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0, uint32_t FrameSize = 0);
+	void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, bool Invisible = false);
+	void AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0);
 
 	void FinalizeTrack();
 
