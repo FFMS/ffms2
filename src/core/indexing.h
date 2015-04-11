@@ -34,7 +34,6 @@ public:
 	AVCodecContext *CodecContext = nullptr;
 	AVCodecParserContext *Parser = nullptr;
 	AVBitStreamFilterContext *BitStreamFilter = nullptr;
-	TrackCompressionContext *TCC = nullptr;
 
 	SharedVideoContext(bool FreeCodecContext);
 	~SharedVideoContext();
@@ -46,7 +45,6 @@ public:
 	AVCodecContext *CodecContext = nullptr;
 	Wave64Writer *W64Writer = nullptr;
 	int64_t CurrentSample = 0;
-	TrackCompressionContext *TCC = nullptr;
 
 	SharedAudioContext(bool FreeCodecContext);
 	~SharedAudioContext();
@@ -119,7 +117,5 @@ public:
 FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer = FFMS_SOURCE_DEFAULT);
 
 FFMS_Indexer *CreateLavfIndexer(const char *Filename, AVFormatContext *FormatContext);
-FFMS_Indexer *CreateMatroskaIndexer(const char *Filename);
-FFMS_Indexer *CreateHaaliIndexer(const char *Filename, FFMS_Sources SourceMode);
 
 #endif

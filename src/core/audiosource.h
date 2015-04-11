@@ -114,7 +114,5 @@ public:
 size_t GetSeekablePacketNumber(FFMS_Track const& Frames, size_t PacketNumber);
 
 FFMS_AudioSource *CreateLavfAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
-FFMS_AudioSource *CreateMatroskaAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
-FFMS_AudioSource *CreateHaaliAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, FFMS_Sources SourceMode, int DelayMode);
 
 #endif

@@ -15,30 +15,14 @@ src_core_libffms2_la_LIBADD = @LIBAV_LIBS@ @AVRESAMPLE_LIBS@ @ZLIB_LDFLAGS@ -lz 
 src_core_libffms2_la_SOURCES = \
 	src/core/audiosource.cpp \
 	src/core/audiosource.h \
-	src/core/codectype.cpp \
-	src/core/codectype.h \
-	src/core/coparser.h \
 	src/core/ffms.cpp \
 	src/core/filehandle.cpp \
 	src/core/filehandle.h \
-	src/core/guids.h \
-	src/core/haaliaudio.cpp \
-	src/core/haalicommon.cpp \
-	src/core/haalicommon.h \
-	src/core/haaliindexer.cpp \
-	src/core/haalivideo.cpp \
 	src/core/indexing.cpp \
 	src/core/indexing.h \
 	src/core/lavfaudio.cpp \
 	src/core/lavfindexer.cpp \
 	src/core/lavfvideo.cpp \
-	src/core/matroskaaudio.cpp \
-	src/core/matroskaindexer.cpp \
-	src/core/matroskaparser.c \
-	src/core/matroskaparser.h \
-	src/core/matroskareader.cpp \
-	src/core/matroskareader.h \
-	src/core/matroskavideo.cpp \
 	src/core/track.cpp \
 	src/core/track.h \
 	src/core/utils.cpp \

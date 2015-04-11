@@ -22,7 +22,6 @@
 #define UTILS_H
 
 #include "ffms.h"
-#include "matroskaparser.h"
 
 extern "C" {
 #include <libavutil/mem.h>
@@ -44,21 +43,6 @@ extern "C" {
 #include <vector>
 
 const int64_t ffms_av_nopts_value = static_cast<int64_t>(UINT64_C(0x8000000000000000));
-
-// used for matroska<->ffmpeg codec ID mapping to avoid Win32 dependency
-typedef struct FFMS_BITMAPINFOHEADER {
-	uint32_t      biSize;
-	int32_t       biWidth;
-	int32_t       biHeight;
-	uint16_t      biPlanes;
-	uint16_t      biBitCount;
-	uint32_t      biCompression;
-	uint32_t      biSizeImage;
-	int32_t       biXPelsPerMeter;
-	int32_t       biYPelsPerMeter;
-	uint32_t      biClrUsed;
-	uint32_t      biClrImportant;
-} FFMS_BITMAPINFOHEADER;
 
 class FFMS_Exception : public std::exception {
 	std::string _Message;
@@ -147,27 +131,11 @@ typedef unknown_size<AVAudioResampleContext, avresample_alloc_context, avresampl
 typedef struct {} FFResampleContext;
 #endif
 
-inline void DeleteMatroskaCodecContext(AVCodecContext *CodecContext) {
-	avcodec_close(CodecContext);
-	av_freep(&CodecContext);
-}
-
-struct TrackCompressionContext {
-	CompressedStream *CS = nullptr;
-	void *CompressedPrivateData = nullptr;
-	unsigned CompressedPrivateDataSize = 0;
-	unsigned CompressionMethod;
-
-	TrackCompressionContext(MatroskaFile *MF, TrackInfo *TI, unsigned int Track);
-	~TrackCompressionContext();
-};
-
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
 bool AudioFMTIsFloat(AVSampleFormat FMT);
 void InitNullPacket(AVPacket &pkt);
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);
 
-void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext);
 std::wstring widen_path(const char *s);
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
 
