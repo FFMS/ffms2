@@ -22,11 +22,11 @@
 
 namespace {
 class FFLAVFVideo : public FFMS_VideoSource {
-	AVFormatContext *FormatContext;
+	AVFormatContext *FormatContext = nullptr;
 	int SeekMode;
 	FFSourceResources<FFMS_VideoSource> Res;
-	bool SeekByPos;
-	int PosOffset;
+	bool SeekByPos = false;
+	int PosOffset = 0;
 
 	void DecodeNextFrame(int64_t *PTS, int64_t *Pos);
 	bool SeekTo(int n, int SeekOffset);
@@ -79,11 +79,8 @@ void FFLAVFVideo::Free(bool CloseCodec) {
 FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	int Threads, int SeekMode)
 : FFMS_VideoSource(SourceFile, Index, Track, Threads)
-, FormatContext(nullptr)
 , SeekMode(SeekMode)
 , Res(this)
-, SeekByPos(false)
-, PosOffset(0)
 {
 	LAVFOpenFile(SourceFile, FormatContext);
 
