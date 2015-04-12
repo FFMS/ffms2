@@ -26,11 +26,11 @@ else
 fi
 
 if test -z "$CFLAGS"; then
-    CFLAGS="$OPT_FLAGS"
+    CFLAGS="$OPT_FLAGS -Wall -Wextra"
 fi
 
 if test -z "$CXXFLAGS"; then
-    CXXFLAGS="$OPT_FLAGS"
+    CXXFLAGS="$OPT_FLAGS -Wall -Wextra"
 fi
 
 AC_CONFIG_HEADERS([src/config/config.h])
