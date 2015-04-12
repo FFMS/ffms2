@@ -12,7 +12,6 @@ endif
 CORE_C   =
 
 CORE_CXX = src/core/audiosource.cpp     \
-           src/core/codectype.cpp       \
            src/core/ffms.cpp            \
            src/core/filehandle.cpp      \
            src/core/indexing.cpp        \
