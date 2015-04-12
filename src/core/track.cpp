@@ -29,7 +29,7 @@
 
 namespace {
 FrameInfo ReadFrame(ZipFile &stream, FrameInfo const& prev, const FFMS_TrackType TT) {
-	FrameInfo f = {0};
+	FrameInfo f{};
 	f.PTS = stream.Read<int64_t>() + prev.PTS;
 	f.KeyFrame = !!stream.Read<int8_t>();
 	f.FilePos = stream.Read<int64_t>() + prev.FilePos;
@@ -81,7 +81,7 @@ FFMS_Track::FFMS_Track(ZipFile &stream) {
 
 	if (!FrameCount) return;
 
-	FrameInfo temp = {0};
+	FrameInfo temp{};
 	Frames.reserve(FrameCount);
 	for (size_t i = 0; i < FrameCount; ++i)
 		Frames.push_back(ReadFrame(stream, i == 0 ? temp : Frames.back(), TT));
@@ -101,7 +101,7 @@ void FFMS_Track::Write(ZipFile &stream) const {
 
 	if (empty()) return;
 
-	FrameInfo temp = {0};
+	FrameInfo temp{};
 	for (size_t i = 0; i < size(); ++i)
 		WriteFrame(stream, Frames[i], i == 0 ? temp : Frames[i - 1], TT);
 }

@@ -234,7 +234,7 @@ int parse_vp8(AVCodecParserContext *s,
 	return buf_size;
 }
 
-AVCodecParser ffms_vp8_parser = { { FFMS_ID(VP8) }, 0, nullptr, parse_vp8, nullptr };
+AVCodecParser ffms_vp8_parser = { { FFMS_ID(VP8) }, 0, nullptr, parse_vp8, nullptr, nullptr, nullptr };
 }
 
 void RegisterCustomParsers() {
