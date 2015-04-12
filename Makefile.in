@@ -416,7 +416,7 @@ AM_CPPFLAGS = \
 	@ZLIB_CPPFLAGS@ \
 	-include config.h
 
-AM_CXXFLAGS = -std=c++11
+AM_CXXFLAGS = -std=c++11 -fvisibility=hidden
 lib_LTLIBRARIES = src/core/libffms2.la
 src_core_libffms2_la_LIBADD = @LIBAV_LIBS@ @AVRESAMPLE_LIBS@ @ZLIB_LDFLAGS@ -lz @LTUNDEF@
 src_core_libffms2_la_SOURCES = \

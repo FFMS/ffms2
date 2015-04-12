@@ -64,25 +64,6 @@ fi
 FFMS_VERSION="$(sh $(dirname -- "$0")/version.sh)"
 AC_SUBST([FFMS_VERSION])
 
-_CXXFLAGS="$CXXFLAGS"
-CXXFLAGS="$CXXFLAGS -fvisibility=hidden"
-
-AC_LANG_PUSH([C++])
-
-AC_MSG_CHECKING([if -fvisibility=hidden works])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([char foo;])],
-    [fvisibility_works=yes],
-    [fvisibility_works=no]
-    )
-
-AC_MSG_RESULT([$fvisibility_works])
-
-if test "$fvisibility_works" = no; then
-    CXXFLAGS="$_CXXFLAGS"
-fi
-
-AC_LANG_POP([C++])
-
 CHECK_ZLIB
 
 dnl Save CFLAGS and LIBS for later, as anything else we add will be from pkg-config
