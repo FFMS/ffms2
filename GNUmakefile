@@ -18,7 +18,6 @@ CORE_CXX = src/core/audiosource.cpp     \
            src/core/lavfaudio.cpp       \
            src/core/lavfindexer.cpp     \
            src/core/lavfvideo.cpp       \
-           src/core/numthreads.cpp      \
            src/core/track.cpp           \
            src/core/utils.cpp           \
            src/core/videosource.cpp     \
