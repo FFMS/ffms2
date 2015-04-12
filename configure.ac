@@ -88,6 +88,7 @@ CHECK_ZLIB
 dnl Save CFLAGS and LIBS for later, as anything else we add will be from pkg-config
 dnl and thus should be separate in our .pc file.
 _CFLAGS="$CFLAGS"
+_CPPFLAGS="$CPPFLAGS"
 _LIBS="$LIBS"
 
 PKG_PROG_PKG_CONFIG([0.22])
@@ -95,7 +96,6 @@ pkgconfigdir="\$(libdir)/pkgconfig"
 AC_SUBST(pkgconfigdir)
 
 PKG_CHECK_MODULES(LIBAV, [libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 ])
-CPPFLAGS="$CPPFLAGS -D__STDC_CONSTANT_MACROS"
 
 dnl As of 0eec06ed8747923faa6a98e474f224d922dc487d ffmpeg only adds -lrt to lavc's
 dnl LIBS, but lavu needs it, so move it to the end if it's present
@@ -104,6 +104,7 @@ LIBAV_LIBS=$(echo $LIBAV_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
 AC_SUBST([LIBAV_CFLAGS])
 AC_SUBST([LIBAV_LIBS])
 
+CPPFLAGS="$CPPFLAGS -D__STDC_CONSTANT_MACROS"
 AC_DEFUN([TEST_IS_FFMPEG],
          [AC_LINK_IFELSE([AC_LANG_PROGRAM([[
             #include <libavcodec/avcodec.h>
@@ -201,8 +202,8 @@ else
 fi
 AC_SUBST([src_core_libffms2_la_LDFLAGS])
 
-CFLAGS="$_CFLAGS -std=c99"
-CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 -DFFMS_EXPORTS"
+CFLAGS="$_CFLAGS"
+CPPFLAGS="$_CPPFLAGS"
 LIBS="$_LIBS"
 AC_MSG_RESULT($bsymbolic)
 

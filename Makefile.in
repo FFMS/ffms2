@@ -405,7 +405,17 @@ ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = foreign
 pkgconfig_DATA = ffms2.pc
 dist_doc_DATA = doc/ffms2-api.md doc/ffms2-changelog.md
-AM_CPPFLAGS = -I. -I$(top_srcdir)/include -I$(top_srcdir)/src/config @LIBAV_CFLAGS@ @ZLIB_CPPFLAGS@ -include config.h
+AM_CPPFLAGS = \
+	-I. \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/src/config \
+	-D_FILE_OFFSET_BITS=64 \
+	-DFFMS_EXPORTS \
+	-D__STDC_CONSTANT_MACROS \
+	@LIBAV_CFLAGS@ \
+	@ZLIB_CPPFLAGS@ \
+	-include config.h
+
 AM_CXXFLAGS = -std=c++11
 lib_LTLIBRARIES = src/core/libffms2.la
 src_core_libffms2_la_LIBADD = @LIBAV_LIBS@ @AVRESAMPLE_LIBS@ @ZLIB_LDFLAGS@ -lz @LTUNDEF@
