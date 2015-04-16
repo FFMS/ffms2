@@ -19,6 +19,7 @@
 //  THE SOFTWARE.
 
 #include "avsutils.h"
+#include <cstring>
 
 extern "C" {
 #include <libswscale/swscale.h>
