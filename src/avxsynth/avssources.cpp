@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -331,12 +331,15 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 				Env->ThrowError("FFVideoSource: %s", E.Buffer);
 			OutputField(Frame, Dst, !FirstField, Env);
 		}
+        Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
+        Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>('U'));
 	} else {
 		const FFMS_Frame *Frame;
 
 		if (FPSNum > 0 && FPSDen > 0) {
 			Frame = FFMS_GetFrameByTime(V, FFMS_GetVideoProperties(V)->FirstTime +
 				(double)(n * (int64_t)FPSDen) / FPSNum, &E);
+            Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
 		} else {
 			Frame = FFMS_GetFrame(V, n, &E);
 			FFMS_Track *T = FFMS_GetTrackFromVideo(V);
