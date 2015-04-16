@@ -101,7 +101,7 @@ int FileHandle::Printf(const char *fmt, ...) {
 	std::vector<char> OutBuffer(100);
 	int ret = -1;
 	while (OutBuffer.size() < 1024 * 1024) {
-		ret = vsnprintf(reinterpret_cast<char *>(&OutBuffer[0]), OutBuffer.size(), fmt, args);
+		ret = vsnprintf(OutBuffer.data(), OutBuffer.size(), fmt, args);
 		if (ret > 0 && ret < (int)OutBuffer.size())
 			break;
 		OutBuffer.resize(OutBuffer.size() * 2);
@@ -109,7 +109,7 @@ int FileHandle::Printf(const char *fmt, ...) {
 
 	va_end(args);
 
-	avio_write(avio, reinterpret_cast<const unsigned char *>(&OutBuffer[0]), ret);
+	avio_write(avio, reinterpret_cast<const unsigned char *>(OutBuffer.data()), ret);
 	avio_flush(avio);
 
 	return avio->error < 0 ? avio->error : ret;

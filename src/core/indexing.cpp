@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -75,20 +75,20 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 	unknown_size<AVSHA, av_sha_alloc, ffms_free_sha> ctx;
 #else
 	std::vector<uint8_t> ctxmem(av_sha_size);
-	AVSHA *ctx = (AVSHA*)(&ctxmem[0]);
+	AVSHA *ctx = (AVSHA*)(ctxmem.data());
 #endif
 	av_sha_init(ctx, 160);
 
 	try {
 		*Filesize = file.Size();
 		std::vector<char> FileBuffer(static_cast<size_t>(std::min<int64_t>(1024*1024, *Filesize)));
-		size_t BytesRead = file.Read(&FileBuffer[0], FileBuffer.size());
-		av_sha_update(ctx, reinterpret_cast<const uint8_t*>(&FileBuffer[0]), BytesRead);
+		size_t BytesRead = file.Read(FileBuffer.data(), FileBuffer.size());
+        av_sha_update(ctx, reinterpret_cast<const uint8_t*>(FileBuffer.data()), BytesRead);
 
 		if (*Filesize > static_cast<int64_t>(FileBuffer.size())) {
-			file.Seek(*Filesize - (int)FileBuffer.size(), SEEK_SET);
-			BytesRead = file.Read(&FileBuffer[0], FileBuffer.size());
-			av_sha_update(ctx, reinterpret_cast<const uint8_t*>(&FileBuffer[0]), BytesRead);
+            file.Seek(*Filesize - static_cast<int64_t>(FileBuffer.size()), SEEK_SET);
+            BytesRead = file.Read(FileBuffer.data(), FileBuffer.size());
+            av_sha_update(ctx, reinterpret_cast<const uint8_t*>(FileBuffer.data()), BytesRead);
 		}
 	}
 	catch (...) {
@@ -262,7 +262,7 @@ void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 		int Format = av_get_packed_sample_fmt(AudioContext.CodecContext->sample_fmt);
 
 		std::vector<char> WName(FNSize + 1);
-		(*ANC)(SourceFile.c_str(), Track, &AP, &WName[0], FNSize, ANCPrivate);
+		(*ANC)(SourceFile.c_str(), Track, &AP, WName.data(), FNSize, ANCPrivate);
 		WName.back() = 0;
 		try {
 			AudioContext.W64Writer =
