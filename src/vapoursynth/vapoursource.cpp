@@ -103,8 +103,6 @@ void VS_CC VSVideoSource::Init(VSMap *, VSMap *, void **instanceData, VSNode *no
 const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, void **instanceData, void **, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi) {
 	VSVideoSource *vs = static_cast<VSVideoSource *>(*instanceData);
 	if (activationReason == arInitial) {
-		if (vs->VI.numFrames && n >= vs->VI.numFrames)
-			n = vs->VI.numFrames - 1;
 
 		char ErrorMsg[1024];
 		FFMS_ErrorInfo E;
@@ -131,8 +129,10 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 			int64_t num;
 			if (n + 1 < vs->VI.numFrames)
 				num = FFMS_GetFrameInfo(T, n + 1)->PTS - FFMS_GetFrameInfo(T, n)->PTS;
-			else // simply use the second to last frame's duration for the last one, should be good enough
-				num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
+            else if (n > 0) // simply use the second to last frame's duration for the last one, should be good enough
+                num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
+            else // just make it one timebase if it's a single frame clip
+                num = 1;
 			vsapi->propSetInt(Props, "_DurationNum", TB->Num * num, paReplace);
 			vsapi->propSetInt(Props, "_DurationDen", TB->Den, paReplace);
 			vsapi->propSetFloat(Props, "_AbsoluteTime",
@@ -207,7 +207,8 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
 		VI.fpsNum = FPSNum;
 		if (VP->NumFrames > 1) {
 			VI.numFrames = static_cast<int>((VP->LastTime - VP->FirstTime) * (1 + 1. / (VP->NumFrames - 1)) * FPSNum / FPSDen + 0.5);
-			if (VI.numFrames < 1) VI.numFrames = 1;
+			if (VI.numFrames < 1)
+                VI.numFrames = 1;
 		} else {
 			VI.numFrames = 1;
 		}
