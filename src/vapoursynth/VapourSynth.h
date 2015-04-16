@@ -1,56 +1,58 @@
-//  Copyright (c) 2012 Fredrik Mellbin
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a copy
-//  of this software and associated documentation files (the "Software"), to deal
-//  in the Software without restriction, including without limitation the rights
-//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//  copies of the Software, and to permit persons to whom the Software is
-//  furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-//  THE SOFTWARE.
+/*
+* Copyright (c) 2012-2014 Fredrik Mellbin
+*
+* This file is part of VapourSynth.
+*
+* VapourSynth is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 2.1 of the License, or (at your option) any later version.
+*
+* VapourSynth is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with VapourSynth; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+*/
 
 #ifndef VAPOURSYNTH_H
 #define VAPOURSYNTH_H
 
 #include <stdint.h>
 
-#define VAPOURSYNTH_API_VERSION 3
+#define VAPOURSYNTH_API_MAJOR 3
+#define VAPOURSYNTH_API_MINOR 1
+#define VAPOURSYNTH_API_VERSION ((VAPOURSYNTH_API_MAJOR << 16) | (VAPOURSYNTH_API_MINOR))
 
-// Convenience for C++ users.
+/* Convenience for C++ users. */
 #ifdef __cplusplus
-#	define VS_EXTERN_C extern "C"
+#    define VS_EXTERN_C extern "C"
 #else
-#	define VS_EXTERN_C
+#    define VS_EXTERN_C
 #endif
 
-#ifdef _WIN32
-#	define VS_CC __stdcall
+#if defined(_WIN32) && !defined(_WIN64)
+#    define VS_CC __stdcall
 #else
-#	define VS_CC
+#    define VS_CC
 #endif
 
-// And now for some symbol hide-and-seek...
-#if defined(_WIN32) // Windows being special
-#	define VS_EXTERNAL_API(ret) VS_EXTERN_C __declspec(dllexport) ret VS_CC
+/* And now for some symbol hide-and-seek... */
+#if defined(_WIN32) /* Windows being special */
+#    define VS_EXTERNAL_API(ret) VS_EXTERN_C __declspec(dllexport) ret VS_CC
 #elif defined(__GNUC__) && __GNUC__ >= 4
-#	define VS_EXTERNAL_API(ret) VS_EXTERN_C __attribute__((visibility("default"))) ret VS_CC
+#    define VS_EXTERNAL_API(ret) VS_EXTERN_C __attribute__((visibility("default"))) ret VS_CC
 #else
-#	define VS_EXTERNAL_API(ret) VS_EXTERN_C ret VS_CC
+#    define VS_EXTERNAL_API(ret) VS_EXTERN_C ret VS_CC
 #endif
 
-#if !defined(VSCORE_EXPORTS) && defined(_WIN32)
-#	define VS_API(ret) VS_EXTERN_C __declspec(dllimport) ret VS_CC
+#if !defined(VS_CORE_EXPORTS) && defined(_WIN32)
+#    define VS_API(ret) VS_EXTERN_C __declspec(dllimport) ret VS_CC
 #else
-#	define VS_API(ret) VS_EXTERNAL_API(ret)
+#    define VS_API(ret) VS_EXTERNAL_API(ret)
 #endif
 
 typedef struct VSFrameRef VSFrameRef;
@@ -64,12 +66,12 @@ typedef struct VSAPI VSAPI;
 typedef struct VSFrameContext VSFrameContext;
 
 typedef enum VSColorFamily {
-    // all planar formats
+    /* all planar formats */
     cmGray   = 1000000,
     cmRGB    = 2000000,
     cmYUV    = 3000000,
     cmYCoCg  = 4000000,
-    // special for compatibility
+    /* special for compatibility */
     cmCompat = 9000000
 } VSColorFamily;
 
@@ -78,12 +80,15 @@ typedef enum VSSampleType {
     stFloat = 1
 } VSSampleType;
 
-// The +10 is so people won't be using the constants interchangably "by accident"
+/* The +10 is so people won't be using the constants interchangably "by accident" */
 typedef enum VSPresetFormat {
     pfNone = 0,
 
     pfGray8 = cmGray + 10,
     pfGray16,
+
+    pfGrayH,
+    pfGrayS,
 
     pfYUV420P8 = cmYUV + 10,
     pfYUV422P8,
@@ -104,59 +109,79 @@ typedef enum VSPresetFormat {
     pfYUV422P16,
     pfYUV444P16,
 
+    pfYUV444PH,
+    pfYUV444PS,
+
     pfRGB24 = cmRGB + 10,
     pfRGB27,
     pfRGB30,
     pfRGB48,
 
-    // special for compatibility, if you implement these in any filter I'll personally kill you
-    // I'll also change their ids around to break your stuff regularly
+    pfRGBH,
+    pfRGBS,
+
+    /* special for compatibility, if you implement these in any filter I'll personally kill you */
+    /* I'll also change their ids around to break your stuff regularly */
     pfCompatBGR32 = cmCompat + 10,
     pfCompatYUY2
 } VSPresetFormat;
 
 typedef enum VSFilterMode {
-    fmParallel = 100, // completely parallel execution
-    fmParallelRequests = 200, // for filters that are serial in nature but can request one or more frames they need in advance
-    fmUnordered = 300, // for filters that modify their internal state every request
-    fmSerial = 400 // for source filters and compatibility with other filtering architectures
+    fmParallel = 100, /* completely parallel execution */
+    fmParallelRequests = 200, /* for filters that are serial in nature but can request one or more frames they need in advance */
+    fmUnordered = 300, /* for filters that modify their internal state every request */
+    fmSerial = 400 /* for source filters and compatibility with other filtering architectures */
 } VSFilterMode;
 
 typedef struct VSFormat {
     char name[32];
     int id;
-    int colorFamily; // see VSColorFamily
-    int sampleType; // see VSSampleType
-    int bitsPerSample; // number of significant bits
-    int bytesPerSample; // actual storage is always in a power of 2 and the smallest possible that can fit the number of bits used per sample
+    int colorFamily; /* see VSColorFamily */
+    int sampleType; /* see VSSampleType */
+    int bitsPerSample; /* number of significant bits */
+    int bytesPerSample; /* actual storage is always in a power of 2 and the smallest possible that can fit the number of bits used per sample */
 
-    int subSamplingW; // log2 subsampling factor, applied to second and third plane
+    int subSamplingW; /* log2 subsampling factor, applied to second and third plane */
     int subSamplingH;
 
-    int numPlanes; // implicit from colorFamily
+    int numPlanes; /* implicit from colorFamily */
 } VSFormat;
 
-typedef enum NodeFlags {
+typedef enum VSNodeFlags {
     nfNoCache = 1,
-} NodeFlags;
+    nfIsCache = 2
+} VSNodeFlags;
 
-typedef enum GetPropErrors {
+typedef enum VSPropTypes {
+    ptUnset = 'u',
+    ptInt = 'i',
+    ptFloat = 'f',
+    ptData = 's',
+    ptNode = 'c',
+    ptFrame = 'v',
+    ptFunction = 'm'
+} VSPropTypes;
+
+typedef enum VSGetPropErrors {
     peUnset = 1,
     peType  = 2,
     peIndex = 4
-} GetPropErrors;
+} VSGetPropErrors;
 
-typedef enum PropAppendMode {
+typedef enum VSPropAppendMode {
     paReplace = 0,
     paAppend  = 1,
     paTouch   = 2
-} PropAppendMode;
+} VSPropAppendMode;
 
-typedef struct VSVersion {
+typedef struct VSCoreInfo {
+    const char *versionString;
     int core;
     int api;
-    const char *versionString;
-} VSVersion;
+    int numThreads;
+    int64_t maxFramebufferSize;
+    int64_t usedFramebufferSize;
+} VSCoreInfo;
 
 typedef struct VSVideoInfo {
     const VSFormat *format;
@@ -168,19 +193,27 @@ typedef struct VSVideoInfo {
     int flags;
 } VSVideoInfo;
 
-typedef enum ActivationReason {
+typedef enum VSActivationReason {
     arInitial = 0,
     arFrameReady = 1,
     arAllFramesReady = 2,
     arError = -1
-} ActivationReason;
+} VSActivationReason;
 
-// core function typedefs
-typedef	VSCore *(VS_CC *VSCreateCore)(int *threads);
-typedef	void (VS_CC *VSFreeCore)(VSCore *core);
-typedef const VSVersion *(VS_CC *VSGetVersion)(void);
+typedef enum VSMessageType {
+    mtDebug = 0,
+    mtWarning = 1,
+    mtCritical = 2,
+    mtFatal = 3
+} VSMessageType;
 
-// function/filter typedefs
+/* core function typedefs */
+typedef const VSAPI *(VS_CC *VSGetVapourSynthAPI)(int version);
+typedef VSCore *(VS_CC *VSCreateCore)(int threads);
+typedef void (VS_CC *VSFreeCore)(VSCore *core);
+typedef const VSCoreInfo *(VS_CC *VSGetCoreInfo)(VSCore *core);
+
+/* function/filter typedefs */
 typedef void (VS_CC *VSPublicFunction)(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi);
 typedef void (VS_CC *VSFreeFuncData)(void *userData);
 typedef void (VS_CC *VSFilterInit)(VSMap *in, VSMap *out, void **instanceData, VSNode *node, VSCore *core, const VSAPI *vsapi);
@@ -197,7 +230,7 @@ typedef void (VS_CC *VSSetFilterError)(const char *errorMessage, VSFrameContext 
 typedef const VSFormat *(VS_CC *VSGetFormatPreset)(int id, VSCore *core);
 typedef const VSFormat *(VS_CC *VSRegisterFormat)(int colorFamily, int sampleType, int bitsPerSample, int subSamplingW, int subSamplingH, VSCore *core);
 
-// frame and clip handling
+/* frame and clip handling */
 typedef void (VS_CC *VSFrameDoneCallback)(void *userData, const VSFrameRef *f, int n, VSNodeRef *, const char *errorMsg);
 typedef void (VS_CC *VSGetFrameAsync)(int n, VSNodeRef *node, VSFrameDoneCallback callback, void *userData);
 typedef const VSFrameRef *(VS_CC *VSGetFrame)(int n, VSNodeRef *node, char *errorMsg, int bufSize);
@@ -217,7 +250,7 @@ typedef int (VS_CC *VSGetStride)(const VSFrameRef *f, int plane);
 typedef const uint8_t *(VS_CC *VSGetReadPtr)(const VSFrameRef *f, int plane);
 typedef uint8_t *(VS_CC *VSGetWritePtr)(VSFrameRef *f, int plane);
 
-// property access
+/* property access */
 typedef const VSVideoInfo *(VS_CC *VSGetVideoInfo)(VSNodeRef *node);
 typedef void (VS_CC *VSSetVideoInfo)(const VSVideoInfo *vi, int numOutputs, VSNode *node);
 typedef const VSFormat *(VS_CC *VSGetFrameFormat)(const VSFrameRef *f);
@@ -230,7 +263,7 @@ typedef const char *(VS_CC *VSPropGetKey)(const VSMap *map, int index);
 typedef int (VS_CC *VSPropNumElements)(const VSMap *map, const char *key);
 typedef char(VS_CC *VSPropGetType)(const VSMap *map, const char *key);
 
-typedef VSMap *(VS_CC *VSNewMap)(void);
+typedef VSMap *(VS_CC *VSCreateMap)(void);
 typedef void (VS_CC *VSFreeMap)(VSMap *map);
 typedef void (VS_CC *VSClearMap)(VSMap *map);
 
@@ -250,30 +283,41 @@ typedef int (VS_CC *VSPropSetNode)(VSMap *map, const char *key, VSNodeRef *node,
 typedef int (VS_CC *VSPropSetFrame)(VSMap *map, const char *key, const VSFrameRef *f, int append);
 typedef int (VS_CC *VSPropSetFunc)(VSMap *map, const char *key, VSFuncRef *func, int append);
 
-// mixed
-
+/* mixed */
 typedef void (VS_CC *VSConfigPlugin)(const char *identifier, const char *defaultNamespace, const char *name, int apiVersion, int readonly, VSPlugin *plugin);
 typedef void (VS_CC *VSInitPlugin)(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin *plugin);
 
-typedef VSPlugin *(VS_CC *VSGetPluginId)(const char *identifier, VSCore *core);
-typedef VSPlugin *(VS_CC *VSGetPluginNs)(const char *ns, VSCore *core);
+typedef VSPlugin *(VS_CC *VSGetPluginById)(const char *identifier, VSCore *core);
+typedef VSPlugin *(VS_CC *VSGetPluginByNs)(const char *ns, VSCore *core);
 
 typedef VSMap *(VS_CC *VSGetPlugins)(VSCore *core);
 typedef VSMap *(VS_CC *VSGetFunctions)(VSPlugin *plugin);
 
-typedef void (VS_CC *VSCallFunc)(VSFuncRef *func, const VSMap *in, VSMap *out, VSCore *core, const VSAPI *vsapi);
-typedef VSFuncRef *(VS_CC *VSCreateFunc)(VSPublicFunction func, void *userData, VSFreeFuncData free);
+typedef void (VS_CC *VSCallFunc)(VSFuncRef *func, const VSMap *in, VSMap *out, VSCore *core, const VSAPI *vsapi); /* core and vsapi arguments are completely ignored, they only remain to preserve ABI */
+typedef VSFuncRef *(VS_CC *VSCreateFunc)(VSPublicFunction func, void *userData, VSFreeFuncData free, VSCore *core, const VSAPI *vsapi);
 
 typedef void (VS_CC *VSQueryCompletedFrame)(VSNodeRef **node, int *n, VSFrameContext *frameCtx);
 typedef void (VS_CC *VSReleaseFrameEarly)(VSNodeRef *node, int n, VSFrameContext *frameCtx);
 
 typedef int64_t (VS_CC *VSSetMaxCacheSize)(int64_t bytes, VSCore *core);
+typedef int (VS_CC *VSSetThreadCount)(int threads, VSCore *core);
+
+typedef void (VS_CC *VSMessageHandler)(int msgType, const char *msg, void *userData);
+typedef void (VS_CC *VSSetMessageHandler)(VSMessageHandler handler, void *userData);
+
+typedef const char *(VS_CC *VSGetPluginPath)(const VSPlugin *plugin);
+
+typedef const int64_t *(VS_CC *VSPropGetIntArray)(const VSMap *map, const char *key, int *error);
+typedef const double *(VS_CC *VSPropGetFloatArray)(const VSMap *map, const char *key, int *error);
+
+typedef int (VS_CC *VSPropSetIntArray)(VSMap *map, const char *key, const int64_t *i, int size);
+typedef int (VS_CC *VSPropSetFloatArray)(VSMap *map, const char *key, const double *d, int size);
 
 
 struct VSAPI {
     VSCreateCore createCore;
     VSFreeCore freeCore;
-    VSGetVersion getVersion;
+    VSGetCoreInfo getCoreInfo;
 
     VSCloneFrameRef cloneFrameRef;
     VSCloneNodeRef cloneNodeRef;
@@ -288,25 +332,25 @@ struct VSAPI {
     VSCopyFrameProps copyFrameProps;
 
     VSRegisterFunction registerFunction;
-    VSGetPluginId getPluginId;
-    VSGetPluginNs getPluginNs;
+    VSGetPluginById getPluginById;
+    VSGetPluginByNs getPluginByNs;
     VSGetPlugins getPlugins;
     VSGetFunctions getFunctions;
-    VSCreateFilter createFilter; // do never use inside a filter's getframe function
-    VSSetError setError; // use to signal errors outside filter getframe functions
-    VSGetError getError; // use to query errors, returns 0 if no error
-    VSSetFilterError setFilterError; // use to signal errors in the filter getframe function
-    VSInvoke invoke; // may not be used inside a filter's getframe method
+    VSCreateFilter createFilter;
+    VSSetError setError; /* use to signal errors outside filter getframe functions */
+    VSGetError getError; /* use to query errors, returns 0 if no error */
+    VSSetFilterError setFilterError; /* use to signal errors in the filter getframe function */
+    VSInvoke invoke;
 
-    VSGetFormatPreset getFormatPreset; //threadsafe
-    VSRegisterFormat registerFormat; // threadsafe
+    VSGetFormatPreset getFormatPreset;
+    VSRegisterFormat registerFormat;
 
-    VSGetFrame getFrame; // do never use inside a filter's getframe function, for external applications using the core as a library or for requesting frames in a filter constructor
-    VSGetFrameAsync getFrameAsync; // do never use inside a filter's getframe function, for external applications using the core as a library or for requesting frames in a filter constructor
-    VSGetFrameFilter getFrameFilter; // only use inside a filter's getframe function
-    VSRequestFrameFilter requestFrameFilter; // only use inside a filter's getframe function
-    VSQueryCompletedFrame queryCompletedFrame; // only use inside a filter's getframe function
-    VSReleaseFrameEarly releaseFrameEarly; // only use inside a filter's getframe function
+    VSGetFrame getFrame; /* do never use inside a filter's getframe function, for external applications using the core as a library or for requesting frames in a filter constructor */
+    VSGetFrameAsync getFrameAsync; /* do never use inside a filter's getframe function, for external applications using the core as a library or for requesting frames in a filter constructor */
+    VSGetFrameFilter getFrameFilter; /* only use inside a filter's getframe function */
+    VSRequestFrameFilter requestFrameFilter; /* only use inside a filter's getframe function */
+    VSQueryCompletedFrame queryCompletedFrame; /* only use inside a filter's getframe function */
+    VSReleaseFrameEarly releaseFrameEarly; /* only use inside a filter's getframe function */
 
     VSGetStride getStride;
     VSGetReadPtr getReadPtr;
@@ -315,8 +359,8 @@ struct VSAPI {
     VSCreateFunc createFunc;
     VSCallFunc callFunc;
 
-    //property access functions
-    VSNewMap newMap;
+    /* property access functions */
+    VSCreateMap createMap;
     VSFreeMap freeMap;
     VSClearMap clearMap;
 
@@ -351,8 +395,19 @@ struct VSAPI {
     VSSetMaxCacheSize setMaxCacheSize;
     VSGetOutputIndex getOutputIndex;
     VSNewVideoFrame2 newVideoFrame2;
+
+    VSSetMessageHandler setMessageHandler;
+    VSSetThreadCount setThreadCount;
+
+    VSGetPluginPath getPluginPath;
+
+    VSPropGetIntArray propGetIntArray;
+    VSPropGetFloatArray propGetFloatArray;
+
+    VSPropSetIntArray propSetIntArray;
+    VSPropSetFloatArray propSetFloatArray;
 };
 
 VS_API(const VSAPI *) getVapourSynthAPI(int version);
 
-#endif // VAPOURSYNTH_H
+#endif /* VAPOURSYNTH_H */
