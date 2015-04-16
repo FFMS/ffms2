@@ -1,4 +1,4 @@
-//  Copyright (c) 2012 Fredrik Mellbin
+//  Copyright (c) 2012-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -157,6 +157,12 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
         else if (Frame->ColorRange == 2)
             vsapi->propSetInt(Props, "_ColorRange", 0, paReplace);
 		vsapi->propSetData(Props, "_PictType", &Frame->PictType, 1, paReplace);
+
+        // Set field information
+        int FieldBased = 0;
+        if (Frame->InterlacedFrame)
+            FieldBased = (Frame->TopFieldFirst ? 2 : 1);
+        vsapi->propSetInt(Props, "_FieldBased", FieldBased, paReplace);
 
 		OutputFrame(Frame, Dst, vsapi, core);
 
