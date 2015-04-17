@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,10 @@ public:
 			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 				"Couldn't find stream information");
 		}
+
+		for (unsigned int i = 0; i < FormatContext->nb_streams; i++)
+			if (FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+				IndexMask[i] = false;
 	}
 
 	~FFLAVFIndexer() {
@@ -74,10 +78,10 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			FormatContext->streams[i]->time_base.den,
 			static_cast<FFMS_TrackType>(FormatContext->streams[i]->codec->codec_type)));
 
-		if (FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
+		if (IndexMask.count(i) && FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
 			AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codec->codec_id);
 			if (!VideoCodec) {
-				IndexMask &= ~(1 << i);
+				IndexMask.erase(i);
 				continue;
 			}
 
@@ -91,11 +95,11 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 				VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
 
 			if (FormatContext->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
-				IndexMask &= ~(1 << i);
+				IndexMask.erase(i);
 			else
-				IndexMask |= 1 << i;
+				IndexMask[i] = false;
 		}
-		else if (IndexMask & (1 << i) && FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+		else if (IndexMask.count(i) && FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
 			AVCodecContext *AudioCodecContext = FormatContext->streams[i]->codec;
 
 			AVCodec *AudioCodec = avcodec_find_decoder(AudioCodecContext->codec_id);
@@ -110,7 +114,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			AudioContexts[i].CodecContext = AudioCodecContext;
 			(*TrackIndices)[i].HasTS = false;
 		} else {
-			IndexMask &= ~(1 << i);
+			IndexMask.erase(i);
 		}
 	}
 
@@ -128,7 +132,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 				throw FFMS_Exception(FFMS_ERROR_CANCELLED, FFMS_ERROR_USER,
 					"Cancelled by user");
 		}
-		if (!(IndexMask & (1 << Packet.stream_index))) {
+		if (!IndexMask.count(Packet.stream_index)) {
 			av_free_packet(&Packet);
 			continue;
 		}

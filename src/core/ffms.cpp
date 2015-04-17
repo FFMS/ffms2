@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -380,8 +380,12 @@ FFMS_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, i
 FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 
-	Indexer->SetIndexMask(IndexMask | DumpMask);
-	Indexer->SetDumpMask(DumpMask);
+	IndexMask |= DumpMask;
+	for (int i = 0; i < sizeof(int) * 8; i++) {
+		if ((IndexMask >> i) & 1)
+			FFMS_IndexTrackSettings(Indexer, i, 1, ((DumpMask >> i) & 1));
+	}
+
 	Indexer->SetErrorHandling(ErrorHandling);
 	Indexer->SetProgressCallback(IC, ICPrivate);
 	Indexer->SetAudioNameCallback(ANC, ANCPrivate);
@@ -394,6 +398,31 @@ FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int
 	}
 	delete Indexer;
 	return Index;
+}
+
+FFMS_API(FFMS_Index *) FFMS_DoIndexing2(FFMS_Indexer *Indexer, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
+	ClearErrorInfo(ErrorInfo);
+
+	Indexer->SetErrorHandling(ErrorHandling);
+	Indexer->SetProgressCallback(IC, ICPrivate);
+	Indexer->SetAudioNameCallback(ANC, ANCPrivate);
+
+	FFMS_Index *Index = nullptr;
+	try {
+		Index = Indexer->DoIndexing();
+	} catch (FFMS_Exception &e) {
+		e.CopyOut(ErrorInfo);
+	}
+	delete Indexer;
+	return Index;
+}
+
+FFMS_API(void) FFMS_IndexTrackSettings(FFMS_Indexer *Indexer, int Track, int Index, int Dump) {
+	Indexer->SetIndexTrack(Track, !!Index, !!Dump);
+}
+
+FFMS_API(void) FFMS_IndexTrackType(FFMS_Indexer *Indexer, int TrackType, int Index, int Dump) {
+	Indexer->SetIndexTrackType(TrackType, !!Index, !!Dump);
 }
 
 FFMS_API(void) FFMS_CancelIndexing(FFMS_Indexer *Indexer) {

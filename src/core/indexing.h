@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -78,8 +78,8 @@ struct FFMS_Indexer {
 	FFMS_Indexer(FFMS_Indexer const&) = delete;
 	FFMS_Indexer& operator=(FFMS_Indexer const&) = delete;
 protected:
-	int IndexMask = 0;
-	int DumpMask = 0;
+	// Index a track if key exists, dump track if value is true
+	std::map<int, bool> IndexMask;
 	int ErrorHandling = FFMS_IEH_CLEAR_TRACK;
 	TIndexCallback IC = nullptr;
 	void *ICPrivate = nullptr;
@@ -100,8 +100,8 @@ public:
 	FFMS_Indexer(const char *Filename);
 	virtual ~FFMS_Indexer() { }
 
-	void SetIndexMask(int IndexMask) { this->IndexMask = IndexMask; }
-	void SetDumpMask(int DumpMask) { this->DumpMask = DumpMask; }
+	void SetIndexTrack(int Track, bool Index, bool Dump);
+	void SetIndexTrackType(int TrackType, bool Index, bool Dump);
 	void SetErrorHandling(int ErrorHandling);
 	void SetProgressCallback(TIndexCallback IC, void *ICPrivate);
 	void SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate);
