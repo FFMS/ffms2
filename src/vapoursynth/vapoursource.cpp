@@ -154,13 +154,12 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 		vsapi->propSetInt(Props, "_Matrix", Frame->ColorSpace, paReplace);
 		vsapi->propSetInt(Props, "_Primaries", Frame->ColorPrimaries, paReplace);
 		vsapi->propSetInt(Props, "_Transfer", Frame->TransferCharateristics, paReplace);
-		if (Frame->ChromaLocation)
+		if (Frame->ChromaLocation > 0)
 			vsapi->propSetInt(Props, "_ChromaLocation", Frame->ChromaLocation - 1, paReplace);
 
-		vsapi->propSetInt(Props, "_ColorSpace", Frame->ColorSpace, paReplace);
-        if (Frame->ColorRange == 1)
+		if (Frame->ColorRange == FFMS_CR_MPEG)
             vsapi->propSetInt(Props, "_ColorRange", 1, paReplace);
-        else if (Frame->ColorRange == 2)
+        else if (Frame->ColorRange == FFMS_CR_JPEG)
             vsapi->propSetInt(Props, "_ColorRange", 0, paReplace);
 		vsapi->propSetData(Props, "_PictType", &Frame->PictType, 1, paReplace);
 
