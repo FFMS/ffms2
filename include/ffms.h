@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2012 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -304,6 +304,10 @@ typedef struct FFMS_Frame {
 	char PictType;
 	int ColorSpace;
 	int ColorRange;
+	/* Introduced in FFMS_VERSION ((2 << 24) | (21 << 16) | (0 << 8) | 0) */
+	int ColorPrimaries;
+	int TransferCharateristics;
+	int ChromaLocation;
 } FFMS_Frame;
 
 typedef struct FFMS_TrackTimeBase {

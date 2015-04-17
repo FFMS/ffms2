@@ -90,6 +90,9 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	LocalFrame.TopFieldFirst = Frame->top_field_first;
 	LocalFrame.ColorSpace = OutputColorSpace;
 	LocalFrame.ColorRange = OutputColorRange;
+	LocalFrame.ColorPrimaries = Frame->color_primaries;
+	LocalFrame.TransferCharateristics = Frame->color_trc;
+	LocalFrame.ChromaLocation = Frame->chroma_location;
 
 	LastFrameHeight = CodecContext->height;
 	LastFrameWidth = CodecContext->width;

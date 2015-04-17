@@ -151,6 +151,12 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 			vsapi->propSetInt(Props, "_SARDen", vs->SARDen, paReplace);
 		}
 
+		vsapi->propSetInt(Props, "_Matrix", Frame->ColorSpace, paReplace);
+		vsapi->propSetInt(Props, "_Primaries", Frame->ColorPrimaries, paReplace);
+		vsapi->propSetInt(Props, "_Transfer", Frame->TransferCharateristics, paReplace);
+		if (Frame->ChromaLocation)
+			vsapi->propSetInt(Props, "_ChromaLocation", Frame->ChromaLocation - 1, paReplace);
+
 		vsapi->propSetInt(Props, "_ColorSpace", Frame->ColorSpace, paReplace);
         if (Frame->ColorRange == 1)
             vsapi->propSetInt(Props, "_ColorRange", 1, paReplace);
