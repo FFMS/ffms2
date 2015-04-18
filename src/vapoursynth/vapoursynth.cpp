@@ -1,4 +1,4 @@
-//  Copyright (c) 2012 Fredrik Mellbin
+//  Copyright (c) 2012-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,14 @@
 #ifndef _WIN32
 #define _stricmp strcmp
 #endif
+
+static inline int int64ToIntS(int64_t i) {
+	if (i > INT_MAX)
+		return INT_MAX;
+	else if (i < INT_MIN)
+		return INT_MIN;
+	else return (int)i;
+}
 
 static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, const VSAPI *vsapi)  {
 	FFMS_Init(0,  1);
@@ -105,31 +113,35 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
 	int err;
 
 	const char *Source = vsapi->propGetData(in, "source", 0, nullptr);
-	int Track = (int)vsapi->propGetInt(in, "track", 0, &err);
+	int Track = int64ToIntS(vsapi->propGetInt(in, "track", 0, &err));
 	if (err)
 		Track = -1;
 	bool Cache = !!vsapi->propGetInt(in, "cache", 0, &err);
 	if (err)
 		Cache = true;
 	const char *CacheFile = vsapi->propGetData(in, "cachefile", 0, &err);
-	int FPSNum = (int)vsapi->propGetInt(in, "fpsnum", 0, &err);
+	int FPSNum = int64ToIntS(vsapi->propGetInt(in, "fpsnum", 0, &err));
 	if (err)
 		FPSNum = -1;
-	int FPSDen = (int)vsapi->propGetInt(in, "fpsden", 0, &err);
+	int FPSDen = int64ToIntS(vsapi->propGetInt(in, "fpsden", 0, &err));
 	if (err)
 		FPSDen = 1;
-	int Threads = (int)vsapi->propGetInt(in, "threads", 0, &err);
+	int Threads = int64ToIntS(vsapi->propGetInt(in, "threads", 0, &err));
 	const char *Timecodes = vsapi->propGetData(in, "timecodes", 0, &err);
-	int SeekMode = (int)vsapi->propGetInt(in, "seekmode", 0, &err);
+	int SeekMode = int64ToIntS(vsapi->propGetInt(in, "seekmode", 0, &err));
 	if (err)
 		SeekMode = FFMS_SEEK_NORMAL;
-	int RFFMode = (int)vsapi->propGetInt(in, "rffmode", 0, &err);
-	int Width = (int)vsapi->propGetInt(in, "width", 0, &err);
-	int Height = (int)vsapi->propGetInt(in, "height", 0, &err);
+	int RFFMode = int64ToIntS(vsapi->propGetInt(in, "rffmode", 0, &err));
+	int Width = int64ToIntS(vsapi->propGetInt(in, "width", 0, &err));
+	int Height = int64ToIntS(vsapi->propGetInt(in, "height", 0, &err));
 	const char *Resizer = vsapi->propGetData(in, "resizer", 0, &err);
 	if (err)
 		Resizer = "BICUBIC";
-	int Format = (int)vsapi->propGetInt(in, "format", 0, &err);
+	int Format = int64ToIntS(vsapi->propGetInt(in, "format", 0, &err));
+
+	bool OutputAlpha = !!vsapi->propGetInt(in, "alpha", 0, &err);
+	if (err)
+		OutputAlpha = true;
 
 	if (FPSDen < 1)
 		return vsapi->setError(out, "Source: FPS denominator needs to be 1 or higher");
@@ -192,13 +204,13 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
 
 	VSVideoSource *vs;
 	try {
-		vs = new VSVideoSource(Source, Track, Index, FPSNum, FPSDen, Threads, SeekMode, RFFMode, Width, Height, Resizer, Format, vsapi, core);
+		vs = new VSVideoSource(Source, Track, Index, FPSNum, FPSDen, Threads, SeekMode, RFFMode, Width, Height, Resizer, Format, OutputAlpha, vsapi, core);
 	} catch (std::exception const& e) {
 		FFMS_DestroyIndex(Index);
 		return vsapi->setError(out, e.what());
 	}
 
-	vsapi->createFilter(in, out, "Source", VSVideoSource::Init, VSVideoSource::GetFrame, VSVideoSource::Free, fmSerial, 0,vs, core);
+	vsapi->createFilter(in, out, "Source", VSVideoSource::Init, VSVideoSource::GetFrame, VSVideoSource::Free, fmUnordered, 0,vs, core);
 
 	FFMS_DestroyIndex(Index);
 }
@@ -222,7 +234,7 @@ static void VS_CC GetVersion(const VSMap *, VSMap *out, void *, VSCore *, const 
 VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin *plugin) {
 	configFunc("com.vapoursynth.ffms2", "ffms2", "FFmpegSource 2 for VapourSynth", VAPOURSYNTH_API_VERSION, 1, plugin);
 	registerFunc("Index", "source:data;cachefile:data:opt;indexmask:int:opt;dumpmask:int:opt;audiofile:data:opt;errorhandling:int:opt;overwrite:int:opt;demuxer:data:opt;", CreateIndex, nullptr, plugin);
-	registerFunc("Source", "source:data;track:int:opt;cache:int:opt;cachefile:data:opt;fpsnum:int:opt;fpsden:int:opt;threads:int:opt;timecodes:data:opt;seekmode:int:opt;width:int:opt;height:int:opt;resizer:data:opt;format:int:opt;", CreateSource, nullptr, plugin);
+	registerFunc("Source", "source:data;track:int:opt;cache:int:opt;cachefile:data:opt;fpsnum:int:opt;fpsden:int:opt;threads:int:opt;timecodes:data:opt;seekmode:int:opt;width:int:opt;height:int:opt;resizer:data:opt;format:int:opt;alpha:int:opt;", CreateSource, nullptr, plugin);
 	registerFunc("GetLogLevel", "", GetLogLevel, nullptr, plugin);
 	registerFunc("SetLogLevel", "level:int;", SetLogLevel, nullptr, plugin);
 	registerFunc("Version", "", GetVersion, nullptr, plugin);

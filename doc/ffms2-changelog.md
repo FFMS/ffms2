@@ -1,6 +1,8 @@
 # FFmpegSource2 Changelog
 
 - 2.21
+  - vapoursource: Add support for outputting the alpha channel too (Myrsloik)
+  - vapoursource: Fix resizer selection so bicubic isn't always used (Myrsloik)
   - vapoursource: Set chroma location and full colorspace information (Myrsloik)
   - Added support for indexing files with more than 32 tracks and the possibility to skip indexing of video tracks (Myrsloik)
   - The Avisynth plugin now sets all per frame variables in all modes to avoid ugly and slow FFInfo() errors (Myrsloik)

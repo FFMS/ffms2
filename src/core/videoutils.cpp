@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 The FFmpegSource Project
+//  Copyright (c) 2007-2015 The FFmpegSource Project
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -142,7 +142,7 @@ struct LossAttributes {
 	int ChromaUndersampling;
 	int ChromaOversampling;
 	int DepthDifference;
-	int CSLoss; // 0 = same, 1 = no real loss (gray => yuv/rgb), 2 = full conversion required, 3 = complete color loss
+	int CSLoss; // 0 = same, 1 = no real loss (gray => yuv/rgb), 2 = full conversion required, 3 = alpha loss, 4 = complete color loss
 };
 
 static int GetPseudoDepth(const AVPixFmtDescriptor &Desc) {
@@ -174,10 +174,13 @@ static LossAttributes CalculateLoss(PixelFormat Dst, PixelFormat Src) {
 	} else if (DstCS == cGRAY) {
 		Loss.ChromaOversampling = 0;
 		Loss.ChromaUndersampling = 10;
-		Loss.CSLoss = 3;
+		Loss.CSLoss = 4;
 	} else { // conversions between RGB and YUV here
 		Loss.CSLoss = 2;
 	}
+
+	if (Loss.CSLoss < 3 && (DstDesc.nb_components == SrcDesc.nb_components - 1))
+		Loss.CSLoss = 3;
 
 	return Loss;
 }
@@ -198,7 +201,7 @@ PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelForma
 	LossAttributes Loss = CalculateLoss(*i++, Src);
 	for (; i != Dsts.end(); ++i) {
 		LossAttributes CLoss = CalculateLoss(*i, Src);
-		if (Loss.CSLoss == 3 && CLoss.CSLoss < 3) { // Preserve chroma information at any cost
+		if (Loss.CSLoss == 3 && CLoss.CSLoss < 3) { // Preserve chroma and alpha information at any cost
 			Loss = CLoss;
 		} else if (Loss.DepthDifference >= 0 && CLoss.DepthDifference >= 0) { // focus on chroma undersamling and conversion loss if the target depth has been achieved
 			if ((CLoss.ChromaUndersampling < Loss.ChromaUndersampling)

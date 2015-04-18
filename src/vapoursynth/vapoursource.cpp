@@ -19,6 +19,7 @@
 //  THE SOFTWARE.
 
 #include "vapoursource.h"
+#include "../avisynth/avsutils.h"
 
 #include <algorithm>
 #include <cmath>
@@ -57,11 +58,15 @@ static bool IsRealPlanar(const AVPixFmtDescriptor &desc) {
 	int used_planes = 0;
 	for (int i = 0; i < desc.nb_components; i++)
 		used_planes = std::max(used_planes, (int)desc.comp[i].plane + 1);
-	return (used_planes == desc.nb_components) && (desc.nb_components == 1 || desc.nb_components == 3) && (desc.comp[0].depth_minus1 + 1 >= 8);
+	return (used_planes == desc.nb_components) && (desc.comp[0].depth_minus1 + 1 >= 8);
+}
+
+static bool HasAlpha(const AVPixFmtDescriptor &desc) {
+	return !!(desc.flags & AV_PIX_FMT_FLAG_ALPHA);
 }
 
 static int GetColorFamily(const AVPixFmtDescriptor &desc) {
-	if (desc.nb_components == 1)
+	if (desc.nb_components <= 2)
 		return cmGray;
 	else if (desc.flags & PIX_FMT_RGB)
 		return cmRGB;
@@ -69,35 +74,44 @@ static int GetColorFamily(const AVPixFmtDescriptor &desc) {
 		return cmYUV;
 }
 
-static int formatConversion(int id, bool toPixelFormat, VSCore *core, const VSAPI *vsapi) {
-	if (toPixelFormat) {
-		const VSFormat *f = vsapi->getFormatPreset(id, core);
-		int npixfmt = GetNumPixFmts();
+static int FormatConversionToPixelFormat(int id, bool Alpha, VSCore *core, const VSAPI *vsapi) {
+	const VSFormat *f = vsapi->getFormatPreset(id, core);
+	int npixfmt = GetNumPixFmts();
+	// Look for a suitable format without alpha first to not waste memory
+	if (!Alpha) {
 		for (int i = 0; i < npixfmt; i++) {
-			const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat) i);
-			if (IsRealPlanar(desc)
+			const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat)i);
+			if (IsRealPlanar(desc) && !HasAlpha(desc)
 				&& GetColorFamily(desc) == f->colorFamily
 				&& desc.comp[0].depth_minus1 + 1 == f->bitsPerSample
 				&& desc.log2_chroma_w == f->subSamplingW
 				&& desc.log2_chroma_h == f->subSamplingH)
 				return i;
 		}
-		return PIX_FMT_NONE;
-	} else {
-		int colorfamily = cmYUV;
-		if (av_pix_fmt_desc_get((AVPixelFormat) id)->nb_components == 1)
-			colorfamily = cmGray;
-		else if (av_pix_fmt_desc_get((AVPixelFormat) id)->nb_components == 1)
-			colorfamily = cmRGB;
-		return vsapi->registerFormat(colorfamily, stInteger,
-			av_pix_fmt_desc_get((AVPixelFormat) id)->comp[0].depth_minus1 + 1,
-			av_pix_fmt_desc_get((AVPixelFormat) id)->log2_chroma_w,
-			av_pix_fmt_desc_get((AVPixelFormat) id)->log2_chroma_h, core)->id;
 	}
+	// Try al remaining formats
+	for (int i = 0; i < npixfmt; i++) {
+		const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat)i);
+		if (IsRealPlanar(desc) && HasAlpha(desc)
+			&& GetColorFamily(desc) == f->colorFamily
+			&& desc.comp[0].depth_minus1 + 1 == f->bitsPerSample
+			&& desc.log2_chroma_w == f->subSamplingW
+			&& desc.log2_chroma_h == f->subSamplingH)
+			return i;
+	}
+	return PIX_FMT_NONE;
+}
+
+static const VSFormat *FormatConversionToVS(int id, VSCore *core, const VSAPI *vsapi) {
+	return vsapi->registerFormat(GetColorFamily(*av_pix_fmt_desc_get((AVPixelFormat)id)), stInteger,
+		av_pix_fmt_desc_get((AVPixelFormat)id)->comp[0].depth_minus1 + 1,
+		av_pix_fmt_desc_get((AVPixelFormat)id)->log2_chroma_w,
+		av_pix_fmt_desc_get((AVPixelFormat)id)->log2_chroma_h, core);
 }
 
 void VS_CC VSVideoSource::Init(VSMap *, VSMap *, void **instanceData, VSNode *node, VSCore *, const VSAPI *vsapi) {
-	vsapi->setVideoInfo(&static_cast<VSVideoSource *>(*instanceData)->VI, 1, node);
+	VSVideoSource *Source = static_cast<VSVideoSource *>(*instanceData);
+	vsapi->setVideoInfo(Source->VI, Source->OutputAlpha ? 2 : 1, node);
 }
 
 const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, void **instanceData, void **, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi) {
@@ -110,7 +124,9 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 		E.BufferSize = sizeof(ErrorMsg);
 		std::string buf = "Source: ";
 
-		VSFrameRef *Dst = vsapi->newVideoFrame(vs->VI.format, vs->VI.width, vs->VI.height, nullptr, core);
+		int OutputIndex = vs->OutputAlpha ? vsapi->getOutputIndex(frameCtx) : 0;	
+
+		VSFrameRef *Dst = vsapi->newVideoFrame(vs->VI[OutputIndex].format, vs->VI[OutputIndex].width, vs->VI[OutputIndex].height, nullptr, core);
 		VSMap *Props = vsapi->getFramePropsRW(Dst);
 
 		const FFMS_Frame *Frame;
@@ -127,7 +143,7 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 			FFMS_Track *T = FFMS_GetTrackFromVideo(vs->V);
 			const FFMS_TrackTimeBase *TB = FFMS_GetTimeBase(T);
 			int64_t num;
-			if (n + 1 < vs->VI.numFrames)
+			if (n + 1 < vs->VI[0].numFrames)
 				num = FFMS_GetFrameInfo(T, n + 1)->PTS - FFMS_GetFrameInfo(T, n)->PTS;
             else if (n > 0) // simply use the second to last frame's duration for the last one, should be good enough
                 num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
@@ -169,7 +185,10 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
             FieldBased = (Frame->TopFieldFirst ? 2 : 1);
         vsapi->propSetInt(Props, "_FieldBased", FieldBased, paReplace);
 
-		OutputFrame(Frame, Dst, vsapi, core);
+		if (OutputIndex == 0)
+			OutputFrame(Frame, Dst, vsapi);
+		else
+			OutputAlphaFrame(Frame, vs->VI[0].format->numPlanes, Dst, vsapi);
 
 		return Dst;
 	}
@@ -184,10 +203,11 @@ void VS_CC VSVideoSource::Free(void *instanceData, VSCore *, const VSAPI *) {
 VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, int Threads, int SeekMode, int /*RFFMode*/,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
-		int Format, const VSAPI *vsapi, VSCore *core)
-		: FPSNum(FPSNum), FPSDen(FPSDen) {
+		int Format, bool OutputAlpha, const VSAPI *vsapi, VSCore *core)
+		: FPSNum(FPSNum), FPSDen(FPSDen), OutputAlpha(OutputAlpha) {
 
-	memset(&VI, 0, sizeof(VI));
+	VI[0] = { 0 };
+	VI[1] = { 0 };
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
@@ -208,19 +228,24 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
 	const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
 
 	if (FPSNum > 0 && FPSDen > 0) {
-		VI.fpsDen = FPSDen;
-		VI.fpsNum = FPSNum;
+		VI[0].fpsDen = FPSDen;
+		VI[0].fpsNum = FPSNum;
 		if (VP->NumFrames > 1) {
-			VI.numFrames = static_cast<int>((VP->LastTime - VP->FirstTime) * (1 + 1. / (VP->NumFrames - 1)) * FPSNum / FPSDen + 0.5);
-			if (VI.numFrames < 1)
-                VI.numFrames = 1;
+			VI[0].numFrames = static_cast<int>((VP->LastTime - VP->FirstTime) * (1 + 1. / (VP->NumFrames - 1)) * FPSNum / FPSDen + 0.5);
+			if (VI[0].numFrames < 1)
+				VI[0].numFrames = 1;
 		} else {
-			VI.numFrames = 1;
+			VI[0].numFrames = 1;
 		}
 	} else {
-		VI.fpsDen = VP->FPSDenominator;
-		VI.fpsNum = VP->FPSNumerator;
-		VI.numFrames = VP->NumFrames;
+		VI[0].fpsDen = VP->FPSDenominator;
+		VI[0].fpsNum = VP->FPSNumerator;
+		VI[0].numFrames = VP->NumFrames;
+	}
+
+	if (OutputAlpha) {
+		VI[1] = VI[0];
+		VI[1].format = vsapi->registerFormat(cmGray, VI[0].format->sampleType, VI[0].format->bitsPerSample, VI[0].format->subSamplingW, VI[0].format->subSamplingH, core);
 	}
 
 	SARNum = VP->SARNum;
@@ -232,7 +257,7 @@ VSVideoSource::~VSVideoSource() {
 }
 
 void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
-		const char * /*ResizerName*/, int ConvertToFormat, const VSAPI *vsapi, VSCore *core) {
+		const char *ResizerName, int ConvertToFormat, const VSAPI *vsapi, VSCore *core) {
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;
@@ -255,7 +280,7 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 
 	int TargetPixelFormat = PIX_FMT_NONE;
 	if (ConvertToFormat != pfNone) {
-		TargetPixelFormat = formatConversion(ConvertToFormat, true, core, vsapi);
+		TargetPixelFormat = FormatConversionToPixelFormat(ConvertToFormat, OutputAlpha, core, vsapi);
 		if (TargetPixelFormat == PIX_FMT_NONE)
 			throw std::runtime_error(std::string("Source: Invalid output colorspace specified"));
 
@@ -270,13 +295,9 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	if (ResizeToHeight <= 0)
 		ResizeToHeight = F->EncodedHeight;
 
-	/* fixme, ignore the resizer for now since nobody ever uses it
 	int Resizer = ResizerNameToSWSResizer(ResizerName);
 	if (Resizer == 0)
 		throw std::runtime_error(std::string("Source: Invalid resizer name specified"));
-	*/
-
-	int Resizer = SWS_BICUBIC;
 
 	if (FFMS_SetOutputFormatV2(V, &TargetFormats[0],
 		ResizeToWidth, ResizeToHeight, Resizer, &E))
@@ -288,24 +309,34 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	TargetFormats.push_back(-1);
 
 	// This trick is required to first get the "best" default format and then set only that format as the output
-	if (FFMS_SetOutputFormatV2(V, &TargetFormats[0], ResizeToWidth, ResizeToHeight, Resizer, &E))
+	if (FFMS_SetOutputFormatV2(V, TargetFormats.data(), ResizeToWidth, ResizeToHeight, Resizer, &E))
 		throw std::runtime_error(std::string("Source: No suitable output format found"));
 
 	F = FFMS_GetFrame(V, 0, &E);
 
-	VI.format = vsapi->getFormatPreset(formatConversion(F->ConvertedPixelFormat, false, core, vsapi), core);
-	if (!VI.format)
+	// Don't output alpha if the clip doesn't have it
+	if (!HasAlpha(*av_pix_fmt_desc_get((AVPixelFormat)F->ConvertedPixelFormat)))
+		OutputAlpha = false;
+
+	VI[0].format = FormatConversionToVS(F->ConvertedPixelFormat, core, vsapi);
+	if (!VI[0].format)
 		throw std::runtime_error(std::string("Source: No suitable output format found"));
 
-	VI.width = F->ScaledWidth;
-	VI.height = F->ScaledHeight;
+	VI[0].width = F->ScaledWidth;
+	VI[0].height = F->ScaledHeight;
 
 	// fixme? Crop to obey sane even width/height requirements
 }
 
-void VSVideoSource::OutputFrame(const FFMS_Frame *Frame, VSFrameRef *Dst, const VSAPI *vsapi, VSCore *) {
+void VSVideoSource::OutputFrame(const FFMS_Frame *Frame, VSFrameRef *Dst, const VSAPI *vsapi) {
 	const VSFormat *fi = vsapi->getFrameFormat(Dst);
     for (int i = 0; i < fi->numPlanes; i++)
         BitBlt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i],
             vsapi->getFrameWidth(Dst, i) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, i));
+}
+
+void VSVideoSource::OutputAlphaFrame(const FFMS_Frame *Frame, int Plane, VSFrameRef *Dst, const VSAPI *vsapi) {
+	const VSFormat *fi = vsapi->getFrameFormat(Dst);
+	BitBlt(vsapi->getWritePtr(Dst, 0), vsapi->getStride(Dst, 0), Frame->Data[Plane], Frame->Linesize[Plane],
+		vsapi->getFrameWidth(Dst, 0) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, 0));
 }
