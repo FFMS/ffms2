@@ -383,7 +383,7 @@ FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int
 	IndexMask |= DumpMask;
 	for (int i = 0; i < sizeof(int) * 8; i++) {
 		if ((IndexMask >> i) & 1)
-			FFMS_IndexTrackSettings(Indexer, i, 1, ((DumpMask >> i) & 1));
+			FFMS_TrackIndexSettings(Indexer, i, 1, ((DumpMask >> i) & 1));
 	}
 
 	Indexer->SetErrorHandling(ErrorHandling);
@@ -400,12 +400,10 @@ FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int
 	return Index;
 }
 
-FFMS_API(FFMS_Index *) FFMS_DoIndexing2(FFMS_Indexer *Indexer, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
+FFMS_API(FFMS_Index *) FFMS_DoIndexing2(FFMS_Indexer *Indexer, int ErrorHandling, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 
 	Indexer->SetErrorHandling(ErrorHandling);
-	Indexer->SetProgressCallback(IC, ICPrivate);
-	Indexer->SetAudioNameCallback(ANC, ANCPrivate);
 
 	FFMS_Index *Index = nullptr;
 	try {
@@ -417,12 +415,20 @@ FFMS_API(FFMS_Index *) FFMS_DoIndexing2(FFMS_Indexer *Indexer, TAudioNameCallbac
 	return Index;
 }
 
-FFMS_API(void) FFMS_IndexTrackSettings(FFMS_Indexer *Indexer, int Track, int Index, int Dump) {
+FFMS_API(void) FFMS_TrackIndexSettings(FFMS_Indexer *Indexer, int Track, int Index, int Dump) {
 	Indexer->SetIndexTrack(Track, !!Index, !!Dump);
 }
 
-FFMS_API(void) FFMS_IndexTrackType(FFMS_Indexer *Indexer, int TrackType, int Index, int Dump) {
+FFMS_API(void) FFMS_TrackTypeIndexSettings(FFMS_Indexer *Indexer, int TrackType, int Index, int Dump) {
 	Indexer->SetIndexTrackType(TrackType, !!Index, !!Dump);
+}
+
+FFMS_API(void) FFMS_SetAudioNameCallback(FFMS_Indexer *Indexer, TAudioNameCallback ANC, void *ANCPrivate) {
+	Indexer->SetAudioNameCallback(ANC, ANCPrivate);
+}
+
+FFMS_API(void) FFMS_SetProgressCallback(FFMS_Indexer *Indexer, TIndexCallback IC, void *ICPrivate) {
+	Indexer->SetProgressCallback(IC, ICPrivate);
 }
 
 FFMS_API(void) FFMS_CancelIndexing(FFMS_Indexer *Indexer) {

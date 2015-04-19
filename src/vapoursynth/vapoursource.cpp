@@ -89,7 +89,7 @@ static int FormatConversionToPixelFormat(int id, bool Alpha, VSCore *core, const
 				return i;
 		}
 	}
-	// Try al remaining formats
+	// Try all remaining formats
 	for (int i = 0; i < npixfmt; i++) {
 		const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat)i);
 		if (IsRealPlanar(desc) && HasAlpha(desc)
