@@ -208,7 +208,7 @@ void DoIndexing() {
 			if (!Filename.empty()) {
 				std::ofstream kf(Filename.c_str());
 				kf << "# keyframe format v1\n"
-				      "fps 0\n";
+					"fps 0\n";
 
 				int FrameCount = FFMS_GetNumFrames(Track);
 				for (int CurFrameNum = 0; CurFrameNum < FrameCount; CurFrameNum++) {

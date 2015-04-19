@@ -36,15 +36,15 @@ extern "C" {
 }
 
 static void BitBlt(uint8_t* dstp, int dst_pitch, const uint8_t* srcp, int src_pitch, int row_size, int height) {
-    if (src_pitch == dst_pitch && dst_pitch == row_size) {
-        memcpy(dstp, srcp, row_size * height);
-    } else {
-        for (int i = 0; i < height; i++) {
-            memcpy(dstp, srcp, row_size);
-            dstp += dst_pitch;
-            srcp += src_pitch;
-        }
-    }
+	if (src_pitch == dst_pitch && dst_pitch == row_size) {
+		memcpy(dstp, srcp, row_size * height);
+	} else {
+		for (int i = 0; i < height; i++) {
+			memcpy(dstp, srcp, row_size);
+			dstp += dst_pitch;
+			srcp += src_pitch;
+		}
+	}
 }
 
 static int GetNumPixFmts() {
@@ -145,10 +145,10 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 			int64_t num;
 			if (n + 1 < vs->VI[0].numFrames)
 				num = FFMS_GetFrameInfo(T, n + 1)->PTS - FFMS_GetFrameInfo(T, n)->PTS;
-            else if (n > 0) // simply use the second to last frame's duration for the last one, should be good enough
-                num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
-            else // just make it one timebase if it's a single frame clip
-                num = 1;
+			else if (n > 0) // simply use the second to last frame's duration for the last one, should be good enough
+				num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
+			else // just make it one timebase if it's a single frame clip
+				num = 1;
 			vsapi->propSetInt(Props, "_DurationNum", TB->Num * num, paReplace);
 			vsapi->propSetInt(Props, "_DurationDen", TB->Den, paReplace);
 			vsapi->propSetFloat(Props, "_AbsoluteTime",
@@ -174,16 +174,16 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 			vsapi->propSetInt(Props, "_ChromaLocation", Frame->ChromaLocation - 1, paReplace);
 
 		if (Frame->ColorRange == FFMS_CR_MPEG)
-            vsapi->propSetInt(Props, "_ColorRange", 1, paReplace);
-        else if (Frame->ColorRange == FFMS_CR_JPEG)
-            vsapi->propSetInt(Props, "_ColorRange", 0, paReplace);
+			vsapi->propSetInt(Props, "_ColorRange", 1, paReplace);
+		else if (Frame->ColorRange == FFMS_CR_JPEG)
+			vsapi->propSetInt(Props, "_ColorRange", 0, paReplace);
 		vsapi->propSetData(Props, "_PictType", &Frame->PictType, 1, paReplace);
 
-        // Set field information
-        int FieldBased = 0;
-        if (Frame->InterlacedFrame)
-            FieldBased = (Frame->TopFieldFirst ? 2 : 1);
-        vsapi->propSetInt(Props, "_FieldBased", FieldBased, paReplace);
+		// Set field information
+		int FieldBased = 0;
+		if (Frame->InterlacedFrame)
+			FieldBased = (Frame->TopFieldFirst ? 2 : 1);
+		vsapi->propSetInt(Props, "_FieldBased", FieldBased, paReplace);
 
 		if (OutputIndex == 0)
 			OutputFrame(Frame, Dst, vsapi);
@@ -330,9 +330,9 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 
 void VSVideoSource::OutputFrame(const FFMS_Frame *Frame, VSFrameRef *Dst, const VSAPI *vsapi) {
 	const VSFormat *fi = vsapi->getFrameFormat(Dst);
-    for (int i = 0; i < fi->numPlanes; i++)
-        BitBlt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i],
-            vsapi->getFrameWidth(Dst, i) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, i));
+	for (int i = 0; i < fi->numPlanes; i++)
+		BitBlt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i],
+			vsapi->getFrameWidth(Dst, i) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, i));
 }
 
 void VSVideoSource::OutputAlphaFrame(const FFMS_Frame *Frame, int Plane, VSFrameRef *Dst, const VSAPI *vsapi) {

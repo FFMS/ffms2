@@ -304,7 +304,7 @@ void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst,
 	} else if (VI.IsYUY2()) {
 		BlitField(Frame, Dst, Env, 0, Field);
 	} else { // RGB
-        Env->BitBlt(
+		Env->BitBlt(
 			Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1 - Field), -Dst->GetPitch() * 2,
 			SrcPicture->Data[0] + SrcPicture->Linesize[0] * Field, SrcPicture->Linesize[0] * 2,
 			Dst->GetRowSize(), Dst->GetHeight() / 2);
@@ -331,15 +331,15 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 				Env->ThrowError("FFVideoSource: %s", E.Buffer);
 			OutputField(Frame, Dst, !FirstField, Env);
 		}
-        Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
-        Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>('U'));
+		Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
+		Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>('U'));
 	} else {
 		const FFMS_Frame *Frame;
 
 		if (FPSNum > 0 && FPSDen > 0) {
 			Frame = FFMS_GetFrameByTime(V, FFMS_GetVideoProperties(V)->FirstTime +
 				(double)(n * (int64_t)FPSDen) / FPSNum, &E);
-            Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
+			Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
 		} else {
 			Frame = FFMS_GetFrame(V, n, &E);
 			FFMS_Track *T = FFMS_GetTrackFromVideo(V);
