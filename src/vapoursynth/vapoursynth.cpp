@@ -24,6 +24,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <set>
 
 // assume windows is the only OS with a case insensitive filesystem
 #ifndef _WIN32
@@ -47,12 +48,31 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
 	E.BufferSize = sizeof(ErrorMsg);
 	int err;
 
+	std::set<int> IndexTracks;
+	std::set<int> DumpTracks;
+
 	const char *Source = vsapi->propGetData(in, "source", 0, nullptr);
 	const char *CacheFile = vsapi->propGetData(in, "cachefile", 0, &err);
-	int IndexMask = (int)vsapi->propGetInt(in, "indexmask", 0, &err);
-	if (err)
-		IndexMask = -1;
-	int DumpMask = (int)vsapi->propGetInt(in, "dumpmask", 0, &err);
+	
+	int NumIndexTracks = vsapi->propNumElements(in, "indextracks");
+	bool IndexAllTracks = (NumIndexTracks == 1) && (int64ToIntS(vsapi->propGetInt(in, "indextracks", 0, nullptr)) == -1);
+	if (!IndexAllTracks) {
+		for (int i = 0; i < NumIndexTracks; i++) {
+			int Track = int64ToIntS(vsapi->propGetInt(in, "indextracks", i, nullptr));
+			IndexTracks.insert(Track);
+		}
+	}
+
+	int NumDumpTracks = vsapi->propNumElements(in, "dumptracks");
+	bool DumpAllTracks = (NumDumpTracks == 1) && (int64ToIntS(vsapi->propGetInt(in, "dumptracks", 0, nullptr)) == -1);
+	if (!DumpAllTracks) {
+		for (int i = 0; i < NumIndexTracks; i++) {
+			int Track = int64ToIntS(vsapi->propGetInt(in, "dumptracks", i, nullptr));
+			IndexTracks.insert(Track);
+			DumpTracks.insert(Track);
+		}
+	}
+
 	const char *AudioFile = vsapi->propGetData(in, "audiofile", 0, &err);
 	if (err)
 		AudioFile = "%sourcefile%.%trackzn%.w64";
@@ -86,7 +106,20 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
 			FFMS_DestroyIndex(Index);
 			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
 		}
-		if (!(Index = FFMS_DoIndexing(Indexer, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, ErrorHandling, nullptr, nullptr, &E)))
+
+		FFMS_SetAudioNameCallback(Indexer, FFMS_DefaultAudioFilename, (void *)AudioFile);
+
+		if (DumpAllTracks) {
+			FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 1);
+		} else if (IndexAllTracks) {
+			FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 0);
+		} 
+
+		for (int i : IndexTracks)
+			FFMS_TrackIndexSettings(Indexer, i, 1, DumpTracks.count(i));
+		
+
+		if (!(Index = FFMS_DoIndexing2(Indexer, ErrorHandling, &E)))
 			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
 		if (FFMS_WriteIndex(CacheFile, Index, &E)) {
 			FFMS_DestroyIndex(Index);
@@ -238,7 +271,7 @@ static void VS_CC GetVersion(const VSMap *, VSMap *out, void *, VSCore *, const 
 
 VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin *plugin) {
 	configFunc("com.vapoursynth.ffms2", "ffms2", "FFmpegSource 2 for VapourSynth", VAPOURSYNTH_API_VERSION, 1, plugin);
-	registerFunc("Index", "source:data;cachefile:data:opt;indexmask:int:opt;dumpmask:int:opt;audiofile:data:opt;errorhandling:int:opt;overwrite:int:opt;demuxer:data:opt;", CreateIndex, nullptr, plugin);
+	registerFunc("Index", "source:data;cachefile:data:opt;indextracks:int[]:opt;dumptracks:int[]:opt;audiofile:data:opt;errorhandling:int:opt;overwrite:int:opt;demuxer:data:opt;", CreateIndex, nullptr, plugin);
 	registerFunc("Source", "source:data;track:int:opt;cache:int:opt;cachefile:data:opt;fpsnum:int:opt;fpsden:int:opt;threads:int:opt;timecodes:data:opt;seekmode:int:opt;width:int:opt;height:int:opt;resizer:data:opt;format:int:opt;alpha:int:opt;", CreateSource, nullptr, plugin);
 	registerFunc("GetLogLevel", "", GetLogLevel, nullptr, plugin);
 	registerFunc("SetLogLevel", "level:int;", SetLogLevel, nullptr, plugin);
