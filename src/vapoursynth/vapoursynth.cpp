@@ -178,7 +178,12 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
 	}
 
 	if (!Index) {
-		if (!(Index = FFMS_MakeIndex(Source, 0, 0, nullptr, nullptr, true, nullptr, nullptr, &E)))
+		FFMS_Indexer *Indexer = FFMS_CreateIndexer(Source, &E);
+		if (!Indexer)
+			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
+
+		Index = FFMS_DoIndexing2(Indexer, FFMS_IEH_CLEAR_TRACK, &E);
+		if (!Index)
 			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
 
 		if (Cache)

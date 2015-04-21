@@ -142,7 +142,12 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	}
 
 	if (!Index) {
-		if (!(Index = FFMS_MakeIndex(Source, 0, 0, NULL, NULL, true, NULL, NULL, &E)))
+		FFMS_Indexer *Indexer = FFMS_CreateIndexer(Source, &E);
+		if (!Indexer)
+			Env->ThrowError("FFVideoSource: %s", E.Buffer);
+
+		Index = FFMS_DoIndexing2(Indexer, FFMS_IEH_CLEAR_TRACK, &E);
+		if (!Index)
 			Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
 		if (Cache)
@@ -237,7 +242,14 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	}
 
 	if (!Index) {
-		if (!(Index = FFMS_MakeIndex(Source, -1, 0, NULL, NULL, true, NULL, NULL, &E)))
+		FFMS_Indexer *Indexer = FFMS_CreateIndexer(Source, &E);
+		if (!Indexer)
+			Env->ThrowError("FFAudioSource: %s", E.Buffer);
+
+		FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 0);
+
+		Index = FFMS_DoIndexing2(Indexer, FFMS_IEH_CLEAR_TRACK, &E);
+		if (!Index)
 			Env->ThrowError("FFAudioSource: %s", E.Buffer);
 
 		if (Cache)
