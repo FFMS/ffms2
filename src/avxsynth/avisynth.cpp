@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,19 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 		FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(Source, Demuxer, &E);
 		if (!Indexer)
 			Env->ThrowError("FFIndex: %s", E.Buffer);
-		if (!(Index = FFMS_DoIndexing(Indexer, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, ErrorHandling, NULL, NULL, &E)))
+		FFMS_SetAudioNameCallback(Indexer, FFMS_DefaultAudioFilename, (void *)AudioFile);
+
+		// Treat -1 as meaning track numbers above 32 too, dumping implies indexing
+		if (DumpMask == -1) {
+			FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 1);
+		} else if (IndexMask == -1) {
+			FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 0);
+		}
+		// Apply attributes to remaining tracks
+		for (int i = 0; i < sizeof(int) * 8; i++)
+			FFMS_TrackIndexSettings(Indexer, i, ((IndexMask >> i) & 1) | ((DumpMask >> i) & 1), (DumpMask >> i) & 1);
+
+		if (!(Index = FFMS_DoIndexing2(Indexer, ErrorHandling, &E)))
 			Env->ThrowError("FFIndex: %s", E.Buffer);
 		if (FFMS_WriteIndex(CacheFile, Index, &E)) {
 			FFMS_DestroyIndex(Index);
