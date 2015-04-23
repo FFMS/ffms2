@@ -209,7 +209,7 @@ PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelForma
 	LossAttributes Loss = CalculateLoss(*i++, Src);
 	for (; i != Dsts.end(); ++i) {
 		LossAttributes CLoss = CalculateLoss(*i, Src);
-		if (Loss.CSLoss == 3 && CLoss.CSLoss < 3) { // favor the same color format output
+		if (Loss.CSLoss >= 3 && CLoss.CSLoss < Loss.CSLoss) { // favor the same color format output
 			Loss = CLoss;
 		} else if (Loss.DepthDifference >= 0 && CLoss.DepthDifference >= 0) { // focus on chroma undersamling and conversion loss if the target depth has been achieved
 			if ((CLoss.ChromaUndersampling < Loss.ChromaUndersampling)
