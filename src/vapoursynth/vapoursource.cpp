@@ -274,7 +274,7 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	std::vector<int> TargetFormats;
 	int npixfmt = GetNumPixFmts();
 	for (int i = 0; i < npixfmt; i++)
-		if (IsRealPlanar(*av_pix_fmt_desc_get((AVPixelFormat) i)))
+		if (IsRealPlanar(*av_pix_fmt_desc_get((AVPixelFormat)i)) && (OutputAlpha || !HasAlpha(*av_pix_fmt_desc_get((AVPixelFormat)i))))
 			TargetFormats.push_back(i);
 	TargetFormats.push_back(PIX_FMT_NONE);
 
