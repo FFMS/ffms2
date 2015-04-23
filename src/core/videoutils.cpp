@@ -197,11 +197,15 @@ PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelForma
 	if (i != Dsts.end())
 		return Src;
 
+	// If it's an evil paletted format pretend it's normal RGB when calculating loss
+    if (Src == PIX_FMT_PAL8)
+        Src = PIX_FMT_RGB32;
+
 	i = Dsts.begin();
 	LossAttributes Loss = CalculateLoss(*i++, Src);
 	for (; i != Dsts.end(); ++i) {
 		LossAttributes CLoss = CalculateLoss(*i, Src);
-		if (Loss.CSLoss == 3 && CLoss.CSLoss < 3) { // Preserve chroma and alpha information at any cost
+		if (Loss.CSLoss == 3 && CLoss.CSLoss < 3) { // favor the same color format output
 			Loss = CLoss;
 		} else if (Loss.DepthDifference >= 0 && CLoss.DepthDifference >= 0) { // focus on chroma undersamling and conversion loss if the target depth has been achieved
 			if ((CLoss.ChromaUndersampling < Loss.ChromaUndersampling)

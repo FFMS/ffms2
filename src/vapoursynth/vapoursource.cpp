@@ -58,7 +58,7 @@ static bool IsRealPlanar(const AVPixFmtDescriptor &desc) {
 	int used_planes = 0;
 	for (int i = 0; i < desc.nb_components; i++)
 		used_planes = std::max(used_planes, (int)desc.comp[i].plane + 1);
-	return (used_planes == desc.nb_components) && (desc.comp[0].depth_minus1 + 1 >= 8);
+	return (used_planes == desc.nb_components) && (desc.comp[0].depth_minus1 + 1 >= 8) && (!(desc.flags & AV_PIX_FMT_FLAG_PAL));
 }
 
 static bool HasAlpha(const AVPixFmtDescriptor &desc) {
