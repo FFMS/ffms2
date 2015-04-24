@@ -66,7 +66,7 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
 	int NumDumpTracks = vsapi->propNumElements(in, "dumptracks");
 	bool DumpAllTracks = (NumDumpTracks == 1) && (int64ToIntS(vsapi->propGetInt(in, "dumptracks", 0, nullptr)) == -1);
 	if (!DumpAllTracks) {
-		for (int i = 0; i < NumIndexTracks; i++) {
+		for (int i = 0; i < NumDumpTracks; i++) {
 			int Track = int64ToIntS(vsapi->propGetInt(in, "dumptracks", i, nullptr));
 			IndexTracks.insert(Track);
 			DumpTracks.insert(Track);
