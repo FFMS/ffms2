@@ -37,7 +37,7 @@ extern "C" {
 
 namespace {
 
-int TrackMask = 0;
+int IndexMask = 0;
 int DumpMask = 0;
 int Verbose = 0;
 int IgnoreErrors = 0;
@@ -95,7 +95,7 @@ void ParseCMDLine(int argc, char *argv[]) {
 		} else if (!strcmp(Option, "-k")) {
 			WriteKF = true;
 		} else if (!strcmp(Option, "-t")) {
-			TrackMask = atoi(OPTION_ARG("t"));
+			IndexMask = atoi(OPTION_ARG("t"));
 			i++;
 		} else if (!strcmp(Option, "-d")) {
 			DumpMask = atoi(OPTION_ARG("d"));
@@ -175,7 +175,20 @@ void DoIndexing() {
 	if (Indexer == nullptr)
 		throw Error("\nFailed to initialize indexing: ", E);
 
-	Index = FFMS_DoIndexing(Indexer, TrackMask, DumpMask, &GenAudioFilename, nullptr, IgnoreErrors, UpdateProgress, &Progress, &E);
+	FFMS_SetAudioNameCallback(Indexer, GenAudioFilename, nullptr);
+	FFMS_SetProgressCallback(Indexer, UpdateProgress, &Progress);
+
+	// Treat -1 as meaning track numbers above 32 too, dumping implies indexing
+	if (DumpMask == -1) {
+		FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 1);
+	} else if (IndexMask == -1) {
+		FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 0);
+	}
+	// Apply attributes to remaining tracks
+	for (int i = 0; i < sizeof(int) * 8; i++)
+		FFMS_TrackIndexSettings(Indexer, i, ((IndexMask >> i) & 1) | ((DumpMask >> i) & 1), (DumpMask >> i) & 1);
+
+	Index = FFMS_DoIndexing2(Indexer, IgnoreErrors, &E);
 	if (Index == nullptr)
 		throw Error("\nIndexing error: ", E);
 
