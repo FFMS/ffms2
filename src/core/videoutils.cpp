@@ -142,7 +142,7 @@ struct LossAttributes {
 	int ChromaUndersampling;
 	int ChromaOversampling;
 	int DepthDifference;
-	int CSLoss; // 0 = same, 1 = no real loss (gray => yuv/rgb), 2 = full conversion required, 3 = alpha loss, 4 = full conversion plus alpha loss, 5 = complete color loss
+	int CSLoss; // 0 = no difference, 1 = no real loss (gray => yuv/rgb or alpha plane added), 2 = full conversion required, 3 = alpha loss, 4 = full conversion plus alpha loss, 5 = complete color loss
 };
 
 static int GetPseudoDepth(const AVPixFmtDescriptor &Desc) {
@@ -184,6 +184,10 @@ static LossAttributes CalculateLoss(PixelFormat Dst, PixelFormat Src) {
 			Loss.CSLoss = 4;
 		else
 			Loss.CSLoss = 3;
+	}
+
+	if (Loss.CSLoss == 0 && (SrcDesc.nb_components == DstDesc.nb_components - 1)) {
+		Loss.CSLoss = 1;
 	}
 
 	return Loss;

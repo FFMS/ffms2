@@ -54,11 +54,18 @@ static int GetNumPixFmts() {
 	return n;
 }
 
-static bool IsRealPlanar(const AVPixFmtDescriptor &desc) {
+static bool IsRealNativeEndianPlanar(const AVPixFmtDescriptor &desc) {
 	int used_planes = 0;
 	for (int i = 0; i < desc.nb_components; i++)
 		used_planes = std::max(used_planes, (int)desc.comp[i].plane + 1);
-	return (used_planes == desc.nb_components) && (desc.comp[0].depth_minus1 + 1 >= 8) && (!(desc.flags & AV_PIX_FMT_FLAG_PAL));
+	bool temp = (used_planes == desc.nb_components) && (desc.comp[0].depth_minus1 + 1 >= 8) &&
+		(!(desc.flags & AV_PIX_FMT_FLAG_PAL));
+	if (!temp)
+		return false;
+	else if (desc.comp[0].depth_minus1 + 1 == 8)
+		return temp;
+	else
+		return (AV_PIX_FMT_YUV420P10 == AV_PIX_FMT_YUV420P10BE ? !!(desc.flags & AV_PIX_FMT_FLAG_BE) : !(desc.flags & AV_PIX_FMT_FLAG_BE));
 }
 
 static bool HasAlpha(const AVPixFmtDescriptor &desc) {
@@ -81,7 +88,7 @@ static int FormatConversionToPixelFormat(int id, bool Alpha, VSCore *core, const
 	if (!Alpha) {
 		for (int i = 0; i < npixfmt; i++) {
 			const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat)i);
-			if (IsRealPlanar(desc) && !HasAlpha(desc)
+			if (IsRealNativeEndianPlanar(desc) && !HasAlpha(desc)
 				&& GetColorFamily(desc) == f->colorFamily
 				&& desc.comp[0].depth_minus1 + 1 == f->bitsPerSample
 				&& desc.log2_chroma_w == f->subSamplingW
@@ -92,7 +99,7 @@ static int FormatConversionToPixelFormat(int id, bool Alpha, VSCore *core, const
 	// Try all remaining formats
 	for (int i = 0; i < npixfmt; i++) {
 		const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat)i);
-		if (IsRealPlanar(desc) && HasAlpha(desc)
+		if (IsRealNativeEndianPlanar(desc) && HasAlpha(desc)
 			&& GetColorFamily(desc) == f->colorFamily
 			&& desc.comp[0].depth_minus1 + 1 == f->bitsPerSample
 			&& desc.log2_chroma_w == f->subSamplingW
@@ -274,7 +281,7 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	std::vector<int> TargetFormats;
 	int npixfmt = GetNumPixFmts();
 	for (int i = 0; i < npixfmt; i++)
-		if (IsRealPlanar(*av_pix_fmt_desc_get((AVPixelFormat)i)) && (OutputAlpha || !HasAlpha(*av_pix_fmt_desc_get((AVPixelFormat)i))))
+		if (IsRealNativeEndianPlanar(*av_pix_fmt_desc_get((AVPixelFormat)i)))
 			TargetFormats.push_back(i);
 	TargetFormats.push_back(PIX_FMT_NONE);
 
