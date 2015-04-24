@@ -127,12 +127,12 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
 		}
 		FFMS_DestroyIndex(Index);
 		if (!OverWrite)
-			vsapi->propSetData(out, "result", "Index generated", 0, 0);
+			vsapi->propSetData(out, "result", "Index generated", -1, paReplace);
 		else
-			vsapi->propSetData(out, "result", "Index generated (forced overwrite)", 0, 0);
+			vsapi->propSetData(out, "result", "Index generated (forced overwrite)", -1, paReplace);
 	} else {
 		FFMS_DestroyIndex(Index);
-		vsapi->propSetData(out, "result", "Valid index already exists", 0, 0);
+		vsapi->propSetData(out, "result", "Valid index already exists", -1, paReplace);
 	}
 }
 
@@ -254,19 +254,19 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
 }
 
 static void VS_CC GetLogLevel(const VSMap *, VSMap *out, void *, VSCore *, const VSAPI *vsapi) {
-	vsapi->propSetInt(out, "level", FFMS_GetLogLevel(), 0);
+	vsapi->propSetInt(out, "level", FFMS_GetLogLevel(), paReplace);
 }
 
 static void VS_CC SetLogLevel(const VSMap *in, VSMap *out, void *, VSCore *, const VSAPI *vsapi) {
 	FFMS_SetLogLevel((int)vsapi->propGetInt(in, "level", 0, nullptr));
-	vsapi->propSetInt(out, "level", FFMS_GetLogLevel(), 0);
+	vsapi->propSetInt(out, "level", FFMS_GetLogLevel(), paReplace);
 }
 
 static void VS_CC GetVersion(const VSMap *, VSMap *out, void *, VSCore *, const VSAPI *vsapi) {
 	int Version = FFMS_GetVersion();
 	char buf[100];
 	sprintf(buf, "%d.%d.%d.%d", Version >> 24, (Version & 0xFF0000) >> 16, (Version & 0xFF00) >> 8, Version & 0xFF);
-	vsapi->propSetData(out, "version", buf, 0, 0);
+	vsapi->propSetData(out, "version", buf, -1, paReplace);
 }
 
 VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin *plugin) {
