@@ -15,10 +15,6 @@ Collecting weird clips from the internet and making them play takes more time th
 
 ## Limitations
 
- - Requires [Haali's Media Splitter][haali] if you want to seek in OGM or MPEG PS/TS.
-   Trying to do non-linear access in those containers without it will end in tears.
- - Haali's splitter requires transport streams to but cut at packed boundaries.
-   Use [TsRemux][tsremux] to fix the stream if you get an error message complaining about this.
  - Because of LAVF's demuxer, most raw streams (such as elementary h264 and other mpeg video streams) will fail to work properly.
  - FFAudioSource() will have to remake any index implicitly created by FFVideoSource() and therefore code like
    ```
@@ -36,17 +32,9 @@ Collecting weird clips from the internet and making them play takes more time th
    FFIndex(X)
    AudioDub(FFVideoSource(X), FFAudioSource(X))
    ```
-
-[haali]: http://haali.su/mkv/
-[tsremux]: http://forum.doom9.org/showthread.php?t=125447
-
-## Known issues
- - Interlaced H.264 is decoded in an odd way; each field gets its own full-height frame and the fieldrate is reported as the framerate, and furthermore one of the fields (odd or even) may "jump around".
-   To get the correct behavior, you can try setting fpsnum and fpsden so that the framerate is halved (may or may not work).
-   This issue is caused by libavcodec.
- - Decoding some M2TS files using Haali's splitter will cause massive blocking and other corruption issues.
-   You can work around the issue either by remuxing the file to MKV (using GDSMux (make sure you untick "minimize output file size" in the Global settings tab) or eac3to), or (if you will be doing linear decoding only) by setting `demuxer="lavf"` in `FFIndex` and using `seekmode=0` with `FFVideoSource`.
-   The cause of this issue is unknown but being investigated.
+ - Interlaced H.264 mostly works these days, but seeking may occasionally result in corruption.
+ - Transport Streams will not decode reliably without seekmode -1.
+ - Open-GOP H.264 will sometimes produces corruption when seeking.
 
 ## Compatibility
 
@@ -59,10 +47,8 @@ Collecting weird clips from the internet and making them play takes more time th
  - Image files: Most formats can be opened if seekmode=-1 is set, no animation support
 
 ### Audio
-Seeking should be sample-accurate with most codecs in AVI, MKV, MP4 and FLV with two notable exceptions, namely MP3 and AC3 where FFmpeg's decoders seem to be completely broken (with MP3 in particular you can feed the decoder the same encoded data three times in a row and get a different decoded result every time).
-Still, results should usually be "good enough" for most purposes.
-
-Decoding linearly will almost always work correctly.
+Seeking should be sample-accurate with most codecs in AVI, MKV, MP4 and FLV.
+Decoding linearly will almost always giee correct results, and forward-seeks from trimming should result in at most a few hundred samples of corruption.
 
 ## Indexing and You
 
@@ -80,7 +66,7 @@ If you want a progress report on the indexing, you can use the supplied `ffmsind
 ```
 FFIndex(string source, string cachefile = source + ".ffindex", int indexmask = -1,
     int dumpmask = 0, string audiofile = "%sourcefile%.%trackzn%.w64", int errorhandling = 3,
-    bool overwrite = false, bool utf8 = false, string demuxer = "default")
+    bool overwrite = false, bool utf8 = false)
 ```
 Indexes a number of tracks in a given source file and writes the index file to disk, where it can be picked up and used by `FFVideoSource` or `FFAudioSource`.
 Normally you do not need to call this function manually; it's invoked automatically if necessary by `FFVideoSource`/`FFAudioSource`.
@@ -148,17 +134,6 @@ Notepad will write a BOM, so use something else.
 
 You should also note that setting this parameter incorrectly will cause all file openings to fail unless your filenames are exclusively 7-bit ASCII compatible.
 
-##### string demuxer = "default"
-Forces FFMS to use a given demuxer, namely one of:
-
- - **default**: probe for the best source module, i.e. choose automatically.
- - **lavf**: use libavformat.
- - **matroska**: use Haali's Matroska parser. Obviously only works for Matroska and WebM files.
- - **haalimpeg**: use Haali's DirectShow MPEG TS/PS parser. Only works if Haali Media Splitter is installed and only on MPEG TS/PS files (.ts/.m2ts/.mpg/.mpeg).
- - **haaliogg:** use Haali's DirectShow Ogg parser. As above, only works if Haali Media Splitter is installed, and only on Ogg files (.ogg/.ogm).
-
-You should only use this parameter if you know exactly what you're doing and exactly why you want to force another demuxer.
-
 ### FFVideoSource
 ```
 FFVideoSource(string source, int track = -1, bool cache = true,
@@ -210,7 +185,6 @@ Set to the empty string to disable timecodes writing (this is the default).
 ##### int seekmode = 1
 Controls how seeking is done.
 Mostly useful for getting uncooperative files to work.
-Only has an effect on files opened with the libavformat demuxer; on other files the equivalent of mode 1 is always used.
 Valid modes are:
 
  - **-1**: Linear access without rewind; i.e. will throw an error if each successive requested frame number isn't bigger than the last one.

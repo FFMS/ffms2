@@ -22,15 +22,15 @@
 
 namespace {
 class FFLAVFVideo : public FFMS_VideoSource {
-	AVFormatContext *FormatContext;
+	AVFormatContext *FormatContext = nullptr;
 	int SeekMode;
 	FFSourceResources<FFMS_VideoSource> Res;
-	bool SeekByPos;
-	int PosOffset;
+	bool SeekByPos = false;
+	int PosOffset = 0;
 
 	void DecodeNextFrame(int64_t *PTS, int64_t *Pos);
 	bool SeekTo(int n, int SeekOffset);
-	void Free(bool CloseCodec);
+	void Free(bool CloseCodec) override;
 
 	int Seek(int n) {
 		int ret = -1;
@@ -67,7 +67,7 @@ class FFLAVFVideo : public FFMS_VideoSource {
 
 public:
 	FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode);
-	FFMS_Frame *GetFrame(int n);
+	FFMS_Frame *GetFrame(int n) override;
 };
 
 void FFLAVFVideo::Free(bool CloseCodec) {
@@ -79,11 +79,8 @@ void FFLAVFVideo::Free(bool CloseCodec) {
 FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	int Threads, int SeekMode)
 : FFMS_VideoSource(SourceFile, Index, Track, Threads)
-, FormatContext(NULL)
 , SeekMode(SeekMode)
 , Res(this)
-, SeekByPos(false)
-, PosOffset(0)
 {
 	LAVFOpenFile(SourceFile, FormatContext);
 
@@ -96,11 +93,11 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	CodecContext->has_b_frames = Frames.MaxBFrames;
 
 	AVCodec *Codec = avcodec_find_decoder(CodecContext->codec_id);
-	if (Codec == NULL)
+	if (Codec == nullptr)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Video codec not found");
 
-	if (avcodec_open2(CodecContext, Codec, NULL) < 0)
+	if (avcodec_open2(CodecContext, Codec, nullptr) < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Could not open video codec");
 

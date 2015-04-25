@@ -1,4 +1,4 @@
-//  Copyright (c) 2012 Fredrik Mellbin
+//  Copyright (c) 2012-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -103,8 +103,6 @@ void VS_CC VSVideoSource::Init(VSMap *, VSMap *, void **instanceData, VSNode *no
 const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, void **instanceData, void **, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi) {
 	VSVideoSource *vs = static_cast<VSVideoSource *>(*instanceData);
 	if (activationReason == arInitial) {
-		if (vs->VI.numFrames && n >= vs->VI.numFrames)
-			n = vs->VI.numFrames - 1;
 
 		char ErrorMsg[1024];
 		FFMS_ErrorInfo E;
@@ -112,7 +110,7 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 		E.BufferSize = sizeof(ErrorMsg);
 		std::string buf = "Source: ";
 
-		VSFrameRef *Dst = vsapi->newVideoFrame(vs->VI.format, vs->VI.width, vs->VI.height, NULL, core);
+		VSFrameRef *Dst = vsapi->newVideoFrame(vs->VI.format, vs->VI.width, vs->VI.height, nullptr, core);
 		VSMap *Props = vsapi->getFramePropsRW(Dst);
 
 		const FFMS_Frame *Frame;
@@ -131,18 +129,20 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 			int64_t num;
 			if (n + 1 < vs->VI.numFrames)
 				num = FFMS_GetFrameInfo(T, n + 1)->PTS - FFMS_GetFrameInfo(T, n)->PTS;
-			else // simply use the second to last frame's duration for the last one, should be good enough
-				num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
+            else if (n > 0) // simply use the second to last frame's duration for the last one, should be good enough
+                num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
+            else // just make it one timebase if it's a single frame clip
+                num = 1;
 			vsapi->propSetInt(Props, "_DurationNum", TB->Num * num, paReplace);
 			vsapi->propSetInt(Props, "_DurationDen", TB->Den, paReplace);
 			vsapi->propSetFloat(Props, "_AbsoluteTime",
 				((double)(TB->Num / 1000) *  FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, paReplace);
 		}
 
-		if (Frame == NULL) {
+		if (Frame == nullptr) {
 			buf += E.Buffer;
 			vsapi->setFilterError(buf.c_str(), frameCtx);
-			return NULL;
+			return nullptr;
 		}
 
 		// Set AR variables
@@ -158,12 +158,18 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
             vsapi->propSetInt(Props, "_ColorRange", 0, paReplace);
 		vsapi->propSetData(Props, "_PictType", &Frame->PictType, 1, paReplace);
 
+        // Set field information
+        int FieldBased = 0;
+        if (Frame->InterlacedFrame)
+            FieldBased = (Frame->TopFieldFirst ? 2 : 1);
+        vsapi->propSetInt(Props, "_FieldBased", FieldBased, paReplace);
+
 		OutputFrame(Frame, Dst, vsapi, core);
 
 		return Dst;
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 void VS_CC VSVideoSource::Free(void *instanceData, VSCore *, const VSAPI *) {
@@ -201,7 +207,8 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
 		VI.fpsNum = FPSNum;
 		if (VP->NumFrames > 1) {
 			VI.numFrames = static_cast<int>((VP->LastTime - VP->FirstTime) * (1 + 1. / (VP->NumFrames - 1)) * FPSNum / FPSDen + 0.5);
-			if (VI.numFrames < 1) VI.numFrames = 1;
+			if (VI.numFrames < 1)
+                VI.numFrames = 1;
 		} else {
 			VI.numFrames = 1;
 		}

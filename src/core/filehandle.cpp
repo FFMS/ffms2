@@ -23,79 +23,94 @@
 #include "utils.h"
 
 #include <cstdarg>
+#include <cstdio>
 
-#if defined(_WIN32) && !defined(__MINGW64_VERSION_MAJOR)
-#	ifdef __MINGW32__
-#		define fseeko fseeko64
-#		define ftello ftello64
-#	else
-#		define fseeko _fseeki64
-#		define ftello _ftelli64
-#	endif
-#endif
+static AVIOContext *ffms_fopen(const char *filename, const char *mode) {
+	AVIOContext *ctx;
+	std::string smode(mode);
+	int flags = 0;
+	int ret;
 
-#ifdef _WIN32
-static FILE *ffms_fopen(const char *filename, const char *mode) {
-	std::wstring filename_wide = widen_path(filename);
-	if (filename_wide.empty())
-		return fopen(filename, mode);
+	if (smode.find('r') != std::string::npos)
+		flags |= AVIO_FLAG_READ;
+	if (smode.find('w') != std::string::npos)
+		flags |= AVIO_FLAG_WRITE;
 
-	std::wstring mode_wide = widen_path(mode);
-	if (mode_wide.empty())
-		return fopen(filename, mode);
+	ret = avio_open2(&ctx, filename, flags, nullptr, nullptr);
+	if (ret < 0)
+		return nullptr;
 
-	return _wfopen(filename_wide.c_str(), mode_wide.c_str());
+	return ctx;
 }
-#else
-#define ffms_fopen fopen
-#endif // _WIN32
 
 FileHandle::FileHandle(const char *filename, const char *mode, int error_source, int error_cause)
-: f(ffms_fopen(filename, mode))
+: avio(ffms_fopen(filename, mode))
 , filename(filename)
 , error_source(error_source)
 , error_cause(error_cause)
 {
-	if (!f)
+	if (!avio)
 		throw FFMS_Exception(error_source, FFMS_ERROR_NO_FILE,
 			"Failed to open '" + this->filename + "'");
 }
 
 void FileHandle::Seek(int64_t offset, int origin) {
-	int ret = fseeko(f, offset, origin);
-	if (ret < 0 || ferror(f))
+	int64_t ret = avio_seek(avio, offset, origin);
+	if (ret < 0)
 		throw FFMS_Exception(error_source, error_cause,
 			"Failed to seek in '" + filename + "'");
 }
 
 int64_t FileHandle::Tell() {
-	int64_t ret = ftello(f);
-	if (ret < 0 || ferror(f))
+	int64_t ret = avio_tell(avio);
+	if (ret < 0)
 		throw FFMS_Exception(error_source, error_cause,
 			"Failed to read position in '" + filename + "'");
 	return ret;
 }
 
 size_t FileHandle::Read(char *buffer, size_t size) {
-	size_t count = fread(buffer, 1, size, f);
-	if (ferror(f) && !feof(f))
+	int count = avio_read(avio, (unsigned char *)buffer, size);
+	if (count < 0)
 		throw FFMS_Exception(error_source, FFMS_ERROR_FILE_READ,
 			"Failed to read from '" + filename + "'");
-	return count;
+	return (size_t)count;
 }
 
 size_t FileHandle::Write(const char *buffer, size_t size) {
-	size_t count = fwrite(buffer, 1, size, f);
-	if (ferror(f))
+	avio_write(avio, (const unsigned char *)buffer, size);
+	avio_flush(avio);
+	if (avio->error < 0)
 		throw FFMS_Exception(error_source, FFMS_ERROR_FILE_WRITE,
 			"Failed to write to '" + filename + "'");
-	return count;
+	return size;
+}
+
+int64_t FileHandle::Size() {
+	int64_t size = avio_size(avio);
+	if (size < 0)
+		throw FFMS_Exception(error_source, FFMS_ERROR_FILE_READ,
+			"Failed to get file size for '" + filename +"'");
+	return size;
 }
 
 int FileHandle::Printf(const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
-	int ret = vfprintf(f, fmt, args);
+
+	std::vector<char> OutBuffer(100);
+	int ret = -1;
+	while (OutBuffer.size() < 1024 * 1024) {
+		ret = vsnprintf(OutBuffer.data(), OutBuffer.size(), fmt, args);
+		if (ret > 0 && ret < (int)OutBuffer.size())
+			break;
+		OutBuffer.resize(OutBuffer.size() * 2);
+	}
+
 	va_end(args);
-	return ret;
+
+	avio_write(avio, reinterpret_cast<const unsigned char *>(OutBuffer.data()), ret);
+	avio_flush(avio);
+
+	return avio->error < 0 ? avio->error : ret;
 }

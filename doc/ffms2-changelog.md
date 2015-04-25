@@ -1,5 +1,16 @@
 # FFmpegSource2 Changelog
 
+- 2.21
+  - The Avisynth plugin now sets all per frame variables in all modes to avoid ugly and slow FFInfo() errors (Myrsloik)
+  - vapoursource: Fix crash on single frame files (Myrsloik)
+  - Remove the Matroska and Haali demuxers (qyot27, Plorkyeran)
+  - Fix adjustments for positive audio delay (tophf)
+  - Don't try to index video tracks in unsupported formats (Daemon404)
+  - Don't use scientific notation in timecode files (Daemon404)
+  - Fix utf8 support in FFVideoSource (nixxquality)
+  - Improve handling of files where only some packets have timestamps (Plorkyeran)
+  - Fix memory leaks in the VapourSynth error handling (Plorkyeran)
+
 - 2.20
   - Add support for Opus in MKV when ffmpeg/libav are built with libopus (qyot27)
   - vapoursource: Provide _AbsoluteTime metadata (Daemon404)

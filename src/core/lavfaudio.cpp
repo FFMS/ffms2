@@ -24,17 +24,17 @@
 
 namespace {
 class FFLAVFAudio : public FFMS_AudioSource {
-	AVFormatContext *FormatContext;
+	AVFormatContext *FormatContext = nullptr;
 	int64_t LastValidTS;
 	std::string SourceFile;
 
-	bool ReadPacket(AVPacket *);
-	void FreePacket(AVPacket *Packet) { av_free_packet(Packet); }
-	void Seek();
+	bool ReadPacket(AVPacket *) override;
+	void FreePacket(AVPacket *Packet) override { av_free_packet(Packet); }
+	void Seek() override;
 
 	int64_t FrameTS(size_t Packet) const;
 
-	void ReopenFile() {
+	void ReopenFile() override {
 		avcodec_close(CodecContext);
 		avformat_close_input(&FormatContext);
 
@@ -49,7 +49,7 @@ class FFLAVFAudio : public FFMS_AudioSource {
 			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 				"Audio codec not found");
 
-		if (avcodec_open2(CodecContext, Codec, NULL) < 0)
+		if (avcodec_open2(CodecContext, Codec, nullptr) < 0)
 			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 				"Could not open audio codec");
 	}
@@ -61,7 +61,6 @@ public:
 
 FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode)
 : FFMS_AudioSource(SourceFile, Index, Track)
-, FormatContext(NULL)
 , LastValidTS(ffms_av_nopts_value)
 , SourceFile(SourceFile)
 {

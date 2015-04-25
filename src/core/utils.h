@@ -22,7 +22,6 @@
 #define UTILS_H
 
 #include "ffms.h"
-#include "matroskaparser.h"
 
 extern "C" {
 #include <libavutil/mem.h>
@@ -39,25 +38,11 @@ extern "C" {
 #include "ffmscompat.h"
 
 #include <cstdio>
+#include <memory>
 #include <string>
 #include <vector>
 
 const int64_t ffms_av_nopts_value = static_cast<int64_t>(UINT64_C(0x8000000000000000));
-
-// used for matroska<->ffmpeg codec ID mapping to avoid Win32 dependency
-typedef struct FFMS_BITMAPINFOHEADER {
-	uint32_t      biSize;
-	int32_t       biWidth;
-	int32_t       biHeight;
-	uint16_t      biPlanes;
-	uint16_t      biBitCount;
-	uint32_t      biCompression;
-	uint32_t      biSizeImage;
-	int32_t       biXPelsPerMeter;
-	int32_t       biYPelsPerMeter;
-	uint32_t      biClrUsed;
-	uint32_t      biClrImportant;
-} FFMS_BITMAPINFOHEADER;
 
 class FFMS_Exception : public std::exception {
 	std::string _Message;
@@ -72,21 +57,22 @@ public:
 	int CopyOut(FFMS_ErrorInfo *ErrorInfo) const;
 };
 
-class noncopyable {
-	noncopyable(const noncopyable&);
-	noncopyable& operator=(const noncopyable&);
-public:
-	noncopyable() { }
-};
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args) {
+	return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
 
 template<class T>
-class FFSourceResources : private noncopyable {
+class FFSourceResources {
 	T *PrivClass;
-	bool Enabled;
-	bool Arg;
+	bool Enabled = true;
+	bool Arg = false;
+
+	FFSourceResources(FFSourceResources const&) = delete;
+	FFSourceResources& operator=(FFSourceResources const&) = delete;
 
 public:
-	FFSourceResources(T *Target) : PrivClass(Target), Enabled(true), Arg(false) { }
+	FFSourceResources(T *Target) : PrivClass(Target) { }
 
 	~FFSourceResources() {
 		if (Enabled)
@@ -116,8 +102,11 @@ public:
 };
 
 template<typename T, T *(*Alloc)(), void (*Del)(T **)>
-class unknown_size : private noncopyable {
+class unknown_size {
 	T *ptr;
+
+	unknown_size(unknown_size const&) = delete;
+	unknown_size& operator=(unknown_size const&) = delete;
 
 public:
 	operator T*() const { return ptr; }
@@ -142,27 +131,11 @@ typedef unknown_size<AVAudioResampleContext, avresample_alloc_context, avresampl
 typedef struct {} FFResampleContext;
 #endif
 
-inline void DeleteMatroskaCodecContext(AVCodecContext *CodecContext) {
-	avcodec_close(CodecContext);
-	av_freep(&CodecContext);
-}
-
-struct TrackCompressionContext : private noncopyable {
-	CompressedStream *CS;
-	void *CompressedPrivateData;
-	unsigned CompressedPrivateDataSize;
-	unsigned CompressionMethod;
-
-	TrackCompressionContext(MatroskaFile *MF, TrackInfo *TI, unsigned int Track);
-	~TrackCompressionContext();
-};
-
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
 bool AudioFMTIsFloat(AVSampleFormat FMT);
 void InitNullPacket(AVPacket &pkt);
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);
 
-void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext);
 std::wstring widen_path(const char *s);
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext);
 
@@ -197,9 +170,9 @@ namespace optdetail {
 template<typename FFMS_Struct>
 class OptionMapper {
 	struct OptionMapperBase {
-		virtual void ToOpt(const FFMS_Struct *src, void *dst) const=0;
-		virtual void FromOpt(FFMS_Struct *dst, void *src) const=0;
-		virtual ~OptionMapperBase() {}
+		virtual void ToOpt(FFMS_Struct const& src, void *dst) const=0;
+		virtual void FromOpt(FFMS_Struct &dst, void *src) const=0;
+		virtual ~OptionMapperBase() = default;
 	};
 
 	template<typename T>
@@ -209,31 +182,30 @@ class OptionMapper {
 
 	public:
 		OptionMapperImpl(T (FFMS_Struct::*ptr), const char *name) : ptr(ptr), name(name) { }
-		void ToOpt(const FFMS_Struct *src, void *dst) const { optdetail::set_av_opt(dst, name, src->*ptr); }
-		void FromOpt(FFMS_Struct *dst, void *src) const { dst->*ptr = optdetail::get_av_opt<T>(src, name); }
+		void ToOpt(FFMS_Struct const& src, void *dst) const { optdetail::set_av_opt(dst, name, src.*ptr); }
+		void FromOpt(FFMS_Struct &dst, void *src) const { dst.*ptr = optdetail::get_av_opt<T>(src, name); }
 	};
 
-	OptionMapperBase *impl;
+	std::unique_ptr<OptionMapperBase> impl;
 
 public:
 	template<typename T>
 	OptionMapper(const char *opt_name, T (FFMS_Struct::*member)) : impl(new OptionMapperImpl<T>(member, opt_name)) { }
-	~OptionMapper() { delete impl; }
 
-	void ToOpt(const FFMS_Struct *src, void *dst) const { impl->ToOpt(src, dst); }
-	void FromOpt(FFMS_Struct *dst, void *src) const { impl->FromOpt(dst, src); }
+	void ToOpt(FFMS_Struct const& src, void *dst) const { impl->ToOpt(src, dst); }
+	void FromOpt(FFMS_Struct &dst, void *src) const { impl->FromOpt(dst, src); }
 };
 
 template<typename T, int N>
-T *ReadOptions(void *opt, OptionMapper<T> (&options)[N]) {
-	T *ret = new T;
+std::unique_ptr<T> ReadOptions(void *opt, OptionMapper<T> (&options)[N]) {
+	auto ret = make_unique<T>();
 	for (int i = 0; i < N; ++i)
-		options[i].FromOpt(ret, opt);
+		options[i].FromOpt(*ret, opt);
 	return ret;
 }
 
 template<typename T, int N>
-void SetOptions(const T* src, void *opt, OptionMapper<T> (&options)[N]) {
+void SetOptions(T const& src, void *opt, OptionMapper<T> (&options)[N]) {
 	for (int i = 0; i < N; ++i)
 		options[i].ToOpt(src, opt);
 }

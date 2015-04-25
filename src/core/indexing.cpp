@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,6 @@
 
 #include "indexing.h"
 
-#include "codectype.h"
 #include "track.h"
 #include "wave64writer.h"
 #include "zipfile.h"
@@ -37,15 +36,8 @@ extern "C" {
 
 #define INDEXID 0x53920873
 
-extern bool HasHaaliMPEG;
-extern bool HasHaaliOGG;
-
 SharedVideoContext::SharedVideoContext(bool FreeCodecContext)
 : FreeCodecContext(FreeCodecContext)
-, CodecContext(NULL)
-, Parser(NULL)
-, BitStreamFilter(NULL)
-, TCC(NULL)
 {
 }
 
@@ -58,15 +50,10 @@ SharedVideoContext::~SharedVideoContext() {
 	av_parser_close(Parser);
 	if (BitStreamFilter)
 		av_bitstream_filter_close(BitStreamFilter);
-	delete TCC;
 }
 
 SharedAudioContext::SharedAudioContext(bool FreeCodecContext)
 : FreeCodecContext(FreeCodecContext)
-, CodecContext(NULL)
-, W64Writer(NULL)
-, CurrentSample(0)
-, TCC(NULL)
 {
 }
 
@@ -77,7 +64,6 @@ SharedAudioContext::~SharedAudioContext() {
 		if (FreeCodecContext)
 			av_freep(&CodecContext);
 	}
-	delete TCC;
 }
 
 void ffms_free_sha(AVSHA **ctx) { av_freep(ctx); }
@@ -89,23 +75,20 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 	unknown_size<AVSHA, av_sha_alloc, ffms_free_sha> ctx;
 #else
 	std::vector<uint8_t> ctxmem(av_sha_size);
-	AVSHA *ctx = (AVSHA*)(&ctxmem[0]);
+	AVSHA *ctx = (AVSHA*)(ctxmem.data());
 #endif
 	av_sha_init(ctx, 160);
 
 	try {
-		file.Seek(0, SEEK_END);
-		*Filesize = file.Tell();
-
-		file.Seek(0, SEEK_SET);
+		*Filesize = file.Size();
 		std::vector<char> FileBuffer(static_cast<size_t>(std::min<int64_t>(1024*1024, *Filesize)));
-		size_t BytesRead = file.Read(&FileBuffer[0], FileBuffer.size());
-		av_sha_update(ctx, reinterpret_cast<const uint8_t*>(&FileBuffer[0]), BytesRead);
+		size_t BytesRead = file.Read(FileBuffer.data(), FileBuffer.size());
+        av_sha_update(ctx, reinterpret_cast<const uint8_t*>(FileBuffer.data()), BytesRead);
 
 		if (*Filesize > static_cast<int64_t>(FileBuffer.size())) {
-			file.Seek(-(int)FileBuffer.size(), SEEK_END);
-			BytesRead = file.Read(&FileBuffer[0], FileBuffer.size());
-			av_sha_update(ctx, reinterpret_cast<const uint8_t*>(&FileBuffer[0]), BytesRead);
+            file.Seek(*Filesize - static_cast<int64_t>(FileBuffer.size()), SEEK_SET);
+            BytesRead = file.Read(FileBuffer.data(), FileBuffer.size());
+            av_sha_update(ctx, reinterpret_cast<const uint8_t*>(FileBuffer.data()), BytesRead);
 		}
 	}
 	catch (...) {
@@ -177,9 +160,7 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 	zf.Finish();
 }
 
-FFMS_Index::FFMS_Index(const char *IndexFile)
-: RefCount(1)
-{
+FFMS_Index::FFMS_Index(const char *IndexFile) {
 	ZipFile zf(IndexFile, "rb");
 
 	// Read the index file header
@@ -224,8 +205,7 @@ FFMS_Index::FFMS_Index(const char *IndexFile)
 }
 
 FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling)
-: RefCount(1)
-, Decoder(Decoder)
+: Decoder(Decoder)
 , ErrorHandling(ErrorHandling)
 , Filesize(Filesize)
 {
@@ -250,75 +230,18 @@ void FFMS_Indexer::SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate
 	this->ANCPrivate = ANCPrivate;
 }
 
-FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer) {
-	AVFormatContext *FormatContext = NULL;
+FFMS_Indexer *CreateIndexer(const char *Filename) {
+	AVFormatContext *FormatContext = nullptr;
 
-	if (avformat_open_input(&FormatContext, Filename, NULL, NULL) != 0)
+	if (avformat_open_input(&FormatContext, Filename, nullptr, nullptr) != 0)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Can't open '") + Filename + "'");
 
-	// Demuxer was not forced, probe for the best one to use
-	if (Demuxer == FFMS_SOURCE_DEFAULT) {
-		// Do matroska indexing instead?
-		if (!strncmp(FormatContext->iformat->name, "matroska", 8)) {
-			avformat_close_input(&FormatContext);
-			return CreateMatroskaIndexer(Filename);
-		}
-
-#ifdef HAALISOURCE
-		// Do haali ts indexing instead?
-		if (HasHaaliMPEG && (!strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts"))) {
-			avformat_close_input(&FormatContext);
-			return CreateHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
-		}
-
-		if (HasHaaliOGG && !strcmp(FormatContext->iformat->name, "ogg")) {
-			avformat_close_input(&FormatContext);
-			return CreateHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
-		}
-#endif
-
-		return CreateLavfIndexer(Filename, FormatContext);
-	}
-
-	// someone forced a demuxer, use it
-	if (Demuxer != FFMS_SOURCE_LAVF)
-		avformat_close_input(&FormatContext);
-#if !defined(HAALISOURCE)
-	if (Demuxer == FFMS_SOURCE_HAALIOGG || Demuxer == FFMS_SOURCE_HAALIMPEG) {
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Your binary was not compiled with support for Haali's DirectShow parsers");
-	}
-#endif // !defined(HAALISOURCE)
-
-	switch (Demuxer) {
-		case FFMS_SOURCE_LAVF:
-			return CreateLavfIndexer(Filename, FormatContext);
-#ifdef HAALISOURCE
-		case FFMS_SOURCE_HAALIOGG:
-			if (!HasHaaliOGG)
-				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali's Ogg parser is not available");
-			return CreateHaaliIndexer(Filename, FFMS_SOURCE_HAALIOGG);
-		case FFMS_SOURCE_HAALIMPEG:
-			if (!HasHaaliMPEG)
-				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_NOT_AVAILABLE, "Haali's MPEG PS/TS parser is not available");
-			return CreateHaaliIndexer(Filename, FFMS_SOURCE_HAALIMPEG);
-#endif
-		case FFMS_SOURCE_MATROSKA:
-			return CreateMatroskaIndexer(Filename);
-		default:
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_INVALID_ARGUMENT, "Invalid demuxer requested");
-	}
+	return CreateLavfIndexer(Filename, FormatContext);
 }
 
 FFMS_Indexer::FFMS_Indexer(const char *Filename)
-: IndexMask(0)
-, DumpMask(0)
-, ErrorHandling(FFMS_IEH_CLEAR_TRACK)
-, IC(0)
-, ICPrivate(0)
-, ANC(0)
-, ANCPrivate(0)
-, SourceFile(Filename)
+: SourceFile(Filename)
 {
 	FFMS_Index::CalculateFileSignature(Filename, &Filesize, Digest);
 }
@@ -330,7 +253,7 @@ void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 	if (!AudioContext.W64Writer) {
 		FFMS_AudioProperties AP;
 		FillAP(AP, AudioContext.CodecContext, (*Index)[Track]);
-		int FNSize = (*ANC)(SourceFile.c_str(), Track, &AP, NULL, 0, ANCPrivate);
+		int FNSize = (*ANC)(SourceFile.c_str(), Track, &AP, nullptr, 0, ANCPrivate);
 		if (FNSize <= 0) {
 			DumpMask = DumpMask & ~(1 << Track);
 			return;
@@ -339,7 +262,7 @@ void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 		int Format = av_get_packed_sample_fmt(AudioContext.CodecContext->sample_fmt);
 
 		std::vector<char> WName(FNSize + 1);
-		(*ANC)(SourceFile.c_str(), Track, &AP, &WName[0], FNSize, ANCPrivate);
+		(*ANC)(SourceFile.c_str(), Track, &AP, WName.data(), FNSize, ANCPrivate);
 		WName.back() = 0;
 		try {
 			AudioContext.W64Writer =
@@ -395,8 +318,19 @@ uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudio
 	return static_cast<uint32_t>(Context.CurrentSample - StartSample);
 }
 
+static const char *GetLAVCSampleFormatName(AVSampleFormat s) {
+	switch (s) {
+		case AV_SAMPLE_FMT_U8:  return "8-bit unsigned integer";
+		case AV_SAMPLE_FMT_S16: return "16-bit signed integer";
+		case AV_SAMPLE_FMT_S32: return "32-bit signed integer";
+		case AV_SAMPLE_FMT_FLT: return "Single-precision floating point";
+		case AV_SAMPLE_FMT_DBL: return "Double-precision floating point";
+		default:                return "Unknown";
+	}
+}
+
 void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
-	std::map<int, FFMS_AudioProperties>::iterator it = LastAudioProperties.find(Track);
+	auto it = LastAudioProperties.find(Track);
 	if (it == LastAudioProperties.end()) {
 		FFMS_AudioProperties &AP = LastAudioProperties[Track];
 		AP.SampleRate = Context->sample_rate;

@@ -26,7 +26,7 @@ extern "C" {
 }
 
 #ifdef _WIN32
-#include <objbase.h>
+#include <Windows.h>
 #endif
 
 #include <cstdlib>
@@ -46,11 +46,11 @@ bool Overwrite = false;
 bool PrintProgress = true;
 bool WriteTC = false;
 bool WriteKF = false;
-const char *InputFile = 0;
+const char *InputFile = nullptr;
 std::string CacheFile;
 std::string AudioFile;
 
-FFMS_Index *Index = NULL;
+FFMS_Index *Index = nullptr;
 
 struct Error {
 	std::string msg;
@@ -76,7 +76,6 @@ void PrintUsage() {
 		"-d N      Set the audio decoding mask to N (mask syntax same as -t, default: 0)\n"
 		"-a NAME   Set the audio output base filename to NAME (default: input filename)\n"
 		"-s N      Set audio decoding error handling. See the documentation for details. (default: 0)\n"
-		"-m NAME   Force the use of demuxer NAME (default, lavf, matroska, haalimpeg, haaliogg)"
 		<< std::endl;
 }
 
@@ -106,22 +105,6 @@ void ParseCMDLine(int argc, char *argv[]) {
 			i++;
 		} else if (!strcmp(Option, "-s")) {
 			IgnoreErrors = atoi(OPTION_ARG("s"));
-			i++;
-		} else if (!strcmp(Option, "-m")) {
-			const char *arg = OPTION_ARG("m");
-			if (!strcmp(arg, "default"))
-				Demuxer = FFMS_SOURCE_DEFAULT;
-			else if (!strcmp(arg, "lavf"))
-				Demuxer = FFMS_SOURCE_LAVF;
-			else if (!strcmp(arg, "matroska"))
-				Demuxer = FFMS_SOURCE_MATROSKA;
-			else if (!strcmp(arg, "haalimpeg"))
-				Demuxer = FFMS_SOURCE_HAALIMPEG;
-			else if (!strcmp(arg, "haaliogg"))
-				Demuxer = FFMS_SOURCE_HAALIOGG;
-			else
-				std::cout << "Warning: invalid argument to -m (" << arg << "), using default instead" << std::endl;
-
 			i++;
 		} else if (!InputFile) {
 			InputFile = Option;
@@ -187,16 +170,16 @@ void DoIndexing() {
 	if (!Overwrite && Index)
 		throw Error("Error: index file already exists, use -f if you are sure you want to overwrite it.");
 
-	UpdateProgress(0, 100, 0);
+	UpdateProgress(0, 100, nullptr);
 	FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(InputFile, Demuxer, &E);
-	if (Indexer == NULL)
+	if (Indexer == nullptr)
 		throw Error("\nFailed to initialize indexing: ", E);
 
-	Index = FFMS_DoIndexing(Indexer, TrackMask, DumpMask, &GenAudioFilename, NULL, IgnoreErrors, UpdateProgress, &Progress, &E);
-	if (Index == NULL)
+	Index = FFMS_DoIndexing(Indexer, TrackMask, DumpMask, &GenAudioFilename, nullptr, IgnoreErrors, UpdateProgress, &Progress, &E);
+	if (Index == nullptr)
 		throw Error("\nIndexing error: ", E);
 
-	UpdateProgress(100, 100, 0);
+	UpdateProgress(100, 100, nullptr);
 
 	if (WriteTC) {
 		if (PrintProgress)
@@ -294,13 +277,6 @@ int main(int argc, char *argv[]) {
 		std::cout << e.msg << std::endl;
 		return 1;
 	}
-
-#ifdef _WIN32
-	if (FAILED(CoInitializeEx(NULL, COINIT_MULTITHREADED))) {
-		std::cout << "COM initialization failure" << std::endl;
-		return 1;
-	}
-#endif /* _WIN32 */
 
 	FFMS_Init(0, 1);
 

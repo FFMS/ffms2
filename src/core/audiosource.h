@@ -45,17 +45,17 @@ struct FFMS_AudioSource {
 	typedef std::list<AudioBlock>::iterator CacheIterator;
 
 	// delay in samples to apply to the audio
-	int64_t Delay;
+	int64_t Delay = 0;
 	// cache of decoded audio blocks
 	std::list<AudioBlock> Cache;
 	// max size of the cache in blocks
-	size_t MaxCacheBlocks;
+	size_t MaxCacheBlocks = 50;
 	// pointer to last element of the cache which should never be deleted
 	CacheIterator CacheNoDelete;
 	// bytes per sample * number of channels
-	size_t BytesPerSample;
+	size_t BytesPerSample = 0;
 
-	bool NeedsResample;
+	bool NeedsResample = false;
 	FFResampleContext ResampleContext;
 
 	// Insert the current audio frame into the cache
@@ -78,16 +78,16 @@ struct FFMS_AudioSource {
 	virtual void ReopenFile() { }
 protected:
 	// First sample which is stored in the decoding buffer
-	int64_t CurrentSample;
+	int64_t CurrentSample = -1;
 	// Next packet to be read
-	size_t PacketNumber;
+	size_t PacketNumber = 0;
 	// Current audio frame
-	const FrameInfo *CurrentFrame;
+	const FrameInfo *CurrentFrame = nullptr;
 	// Track which this corresponds to
 	int TrackNumber;
 	// Number of packets which the demuxer requires to know where it is
 	// If -1, seeking is assumed to be impossible
-	int SeekOffset;
+	int SeekOffset = 0;
 
 	// Buffer which audio is decoded into
 	ScopedFrame DecodeFrame;
@@ -107,14 +107,12 @@ public:
 	const FFMS_AudioProperties& GetAudioProperties() const { return AP; }
 	void GetAudio(void *Buf, int64_t Start, int64_t Count);
 
-	FFMS_ResampleOptions *CreateResampleOptions() const;
-	void SetOutputFormat(const FFMS_ResampleOptions *opt);
+	std::unique_ptr<FFMS_ResampleOptions> CreateResampleOptions() const;
+	void SetOutputFormat(FFMS_ResampleOptions const& opt);
 };
 
 size_t GetSeekablePacketNumber(FFMS_Track const& Frames, size_t PacketNumber);
 
 FFMS_AudioSource *CreateLavfAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
-FFMS_AudioSource *CreateMatroskaAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
-FFMS_AudioSource *CreateHaaliAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, FFMS_Sources SourceMode, int DelayMode);
 
 #endif
