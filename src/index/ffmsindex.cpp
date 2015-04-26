@@ -37,8 +37,8 @@ extern "C" {
 
 namespace {
 
-int IndexMask = 0;
-int DumpMask = 0;
+long long IndexMask = 0;
+long long DumpMask = 0;
 int Verbose = 0;
 int IgnoreErrors = 0;
 int Demuxer = FFMS_SOURCE_DEFAULT;
@@ -95,10 +95,10 @@ void ParseCMDLine(int argc, char *argv[]) {
 		} else if (!strcmp(Option, "-k")) {
 			WriteKF = true;
 		} else if (!strcmp(Option, "-t")) {
-			IndexMask = atoi(OPTION_ARG("t"));
+			IndexMask = atoll(OPTION_ARG("t"));
 			i++;
 		} else if (!strcmp(Option, "-d")) {
-			DumpMask = atoi(OPTION_ARG("d"));
+			DumpMask = atoll(OPTION_ARG("d"));
 			i++;
 		} else if (!strcmp(Option, "-a")) {
 			AudioFile = OPTION_ARG("a");
@@ -185,7 +185,7 @@ void DoIndexing() {
 		FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 0);
 	}
 	// Apply attributes to remaining tracks
-	for (int i = 0; i < sizeof(int) * 8; i++)
+	for (int i = 0; i < sizeof(IndexMask) * 8; i++)
 		FFMS_TrackIndexSettings(Indexer, i, ((IndexMask >> i) & 1) | ((DumpMask >> i) & 1), (DumpMask >> i) & 1);
 
 	Index = FFMS_DoIndexing2(Indexer, IgnoreErrors, &E);
