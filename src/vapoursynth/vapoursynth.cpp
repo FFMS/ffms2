@@ -20,6 +20,7 @@
 
 #include "ffms.h"
 #include "vapoursource.h"
+#include "VSHelper.h"
 
 #include <cstdio>
 #include <cstring>
@@ -30,14 +31,6 @@
 #ifndef _WIN32
 #define _stricmp strcmp
 #endif
-
-static inline int int64ToIntS(int64_t i) {
-	if (i > INT_MAX)
-		return INT_MAX;
-	else if (i < INT_MIN)
-		return INT_MIN;
-	else return (int)i;
-}
 
 static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, const VSAPI *vsapi)  {
 	FFMS_Init(0,  1);

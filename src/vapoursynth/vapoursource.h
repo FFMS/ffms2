@@ -33,8 +33,8 @@ struct VSVideoSource {
 private:
 	VSVideoInfo VI[2];
 	FFMS_VideoSource *V;
-	int FPSNum;
-	int FPSDen;
+	int64_t FPSNum;
+	int64_t FPSDen;
 	int SARNum;
 	int SARDen;
 	bool OutputAlpha;
@@ -45,7 +45,7 @@ private:
 	static void OutputAlphaFrame(const FFMS_Frame *Frame, int Plane, VSFrameRef *Dst, const VSAPI *vsapi);
 public:
 	VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
-		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
+		int AFPSNum, int AFPSDen, int Threads, int SeekMode, int RFFMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 		int Format, bool OutputAlpha, const VSAPI *vsapi, VSCore *core);
 	~VSVideoSource();

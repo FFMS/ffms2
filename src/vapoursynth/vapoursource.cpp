@@ -20,6 +20,7 @@
 
 #include "vapoursource.h"
 #include "../avisynth/avsutils.h"
+#include "VSHelper.h"
 
 #include <algorithm>
 #include <cmath>
@@ -33,18 +34,6 @@ extern "C" {
 #include <libavutil/pixdesc.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
-}
-
-static void BitBlt(uint8_t* dstp, int dst_pitch, const uint8_t* srcp, int src_pitch, int row_size, int height) {
-	if (src_pitch == dst_pitch && dst_pitch == row_size) {
-		memcpy(dstp, srcp, row_size * height);
-	} else {
-		for (int i = 0; i < height; i++) {
-			memcpy(dstp, srcp, row_size);
-			dstp += dst_pitch;
-			srcp += src_pitch;
-		}
-	}
 }
 
 static int GetNumPixFmts() {
@@ -156,8 +145,11 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 				num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
 			else // just make it one timebase if it's a single frame clip
 				num = 1;
-			vsapi->propSetInt(Props, "_DurationNum", TB->Num * num, paReplace);
-			vsapi->propSetInt(Props, "_DurationDen", TB->Den, paReplace);
+			int64_t DurNum = TB->Num * num;
+			int64_t DurDen = TB->Den;
+			muldivRational(&DurNum, &DurDen, 1, 1);
+			vsapi->propSetInt(Props, "_DurationNum", DurNum, paReplace);
+			vsapi->propSetInt(Props, "_DurationDen", DurDen, paReplace);
 			vsapi->propSetFloat(Props, "_AbsoluteTime",
 				((double)(TB->Num / 1000) *  FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, paReplace);
 		}
@@ -208,10 +200,10 @@ void VS_CC VSVideoSource::Free(void *instanceData, VSCore *, const VSAPI *) {
 }
 
 VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
-		int FPSNum, int FPSDen, int Threads, int SeekMode, int /*RFFMode*/,
+		int AFPSNum, int AFPSDen, int Threads, int SeekMode, int /*RFFMode*/,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 		int Format, bool OutputAlpha, const VSAPI *vsapi, VSCore *core)
-		: FPSNum(FPSNum), FPSDen(FPSDen), OutputAlpha(OutputAlpha) {
+		: FPSNum(AFPSNum), FPSDen(AFPSDen), OutputAlpha(OutputAlpha) {
 
 	VI[0] = { 0 };
 	VI[1] = { 0 };
@@ -235,6 +227,7 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
 	const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
 
 	if (FPSNum > 0 && FPSDen > 0) {
+		muldivRational(&FPSNum, &FPSDen, 1, 1);
 		VI[0].fpsDen = FPSDen;
 		VI[0].fpsNum = FPSNum;
 		if (VP->NumFrames > 1) {
@@ -248,6 +241,7 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
 		VI[0].fpsDen = VP->FPSDenominator;
 		VI[0].fpsNum = VP->FPSNumerator;
 		VI[0].numFrames = VP->NumFrames;
+		muldivRational(&VI[0].fpsNum, &VI[0].fpsDen, 1, 1);
 	}
 
 	if (OutputAlpha) {
@@ -338,12 +332,12 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 void VSVideoSource::OutputFrame(const FFMS_Frame *Frame, VSFrameRef *Dst, const VSAPI *vsapi) {
 	const VSFormat *fi = vsapi->getFrameFormat(Dst);
 	for (int i = 0; i < fi->numPlanes; i++)
-		BitBlt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i],
+		vs_bitblt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i],
 			vsapi->getFrameWidth(Dst, i) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, i));
 }
 
 void VSVideoSource::OutputAlphaFrame(const FFMS_Frame *Frame, int Plane, VSFrameRef *Dst, const VSAPI *vsapi) {
 	const VSFormat *fi = vsapi->getFrameFormat(Dst);
-	BitBlt(vsapi->getWritePtr(Dst, 0), vsapi->getStride(Dst, 0), Frame->Data[Plane], Frame->Linesize[Plane],
+	vs_bitblt(vsapi->getWritePtr(Dst, 0), vsapi->getStride(Dst, 0), Frame->Data[Plane], Frame->Linesize[Plane],
 		vsapi->getFrameWidth(Dst, 0) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, 0));
 }
