@@ -1,6 +1,7 @@
 # FFmpegSource2 Changelog
 
 - 2.21
+  - vapoursource: The framerate and frame durations are now normalized (Myrsloik)
   - vapoursource: Add support for outputting the alpha channel too (Myrsloik)
   - vapoursource: Fix resizer selection so bicubic isn't always used (Myrsloik)
   - vapoursource: Set chroma location and full colorspace information (Myrsloik)
