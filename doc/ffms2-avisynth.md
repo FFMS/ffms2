@@ -48,7 +48,7 @@ Collecting weird clips from the internet and making them play takes more time th
 
 ### Audio
 Seeking should be sample-accurate with most codecs in AVI, MKV, MP4 and FLV.
-Decoding linearly will almost always giee correct results, and forward-seeks from trimming should result in at most a few hundred samples of corruption.
+Decoding linearly will almost always give correct results, and forward-seeks from trimming should result in at most a few hundred samples of corruption.
 
 ## Indexing and You
 
