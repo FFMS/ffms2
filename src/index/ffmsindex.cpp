@@ -50,8 +50,6 @@ const char *InputFile = nullptr;
 std::string CacheFile;
 std::string AudioFile;
 
-FFMS_Index *Index = nullptr;
-
 struct Error {
 	std::string msg;
 	Error(const char *msg) : msg(msg) { }
@@ -166,9 +164,11 @@ void DoIndexing() {
 
 	int Progress = 0;
 
-	Index = FFMS_ReadIndex(CacheFile.c_str(), &E);
-	if (!Overwrite && Index)
+	FFMS_Index *Index = FFMS_ReadIndex(CacheFile.c_str(), &E);
+	if (!Overwrite && Index) {
+		FFMS_DestroyIndex(Index);
 		throw Error("Error: index file already exists, use -f if you are sure you want to overwrite it.");
+	}
 
 	UpdateProgress(0, 100, nullptr);
 	FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(InputFile, Demuxer, &E);
@@ -189,6 +189,10 @@ void DoIndexing() {
 		FFMS_TrackIndexSettings(Indexer, i, ((IndexMask >> i) & 1) | ((DumpMask >> i) & 1), (DumpMask >> i) & 1);
 
 	Index = FFMS_DoIndexing2(Indexer, IgnoreErrors, &E);
+
+	// The indexer is always freed
+	Indexer = nullptr;
+
 	if (Index == nullptr)
 		throw Error("\nIndexing error: ", E);
 
@@ -237,7 +241,9 @@ void DoIndexing() {
 	if (PrintProgress)
 		std::cout << "Writing index... ";
 
-	if (FFMS_WriteIndex(CacheFile.c_str(), Index, &E))
+	int error = FFMS_WriteIndex(CacheFile.c_str(), Index, &E);
+	FFMS_DestroyIndex(Index);
+	if (error)
 		throw Error("Error writing index: ", E);
 
 	if (PrintProgress)
