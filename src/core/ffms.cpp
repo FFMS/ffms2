@@ -270,7 +270,7 @@ FFMS_API(int) FFMS_GetFirstIndexedTrackOfType(FFMS_Index *Index, int TrackType, 
 }
 
 FFMS_API(int) FFMS_GetNumTracks(FFMS_Index *Index) {
-	return Index->size();
+    return static_cast<int>(Index->size());
 }
 
 FFMS_API(int) FFMS_GetNumTracksI(FFMS_Indexer *Indexer) {
@@ -360,7 +360,7 @@ FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const
 	if (FileName)
 		strcpy(FileName, s.c_str());
 
-	return s.length() + 1;
+    return static_cast<int>(s.length() + 1);
 }
 
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo) {

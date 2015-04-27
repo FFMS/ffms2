@@ -69,7 +69,7 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
 	const char *AudioFile = vsapi->propGetData(in, "audiofile", 0, &err);
 	if (err)
 		AudioFile = "%sourcefile%.%trackzn%.w64";
-	int ErrorHandling = (int)vsapi->propGetInt(in, "errorhandling", 0, &err);
+	int ErrorHandling = int64ToIntS(vsapi->propGetInt(in, "errorhandling", 0, &err));
 	if (err)
 		ErrorHandling = FFMS_IEH_IGNORE;
 	bool OverWrite = !!vsapi->propGetInt(in, "overwrite", 0, &err);
@@ -109,7 +109,7 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
 		} 
 
 		for (int i : IndexTracks)
-			FFMS_TrackIndexSettings(Indexer, i, 1, DumpTracks.count(i));
+            FFMS_TrackIndexSettings(Indexer, i, 1, static_cast<int>(DumpTracks.count(i)));
 		
 
 		if (!(Index = FFMS_DoIndexing2(Indexer, ErrorHandling, &E)))
