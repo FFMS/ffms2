@@ -106,10 +106,12 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
 			FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 1);
 		} else if (IndexAllTracks) {
 			FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 0);
-		} 
-
-		for (int i : IndexTracks)
-            FFMS_TrackIndexSettings(Indexer, i, 1, static_cast<int>(DumpTracks.count(i)));
+			for (int i : DumpTracks)
+				FFMS_TrackIndexSettings(Indexer, i, 1, 1);
+		} else {
+			for (int i : IndexTracks)
+				FFMS_TrackIndexSettings(Indexer, i, 1, static_cast<int>(DumpTracks.count(i)));
+		}
 
 		if (!(Index = FFMS_DoIndexing2(Indexer, ErrorHandling, &E)))
 			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
