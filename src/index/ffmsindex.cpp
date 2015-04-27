@@ -178,15 +178,19 @@ void DoIndexing() {
 	FFMS_SetAudioNameCallback(Indexer, GenAudioFilename, nullptr);
 	FFMS_SetProgressCallback(Indexer, UpdateProgress, &Progress);
 
-	// Treat -1 as meaning track numbers above 32 too, dumping implies indexing
+	// Treat -1 as meaning track numbers above sizeof(long long) * 8 too, dumping implies indexing
 	if (DumpMask == -1) {
 		FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 1);
 	} else if (IndexMask == -1) {
 		FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 0);
 	}
-	// Apply attributes to remaining tracks
-	for (int i = 0; i < sizeof(IndexMask) * 8; i++)
-		FFMS_TrackIndexSettings(Indexer, i, ((IndexMask >> i) & 1) | ((DumpMask >> i) & 1), (DumpMask >> i) & 1);
+
+	// Apply attributes to remaining tracks (will set the attributes again on some tracks)
+	for (int i = 0; i < sizeof(IndexMask) * 8; i++) {
+		int Temp = (((IndexMask >> i) & 1) | ((DumpMask >> i) & 1));
+		if (Temp)
+			FFMS_TrackIndexSettings(Indexer, i, Temp, (DumpMask >> i) & 1);
+	}
 
 	Index = FFMS_DoIndexing2(Indexer, IgnoreErrors, &E);
 

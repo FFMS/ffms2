@@ -110,7 +110,6 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
 
 		for (int i : IndexTracks)
             FFMS_TrackIndexSettings(Indexer, i, 1, static_cast<int>(DumpTracks.count(i)));
-		
 
 		if (!(Index = FFMS_DoIndexing2(Indexer, ErrorHandling, &E)))
 			return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
