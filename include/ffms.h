@@ -233,7 +233,7 @@ typedef enum FFMS_ColorPrimaries {
 	FFMS_PRI_SMPTE240M		= 7,
 	FFMS_PRI_FILM			= 8,
 	FFMS_PRI_BT2020			= 9
-};
+} FFMS_ColorPrimaries;
 
 typedef enum FFMS_TransferCharacteristic {
 	FFMS_TRC_RESERVED0		= 0,
@@ -252,7 +252,7 @@ typedef enum FFMS_TransferCharacteristic {
 	FFMS_TRC_IEC61966_2_1	= 13,
 	FFMS_TRC_BT2020_10		= 14,
 	FFMS_TRC_BT2020_12		= 15
-};
+} FFMS_TransferCharacteristic;
 
 typedef enum FFMS_ColorSpaces {
 	FFMS_CS_RGB			= 0,
