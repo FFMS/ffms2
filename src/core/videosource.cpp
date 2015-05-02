@@ -339,7 +339,7 @@ void FFMS_VideoSource::SetVideoProperties() {
 			"Codec returned zero size video");
 
 	// attempt to correct framerate to the proper NTSC fraction, if applicable
-	CorrectNTSCRationalFramerate(&VP.FPSNumerator, &VP.FPSDenominator);
+	CorrectRationalFramerate(&VP.FPSNumerator, &VP.FPSDenominator);
 	// correct the timebase, if necessary
 	CorrectTimebase(&VP, &Frames.TB);
 
