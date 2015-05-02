@@ -29,6 +29,5 @@ extern "C" {
 
 
 PixelFormat CSNameToPIXFMT(const char *CSName, PixelFormat Default);
-int ResizerNameToSWSResizer(const char *ResizerName);
 
 #endif

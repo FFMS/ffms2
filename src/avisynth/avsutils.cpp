@@ -38,29 +38,3 @@ PixelFormat CSNameToPIXFMT(const char *CSName, PixelFormat Default) {
 		return PIX_FMT_RGB32;
 	return PIX_FMT_NONE;
 }
-
-int ResizerNameToSWSResizer(const char *ResizerName) {
-	if (!_stricmp(ResizerName, "FAST_BILINEAR"))
-		return SWS_FAST_BILINEAR;
-	if (!_stricmp(ResizerName, "BILINEAR"))
-		return SWS_BILINEAR;
-	if (!_stricmp(ResizerName, "BICUBIC"))
-		return SWS_BICUBIC;
-	if (!_stricmp(ResizerName, "X"))
-		return SWS_X;
-	if (!_stricmp(ResizerName, "POINT"))
-		return SWS_POINT;
-	if (!_stricmp(ResizerName, "AREA"))
-		return SWS_AREA;
-	if (!_stricmp(ResizerName, "BICUBLIN"))
-		return SWS_BICUBLIN;
-	if (!_stricmp(ResizerName, "GAUSS"))
-		return SWS_GAUSS;
-	if (!_stricmp(ResizerName, "SINC"))
-		return SWS_SINC;
-	if (!_stricmp(ResizerName, "LANCZOS"))
-		return SWS_LANCZOS;
-	if (!_stricmp(ResizerName, "SPLINE"))
-		return SWS_SPLINE;
-	return 0;
-}

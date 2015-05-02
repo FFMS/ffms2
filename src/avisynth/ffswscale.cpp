@@ -19,8 +19,9 @@
 //  THE SOFTWARE.
 
 #include "ffswscale.h"
-#include "avsutils.h"
+#include "../core/utils.h"
 #include "../core/videoutils.h"
+#include "avsutils.h"
 
 SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env) : GenericVideoFilter(Child) {
 	Context = nullptr;

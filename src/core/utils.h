@@ -210,4 +210,6 @@ void SetOptions(T const& src, void *opt, OptionMapper<T> (&options)[N]) {
 		options[i].ToOpt(src, opt);
 }
 
+int ResizerNameToSWSResizer(const char *ResizerName);
+
 #endif

@@ -20,6 +20,7 @@
 
 #define NOMINMAX
 #include "avssources.h"
+#include "../core/utils.h"
 #include "avsutils.h"
 
 #include <algorithm>

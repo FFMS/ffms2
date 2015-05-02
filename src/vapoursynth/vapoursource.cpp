@@ -19,7 +19,7 @@
 //  THE SOFTWARE.
 
 #include "vapoursource.h"
-#include "../avisynth/avsutils.h"
+#include "../core/utils.h"
 #include "VSHelper.h"
 
 #include <algorithm>
