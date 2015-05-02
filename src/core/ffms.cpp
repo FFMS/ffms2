@@ -47,7 +47,7 @@ void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl)
 
 	static int print_prefix=1;
 	static int count;
-	static char line[1024] = {0}, prev[1024] = {0};
+	static char line[1024] = {}, prev[1024] = {};
 	auto avc = ptr ? *static_cast<AVClass **>(ptr) : nullptr;
 
 	int written = 0;
@@ -381,7 +381,7 @@ FFMS_DEPRECATED_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int Ind
 	ClearErrorInfo(ErrorInfo);
 
 	IndexMask |= DumpMask;
-	for (int i = 0; i < sizeof(int) * 8; i++) {
+    for (int i = 0; i < static_cast<int>(sizeof(IndexMask) * 8); i++) {
 		if ((IndexMask >> i) & 1)
 			FFMS_TrackIndexSettings(Indexer, i, 1, ((DumpMask >> i) & 1));
 	}

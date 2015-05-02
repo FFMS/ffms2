@@ -205,8 +205,8 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
 		int Format, bool OutputAlpha, const VSAPI *vsapi, VSCore *core)
 		: FPSNum(AFPSNum), FPSDen(AFPSDen), OutputAlpha(OutputAlpha) {
 
-	VI[0] = { 0 };
-	VI[1] = { 0 };
+	VI[0] = {};
+	VI[1] = {};
 
 	char ErrorMsg[1024];
 	FFMS_ErrorInfo E;

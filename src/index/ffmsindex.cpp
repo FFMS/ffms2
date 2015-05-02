@@ -186,7 +186,7 @@ void DoIndexing() {
 	}
 
 	// Apply attributes to remaining tracks (will set the attributes again on some tracks)
-	for (int i = 0; i < sizeof(IndexMask) * 8; i++) {
+    for (int i = 0; i < static_cast<int>(sizeof(IndexMask) * 8); i++) {
 		int Temp = (((IndexMask >> i) & 1) | ((DumpMask >> i) & 1));
 		if (Temp)
 			FFMS_TrackIndexSettings(Indexer, i, Temp, (DumpMask >> i) & 1);
