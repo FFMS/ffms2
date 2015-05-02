@@ -31,6 +31,8 @@
 #ifdef _WIN32
 #	define WIN32_LEAN_AND_MEAN
 #	include <windows.h>
+#else
+#	define _stricmp strcmp
 #endif // _WIN32
 
 #include <algorithm>
