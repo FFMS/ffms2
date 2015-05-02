@@ -1,4 +1,4 @@
-//  Copyright (c) 2009 Fredrik Mellbin
+//  Copyright (c) 2009-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -19,22 +19,27 @@
 //  THE SOFTWARE.
 
 #include "avsutils.h"
-#include <cstring>
+#include <string>
+#include <algorithm>
 
 extern "C" {
 #include <libswscale/swscale.h>
 }
 
 PixelFormat CSNameToPIXFMT(const char *CSName, PixelFormat Default) {
-	if (!_stricmp(CSName, ""))
+	if (!CSName)
+		return PIX_FMT_NONE;
+	std::string s = CSName;
+	std::transform(s.begin(), s.end(), s.begin(), toupper);
+	if (s == "")
 		return Default;
-	if (!_stricmp(CSName, "YV12"))
+	if (s == "YV12")
 		return PIX_FMT_YUV420P;
-	if (!_stricmp(CSName, "YUY2"))
+	if (s == "YUY2")
 		return PIX_FMT_YUYV422;
-	if (!_stricmp(CSName, "RGB24"))
+	if (s == "RGB24")
 		return PIX_FMT_BGR24;
-	if (!_stricmp(CSName, "RGB32"))
+	if (s == "RGB32")
 		return PIX_FMT_RGB32;
 	return PIX_FMT_NONE;
 }

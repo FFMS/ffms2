@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +31,6 @@
 #ifdef _WIN32
 #	define WIN32_LEAN_AND_MEAN
 #	include <windows.h>
-#else
-#	define _stricmp strcmp
 #endif // _WIN32
 
 #include <algorithm>
@@ -175,27 +173,31 @@ void FlushBuffers(AVCodecContext *CodecContext) {
 }
 
 int ResizerNameToSWSResizer(const char *ResizerName) {
-	if (!_stricmp(ResizerName, "FAST_BILINEAR"))
+	if (!ResizerName)
+		return 0;
+	std::string s = ResizerName;
+	std::transform(s.begin(), s.end(), s.begin(), toupper);
+	if (s == "FAST_BILINEAR")
 		return SWS_FAST_BILINEAR;
-	if (!_stricmp(ResizerName, "BILINEAR"))
+	if (s == "BILINEAR")
 		return SWS_BILINEAR;
-	if (!_stricmp(ResizerName, "BICUBIC"))
+	if (s == "BICUBIC")
 		return SWS_BICUBIC;
-	if (!_stricmp(ResizerName, "X"))
+	if (s == "X")
 		return SWS_X;
-	if (!_stricmp(ResizerName, "POINT"))
+	if (s == "POINT")
 		return SWS_POINT;
-	if (!_stricmp(ResizerName, "AREA"))
+	if (s == "AREA")
 		return SWS_AREA;
-	if (!_stricmp(ResizerName, "BICUBLIN"))
+	if (s == "BICUBLIN")
 		return SWS_BICUBLIN;
-	if (!_stricmp(ResizerName, "GAUSS"))
+	if (s == "GAUSS")
 		return SWS_GAUSS;
-	if (!_stricmp(ResizerName, "SINC"))
+	if (s == "SINC")
 		return SWS_SINC;
-	if (!_stricmp(ResizerName, "LANCZOS"))
+	if (s == "LANCZOS")
 		return SWS_LANCZOS;
-	if (!_stricmp(ResizerName, "SPLINE"))
+	if (s == "SPLINE")
 		return SWS_SPLINE;
 	return 0;
 }
