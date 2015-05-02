@@ -34,7 +34,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 , RFFMode(RFFMode)
 , VarPrefix(VarPrefix)
 {
-	memset(&VI, 0, sizeof(VI));
+	VI = {};
 
 	ErrorInfo E;
 	V = FFMS_CreateVideoSource(SourceFile, Track, Index, Threads, SeekMode, &E);
@@ -364,7 +364,7 @@ bool AvisynthVideoSource::GetParity(int n) {
 
 AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
 										 int AdjustDelay, const char *VarPrefix, IScriptEnvironment* Env) {
-	memset(&VI, 0, sizeof(VI));
+	VI = {};
 
 	ErrorInfo E;
 	A = FFMS_CreateAudioSource(SourceFile, Track, Index, AdjustDelay, &E);

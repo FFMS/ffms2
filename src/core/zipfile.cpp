@@ -27,8 +27,7 @@ ZipFile::ZipFile(const char *filename, const char *mode)
 , state(Initial)
 {
 	buffer.resize(65536);
-
-	memset(&z, 0, sizeof(z));
+	z = {};
 }
 
 ZipFile::~ZipFile() {

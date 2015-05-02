@@ -124,8 +124,8 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 	Frames = Index[Track];
 	VideoTrack = Track;
 
-	memset(&VP, 0, sizeof(VP));
-	memset(&LocalFrame, 0, sizeof(LocalFrame));
+	VP = {};
+	LocalFrame = {};
 	SWS = nullptr;
 	LastFrameNum = 0;
 	CurrentFrame = 1;
