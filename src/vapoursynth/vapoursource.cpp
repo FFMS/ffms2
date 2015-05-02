@@ -29,13 +29,6 @@
 #include <utility>
 #include <vector>
 
-extern "C" {
-#include <libavutil/common.h>
-#include <libavutil/pixdesc.h>
-#include <libavcodec/avcodec.h>
-#include <libswscale/swscale.h>
-}
-
 static int GetNumPixFmts() {
 	int n = 0;
 	while (av_get_pix_fmt_name((PixelFormat)n))

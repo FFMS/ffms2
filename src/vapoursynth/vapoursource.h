@@ -23,6 +23,10 @@
 
 extern "C" {
 #include <libavutil/avutil.h>
+#include <libavutil/common.h>
+#include <libavutil/pixdesc.h>
+#include <libavcodec/avcodec.h>
+#include <libswscale/swscale.h>
 }
 
 #include "VapourSynth.h"
