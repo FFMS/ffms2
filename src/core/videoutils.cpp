@@ -87,8 +87,7 @@ void CorrectNTSCRationalFramerate(int *Num, int *Den) {
 	if (TempFPS.num == 1) {
 		*Num = TempFPS.den;
 		*Den = TempFPS.num;
-	}
-	else {
+	} else {
 		double FTimebase = av_q2d(TempFPS);
 		double NearestNTSC = floor(FTimebase * 1001.0 + 0.5) / 1001.0;
 		const double SmallInterval = 1.0/120.0;

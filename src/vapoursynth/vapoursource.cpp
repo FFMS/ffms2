@@ -48,17 +48,17 @@ static bool IsRealNativeEndianPlanar(const AVPixFmtDescriptor &desc) {
 	for (int i = 0; i < desc.nb_components; i++)
 		used_planes = std::max(used_planes, (int)desc.comp[i].plane + 1);
 	bool temp = (used_planes == desc.nb_components) && (desc.comp[0].depth_minus1 + 1 >= 8) &&
-		(!(desc.flags & AV_PIX_FMT_FLAG_PAL));
+		(!(desc.flags & PIX_FMT_PAL));
 	if (!temp)
 		return false;
 	else if (desc.comp[0].depth_minus1 + 1 == 8)
 		return temp;
 	else
-		return (AV_PIX_FMT_YUV420P10 == AV_PIX_FMT_YUV420P10BE ? !!(desc.flags & AV_PIX_FMT_FLAG_BE) : !(desc.flags & AV_PIX_FMT_FLAG_BE));
+		return (PIX_FMT_YUV420P10 == PIX_FMT_YUV420P10BE ? !!(desc.flags & PIX_FMT_BE) : !(desc.flags & PIX_FMT_BE));
 }
 
 static bool HasAlpha(const AVPixFmtDescriptor &desc) {
-	return !!(desc.flags & AV_PIX_FMT_FLAG_ALPHA);
+	return !!(desc.flags & PIX_FMT_ALPHA);
 }
 
 static int GetColorFamily(const AVPixFmtDescriptor &desc) {
