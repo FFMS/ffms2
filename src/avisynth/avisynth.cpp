@@ -135,7 +135,7 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 		Env->ThrowError("FFVideoSource: Timecodes will overwrite the source");
 
 	ErrorInfo E;
-	FFMS_Index *Index = NULL;
+	FFMS_Index *Index = nullptr;
 	std::string DefaultCache;
 	if (Cache) {
 		if (*CacheFile) {
@@ -215,7 +215,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 		Env->ThrowError("FFAudioSource: No audio track selected");
 
 	ErrorInfo E;
-	FFMS_Index *Index = NULL;
+	FFMS_Index *Index = nullptr;
 	std::string DefaultCache;
 	if (Cache) {
 		if (*CacheFile) {
@@ -242,7 +242,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 		&& FFMS_GetTrackType(FFMS_GetTrackFromIndex(Index, Track)) == FFMS_TYPE_AUDIO
 		&& FFMS_GetNumFrames(FFMS_GetTrackFromIndex(Index, Track)) == 0) {
 		FFMS_DestroyIndex(Index);
-		Index = NULL;
+		Index = nullptr;
 	}
 
 	// More complicated for finding a default track, reindex the file if at least one audio track exists
@@ -251,7 +251,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 		for (int i = 0; i < FFMS_GetNumTracks(Index); i++) {
 			if (FFMS_GetTrackType(FFMS_GetTrackFromIndex(Index, i)) == FFMS_TYPE_AUDIO) {
 				FFMS_DestroyIndex(Index);
-				Index = NULL;
+				Index = nullptr;
 				break;
 			}
 		}

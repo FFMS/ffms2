@@ -319,7 +319,7 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 	ErrorInfo E;
 	if (RFFMode > 0) {
 		const FFMS_Frame *Frame = FFMS_GetFrame(V, std::min(FieldList[n].Top, FieldList[n].Bottom), &E);
-		if (Frame == NULL)
+		if (Frame == nullptr)
 			Env->ThrowError("FFVideoSource: %s", E.Buffer);
 		if (FieldList[n].Top == FieldList[n].Bottom) {
 			OutputFrame(Frame, Dst, Env);
@@ -327,7 +327,7 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 			int FirstField = std::min(FieldList[n].Top, FieldList[n].Bottom) == FieldList[n].Bottom;
 			OutputField(Frame, Dst, FirstField, Env);
 			Frame = FFMS_GetFrame(V, std::max(FieldList[n].Top, FieldList[n].Bottom), &E);
-			if (Frame == NULL)
+			if (Frame == nullptr)
 				Env->ThrowError("FFVideoSource: %s", E.Buffer);
 			OutputField(Frame, Dst, !FirstField, Env);
 		}
@@ -347,7 +347,7 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 			Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), static_cast<int>(FFMS_GetFrameInfo(T, n)->PTS * static_cast<double>(TB->Num) / TB->Den));
 		}
 
-		if (Frame == NULL)
+		if (Frame == nullptr)
 			Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
 		Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>(Frame->PictType));

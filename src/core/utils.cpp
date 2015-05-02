@@ -126,7 +126,7 @@ void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
 static std::wstring char_to_wstring(const char *s, unsigned int cp) {
 	std::wstring ret;
 	int len;
-	if (!(len = MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1, NULL, 0)))
+	if (!(len = MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1, nullptr, 0)))
 		return ret;
 
 	ret.resize(len);

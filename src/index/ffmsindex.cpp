@@ -272,13 +272,13 @@ int wmain(int argc, wchar_t *_argv[]) {
 #endif
 	char **argv = (char**)malloc(argc*sizeof(char*));
 	for (int i=0; i<argc; i++) {
-		int len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, NULL, 0, NULL, NULL);
+		int len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, nullptr, 0, nullptr, nullptr);
 		if (!len) {
 			std::cout << "Failed to translate commandline to Unicode" << std::endl;
 			return 1;
 		}
 		char *temp = (char*)malloc(len*sizeof(char));
-		len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, temp, len, NULL, NULL);
+		len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, temp, len, nullptr, nullptr);
 		if (!len) {
 			std::cout << "Failed to translate commandline to Unicode" << std::endl;
 			return 1;

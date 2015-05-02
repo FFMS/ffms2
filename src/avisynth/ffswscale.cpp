@@ -23,7 +23,7 @@
 #include "../core/videoutils.h"
 
 SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env) : GenericVideoFilter(Child) {
-	Context = NULL;
+	Context = nullptr;
 	OrigWidth = vi.width;
 	OrigHeight = vi.height;
 	FlipOutput = vi.IsYUV();
@@ -75,7 +75,7 @@ SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char 
 		OrigWidth, OrigHeight, ConvertFromFormat, GetAssumedColorSpace(OrigWidth, OrigHeight), AVCOL_RANGE_UNSPECIFIED,
 		vi.width, vi.height, ConvertToFormat, GetAssumedColorSpace(OrigWidth, OrigHeight), AVCOL_RANGE_UNSPECIFIED,
 		Resizer);
-	if (Context == NULL)
+	if (Context == nullptr)
 		Env->ThrowError("SWScale: Context creation failed");
 }
 
