@@ -23,6 +23,7 @@
 #include "avssources.h"
 #include "ffswscale.h"
 #include "avsutils.h"
+#include "../core/utils.h"
 
 static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	if (!Args[0].Defined())
@@ -131,7 +132,7 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	if (RFFMode > 0 && FPSNum > 0)
 		Env->ThrowError("FFVideoSource: RFF modes may not be combined with CFR conversion");
 
-	if (!_stricmp(Source, Timecodes))
+	if (IsSamePath(Source, Timecodes))
 		Env->ThrowError("FFVideoSource: Timecodes will overwrite the source");
 
 	ErrorInfo E;
@@ -139,7 +140,7 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	std::string DefaultCache;
 	if (Cache) {
 		if (*CacheFile) {
-			if (!_stricmp(Source, CacheFile))
+			if (IsSamePath(Source, CacheFile))
 				Env->ThrowError("FFVideoSource: Cache will overwrite the source");
 			Index = FFMS_ReadIndex(CacheFile, &E);
 		}
@@ -219,7 +220,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	std::string DefaultCache;
 	if (Cache) {
 		if (*CacheFile) {
-			if (!_stricmp(Source, CacheFile))
+			if (IsSamePath(Source, CacheFile))
 				Env->ThrowError("FFAudioSource: Cache will overwrite the source");
 			Index = FFMS_ReadIndex(CacheFile, &E);
 		}

@@ -201,3 +201,12 @@ int ResizerNameToSWSResizer(const char *ResizerName) {
 		return SWS_SPLINE;
 	return 0;
 }
+
+bool IsSamePath(const char *p1, const char *p2) {
+// assume windows is the only OS with a case insensitive filesystem and ignore all path complications
+#ifndef _WIN32
+	return !strcmp(p1, p2);
+#else
+	return !_stricmp(p1, p2);
+#endif
+}

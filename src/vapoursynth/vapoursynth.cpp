@@ -21,16 +21,12 @@
 #include "ffms.h"
 #include "vapoursource.h"
 #include "VSHelper.h"
+#include "../core/utils.h"
 
 #include <cstdio>
 #include <cstring>
 #include <string>
 #include <set>
-
-// assume windows is the only OS with a case insensitive filesystem
-#ifndef _WIN32
-#define _stricmp strcmp
-#endif
 
 static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, const VSAPI *vsapi)  {
 	FFMS_Init(0,  1);
@@ -180,14 +176,14 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
 		return vsapi->setError(out, "Source: Invalid RFF mode selected");
 	if (RFFMode > 0 && FPSNum > 0)
 		return vsapi->setError(out, "Source: RFF modes may not be combined with CFR conversion");
-	if (Timecodes && !_stricmp(Source, Timecodes))
+	if (Timecodes && IsSamePath(Source, Timecodes))
 		return vsapi->setError(out, "Source: Timecodes will overwrite the source");
 
 	FFMS_Index *Index = nullptr;
 	std::string DefaultCache;
 	if (Cache) {
 		if (CacheFile && *CacheFile) {
-			if (!_stricmp(Source, CacheFile))
+			if (IsSamePath(Source, CacheFile))
 				return vsapi->setError(out, "Source: Cache will overwrite the source");
 			Index = FFMS_ReadIndex(CacheFile, &E);
 		} else {
