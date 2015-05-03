@@ -25,6 +25,24 @@
 
 #include <algorithm>
 
+static PixelFormat CSNameToPIXFMT(const char *CSName, PixelFormat Default) {
+	if (!CSName)
+		return PIX_FMT_NONE;
+	std::string s = CSName;
+	std::transform(s.begin(), s.end(), s.begin(), toupper);
+	if (s == "")
+		return Default;
+	if (s == "YV12")
+		return PIX_FMT_YUV420P;
+	if (s == "YUY2")
+		return PIX_FMT_YUYV422;
+	if (s == "RGB24")
+		return PIX_FMT_BGR24;
+	if (s == "RGB32")
+		return PIX_FMT_RGB32;
+	return PIX_FMT_NONE;
+}
+
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
 		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,

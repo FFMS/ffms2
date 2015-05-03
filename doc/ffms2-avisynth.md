@@ -283,15 +283,6 @@ Disables caching and seeking for maximum compatiblity.
 
 **Note:** this function is provided by `FFMS2.avsi` and is not available unless that script has been imported or autoloaded.
 
-### SWScale
-```
-SWScale(clip, int width = -1, int height = -1, string resizer = "BICUBIC", string colorspace = "")
-```
-An image resizing and colorspace conversion filter.
-Does nothing special; it's almost always a better idea to just use Avisynth's builtins instead.
-Might potentially be useful for testing or odd experiments just because it does things in a different way from Avisynth.
-See the relevant arguments to `FFVideoSource` for details.
-
 ### FFFormatTime
 <pre>FFFormatTime(int ms)</pre>
 A helper function used to format a time given in milliseconds into a h:mm:ss.ttt string.
@@ -357,7 +348,7 @@ You can find the gory details in the FFMS2 API documentation, but the important 
 The color range the input video claims to be using.
 Much like FFCOLOR_SPACE, the source for this variable is a metadata flag that can freely be set to arbitrary values, so trusting it blindly might not be a good idea.
 
-Note that using SWScale() or the width/height/colorspace parameters to FFVideoSource may under some circumstances change the output color range.
+Note that using the width/height/colorspace parameters to FFVideoSource may under some circumstances change the output color range.
 
  - **0**: Unknown/unspecified
  - **1**: Limited range (usually 16-235)

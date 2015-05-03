@@ -1,6 +1,8 @@
 # FFmpegSource2 Changelog
 
 - 2.21
+  - Removed the SWScale function from Avisynth since SWScale is useless (Myrsloik)
+  - Fix common framerate correction (Myrsloik)
   - vapoursource: The framerate and frame durations are now normalized (Myrsloik)
   - vapoursource: Add support for outputting the alpha channel too (Myrsloik)
   - vapoursource: Fix resizer selection so bicubic isn't always used (Myrsloik)
