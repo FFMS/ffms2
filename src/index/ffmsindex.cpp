@@ -21,10 +21,6 @@
 #include "ffms.h"
 #include "ffmscompat.h"
 
-extern "C" {
-#include <libavutil/log.h>
-}
-
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -304,11 +300,11 @@ int main(int argc, char *argv[]) {
 	FFMS_Init(0, 1);
 
 	switch (Verbose) {
-		case 0: FFMS_SetLogLevel(AV_LOG_QUIET); break;
-		case 1: FFMS_SetLogLevel(AV_LOG_WARNING); break;
-		case 2: FFMS_SetLogLevel(AV_LOG_INFO); break;
-		case 3:	FFMS_SetLogLevel(AV_LOG_VERBOSE); break;
-		default: FFMS_SetLogLevel(AV_LOG_DEBUG); // if user used -v 4 or more times, he deserves the spam
+		case 0: FFMS_SetLogLevel(FFMS_LOG_QUIET); break;
+		case 1: FFMS_SetLogLevel(FFMS_LOG_WARNING); break;
+		case 2: FFMS_SetLogLevel(FFMS_LOG_INFO); break;
+		case 3:	FFMS_SetLogLevel(FFMS_LOG_VERBOSE); break;
+		default: FFMS_SetLogLevel(FFMS_LOG_DEBUG); // if user used -v 4 or more times, he deserves the spam
 	}
 
 	try {
