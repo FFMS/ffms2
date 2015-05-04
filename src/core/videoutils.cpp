@@ -81,7 +81,7 @@ void CorrectRationalFramerate(int *Num, int *Den) {
 	av_reduce(Den, Num, *Den, *Num, INT_MAX);
 
 	const double fps = static_cast<double>(*Num) / *Den;
-	const int fpsList[] = { 24, 25, 30, 48, 60, 120 };
+	const int fpsList[] = { 24, 25, 30, 48, 50, 60, 100, 120 };
 
 	for (size_t i = 0; i < sizeof(fpsList) / sizeof(fpsList[0]); i++) {
 		const double delta = (fpsList[i] - static_cast<double>(fpsList[i]) / 1.001) / 2.0;
