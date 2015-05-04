@@ -299,6 +299,18 @@ typedef enum FFMS_AudioDitherMethod {
 	FFMS_RESAMPLE_DITHER_TRIANGULAR_NOISESHAPING = 4
 } FFMS_AudioDitherMethod;
 
+typedef enum FFMS_LogLevels {
+	FFMS_LOG_QUIET    = -8,
+	FFMS_LOG_PANIC    =  0,
+	FFMS_LOG_FATAL    =  8,
+	FFMS_LOG_ERROR    = 16,
+	FFMS_LOG_WARNING  = 24,
+	FFMS_LOG_INFO     = 32,
+	FFMS_LOG_VERBOSE  = 40,
+	FFMS_LOG_DEBUG    = 48,
+	FFMS_LOG_TRACE    = 56
+} FFMS_LogLevels;
+
 typedef struct FFMS_ResampleOptions {
 	int64_t ChannelLayout;
 	FFMS_SampleFormat SampleFormat;
