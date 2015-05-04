@@ -83,12 +83,12 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 		*Filesize = file.Size();
 		std::vector<char> FileBuffer(static_cast<size_t>(std::min<int64_t>(1024*1024, *Filesize)));
 		size_t BytesRead = file.Read(FileBuffer.data(), FileBuffer.size());
-        av_sha_update(ctx, reinterpret_cast<const uint8_t*>(FileBuffer.data()), BytesRead);
+		av_sha_update(ctx, reinterpret_cast<const uint8_t*>(FileBuffer.data()), BytesRead);
 
 		if (*Filesize > static_cast<int64_t>(FileBuffer.size())) {
-            file.Seek(*Filesize - static_cast<int64_t>(FileBuffer.size()), SEEK_SET);
-            BytesRead = file.Read(FileBuffer.data(), FileBuffer.size());
-            av_sha_update(ctx, reinterpret_cast<const uint8_t*>(FileBuffer.data()), BytesRead);
+			file.Seek(*Filesize - static_cast<int64_t>(FileBuffer.size()), SEEK_SET);
+			BytesRead = file.Read(FileBuffer.data(), FileBuffer.size());
+			av_sha_update(ctx, reinterpret_cast<const uint8_t*>(FileBuffer.data()), BytesRead);
 		}
 	}
 	catch (...) {
@@ -212,6 +212,26 @@ FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int Er
 	memcpy(this->Digest, Digest, sizeof(this->Digest));
 }
 
+void FFMS_Indexer::SetIndexTrack(int Track, bool Index, bool Dump) {
+	if (Track < 0 || Track >= GetNumberOfTracks())
+		return;
+	if (Index)
+		IndexMask[Track] = Dump;
+	else
+		IndexMask.erase(Track);
+};
+
+void FFMS_Indexer::SetIndexTrackType(int TrackType, bool Index, bool Dump) {
+	for (int i = 0; i < GetNumberOfTracks(); i++) {
+		if (GetTrackType(i) == TrackType) {
+			if (Index)
+				IndexMask[i] = Dump;
+			else
+				IndexMask.erase(i);
+		}
+	}
+}
+
 void FFMS_Indexer::SetErrorHandling(int ErrorHandling) {
 	if (ErrorHandling != FFMS_IEH_ABORT && ErrorHandling != FFMS_IEH_CLEAR_TRACK &&
 		ErrorHandling != FFMS_IEH_STOP_TRACK && ErrorHandling != FFMS_IEH_IGNORE)
@@ -255,7 +275,7 @@ void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Inde
 		FillAP(AP, AudioContext.CodecContext, (*Index)[Track]);
 		int FNSize = (*ANC)(SourceFile.c_str(), Track, &AP, nullptr, 0, ANCPrivate);
 		if (FNSize <= 0) {
-			DumpMask = DumpMask & ~(1 << Track);
+			IndexMask[Track] = false;
 			return;
 		}
 
@@ -294,9 +314,9 @@ uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudio
 				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING, "Audio decoding error");
 			} else if (ErrorHandling == FFMS_IEH_CLEAR_TRACK) {
 				TrackIndices[Track].clear();
-				IndexMask &= ~(1 << Track);
+				IndexMask.erase(Track);
 			} else if (ErrorHandling == FFMS_IEH_STOP_TRACK) {
-				IndexMask &= ~(1 << Track);
+				IndexMask.erase(Track);
 			}
 			break;
 		}
@@ -309,7 +329,7 @@ uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudio
 
 			Context.CurrentSample += DecodeFrame->nb_samples;
 
-			if (DumpMask & (1 << Track))
+			if (IndexMask.count(Track) && IndexMask[Track])
 				WriteAudio(Context, &TrackIndices, Track);
 		}
 	}

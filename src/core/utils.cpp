@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -126,7 +126,7 @@ void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
 static std::wstring char_to_wstring(const char *s, unsigned int cp) {
 	std::wstring ret;
 	int len;
-	if (!(len = MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1, NULL, 0)))
+	if (!(len = MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1, nullptr, 0)))
 		return ret;
 
 	ret.resize(len);
@@ -164,10 +164,53 @@ void FlushBuffers(AVCodecContext *CodecContext) {
 		// might need it and just not implement it as in the case of VC-1, so
 		// close and reopen the codec
 		const AVCodec *codec = CodecContext->codec;
-		avcodec_close(CodecContext);
-		// Whether or not codec is const varies between versions
-		if (avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), nullptr) < 0)
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_CODEC,
+
+		// Raw video codec forgets the palette if "flushed" this way
+		if (codec->id != AV_CODEC_ID_RAWVIDEO) {
+			avcodec_close(CodecContext);
+			// Whether or not codec is const varies between versions
+			if (avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), nullptr) < 0)
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_CODEC,
 				"Couldn't re-open codec.");
+		}
 	}
+}
+
+int ResizerNameToSWSResizer(const char *ResizerName) {
+	if (!ResizerName)
+		return 0;
+	std::string s = ResizerName;
+	std::transform(s.begin(), s.end(), s.begin(), toupper);
+	if (s == "FAST_BILINEAR")
+		return SWS_FAST_BILINEAR;
+	if (s == "BILINEAR")
+		return SWS_BILINEAR;
+	if (s == "BICUBIC")
+		return SWS_BICUBIC;
+	if (s == "X")
+		return SWS_X;
+	if (s == "POINT")
+		return SWS_POINT;
+	if (s == "AREA")
+		return SWS_AREA;
+	if (s == "BICUBLIN")
+		return SWS_BICUBLIN;
+	if (s == "GAUSS")
+		return SWS_GAUSS;
+	if (s == "SINC")
+		return SWS_SINC;
+	if (s == "LANCZOS")
+		return SWS_LANCZOS;
+	if (s == "SPLINE")
+		return SWS_SPLINE;
+	return 0;
+}
+
+bool IsSamePath(const char *p1, const char *p2) {
+// assume windows is the only OS with a case insensitive filesystem and ignore all path complications
+#ifndef _WIN32
+	return !strcmp(p1, p2);
+#else
+	return !_stricmp(p1, p2);
+#endif
 }

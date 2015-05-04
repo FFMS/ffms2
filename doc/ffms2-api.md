@@ -59,10 +59,16 @@ int main (...) {
   errinfo.ErrorType   = FFMS_ERROR_SUCCESS;
   errinfo.SubType     = FFMS_ERROR_SUCCESS;
   const char *sourcefile = "somefilename";
-  FFMS_Index *index = FFMS_MakeIndex(sourcefile, 0, 0, NULL, NULL, FFMS_IEH_ABORT, NULL, NULL, &errinfo);
-  if (index == NULL) {
+  
+  FFMS_Indexer *indexer = FFMS_CreateIndexer(sourcefile, &errinfo);
+  if (indexer == NULL) {
     /* handle error (print errinfo.Buffer somewhere) */
   }
+  
+  FFMS_Index *index = FFMS_DoIndexing2(indexer, FFMS_IEH_ABORT, &errinfo);
+  if (index == NULL) {
+    /* handle error (you should know what to do by now) */
+  } 
 
   /* Retrieve the track number of the first video track */
   int trackno = FFMS_GetFirstTrackOfType(index, FFMS_TYPE_VIDEO, &errinfo);
@@ -74,7 +80,7 @@ int main (...) {
   /* We now have enough information to create the video source object */
   FFMS_VideoSource *videosource = FFMS_CreateVideoSource(sourcefile, trackno, index, 1, FFMS_SEEK_NORMAL, &errinfo);
   if (videosource == NULL) {
-    /* handle error (you should know what to do by now) */
+    /* handle error */
   }
 
   /* Since the index is copied into the video source object upon its creation,
@@ -127,10 +133,6 @@ int main (...) {
 
   /* now it's time to clean up */
   FFMS_DestroyVideoSource(videosource);
-#ifdef _WIN32
-  if (com_inited)
-    CoUninitialize();
-#endif
 
   return 0;
 }

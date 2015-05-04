@@ -75,9 +75,7 @@ void Wave64Writer::WriteHeader(bool Initial, bool IsFloat) {
 	WFEX.wBitsPerSample = BytesPerSample * 8;
 	WFEX.cbSize = 0;
 
-	uint64_t Header[14];
-
-	memset(Header, 0, sizeof(Header));
+	uint64_t Header[14] = {};
 
 	memcpy(Header + 0, GuidRIFF, 16);
 	if (Initial)

@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -47,7 +47,7 @@ void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl)
 
 	static int print_prefix=1;
 	static int count;
-	static char line[1024] = {0}, prev[1024] = {0};
+	static char line[1024] = {}, prev[1024] = {};
 	auto avc = ptr ? *static_cast<AVClass **>(ptr) : nullptr;
 
 	int written = 0;
@@ -270,7 +270,7 @@ FFMS_API(int) FFMS_GetFirstIndexedTrackOfType(FFMS_Index *Index, int TrackType, 
 }
 
 FFMS_API(int) FFMS_GetNumTracks(FFMS_Index *Index) {
-	return Index->size();
+    return static_cast<int>(Index->size());
 }
 
 FFMS_API(int) FFMS_GetNumTracksI(FFMS_Indexer *Indexer) {
@@ -323,7 +323,7 @@ FFMS_API(int) FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, FFMS_
 	return FFMS_ERROR_SUCCESS;
 }
 
-FFMS_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
+FFMS_DEPRECATED_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
 	FFMS_Indexer *Indexer = FFMS_CreateIndexer(SourceFile, ErrorInfo);
 	if (!Indexer)
 		return nullptr;
@@ -360,7 +360,7 @@ FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const
 	if (FileName)
 		strcpy(FileName, s.c_str());
 
-	return s.length() + 1;
+    return static_cast<int>(s.length() + 1);
 }
 
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo) {
@@ -377,11 +377,15 @@ FFMS_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, i
 	}
 }
 
-FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
+FFMS_DEPRECATED_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 
-	Indexer->SetIndexMask(IndexMask | DumpMask);
-	Indexer->SetDumpMask(DumpMask);
+	IndexMask |= DumpMask;
+    for (int i = 0; i < static_cast<int>(sizeof(IndexMask) * 8); i++) {
+		if ((IndexMask >> i) & 1)
+			FFMS_TrackIndexSettings(Indexer, i, 1, ((DumpMask >> i) & 1));
+	}
+
 	Indexer->SetErrorHandling(ErrorHandling);
 	Indexer->SetProgressCallback(IC, ICPrivate);
 	Indexer->SetAudioNameCallback(ANC, ANCPrivate);
@@ -394,6 +398,37 @@ FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int
 	}
 	delete Indexer;
 	return Index;
+}
+
+FFMS_API(FFMS_Index *) FFMS_DoIndexing2(FFMS_Indexer *Indexer, int ErrorHandling, FFMS_ErrorInfo *ErrorInfo) {
+	ClearErrorInfo(ErrorInfo);
+
+	Indexer->SetErrorHandling(ErrorHandling);
+
+	FFMS_Index *Index = nullptr;
+	try {
+		Index = Indexer->DoIndexing();
+	} catch (FFMS_Exception &e) {
+		e.CopyOut(ErrorInfo);
+	}
+	delete Indexer;
+	return Index;
+}
+
+FFMS_API(void) FFMS_TrackIndexSettings(FFMS_Indexer *Indexer, int Track, int Index, int Dump) {
+	Indexer->SetIndexTrack(Track, !!Index, !!Dump);
+}
+
+FFMS_API(void) FFMS_TrackTypeIndexSettings(FFMS_Indexer *Indexer, int TrackType, int Index, int Dump) {
+	Indexer->SetIndexTrackType(TrackType, !!Index, !!Dump);
+}
+
+FFMS_API(void) FFMS_SetAudioNameCallback(FFMS_Indexer *Indexer, TAudioNameCallback ANC, void *ANCPrivate) {
+	Indexer->SetAudioNameCallback(ANC, ANCPrivate);
+}
+
+FFMS_API(void) FFMS_SetProgressCallback(FFMS_Indexer *Indexer, TIndexCallback IC, void *ICPrivate) {
+	Indexer->SetProgressCallback(IC, ICPrivate);
 }
 
 FFMS_API(void) FFMS_CancelIndexing(FFMS_Indexer *Indexer) {

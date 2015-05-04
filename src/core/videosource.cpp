@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -90,6 +90,9 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	LocalFrame.TopFieldFirst = Frame->top_field_first;
 	LocalFrame.ColorSpace = OutputColorSpace;
 	LocalFrame.ColorRange = OutputColorRange;
+	LocalFrame.ColorPrimaries = CodecContext->color_primaries;
+	LocalFrame.TransferCharateristics = CodecContext->color_trc;
+	LocalFrame.ChromaLocation = CodecContext->chroma_sample_location;
 
 	LastFrameHeight = CodecContext->height;
 	LastFrameWidth = CodecContext->width;
@@ -121,8 +124,8 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 	Frames = Index[Track];
 	VideoTrack = Track;
 
-	memset(&VP, 0, sizeof(VP));
-	memset(&LocalFrame, 0, sizeof(LocalFrame));
+	VP = {};
+	LocalFrame = {};
 	SWS = nullptr;
 	LastFrameNum = 0;
 	CurrentFrame = 1;
@@ -336,7 +339,7 @@ void FFMS_VideoSource::SetVideoProperties() {
 			"Codec returned zero size video");
 
 	// attempt to correct framerate to the proper NTSC fraction, if applicable
-	CorrectNTSCRationalFramerate(&VP.FPSNumerator, &VP.FPSDenominator);
+	CorrectRationalFramerate(&VP.FPSNumerator, &VP.FPSDenominator);
 	// correct the timebase, if necessary
 	CorrectTimebase(&VP, &Frames.TB);
 

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -111,8 +111,6 @@
   <ItemGroup>
     <ClCompile Include="..\src\avisynth\avisynth.cpp" />
     <ClCompile Include="..\src\avisynth\avssources.cpp" />
-    <ClCompile Include="..\src\avisynth\avsutils.cpp" />
-    <ClCompile Include="..\src\avisynth\ffswscale.cpp" />
     <ClCompile Include="..\src\config\libs.cpp" />
     <ClCompile Include="..\src\core\audiosource.cpp" />
     <ClCompile Include="..\src\core\ffms.cpp" />
@@ -135,8 +133,6 @@
     <ClInclude Include="..\include\ffmscompat.h" />
     <ClInclude Include="..\src\avisynth\avisynth.h" />
     <ClInclude Include="..\src\avisynth\avssources.h" />
-    <ClInclude Include="..\src\avisynth\avsutils.h" />
-    <ClInclude Include="..\src\avisynth\ffswscale.h" />
     <ClInclude Include="..\src\config\msvc-config.h" />
     <ClInclude Include="..\src\core\audiosource.h" />
     <ClInclude Include="..\src\core\filehandle.h" />

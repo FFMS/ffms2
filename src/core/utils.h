@@ -210,4 +210,7 @@ void SetOptions(T const& src, void *opt, OptionMapper<T> (&options)[N]) {
 		options[i].ToOpt(src, opt);
 }
 
+int ResizerNameToSWSResizer(const char *ResizerName);
+bool IsSamePath(const char *p1, const char *p2);
+
 #endif
