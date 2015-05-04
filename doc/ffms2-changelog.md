@@ -1,6 +1,7 @@
 # FFmpegSource2 Changelog
 
 - 2.21
+  - Fix bad decoder flush that discarded the palette of raw video (Myrsloik)
   - Removed the SWScale function from Avisynth since SWScale is useless (Myrsloik)
   - Fix common framerate correction (Myrsloik)
   - vapoursource: The framerate and frame durations are now normalized (Myrsloik)

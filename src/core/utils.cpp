@@ -164,11 +164,15 @@ void FlushBuffers(AVCodecContext *CodecContext) {
 		// might need it and just not implement it as in the case of VC-1, so
 		// close and reopen the codec
 		const AVCodec *codec = CodecContext->codec;
-		avcodec_close(CodecContext);
-		// Whether or not codec is const varies between versions
-		if (avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), nullptr) < 0)
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_CODEC,
+
+		// Raw video codec forgets the palette if "flushed" this way
+		if (codec->id != AV_CODEC_ID_RAWVIDEO) {
+			avcodec_close(CodecContext);
+			// Whether or not codec is const varies between versions
+			if (avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), nullptr) < 0)
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_CODEC,
 				"Couldn't re-open codec.");
+		}
 	}
 }
 
