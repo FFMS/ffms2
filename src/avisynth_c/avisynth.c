@@ -159,7 +159,12 @@ static AVS_Value AVSC_CC create_FFVideoSource( AVS_ScriptEnvironment *env, AVS_V
     }
     if( !index )
     {
-        if( !(index = FFMS_MakeIndex( src, 0, 0, NULL, NULL, 1, NULL, NULL, &ei )) )
+        FFMS_Indexer *indexer = FFMS_CreateIndexer( src, &ei );
+        if( !indexer )
+            return avs_new_value_error( ffms_avs_sprintf( "FFVideoSource: %s", ei.Buffer ) );
+
+        index = FFMS_DoIndexing2( indexer, FFMS_IEH_CLEAR_TRACK, &ei );
+        if( !index )
             return avs_new_value_error( ffms_avs_sprintf( "FFVideoSource: %s", ei.Buffer ) );
 
         if( cache )
@@ -247,7 +252,14 @@ static AVS_Value AVSC_CC create_FFAudioSource( AVS_ScriptEnvironment *env, AVS_V
 
     if( !index )
     {
-        if( !(index = FFMS_MakeIndex( src, -1, 0, NULL, NULL, 1, NULL, NULL, &ei )) )
+        FFMS_Indexer *indexer = FFMS_CreateIndexer( src, &ei );
+        if( !indexer )
+            return avs_new_value_error( ffms_avs_sprintf( "FFAudioSource: %s", ei.Buffer ) );
+
+        FFMS_TrackTypeIndexSettings( indexer, FFMS_TYPE_AUDIO, 1, 0);
+
+        index = FFMS_DoIndexing2( indexer, FFMS_IEH_CLEAR_TRACK, &ei );
+        if( !indexer )
             return avs_new_value_error( ffms_avs_sprintf( "FFAudioSource: %s", ei.Buffer ) );
 
         if( cache )
