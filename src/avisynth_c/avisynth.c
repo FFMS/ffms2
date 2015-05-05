@@ -302,16 +302,6 @@ static AVS_Value AVSC_CC create_FFAudioSource( AVS_ScriptEnvironment *env, AVS_V
     return audio;
 }
 
-static AVS_Value AVSC_CC create_SWScale( AVS_ScriptEnvironment *env, AVS_Value args, void *user_data )
-{
-    AVS_Value child = as_elt( args, 0 );
-    int dst_width = as_int( as_elt( args, 1 ), 0 );
-    int dst_height = as_int( as_elt( args, 2 ), 0 );
-    const char* resizer = as_string( as_elt( args, 3 ), "BICUBIC" );
-    const char* dst_pix_fmt = as_string( as_elt( args, 4 ), "" );
-    return FFSWScale_create( env, child, dst_width, dst_height, resizer, dst_pix_fmt );
-}
-
 static AVS_Value AVSC_CC create_FFGetLogLevel( AVS_ScriptEnvironment *env, AVS_Value args, void *user_data )
 { return avs_new_value_int( FFMS_GetLogLevel() ); }
 
@@ -337,7 +327,6 @@ const char *AVSC_CC avisynth_c_plugin_init( AVS_ScriptEnvironment* env )
     ffms_avs_lib->avs_add_function( env, "FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b[demuxer]s", create_FFIndex, 0 );
     ffms_avs_lib->avs_add_function( env, "FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", create_FFVideoSource, 0 );
     ffms_avs_lib->avs_add_function( env, "FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b[varprefix]s", create_FFAudioSource, 0 );
-    ffms_avs_lib->avs_add_function( env, "SWScale", "c[width]i[height]i[resizer]s[colorspace]s", create_SWScale, 0 );
     ffms_avs_lib->avs_add_function( env, "FFGetLogLevel", "", create_FFGetLogLevel, 0 );
     ffms_avs_lib->avs_add_function( env, "FFSetLogLevel", "i", create_FFSetLogLevel, 0 );
     ffms_avs_lib->avs_add_function( env, "FFGetVersion", "", create_FFGetVersion, 0 );

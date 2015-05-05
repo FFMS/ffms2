@@ -32,7 +32,4 @@ AVS_Value FFVideoSource_create( AVS_ScriptEnvironment *env, const char *src, int
 AVS_Value FFAudioSource_create( AVS_ScriptEnvironment *env, const char *src, int track,
     FFMS_Index *index, int adjust_delay, const char *var_prefix );
 
-AVS_Value FFSWScale_create( AVS_ScriptEnvironment *env, AVS_Value child, int dst_width,
-    int dst_height, const char *resizer_name, const char *csp_name );
-
 #endif
