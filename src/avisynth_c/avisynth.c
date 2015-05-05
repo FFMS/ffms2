@@ -102,7 +102,7 @@ static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value a
                 FFMS_TrackIndexSettings( indexer, i, temp, (dump_mask >> i) & 1 );
         }
 
-        index = FFMS_DoIndexing2( indexer, ErrorHandling, &ei );
+        index = FFMS_DoIndexing2( indexer, err_handler, &ei );
         if( !index )
             return avs_new_value_error( ffms_avs_sprintf( "FFIndex: %s", ei.Buffer ) );
         if( FFMS_WriteIndex( cache_file, index, &ei ) )
