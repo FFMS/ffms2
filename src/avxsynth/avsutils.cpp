@@ -46,6 +46,11 @@ PixelFormat CSNameToPIXFMT(const char *CSName, PixelFormat Default) {
 	return PIX_FMT_NONE;
 }
 
+// Just disable this without removal, so there's an out if the main
+// implementation in src/core/utils.cpp ever goes away.
+// AvxSynth's resizers are threaded through FFMS2's SWScale()
+// function.
+#if AVX_SWS_LEGACY
 int ResizerNameToSWSResizer(const char *ResizerName) {
 	if (!ResizerName)
 		return 0;
@@ -75,3 +80,4 @@ int ResizerNameToSWSResizer(const char *ResizerName) {
 		return SWS_SPLINE;
 	return 0;
 }
+#endif // AVX_SWS_LEGACY
