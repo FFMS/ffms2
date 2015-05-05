@@ -88,15 +88,19 @@ static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value a
             return avs_new_value_error( ffms_avs_sprintf( "FFIndex: %s", ei.Buffer ) );
         FFMS_SetAudioNameCallback( indexer, FFMS_DefaultAudioFilename, (void*)audio_file );
 
-        /* Treat -1 as meaning track numbers above 32 too, dumping implies indexing */
+        /* Treat -1 as meaning track numbers above sizeof(int) too, dumping implies indexing */
         if (dump_mask == -1) {
             FFMS_TrackTypeIndexSettings( indexer, FFMS_TYPE_AUDIO, 1, 1 );
         } else if (index_mask == -1) {
             FFMS_TrackTypeIndexSettings( indexer, FFMS_TYPE_AUDIO, 1, 0 );
         }
-        /* Apply attributes to remaining tracks */
-        for (int i = 0; i < sizeof(int) * 8; i++)
-            FFMS_TrackIndexSettings( indexer, i, ((index_mask >> i) & 1) | ((dump_mask >> i) & 1), (dump_mask >> i) & 1);
+
+        /* Apply attributes to remaining tracks (will set the attributes again on some tracks) */
+        for (int i = 0; i < sizeof(index_mask) * 8; i++) {
+            int temp = (((index_mask >> i) & 1) | ((dump_mask >> i) & 1));
+            if (temp)
+                FFMS_TrackIndexSettings( indexer, i, temp, (dump_mask >> i) & 1 );
+        }
 
         index = FFMS_DoIndexing2( indexer, ErrorHandling, &ei );
         if( !index )
