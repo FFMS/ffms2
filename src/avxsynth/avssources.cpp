@@ -304,7 +304,7 @@ void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst,
 	} else if (VI.IsYUY2()) {
 		BlitField(Frame, Dst, Env, 0, Field);
 	} else { // RGB
-        Env->BitBlt(
+	Env->BitBlt(
 			Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1 - Field), -Dst->GetPitch() * 2,
 			SrcPicture->Data[0] + SrcPicture->Linesize[0] * Field, SrcPicture->Linesize[0] * 2,
 			Dst->GetRowSize(), Dst->GetHeight() / 2);

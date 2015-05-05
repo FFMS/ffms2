@@ -58,7 +58,7 @@ SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char 
 		case PIX_FMT_BGR24: vi.pixel_type = VideoInfo::CS_BGR24; break;
 		case PIX_FMT_RGB32: vi.pixel_type = VideoInfo::CS_BGR32; break;
 		default:
-		    break;
+			break;
 	}
 
 	FlipOutput ^= vi.IsYUV();
