@@ -419,12 +419,12 @@ AVS_Value FFVideoSource_create( AVS_ScriptEnvironment *env, const char *src, int
                 filter->fi->vi.num_frames = (vidp->LastTime - vidp->FirstTime) * (1 + 1. / (vidp->NumFrames - 1)) * fps_num / fps_den + 0.5;
                 if( filter->fi->vi.num_frames < 1 )
                     filter->fi->vi.num_frames = 1;
-	    }
-	    else
-		filter->fi->vi.num_frames = 1;
-	}
-	else
-	{
+            }
+            else
+                filter->fi->vi.num_frames = 1;
+        }
+        else
+        {
             filter->fi->vi.fps_denominator = vidp->FPSDenominator;
             filter->fi->vi.fps_numerator = vidp->FPSNumerator;
             filter->fi->vi.num_frames = vidp->NumFrames;
