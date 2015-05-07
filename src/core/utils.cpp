@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,6 @@
 
 #include "utils.h"
 
-#include "codectype.h"
 #include "indexing.h"
 #include "track.h"
 
@@ -56,34 +55,6 @@ int FFMS_Exception::CopyOut(FFMS_ErrorInfo *ErrorInfo) const {
 	return (_ErrorType << 16) | _SubType;
 }
 
-TrackCompressionContext::TrackCompressionContext(MatroskaFile *MF, TrackInfo *TI, unsigned int Track)
-: CS(NULL)
-, CompressedPrivateData(NULL)
-, CompressedPrivateDataSize(0)
-, CompressionMethod(TI->CompMethod)
-{
-	if (CompressionMethod == COMP_ZLIB) {
-		char ErrorMessage[512];
-		CS = cs_Create(MF, Track, ErrorMessage, sizeof(ErrorMessage));
-		if (CS == NULL) {
-			std::ostringstream buf;
-			buf << "Can't create MKV track decompressor: " << ErrorMessage;
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, buf.str());
-		}
-	} else if (CompressionMethod == COMP_PREPEND) {
-		CompressedPrivateData		= TI->CompMethodPrivate;
-		CompressedPrivateDataSize	= TI->CompMethodPrivateSize;
-	} else {
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			"Can't create MKV track decompressor: unknown or unsupported compression method");
-	}
-}
-
-TrackCompressionContext::~TrackCompressionContext() {
-	if (CS)
-		cs_Destroy(CS);
-}
-
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo) {
 	if (ErrorInfo) {
 		ErrorInfo->ErrorType = FFMS_ERROR_SUCCESS;
@@ -96,7 +67,7 @@ void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo) {
 
 void InitNullPacket(AVPacket &pkt) {
 	av_init_packet(&pkt);
-	pkt.data = NULL;
+	pkt.data = nullptr;
 	pkt.size = 0;
 }
 
@@ -147,47 +118,6 @@ void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
 		AP.ChannelLayout = av_get_default_channel_layout(AP.Channels);
 }
 
-void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *CodecContext) {
-	uint8_t *PrivateDataSrc = static_cast<uint8_t *>(TI->CodecPrivate);
-	size_t PrivateDataSize = TI->CodecPrivateSize;
-	size_t BIHSize = sizeof(FFMS_BITMAPINFOHEADER); // 40 bytes
-	if (!strncmp(TI->CodecID, "V_MS/VFW/FOURCC", 15) && PrivateDataSize >= BIHSize) {
-		// For some reason UTVideo requires CodecContext->codec_tag (i.e. the FourCC) to be set.
-		// Fine, it can't hurt to set it, so let's go find it.
-		// In a V_MS/VFW/FOURCC track, the codecprivate starts with a BITMAPINFOHEADER. If you treat that struct
-		// as an array of uint32_t, the biCompression member (that's the FourCC) can be found at offset 4.
-		// Therefore the following derp.
-		CodecContext->codec_tag = reinterpret_cast<uint32_t *>(PrivateDataSrc)[4];
-
-		// Now skip copying the BITMAPINFOHEADER into the extradata, because lavc doesn't expect it to be there.
-		if (PrivateDataSize <= BIHSize) {
-			PrivateDataSrc = NULL;
-			PrivateDataSize = 0;
-		}
-		else {
-			PrivateDataSrc += BIHSize;
-			PrivateDataSize -= BIHSize;
-		}
-	}
-	// I think you might need to do some special handling for A_MS/ACM extradata too,
-	// but I don't think anyone actually uses that.
-
-	if (PrivateDataSrc && PrivateDataSize > 0) {
-		CodecContext->extradata = static_cast<uint8_t *>(av_mallocz(PrivateDataSize + FF_INPUT_BUFFER_PADDING_SIZE));
-		CodecContext->extradata_size = PrivateDataSize;
-		memcpy(CodecContext->extradata, PrivateDataSrc, PrivateDataSize);
-	}
-
-	if (TI->Type == TT_VIDEO) {
-		CodecContext->coded_width = TI->AV.Video.PixelWidth;
-		CodecContext->coded_height = TI->AV.Video.PixelHeight;
-	} else if (TI->Type == TT_AUDIO) {
-		CodecContext->sample_rate = mkv_TruncFloat(TI->AV.Audio.SamplingFreq);
-		CodecContext->bits_per_coded_sample = TI->AV.Audio.BitDepth;
-		CodecContext->channels = TI->AV.Audio.Channels;
-	}
-}
-
 // All this filename chikanery that follows is supposed to make sure both local
 // codepage (used by avisynth etc) and UTF8 (potentially used by API users) strings
 // work correctly on Win32.
@@ -196,7 +126,7 @@ void InitializeCodecContextFromMatroskaTrackInfo(TrackInfo *TI, AVCodecContext *
 static std::wstring char_to_wstring(const char *s, unsigned int cp) {
 	std::wstring ret;
 	int len;
-	if (!(len = MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1, NULL, 0)))
+	if (!(len = MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1, nullptr, 0)))
 		return ret;
 
 	ret.resize(len);
@@ -214,13 +144,13 @@ std::wstring widen_path(const char *s) {
 // End of filename hackery.
 
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
-	if (avformat_open_input(&FormatContext, SourceFile, NULL, NULL) != 0)
+	if (avformat_open_input(&FormatContext, SourceFile, nullptr, nullptr) != 0)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Couldn't open '") + SourceFile + "'");
 
-	if (avformat_find_stream_info(FormatContext,NULL) < 0) {
+	if (avformat_find_stream_info(FormatContext,nullptr) < 0) {
 		avformat_close_input(&FormatContext);
-		FormatContext = NULL;
+		FormatContext = nullptr;
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			"Couldn't find stream information");
 	}
@@ -234,10 +164,53 @@ void FlushBuffers(AVCodecContext *CodecContext) {
 		// might need it and just not implement it as in the case of VC-1, so
 		// close and reopen the codec
 		const AVCodec *codec = CodecContext->codec;
-		avcodec_close(CodecContext);
-		// Whether or not codec is const varies between versions
-		if (avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), 0) < 0)
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_CODEC,
+
+		// Raw video codec forgets the palette if "flushed" this way
+		if (codec->id != AV_CODEC_ID_RAWVIDEO) {
+			avcodec_close(CodecContext);
+			// Whether or not codec is const varies between versions
+			if (avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), nullptr) < 0)
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_CODEC,
 				"Couldn't re-open codec.");
+		}
 	}
+}
+
+int ResizerNameToSWSResizer(const char *ResizerName) {
+	if (!ResizerName)
+		return 0;
+	std::string s = ResizerName;
+	std::transform(s.begin(), s.end(), s.begin(), toupper);
+	if (s == "FAST_BILINEAR")
+		return SWS_FAST_BILINEAR;
+	if (s == "BILINEAR")
+		return SWS_BILINEAR;
+	if (s == "BICUBIC")
+		return SWS_BICUBIC;
+	if (s == "X")
+		return SWS_X;
+	if (s == "POINT")
+		return SWS_POINT;
+	if (s == "AREA")
+		return SWS_AREA;
+	if (s == "BICUBLIN")
+		return SWS_BICUBLIN;
+	if (s == "GAUSS")
+		return SWS_GAUSS;
+	if (s == "SINC")
+		return SWS_SINC;
+	if (s == "LANCZOS")
+		return SWS_LANCZOS;
+	if (s == "SPLINE")
+		return SWS_SPLINE;
+	return 0;
+}
+
+bool IsSamePath(const char *p1, const char *p2) {
+// assume windows is the only OS with a case insensitive filesystem and ignore all path complications
+#ifndef _WIN32
+	return !strcmp(p1, p2);
+#else
+	return !_stricmp(p1, p2);
+#endif
 }

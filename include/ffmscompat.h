@@ -57,19 +57,19 @@
 #	undef SampleFormat
 #	define FFMS_CALCULATE_DELAY (CodecContext->has_b_frames + (CodecContext->thread_count - 1))
 #   if VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 54, 25, 0, 54, 51, 100)
-#       define FFMS_ID(x) (CODEC_ID_##x)
-#       define FFMS_CodecID CodecID
+#		define FFMS_ID(x) (CODEC_ID_##x)
+#		define FFMS_CodecID CodecID
 #   else
-#       define FFMS_ID(x) (AV_CODEC_ID_##x)
-#       define FFMS_CodecID AVCodecID
-#       undef CodecID
+#		define FFMS_ID(x) (AV_CODEC_ID_##x)
+#		define FFMS_CodecID AVCodecID
+#		undef CodecID
 #   endif
 #   if VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 54, 28, 0, 54, 59, 100)
 static void av_frame_free(AVFrame **frame) { av_freep(frame); }
-#       define av_frame_unref avcodec_get_frame_defaults
+#		define av_frame_unref avcodec_get_frame_defaults
 #   elif VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 55, 28, 1, 55, 45, 101)
-#       define av_frame_free avcodec_free_frame
-#       define av_frame_unref avcodec_get_frame_defaults
+#		define av_frame_free avcodec_free_frame
+#		define av_frame_unref avcodec_get_frame_defaults
 #   endif
 #endif
 

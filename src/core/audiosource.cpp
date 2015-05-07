@@ -56,15 +56,7 @@ OptionMapper<FFMS_ResampleOptions> resample_options[] = {
 }
 
 FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track)
-: Delay(0)
-, MaxCacheBlocks(50)
-, BytesPerSample(0)
-, NeedsResample(false)
-, CurrentSample(-1)
-, PacketNumber(0)
-, CurrentFrame(NULL)
-, TrackNumber(Track)
-, SeekOffset(0)
+: TrackNumber(Track)
 {
 	if (Track < 0 || Track >= static_cast<int>(Index.size()))
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
@@ -101,8 +93,8 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Codec returned zero size audio");
 
-	std::auto_ptr<FFMS_ResampleOptions> opt(CreateResampleOptions());
-	SetOutputFormat(opt.get());
+	auto opt = CreateResampleOptions();
+	SetOutputFormat(*opt);
 
 	if (DelayMode < FFMS_DELAY_NO_SHIFT)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
@@ -118,11 +110,10 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
 			"Audio delay compensation must be relative to a video track");
 
-	int64_t Delay = 0;
 	if (DelayMode == FFMS_DELAY_FIRST_VIDEO_TRACK) {
 		for (size_t i = 0; i < Index.size(); ++i) {
 			if (Index[i].TT == FFMS_TYPE_VIDEO && !Index[i].empty()) {
-				DelayMode = i;
+                DelayMode = static_cast<int>(i);
 				break;
 			}
 		}
@@ -160,7 +151,7 @@ void FFMS_AudioSource::CacheBeginning() {
 	// file (ts and?), so cache a few blocks even if PTSes are unique
 	// Packet 7 is the last packet I've had be unseekable to, so cache up to
 	// 10 for a bit of an extra buffer
-	CacheIterator end = Cache.end();
+	auto end = Cache.end();
 	while (PacketNumber < Frames.size() &&
 		((Frames[0].PTS != ffms_av_nopts_value && Frames[PacketNumber].PTS == Frames[0].PTS) ||
 		 Cache.size() < 10)) {
@@ -186,13 +177,13 @@ void FFMS_AudioSource::CacheBeginning() {
 	--CacheNoDelete;
 }
 
-void FFMS_AudioSource::SetOutputFormat(const FFMS_ResampleOptions *opt) {
-	if (opt->SampleRate != AP.SampleRate)
+void FFMS_AudioSource::SetOutputFormat(FFMS_ResampleOptions const& opt) {
+	if (opt.SampleRate != AP.SampleRate)
 		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
 			"Sample rate changes are currently unsupported.");
 
 #ifndef WITH_AVRESAMPLE
-	if (opt->SampleFormat != AP.SampleFormat || opt->SampleRate != AP.SampleRate || opt->ChannelLayout != AP.ChannelLayout)
+	if (opt.SampleFormat != AP.SampleFormat || opt.SampleRate != AP.SampleRate || opt.ChannelLayout != AP.ChannelLayout)
 		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
 			"FFMS was not built with resampling enabled. The only supported conversion is interleaving planar audio.");
 #endif
@@ -203,12 +194,12 @@ void FFMS_AudioSource::SetOutputFormat(const FFMS_ResampleOptions *opt) {
 	ReopenFile();
 	FlushBuffers(CodecContext);
 
-	BytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(opt->SampleFormat)) * av_get_channel_layout_nb_channels(opt->ChannelLayout);
+	BytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(opt.SampleFormat)) * av_get_channel_layout_nb_channels(opt.ChannelLayout);
 	NeedsResample =
-		opt->SampleFormat != (int)CodecContext->sample_fmt ||
-		opt->SampleRate != AP.SampleRate ||
-		opt->ChannelLayout != AP.ChannelLayout ||
-		opt->ForceResample;
+		opt.SampleFormat != (int)CodecContext->sample_fmt ||
+		opt.SampleRate != AP.SampleRate ||
+		opt.ChannelLayout != AP.ChannelLayout ||
+		opt.ForceResample;
 
 #ifdef WITH_AVRESAMPLE
 	if (!NeedsResample) return;
@@ -226,12 +217,12 @@ void FFMS_AudioSource::SetOutputFormat(const FFMS_ResampleOptions *opt) {
 #endif
 }
 
-FFMS_ResampleOptions *FFMS_AudioSource::CreateResampleOptions() const {
+std::unique_ptr<FFMS_ResampleOptions> FFMS_AudioSource::CreateResampleOptions() const {
 #ifdef WITH_AVRESAMPLE
-	FFMS_ResampleOptions *ret = ReadOptions(ResampleContext, resample_options);
+	auto ret = ReadOptions(ResampleContext, resample_options);
 #else
-	FFMS_ResampleOptions *ret = new FFMS_ResampleOptions;
-	memset(ret, 0, sizeof(FFMS_ResampleOptions));
+	auto ret = make_unique<FFMS_ResampleOptions>();
+	memset(ret.get(), 0, sizeof(FFMS_ResampleOptions));
 #endif
 	ret->SampleRate = AP.SampleRate;
 	ret->SampleFormat = static_cast<FFMS_SampleFormat>(AP.SampleFormat);
@@ -267,7 +258,7 @@ void FFMS_AudioSource::CacheBlock(CacheIterator &pos) {
 	// If the previous block has the same Start sample as this one, then
 	// we got multiple frames of audio out of a single package and should
 	// combine them
-	CacheIterator block = pos;
+	auto block = pos;
 	if (pos == Cache.begin() || (--block)->Start != CurrentSample)
 		block = Cache.insert(pos, AudioBlock(CurrentSample));
 
@@ -282,11 +273,11 @@ void FFMS_AudioSource::CacheBlock(CacheIterator &pos) {
 
 	if (Cache.size() >= MaxCacheBlocks) {
 		// Kill the oldest one
-		CacheIterator min = CacheNoDelete;
+		auto min = CacheNoDelete;
 		// Never drop the first one as the first packet decoded after a seek
 		// is often decoded incorrectly and we can't seek to before the first one
 		++min;
-		for (CacheIterator it = min; it != Cache.end(); ++it)
+		for (auto it = min; it != Cache.end(); ++it)
 			if (it->Age < min->Age) min = it;
 		if (min == pos) ++pos;
 		Cache.erase(min);
@@ -361,7 +352,7 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 		Dst += Bytes;
 	}
 
-	CacheIterator it = Cache.begin();
+	auto it = Cache.begin();
 
 	while (Count > 0) {
 		// Find first useful cache block

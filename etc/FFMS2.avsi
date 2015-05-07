@@ -80,7 +80,7 @@ function FFFormatTime(int ms) {
 	h = m / 60
 	m = m % 60
 
-	return string(h) + ":" + string(m,"%02.0f") + ":" + string(s,"%02.0f") + "." + string(ms,"%03.0f")
+	return ms < 0 ? "<Unknown>" : string(h) + ":" + string(m,"%02.0f") + ":" + string(s,"%02.0f") + "." + string(ms,"%03.0f")
 }
 
 function FFInfo(clip c, bool "framenum", bool "frametype", bool "cfrtime", bool "vfrtime", string "varprefix") {

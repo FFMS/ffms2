@@ -50,7 +50,6 @@ static const uint8_t Guiddata[16]={
 
 Wave64Writer::Wave64Writer(const char *Filename, uint16_t BytesPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat)
 : WavFile(Filename, "wb", FFMS_ERROR_WAVE_WRITER, FFMS_ERROR_FILE_WRITE)
-, BytesWritten(0)
 , SamplesPerSec(SamplesPerSec)
 , BytesPerSample(BytesPerSample)
 , Channels(Channels)
@@ -76,9 +75,7 @@ void Wave64Writer::WriteHeader(bool Initial, bool IsFloat) {
 	WFEX.wBitsPerSample = BytesPerSample * 8;
 	WFEX.cbSize = 0;
 
-	uint64_t Header[14];
-
-	memset(Header, 0, sizeof(Header));
+	uint64_t Header[14] = {};
 
 	memcpy(Header + 0, GuidRIFF, 16);
 	if (Initial)

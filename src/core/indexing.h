@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -31,10 +31,9 @@ class Wave64Writer;
 class SharedVideoContext {
 	bool FreeCodecContext;
 public:
-	AVCodecContext *CodecContext;
-	AVCodecParserContext *Parser;
-	AVBitStreamFilterContext *BitStreamFilter;
-	TrackCompressionContext *TCC;
+	AVCodecContext *CodecContext = nullptr;
+	AVCodecParserContext *Parser = nullptr;
+	AVBitStreamFilterContext *BitStreamFilter = nullptr;
 
 	SharedVideoContext(bool FreeCodecContext);
 	~SharedVideoContext();
@@ -43,17 +42,18 @@ public:
 class SharedAudioContext {
 	bool FreeCodecContext;
 public:
-	AVCodecContext *CodecContext;
-	Wave64Writer *W64Writer;
-	int64_t CurrentSample;
-	TrackCompressionContext *TCC;
+	AVCodecContext *CodecContext = nullptr;
+	Wave64Writer *W64Writer = nullptr;
+	int64_t CurrentSample = 0;
 
 	SharedAudioContext(bool FreeCodecContext);
 	~SharedAudioContext();
 };
 
-struct FFMS_Index : public std::vector<FFMS_Track>, private noncopyable {
-	int RefCount;
+struct FFMS_Index : public std::vector<FFMS_Track> {
+	int RefCount = 1;
+	FFMS_Index(FFMS_Index const&) = delete;
+	FFMS_Index& operator=(FFMS_Index const&) = delete;
 public:
 	static void CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]);
 
@@ -73,16 +73,18 @@ public:
 	FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling);
 };
 
-struct FFMS_Indexer : private noncopyable {
+struct FFMS_Indexer {
 	std::map<int, FFMS_AudioProperties> LastAudioProperties;
+	FFMS_Indexer(FFMS_Indexer const&) = delete;
+	FFMS_Indexer& operator=(FFMS_Indexer const&) = delete;
 protected:
-	int IndexMask;
-	int DumpMask;
-	int ErrorHandling;
-	TIndexCallback IC;
-	void *ICPrivate;
-	TAudioNameCallback ANC;
-	void *ANCPrivate;
+	// Index a track if key exists, dump track if value is true
+	std::map<int, bool> IndexMask;
+	int ErrorHandling = FFMS_IEH_CLEAR_TRACK;
+	TIndexCallback IC = nullptr;
+	void *ICPrivate = nullptr;
+	TAudioNameCallback ANC = nullptr;
+	void *ANCPrivate = nullptr;
 	std::string SourceFile;
 	ScopedFrame DecodeFrame;
 
@@ -98,8 +100,8 @@ public:
 	FFMS_Indexer(const char *Filename);
 	virtual ~FFMS_Indexer() { }
 
-	void SetIndexMask(int IndexMask) { this->IndexMask = IndexMask; }
-	void SetDumpMask(int DumpMask) { this->DumpMask = DumpMask; }
+	void SetIndexTrack(int Track, bool Index, bool Dump);
+	void SetIndexTrackType(int TrackType, bool Index, bool Dump);
 	void SetErrorHandling(int ErrorHandling);
 	void SetProgressCallback(TIndexCallback IC, void *ICPrivate);
 	void SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate);
@@ -112,10 +114,8 @@ public:
 	virtual const char *GetFormatName() = 0;
 };
 
-FFMS_Indexer *CreateIndexer(const char *Filename, FFMS_Sources Demuxer = FFMS_SOURCE_DEFAULT);
+FFMS_Indexer *CreateIndexer(const char *Filename);
 
 FFMS_Indexer *CreateLavfIndexer(const char *Filename, AVFormatContext *FormatContext);
-FFMS_Indexer *CreateMatroskaIndexer(const char *Filename);
-FFMS_Indexer *CreateHaaliIndexer(const char *Filename, FFMS_Sources SourceMode);
 
 #endif

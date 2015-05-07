@@ -5,6 +5,11 @@ compiler:
 env:
   - FFMPEG=git://git.videolan.org/ffmpeg.git
   - FFMPEG=git://git.libav.org/libav.git
+before_install:
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq g++-4.8
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8
 install:
   - sudo apt-get install yasm
   - git clone $FFMPEG --depth=1 ffmpeg
@@ -14,7 +19,7 @@ install:
   - sudo make install
   - cd ..
 script:
-  - ./configure --extra-cxxflags='-Wall -Wextra -Wno-missing-field-initializers -Werror' || cat config.log
+  - ./configure --extra-cxxflags='-Werror' || cat config.log
   - make V=1 -j2 -k
 notifications:
   email:

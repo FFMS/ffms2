@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -59,7 +59,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>FFMS_EXPORTS;HAALISOURCE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>FFMS_EXPORTS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
       <DisableSpecificWarnings>4995;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
@@ -111,27 +111,14 @@
   <ItemGroup>
     <ClCompile Include="..\src\avisynth\avisynth.cpp" />
     <ClCompile Include="..\src\avisynth\avssources.cpp" />
-    <ClCompile Include="..\src\avisynth\avsutils.cpp" />
-    <ClCompile Include="..\src\avisynth\ffswscale.cpp" />
     <ClCompile Include="..\src\config\libs.cpp" />
     <ClCompile Include="..\src\core\audiosource.cpp" />
-    <ClCompile Include="..\src\core\codectype.cpp" />
     <ClCompile Include="..\src\core\ffms.cpp" />
     <ClCompile Include="..\src\core\filehandle.cpp" />
-    <ClCompile Include="..\src\core\haaliaudio.cpp" />
-    <ClCompile Include="..\src\core\haalicommon.cpp" />
-    <ClCompile Include="..\src\core\haaliindexer.cpp" />
-    <ClCompile Include="..\src\core\haalivideo.cpp" />
     <ClCompile Include="..\src\core\indexing.cpp" />
     <ClCompile Include="..\src\core\lavfaudio.cpp" />
     <ClCompile Include="..\src\core\lavfindexer.cpp" />
     <ClCompile Include="..\src\core\lavfvideo.cpp" />
-    <ClCompile Include="..\src\core\matroskaaudio.cpp" />
-    <ClCompile Include="..\src\core\matroskaindexer.cpp" />
-    <ClCompile Include="..\src\core\matroskaparser.c" />
-    <ClCompile Include="..\src\core\matroskareader.cpp" />
-    <ClCompile Include="..\src\core\matroskavideo.cpp" />
-    <ClCompile Include="..\src\core\numthreads.cpp" />
     <ClCompile Include="..\src\core\track.cpp" />
     <ClCompile Include="..\src\core\utils.cpp" />
     <ClCompile Include="..\src\core\videosource.cpp" />
@@ -146,19 +133,10 @@
     <ClInclude Include="..\include\ffmscompat.h" />
     <ClInclude Include="..\src\avisynth\avisynth.h" />
     <ClInclude Include="..\src\avisynth\avssources.h" />
-    <ClInclude Include="..\src\avisynth\avsutils.h" />
-    <ClInclude Include="..\src\avisynth\ffswscale.h" />
     <ClInclude Include="..\src\config\msvc-config.h" />
     <ClInclude Include="..\src\core\audiosource.h" />
-    <ClInclude Include="..\src\core\codectype.h" />
-    <ClInclude Include="..\src\core\coparser.h" />
     <ClInclude Include="..\src\core\filehandle.h" />
-    <ClInclude Include="..\src\core\guids.h" />
-    <ClInclude Include="..\src\core\haalicommon.h" />
     <ClInclude Include="..\src\core\indexing.h" />
-    <ClInclude Include="..\src\core\matroskaparser.h" />
-    <ClInclude Include="..\src\core\matroskareader.h" />
-    <ClInclude Include="..\src\core\numthreads.h" />
     <ClInclude Include="..\src\core\track.h" />
     <ClInclude Include="..\src\core\utils.h" />
     <ClInclude Include="..\src\core\videosource.h" />

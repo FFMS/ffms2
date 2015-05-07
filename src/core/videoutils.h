@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 The FFmpegSource Project
+//  Copyright (c) 2007-2015 The FFmpegSource Project
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,7 @@ SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColo
 AVColorSpace GetAssumedColorSpace(int Width, int Height);
 
 // timebase-related functions
-void CorrectNTSCRationalFramerate(int *Num, int *Den);
+void CorrectRationalFramerate(int *Num, int *Den);
 void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase);
 
 // our implementation of avcodec_find_best_pix_fmt()

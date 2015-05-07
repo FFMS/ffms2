@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 The FFmpegSource Project
+//  Copyright (c) 2007-2015 The FFmpegSource Project
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@ extern "C" {
 SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, PixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags) {
 	Flags |= SWS_FULL_CHR_H_INT | SWS_FULL_CHR_H_INP | SWS_ACCURATE_RND | SWS_BITEXACT;
 	SwsContext *Context = sws_alloc_context();
-	if (!Context) return 0;
+	if (!Context) return nullptr;
 
 	// 0 = limited range, 1 = full range
 	int SrcRange = SrcColorRange == AVCOL_RANGE_JPEG;
@@ -53,9 +53,9 @@ SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColo
 		sws_getCoefficients(DstColorSpace), DstRange,
 		0, 1<<16, 1<<16);
 
-	if(sws_init_context(Context, 0, 0) < 0){
+	if(sws_init_context(Context, nullptr, nullptr) < 0){
 		sws_freeContext(Context);
-		return 0;
+		return nullptr;
 	}
 
 	return Context;
@@ -75,27 +75,24 @@ AVColorSpace GetAssumedColorSpace(int W, int H) {
 ***************************/
 
 
-// attempt to correct framerate to the proper NTSC fraction, if applicable
-// code stolen from Perian
-void CorrectNTSCRationalFramerate(int *Num, int *Den) {
-	AVRational TempFPS;
-	TempFPS.den = *Num; // not a typo
-	TempFPS.num = *Den; // still not a typo
+// attempt to correct framerate to a common fraction if close to one
+void CorrectRationalFramerate(int *Num, int *Den) {
+	// Make sure fps is a normalized rational number
+	av_reduce(Den, Num, *Den, *Num, INT_MAX);
 
-	av_reduce(&TempFPS.num, &TempFPS.den, TempFPS.num, TempFPS.den, INT_MAX);
+	const double fps = static_cast<double>(*Num) / *Den;
+	const int fpsList[] = { 24, 25, 30, 48, 50, 60, 100, 120 };
 
-	if (TempFPS.num == 1) {
-		*Num = TempFPS.den;
-		*Den = TempFPS.num;
-	}
-	else {
-		double FTimebase = av_q2d(TempFPS);
-		double NearestNTSC = floor(FTimebase * 1001.0 + 0.5) / 1001.0;
-		const double SmallInterval = 1.0/120.0;
-
-		if (fabs(FTimebase - NearestNTSC) < SmallInterval) {
-			*Num = int((1001.0 / FTimebase) + 0.5);
+	for (size_t i = 0; i < sizeof(fpsList) / sizeof(fpsList[0]); i++) {
+		const double delta = (fpsList[i] - static_cast<double>(fpsList[i]) / 1.001) / 2.0;
+		if (fabs(fps - fpsList[i]) < delta) {
+			*Num = fpsList[i];
+			*Den = 1;
+			break;
+		} else if ((fpsList[i] % 25) && (abs(fps - static_cast<double>(fpsList[i]) / 1.001) < delta)) {
+			*Num = fpsList[i] * 1000;
 			*Den = 1001;
+			break;
 		}
 	}
 }
@@ -142,7 +139,7 @@ struct LossAttributes {
 	int ChromaUndersampling;
 	int ChromaOversampling;
 	int DepthDifference;
-	int CSLoss; // 0 = same, 1 = no real loss (gray => yuv/rgb), 2 = full conversion required, 3 = complete color loss
+	int CSLoss; // 0 = no difference, 1 = no real loss (gray => yuv/rgb or alpha plane added), 2 = full conversion required, 3 = alpha loss, 4 = full conversion plus alpha loss, 5 = complete color loss
 };
 
 static int GetPseudoDepth(const AVPixFmtDescriptor &Desc) {
@@ -174,9 +171,20 @@ static LossAttributes CalculateLoss(PixelFormat Dst, PixelFormat Src) {
 	} else if (DstCS == cGRAY) {
 		Loss.ChromaOversampling = 0;
 		Loss.ChromaUndersampling = 10;
-		Loss.CSLoss = 3;
+		Loss.CSLoss = 5;
 	} else { // conversions between RGB and YUV here
 		Loss.CSLoss = 2;
+	}
+
+	if (Loss.CSLoss < 3 && (DstDesc.nb_components == SrcDesc.nb_components - 1)) {
+		if (Loss.CSLoss == 2)
+			Loss.CSLoss = 4;
+		else
+			Loss.CSLoss = 3;
+	}
+
+	if (Loss.CSLoss == 0 && (SrcDesc.nb_components == DstDesc.nb_components - 1)) {
+		Loss.CSLoss = 1;
 	}
 
 	return Loss;
@@ -190,15 +198,19 @@ PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelForma
 		return Dsts[0];
 
 	// is the input in the output?
-	std::vector<PixelFormat>::const_iterator i = std::find(Dsts.begin(), Dsts.end(), Src);
+	auto i = std::find(Dsts.begin(), Dsts.end(), Src);
 	if (i != Dsts.end())
 		return Src;
+
+	// If it's an evil paletted format pretend it's normal RGB when calculating loss
+    if (Src == PIX_FMT_PAL8)
+        Src = PIX_FMT_RGB32;
 
 	i = Dsts.begin();
 	LossAttributes Loss = CalculateLoss(*i++, Src);
 	for (; i != Dsts.end(); ++i) {
 		LossAttributes CLoss = CalculateLoss(*i, Src);
-		if (Loss.CSLoss == 3 && CLoss.CSLoss < 3) { // Preserve chroma information at any cost
+		if (Loss.CSLoss >= 3 && CLoss.CSLoss < Loss.CSLoss) { // favor the same color format output
 			Loss = CLoss;
 		} else if (Loss.DepthDifference >= 0 && CLoss.DepthDifference >= 0) { // focus on chroma undersamling and conversion loss if the target depth has been achieved
 			if ((CLoss.ChromaUndersampling < Loss.ChromaUndersampling)
@@ -234,7 +246,7 @@ int parse_vp8(AVCodecParserContext *s,
 	return buf_size;
 }
 
-AVCodecParser ffms_vp8_parser = { { FFMS_ID(VP8) }, 0, NULL, parse_vp8, NULL };
+AVCodecParser ffms_vp8_parser = { { FFMS_ID(VP8) }, 0, nullptr, parse_vp8, nullptr, nullptr, nullptr };
 }
 
 void RegisterCustomParsers() {

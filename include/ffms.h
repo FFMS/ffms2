@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (20 << 16) | (0 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (21 << 16) | (0 << 8) | 0)
 
 #include <stdint.h>
 
@@ -81,6 +81,64 @@
 #	define FFMS_API(ret) FFMS_EXTERN_C ret FFMS_CC
 #	define FFMS_DEPRECATED_API(ret) FFMS_EXTERN_C FFMS_DEPRECATED ret FFMS_CC
 #endif // defined(_MSC_VER)
+
+// This is necessary so the C-plugin can talk to stuff that expects
+// an MSVC dll. There seems to be no easy way to do this with LDFLAGS
+// or manipulating stdcall(s), unfortunately.
+#if defined(FFMS_CPLUGIN_SHARED)
+#define FFMS_CancelIndexing _FFMS_CancelIndexing
+#define FFMS_CreateAudioSource _FFMS_CreateAudioSource
+#define FFMS_CreateIndexer _FFMS_CreateIndexer
+#define FFMS_CreateIndexerWithDemuxer _FFMS_CreateIndexerWithDemuxer
+#define FFMS_CreateResampleOptions _FFMS_CreateResampleOptions
+#define FFMS_CreateVideoSource _FFMS_CreateVideoSource
+#define FFMS_DefaultAudioFilename _FFMS_DefaultAudioFilename
+#define FFMS_DestroyAudioSource _FFMS_DestroyAudioSource
+#define FFMS_DestroyIndex _FFMS_DestroyIndex
+#define FFMS_DestroyResampleOptions _FFMS_DestroyResampleOptions
+#define FFMS_DestroyVideoSource _FFMS_DestroyVideoSource
+#define FFMS_DoIndexing _FFMS_DoIndexing
+#define FFMS_GetAudio _FFMS_GetAudio
+#define FFMS_GetAudioProperties _FFMS_GetAudioProperties
+#define FFMS_GetCodecNameI _FFMS_GetCodecNameI
+#define FFMS_GetEnabledSources _FFMS_GetEnabledSources
+#define FFMS_GetErrorHandling _FFMS_GetErrorHandling
+#define FFMS_GetFirstIndexedTrackOfType _FFMS_GetFirstIndexedTrackOfType
+#define FFMS_GetFirstTrackOfType _FFMS_GetFirstTrackOfType
+#define FFMS_GetFormatNameI _FFMS_GetFormatNameI
+#define FFMS_GetFrame _FFMS_GetFrame
+#define FFMS_GetFrameByTime _FFMS_GetFrameByTime
+#define FFMS_GetFrameInfo _FFMS_GetFrameInfo
+#define FFMS_GetLogLevel _FFMS_GetLogLevel
+#define FFMS_GetNumFrames _FFMS_GetNumFrames
+#define FFMS_GetNumTracks _FFMS_GetNumTracks
+#define FFMS_GetNumTracksI _FFMS_GetNumTracksI
+#define FFMS_GetPixFmt _FFMS_GetPixFmt
+#define FFMS_GetPresentSources _FFMS_GetPresentSources
+#define FFMS_GetSourceType _FFMS_GetSourceType
+#define FFMS_GetSourceTypeI _FFMS_GetSourceTypeI
+#define FFMS_GetTimeBase _FFMS_GetTimeBase
+#define FFMS_GetTrackFromAudio _FFMS_GetTrackFromAudio
+#define FFMS_GetTrackFromIndex _FFMS_GetTrackFromIndex
+#define FFMS_GetTrackFromVideo _FFMS_GetTrackFromVideo
+#define FFMS_GetTrackType _FFMS_GetTrackType
+#define FFMS_GetTrackTypeI _FFMS_GetTrackTypeI
+#define FFMS_GetVersion _FFMS_GetVersion
+#define FFMS_GetVideoProperties _FFMS_GetVideoProperties
+#define FFMS_IndexBelongsToFile _FFMS_IndexBelongsToFile
+#define FFMS_Init _FFMS_Init
+#define FFMS_MakeIndex _FFMS_MakeIndex
+#define FFMS_ReadIndex _FFMS_ReadIndex
+#define FFMS_ResetInputFormatV _FFMS_ResetInputFormatV
+#define FFMS_ResetOutputFormatV _FFMS_ResetOutputFormatV
+#define FFMS_SetInputFormatV _FFMS_SetInputFormatV
+#define FFMS_SetLogLevel _FFMS_SetLogLevel
+#define FFMS_SetOutputFormatA _FFMS_SetOutputFormatA
+#define FFMS_SetOutputFormatV2 _FFMS_SetOutputFormatV2
+#define FFMS_WriteIndex _FFMS_WriteIndex
+#define FFMS_WriteTimecodes _FFMS_WriteTimecodes
+#endif
+
 
 
 // we now return you to your regularly scheduled programming.
@@ -221,6 +279,38 @@ typedef enum FFMS_AudioDelayModes {
 	FFMS_DELAY_FIRST_VIDEO_TRACK	= -1
 } FFMS_AudioDelayModes;
 
+typedef enum FFMS_ColorPrimaries {
+	FFMS_PRI_RESERVED0		= 0,
+	FFMS_PRI_BT709			= 1,
+	FFMS_PRI_UNSPECIFIED	= 2,
+	FFMS_PRI_RESERVED		= 3,
+	FFMS_PRI_BT470M			= 4,
+	FFMS_PRI_BT470BG		= 5,
+	FFMS_PRI_SMPTE170M		= 6,
+	FFMS_PRI_SMPTE240M		= 7,
+	FFMS_PRI_FILM			= 8,
+	FFMS_PRI_BT2020			= 9
+} FFMS_ColorPrimaries;
+
+typedef enum FFMS_TransferCharacteristic {
+	FFMS_TRC_RESERVED0		= 0,
+	FFMS_TRC_BT709			= 1,
+	FFMS_TRC_UNSPECIFIED	= 2,
+	FFMS_TRC_RESERVED		= 3,
+	FFMS_TRC_GAMMA22		= 4,
+	FFMS_TRC_GAMMA28		= 5,
+	FFMS_TRC_SMPTE170M		= 6,
+	FFMS_TRC_SMPTE240M		= 7,
+	FFMS_TRC_LINEAR			= 8,
+	FFMS_TRC_LOG			= 9,
+	FFMS_TRC_LOG_SQRT		= 10,
+	FFMS_TRC_IEC61966_2_4	= 11,
+	FFMS_TRC_BT1361_ECG		= 12,
+	FFMS_TRC_IEC61966_2_1	= 13,
+	FFMS_TRC_BT2020_10		= 14,
+	FFMS_TRC_BT2020_12		= 15
+} FFMS_TransferCharacteristic;
+
 typedef enum FFMS_ColorSpaces {
 	FFMS_CS_RGB			= 0,
 	FFMS_CS_BT709		= 1,
@@ -266,6 +356,18 @@ typedef enum FFMS_AudioDitherMethod {
 	FFMS_RESAMPLE_DITHER_TRIANGULAR_NOISESHAPING = 4
 } FFMS_AudioDitherMethod;
 
+typedef enum FFMS_LogLevels {
+	FFMS_LOG_QUIET    = -8,
+	FFMS_LOG_PANIC    =  0,
+	FFMS_LOG_FATAL    =  8,
+	FFMS_LOG_ERROR    = 16,
+	FFMS_LOG_WARNING  = 24,
+	FFMS_LOG_INFO     = 32,
+	FFMS_LOG_VERBOSE  = 40,
+	FFMS_LOG_DEBUG    = 48,
+	FFMS_LOG_TRACE    = 56
+} FFMS_LogLevels;
+
 typedef struct FFMS_ResampleOptions {
 	int64_t ChannelLayout;
 	FFMS_SampleFormat SampleFormat;
@@ -303,6 +405,10 @@ typedef struct FFMS_Frame {
 	char PictType;
 	int ColorSpace;
 	int ColorRange;
+	/* Introduced in FFMS_VERSION ((2 << 24) | (21 << 16) | (0 << 8) | 0) */
+	int ColorPrimaries;
+	int TransferCharateristics;
+	int ChromaLocation;
 } FFMS_Frame;
 
 typedef struct FFMS_TrackTimeBase {
@@ -390,11 +496,16 @@ FFMS_API(FFMS_Track *) FFMS_GetTrackFromVideo(FFMS_VideoSource *V);
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromAudio(FFMS_AudioSource *A);
 FFMS_API(const FFMS_TrackTimeBase *) FFMS_GetTimeBase(FFMS_Track *T);
 FFMS_API(int) FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, FFMS_ErrorInfo *ErrorInfo);
-FFMS_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo);
+FFMS_DEPRECATED_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int FNSize, void *Private);
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int Demuxer, FFMS_ErrorInfo *ErrorInfo);
-FFMS_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo);
+FFMS_DEPRECATED_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo);
+FFMS_API(void) FFMS_TrackIndexSettings(FFMS_Indexer *Indexer, int Track, int Index, int Dump); /* Introduced in FFMS_VERSION ((2 << 24) | (21 << 16) | (0 << 8) | 0) */
+FFMS_API(void) FFMS_TrackTypeIndexSettings(FFMS_Indexer *Indexer, int TrackType, int Index, int Dump); /* Introduced in FFMS_VERSION ((2 << 24) | (21 << 16) | (0 << 8) | 0) */
+FFMS_API(void) FFMS_SetAudioNameCallback(FFMS_Indexer *Indexer, TAudioNameCallback ANC, void *ANCPrivate); /* Introduced in FFMS_VERSION ((2 << 24) | (21 << 16) | (0 << 8) | 0) */
+FFMS_API(void) FFMS_SetProgressCallback(FFMS_Indexer *Indexer, TIndexCallback IC, void *ICPrivate); /* Introduced in FFMS_VERSION ((2 << 24) | (21 << 16) | (0 << 8) | 0) */
+FFMS_API(FFMS_Index *) FFMS_DoIndexing2(FFMS_Indexer *Indexer, int ErrorHandling, FFMS_ErrorInfo *ErrorInfo); /* Introduced in FFMS_VERSION ((2 << 24) | (21 << 16) | (0 << 8) | 0) */
 FFMS_API(void) FFMS_CancelIndexing(FFMS_Indexer *Indexer);
 FFMS_API(FFMS_Index *) FFMS_ReadIndex(const char *IndexFile, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_IndexBelongsToFile(FFMS_Index *Index, const char *SourceFile, FFMS_ErrorInfo *ErrorInfo);

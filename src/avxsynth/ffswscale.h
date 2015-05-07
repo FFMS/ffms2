@@ -39,7 +39,7 @@ private:
 public:
 	SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env);
 	~SWScale();
-    PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment *Env);
+	PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment *Env);
 };
 
 #endif

@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
 #include "avssources.h"
 #include "ffswscale.h"
 #include "avsutils.h"
+#include "../core/utils.h"
 
 static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	if (!Args[0].Defined())
@@ -52,12 +53,6 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 		Demuxer = FFMS_SOURCE_DEFAULT;
 	else if (!strcmp(DemuxerStr, "lavf"))
 		Demuxer = FFMS_SOURCE_LAVF;
-	else if (!strcmp(DemuxerStr, "matroska"))
-		Demuxer = FFMS_SOURCE_MATROSKA;
-	else if (!strcmp(DemuxerStr, "haalimpeg"))
-		Demuxer = FFMS_SOURCE_HAALIMPEG;
-	else if (!strcmp(DemuxerStr, "haaliogg"))
-		Demuxer = FFMS_SOURCE_HAALIOGG;
 	else
 		Env->ThrowError("FFIndex: Invalid demuxer requested");
 
@@ -67,7 +62,23 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
 		FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(Source, Demuxer, &E);
 		if (!Indexer)
 			Env->ThrowError("FFIndex: %s", E.Buffer);
-		if (!(Index = FFMS_DoIndexing(Indexer, IndexMask, DumpMask, FFMS_DefaultAudioFilename, (void *)AudioFile, ErrorHandling, NULL, NULL, &E)))
+		FFMS_SetAudioNameCallback(Indexer, FFMS_DefaultAudioFilename, (void *)AudioFile);
+
+		// Treat -1 as meaning track numbers above sizeof(int) too, dumping implies indexing
+		if (DumpMask == -1) {
+			FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 1);
+		} else if (IndexMask == -1) {
+			FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 0);
+		}
+
+		// Apply attributes to remaining tracks (will set the attributes again on some tracks)
+		for (int i = 0; i < sizeof(IndexMask) * 8; i++) {
+			int Temp = (((IndexMask >> i) & 1) | ((DumpMask >> i) & 1));
+			if (Temp)
+				FFMS_TrackIndexSettings(Indexer, i, Temp, (DumpMask >> i) & 1);
+		}
+
+		if (!(Index = FFMS_DoIndexing2(Indexer, ErrorHandling, &E)))
 			Env->ThrowError("FFIndex: %s", E.Buffer);
 		if (FFMS_WriteIndex(CacheFile, Index, &E)) {
 			FFMS_DestroyIndex(Index);
@@ -121,7 +132,7 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	if (RFFMode > 0 && FPSNum > 0)
 		Env->ThrowError("FFVideoSource: RFF modes may not be combined with CFR conversion");
 
-	if (!_stricmp(Source, Timecodes))
+	if (IsSamePath(Source, Timecodes))
 		Env->ThrowError("FFVideoSource: Timecodes will overwrite the source");
 
 	ErrorInfo E;
@@ -129,7 +140,7 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	std::string DefaultCache;
 	if (Cache) {
 		if (*CacheFile) {
-			if (!_stricmp(Source, CacheFile))
+			if (IsSamePath(Source, CacheFile))
 				Env->ThrowError("FFVideoSource: Cache will overwrite the source");
 			Index = FFMS_ReadIndex(CacheFile, &E);
 		}
@@ -148,7 +159,12 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
 	}
 
 	if (!Index) {
-		if (!(Index = FFMS_MakeIndex(Source, 0, 0, NULL, NULL, true, NULL, NULL, &E)))
+		FFMS_Indexer *Indexer = FFMS_CreateIndexer(Source, &E);
+		if (!Indexer)
+			Env->ThrowError("FFVideoSource: %s", E.Buffer);
+
+		Index = FFMS_DoIndexing2(Indexer, FFMS_IEH_CLEAR_TRACK, &E);
+		if (!Index)
 			Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
 		if (Cache)
@@ -204,7 +220,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	std::string DefaultCache;
 	if (Cache) {
 		if (*CacheFile) {
-			if (!_stricmp(Source, CacheFile))
+			if (IsSamePath(Source, CacheFile))
 				Env->ThrowError("FFAudioSource: Cache will overwrite the source");
 			Index = FFMS_ReadIndex(CacheFile, &E);
 		}
@@ -243,7 +259,14 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	}
 
 	if (!Index) {
-		if (!(Index = FFMS_MakeIndex(Source, -1, 0, NULL, NULL, true, NULL, NULL, &E)))
+		FFMS_Indexer *Indexer = FFMS_CreateIndexer(Source, &E);
+		if (!Indexer)
+			Env->ThrowError("FFAudioSource: %s", E.Buffer);
+
+		FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 0);
+
+		Index = FFMS_DoIndexing2(Indexer, FFMS_IEH_CLEAR_TRACK, &E);
+		if (!Index)
 			Env->ThrowError("FFAudioSource: %s", E.Buffer);
 
 		if (Cache)

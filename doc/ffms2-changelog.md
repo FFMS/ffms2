@@ -1,5 +1,24 @@
 # FFmpegSource2 Changelog
 
+- 2.21
+  - Fix bad decoder flush that discarded the palette of raw video (Myrsloik)
+  - Removed the SWScale function from Avisynth since SWScale is useless (Myrsloik)
+  - Fix common framerate correction (Myrsloik)
+  - vapoursource: The framerate and frame durations are now normalized (Myrsloik)
+  - vapoursource: Add support for outputting the alpha channel too (Myrsloik)
+  - vapoursource: Fix resizer selection so bicubic isn't always used (Myrsloik)
+  - vapoursource: Set chroma location and full colorspace information (Myrsloik)
+  - Added support for indexing files with more than 32 tracks and the possibility to skip indexing of video tracks (Myrsloik)
+  - The Avisynth plugin now sets all per frame variables in all modes to avoid ugly and slow FFInfo() errors (Myrsloik)
+  - vapoursource: Fix crash on single frame files (Myrsloik)
+  - Remove the Matroska and Haali demuxers (qyot27, Plorkyeran)
+  - Fix adjustments for positive audio delay (tophf)
+  - Don't try to index video tracks in unsupported formats (Daemon404)
+  - Don't use scientific notation in timecode files (Daemon404)
+  - Fix utf8 support in FFVideoSource (nixxquality)
+  - Improve handling of files where only some packets have timestamps (Plorkyeran)
+  - Fix memory leaks in the VapourSynth error handling (Plorkyeran)
+
 - 2.20
   - Add support for Opus in MKV when ffmpeg/libav are built with libopus (qyot27)
   - vapoursource: Provide _AbsoluteTime metadata (Daemon404)

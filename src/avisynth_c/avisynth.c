@@ -77,12 +77,6 @@ static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value a
         demuxer = FFMS_SOURCE_DEFAULT;
     else if( !strcasecmp( demuxer_str, "lavf" ) )
         demuxer = FFMS_SOURCE_LAVF;
-    else if( !strcasecmp( demuxer_str, "matroska" ) )
-        demuxer = FFMS_SOURCE_MATROSKA;
-    else if( !strcasecmp( demuxer_str, "haalimpeg" ) )
-        demuxer = FFMS_SOURCE_HAALIMPEG;
-    else if( !strcasecmp( demuxer_str, "haaliogg" ) )
-        demuxer = FFMS_SOURCE_HAALIOGG;
     else
         return avs_new_value_error( "FFIndex: Invalid demuxer requested" );
 
@@ -92,8 +86,23 @@ static AVS_Value AVSC_CC create_FFIndex( AVS_ScriptEnvironment *env, AVS_Value a
         FFMS_Indexer *indexer = FFMS_CreateIndexerWithDemuxer( src, demuxer, &ei );
         if( !indexer )
             return avs_new_value_error( ffms_avs_sprintf( "FFIndex: %s", ei.Buffer ) );
-        index = FFMS_DoIndexing( indexer, index_mask, dump_mask, FFMS_DefaultAudioFilename,
-                                 (void*)audio_file, err_handler, NULL, NULL, &ei );
+        FFMS_SetAudioNameCallback( indexer, FFMS_DefaultAudioFilename, (void*)audio_file );
+
+        /* Treat -1 as meaning track numbers above sizeof(int) too, dumping implies indexing */
+        if (dump_mask == -1) {
+            FFMS_TrackTypeIndexSettings( indexer, FFMS_TYPE_AUDIO, 1, 1 );
+        } else if (index_mask == -1) {
+            FFMS_TrackTypeIndexSettings( indexer, FFMS_TYPE_AUDIO, 1, 0 );
+        }
+
+        /* Apply attributes to remaining tracks (will set the attributes again on some tracks) */
+        for (int i = 0; i < sizeof(index_mask) * 8; i++) {
+            int temp = (((index_mask >> i) & 1) | ((dump_mask >> i) & 1));
+            if (temp)
+                FFMS_TrackIndexSettings( indexer, i, temp, (dump_mask >> i) & 1 );
+        }
+
+        index = FFMS_DoIndexing2( indexer, err_handler, &ei );
         if( !index )
             return avs_new_value_error( ffms_avs_sprintf( "FFIndex: %s", ei.Buffer ) );
         if( FFMS_WriteIndex( cache_file, index, &ei ) )
@@ -165,7 +174,12 @@ static AVS_Value AVSC_CC create_FFVideoSource( AVS_ScriptEnvironment *env, AVS_V
     }
     if( !index )
     {
-        if( !(index = FFMS_MakeIndex( src, 0, 0, NULL, NULL, 1, NULL, NULL, &ei )) )
+        FFMS_Indexer *indexer = FFMS_CreateIndexer( src, &ei );
+        if( !indexer )
+            return avs_new_value_error( ffms_avs_sprintf( "FFVideoSource: %s", ei.Buffer ) );
+
+        index = FFMS_DoIndexing2( indexer, FFMS_IEH_CLEAR_TRACK, &ei );
+        if( !index )
             return avs_new_value_error( ffms_avs_sprintf( "FFVideoSource: %s", ei.Buffer ) );
 
         if( cache )
@@ -253,7 +267,14 @@ static AVS_Value AVSC_CC create_FFAudioSource( AVS_ScriptEnvironment *env, AVS_V
 
     if( !index )
     {
-        if( !(index = FFMS_MakeIndex( src, -1, 0, NULL, NULL, 1, NULL, NULL, &ei )) )
+        FFMS_Indexer *indexer = FFMS_CreateIndexer( src, &ei );
+        if( !indexer )
+            return avs_new_value_error( ffms_avs_sprintf( "FFAudioSource: %s", ei.Buffer ) );
+
+        FFMS_TrackTypeIndexSettings( indexer, FFMS_TYPE_AUDIO, 1, 0);
+
+        index = FFMS_DoIndexing2( indexer, FFMS_IEH_CLEAR_TRACK, &ei );
+        if( !indexer )
             return avs_new_value_error( ffms_avs_sprintf( "FFAudioSource: %s", ei.Buffer ) );
 
         if( cache )
@@ -281,16 +302,6 @@ static AVS_Value AVSC_CC create_FFAudioSource( AVS_ScriptEnvironment *env, AVS_V
     return audio;
 }
 
-static AVS_Value AVSC_CC create_SWScale( AVS_ScriptEnvironment *env, AVS_Value args, void *user_data )
-{
-    AVS_Value child = as_elt( args, 0 );
-    int dst_width = as_int( as_elt( args, 1 ), 0 );
-    int dst_height = as_int( as_elt( args, 2 ), 0 );
-    const char* resizer = as_string( as_elt( args, 3 ), "BICUBIC" );
-    const char* dst_pix_fmt = as_string( as_elt( args, 4 ), "" );
-    return FFSWScale_create( env, child, dst_width, dst_height, resizer, dst_pix_fmt );
-}
-
 static AVS_Value AVSC_CC create_FFGetLogLevel( AVS_ScriptEnvironment *env, AVS_Value args, void *user_data )
 { return avs_new_value_int( FFMS_GetLogLevel() ); }
 
@@ -316,7 +327,6 @@ const char *AVSC_CC avisynth_c_plugin_init( AVS_ScriptEnvironment* env )
     ffms_avs_lib->avs_add_function( env, "FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b[demuxer]s", create_FFIndex, 0 );
     ffms_avs_lib->avs_add_function( env, "FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[pp]s[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", create_FFVideoSource, 0 );
     ffms_avs_lib->avs_add_function( env, "FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b[varprefix]s", create_FFAudioSource, 0 );
-    ffms_avs_lib->avs_add_function( env, "SWScale", "c[width]i[height]i[resizer]s[colorspace]s", create_SWScale, 0 );
     ffms_avs_lib->avs_add_function( env, "FFGetLogLevel", "", create_FFGetLogLevel, 0 );
     ffms_avs_lib->avs_add_function( env, "FFSetLogLevel", "i", create_FFSetLogLevel, 0 );
     ffms_avs_lib->avs_add_function( env, "FFGetVersion", "", create_FFGetVersion, 0 );

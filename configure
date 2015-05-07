@@ -13,7 +13,7 @@ echo "  --enable-debug            adds -g, doesn't strip"
 echo "  --enable-gprof            adds -pg, doesn't strip"
 echo "  --enable-pic              build position-independent code"
 echo "  --enable-shared           build libffms2.so"
-echo "  --optlevel=olev           GCC optimization level [0-3, s, fast] (0)"
+echo "  --optlevel=olev           GCC optimization level [0-3, s, fast] (2)"
 echo "  --avx-plugindir=PLUGINDIR location of AvxSynth plugin directory,
                                      default is [libdir]/avxsynth"
 echo "  --vs-plugindir=PLUGINDIR  location of VapourSynth plugin directory,
@@ -162,11 +162,11 @@ shared="no"
 
 CPPFLAGS="$CPPFLAGS -I. -Iinclude -D_FILE_OFFSET_BITS=64 -DFFMS_EXPORTS"
 CFLAGS="$CFLAGS -Wall"
-CXXFLAGS="$CXXFLAGS -Wall -D__STDC_CONSTANT_MACROS"
+CXXFLAGS="$CXXFLAGS -Wall -D__STDC_CONSTANT_MACROS --std=c++11"
 LDFLAGS="$LDFLAGS"
 SOFLAGS="$SOFLAGS"
 HAVE_GETOPT_LONG=1
-olev="0"
+olev="2"
 cross_prefix=""
 
 EXE=""
@@ -353,9 +353,6 @@ else
     avs="no"
 fi
 
-#COM functions on windows
-cc_check "objbase.h" "-lole32" "CoUninitialize();" && LDFLAGS="$LDFLAGS -lole32"
-
 #find ffmpeg
 if ${cross_prefix}pkg-config --exists libavformat libavcodec libswscale libavutil libavresample 2>$DEVNULL; then
     FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavformat libavcodec libswscale libavutil libavresample)"
@@ -416,6 +413,16 @@ if [ "$avs" = "yes" -o "$avx" = "yes" -o "$vapoursynth" = "yes" ] ; then
         avx="no"
         vapoursynth="no"
 fi
+fi
+
+if [ "$avs" = "yes" ] ; then
+    CFLAGS="$CFLAGS -DFFMS_CPLUGIN_SHARED"
+    CXXFLAGS="$CXXFLAGS -DFFMS_CPLUGIN_SHARED"
+fi
+
+if [ "$avx" = "yes" -a "$avs" = "no" ] ; then
+    # the AvxSynth plugin doesn't need the LoadCPlugin line
+    sed '3s/^/#/' etc/FFMS2.avsi > etc/FFMS2-avx.avsi
 fi
 
 if [ "$pic" = "yes" ] ; then

@@ -9,25 +9,15 @@ $(foreach VAR,CC CXX AR RANLIB RC,\
     $(eval override $(VAR) = @printf " %s\t%s\n" $(VAR) "$$@"; $($(VAR))))
 endif
 
-CORE_C   = src/core/matroskaparser.c
+CORE_C   =
 
 CORE_CXX = src/core/audiosource.cpp     \
-           src/core/codectype.cpp       \
            src/core/ffms.cpp            \
            src/core/filehandle.cpp      \
-           src/core/haaliaudio.cpp      \
-           src/core/haalicommon.cpp     \
-           src/core/haaliindexer.cpp    \
-           src/core/haalivideo.cpp      \
            src/core/indexing.cpp        \
            src/core/lavfaudio.cpp       \
            src/core/lavfindexer.cpp     \
            src/core/lavfvideo.cpp       \
-           src/core/matroskaaudio.cpp   \
-           src/core/matroskaindexer.cpp \
-           src/core/matroskareader.cpp  \
-           src/core/matroskavideo.cpp   \
-           src/core/numthreads.cpp      \
            src/core/track.cpp           \
            src/core/utils.cpp           \
            src/core/videosource.cpp     \
@@ -47,7 +37,6 @@ SO_C += src/avisynth_c/avisynth.c     \
         src/avisynth_c/avs_lib.c      \
         src/avisynth_c/avs_utils.c    \
         src/avisynth_c/ff_audsource.c \
-        src/avisynth_c/ff_swscale.c   \
         src/avisynth_c/ff_vidsource.c
 endif
 
@@ -136,11 +125,12 @@ else
 	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(libdir))
 ifeq ($(AVXSYNTH), yes)
 	install -d $(DESTDIR)$(avxplugindir)
-	$(if $(SONAME), ln -f -s $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(avxplugindir)/libavxffms2.$(SOSUFFIX))
+	install -m 644 etc/FFMS2-avx.avsi $(DESTDIR)$(avxplugindir)/FFMS2.avsi
+	$(if $(SONAME), ln -f -s $(libdir)/$(SONAME) $(DESTDIR)$(avxplugindir)/libavxffms2.so)
 endif
 ifeq ($(VAPOURSYNTH), yes)
 	install -d $(DESTDIR)$(vsplugindir)
-	$(if $(SONAME), ln -f -s $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(vsplugindir)/libffms2.$(SOSUFFIX))
+	$(if $(SONAME), ln -f -s $(libdir)/$(SONAME) $(DESTDIR)$(vsplugindir)/libffms2.$(SOSUFFIX))
 endif
 endif
 	$(if $(IMPLIBNAME), install -m 644 $(IMPLIBNAME) $(DESTDIR)$(libdir))

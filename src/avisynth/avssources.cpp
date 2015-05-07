@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -20,9 +20,27 @@
 
 #define NOMINMAX
 #include "avssources.h"
-#include "avsutils.h"
+#include "../core/utils.h"
 
 #include <algorithm>
+
+static PixelFormat CSNameToPIXFMT(const char *CSName, PixelFormat Default) {
+	if (!CSName)
+		return PIX_FMT_NONE;
+	std::string s = CSName;
+	std::transform(s.begin(), s.end(), s.begin(), toupper);
+	if (s == "")
+		return Default;
+	if (s == "YV12")
+		return PIX_FMT_YUV420P;
+	if (s == "YUY2")
+		return PIX_FMT_YUYV422;
+	if (s == "RGB24")
+		return PIX_FMT_BGR24;
+	if (s == "RGB32")
+		return PIX_FMT_RGB32;
+	return PIX_FMT_NONE;
+}
 
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
@@ -33,7 +51,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 , RFFMode(RFFMode)
 , VarPrefix(VarPrefix)
 {
-	memset(&VI, 0, sizeof(VI));
+	VI = {};
 
 	ErrorInfo E;
 	V = FFMS_CreateVideoSource(SourceFile, Track, Index, Threads, SeekMode, &E);
@@ -304,7 +322,7 @@ void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst,
 	} else if (VI.IsYUY2()) {
 		BlitField(Frame, Dst, Env, 0, Field);
 	} else { // RGB
-        Env->BitBlt(
+		Env->BitBlt(
 			Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1 - Field), -Dst->GetPitch() * 2,
 			SrcPicture->Data[0] + SrcPicture->Linesize[0] * Field, SrcPicture->Linesize[0] * 2,
 			Dst->GetRowSize(), Dst->GetHeight() / 2);
@@ -319,7 +337,7 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 	ErrorInfo E;
 	if (RFFMode > 0) {
 		const FFMS_Frame *Frame = FFMS_GetFrame(V, std::min(FieldList[n].Top, FieldList[n].Bottom), &E);
-		if (Frame == NULL)
+		if (Frame == nullptr)
 			Env->ThrowError("FFVideoSource: %s", E.Buffer);
 		if (FieldList[n].Top == FieldList[n].Bottom) {
 			OutputFrame(Frame, Dst, Env);
@@ -327,16 +345,19 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 			int FirstField = std::min(FieldList[n].Top, FieldList[n].Bottom) == FieldList[n].Bottom;
 			OutputField(Frame, Dst, FirstField, Env);
 			Frame = FFMS_GetFrame(V, std::max(FieldList[n].Top, FieldList[n].Bottom), &E);
-			if (Frame == NULL)
+			if (Frame == nullptr)
 				Env->ThrowError("FFVideoSource: %s", E.Buffer);
 			OutputField(Frame, Dst, !FirstField, Env);
 		}
+		Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
+		Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>('U'));
 	} else {
 		const FFMS_Frame *Frame;
 
 		if (FPSNum > 0 && FPSDen > 0) {
 			Frame = FFMS_GetFrameByTime(V, FFMS_GetVideoProperties(V)->FirstTime +
 				(double)(n * (int64_t)FPSDen) / FPSNum, &E);
+			Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
 		} else {
 			Frame = FFMS_GetFrame(V, n, &E);
 			FFMS_Track *T = FFMS_GetTrackFromVideo(V);
@@ -344,7 +365,7 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 			Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), static_cast<int>(FFMS_GetFrameInfo(T, n)->PTS * static_cast<double>(TB->Num) / TB->Den));
 		}
 
-		if (Frame == NULL)
+		if (Frame == nullptr)
 			Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
 		Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>(Frame->PictType));
@@ -360,7 +381,7 @@ bool AvisynthVideoSource::GetParity(int n) {
 
 AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
 										 int AdjustDelay, const char *VarPrefix, IScriptEnvironment* Env) {
-	memset(&VI, 0, sizeof(VI));
+	VI = {};
 
 	ErrorInfo E;
 	A = FFMS_CreateAudioSource(SourceFile, Track, Index, AdjustDelay, &E);

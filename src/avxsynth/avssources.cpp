@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 , RFFMode(RFFMode)
 , VarPrefix(VarPrefix)
 {
-	memset(&VI, 0, sizeof(VI));
+	VI = {};
 
 	ErrorInfo E;
 	V = FFMS_CreateVideoSource(SourceFile, Track, Index, Threads, SeekMode, &E);
@@ -304,7 +304,7 @@ void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst,
 	} else if (VI.IsYUY2()) {
 		BlitField(Frame, Dst, Env, 0, Field);
 	} else { // RGB
-        Env->BitBlt(
+	Env->BitBlt(
 			Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1 - Field), -Dst->GetPitch() * 2,
 			SrcPicture->Data[0] + SrcPicture->Linesize[0] * Field, SrcPicture->Linesize[0] * 2,
 			Dst->GetRowSize(), Dst->GetHeight() / 2);
@@ -331,12 +331,15 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 				Env->ThrowError("FFVideoSource: %s", E.Buffer);
 			OutputField(Frame, Dst, !FirstField, Env);
 		}
+        Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
+        Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>('U'));
 	} else {
 		const FFMS_Frame *Frame;
 
 		if (FPSNum > 0 && FPSDen > 0) {
 			Frame = FFMS_GetFrameByTime(V, FFMS_GetVideoProperties(V)->FirstTime +
 				(double)(n * (int64_t)FPSDen) / FPSNum, &E);
+            Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
 		} else {
 			Frame = FFMS_GetFrame(V, n, &E);
 			FFMS_Track *T = FFMS_GetTrackFromVideo(V);
@@ -360,7 +363,7 @@ bool AvisynthVideoSource::GetParity(int n) {
 
 AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
 										 int AdjustDelay, const char *VarPrefix, IScriptEnvironment* Env) {
-	memset(&VI, 0, sizeof(VI));
+	VI = {};
 
 	ErrorInfo E;
 	A = FFMS_CreateAudioSource(SourceFile, Track, Index, AdjustDelay, &E);

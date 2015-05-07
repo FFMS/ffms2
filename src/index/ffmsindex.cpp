@@ -21,12 +21,8 @@
 #include "ffms.h"
 #include "ffmscompat.h"
 
-extern "C" {
-#include <libavutil/log.h>
-}
-
 #ifdef _WIN32
-#include <objbase.h>
+#include <windows.h>
 #endif
 
 #include <cstdlib>
@@ -37,8 +33,8 @@ extern "C" {
 
 namespace {
 
-int TrackMask = 0;
-int DumpMask = 0;
+long long IndexMask = 0;
+long long DumpMask = 0;
 int Verbose = 0;
 int IgnoreErrors = 0;
 int Demuxer = FFMS_SOURCE_DEFAULT;
@@ -46,11 +42,9 @@ bool Overwrite = false;
 bool PrintProgress = true;
 bool WriteTC = false;
 bool WriteKF = false;
-const char *InputFile = 0;
+const char *InputFile = nullptr;
 std::string CacheFile;
 std::string AudioFile;
-
-FFMS_Index *Index = NULL;
 
 struct Error {
 	std::string msg;
@@ -76,7 +70,6 @@ void PrintUsage() {
 		"-d N      Set the audio decoding mask to N (mask syntax same as -t, default: 0)\n"
 		"-a NAME   Set the audio output base filename to NAME (default: input filename)\n"
 		"-s N      Set audio decoding error handling. See the documentation for details. (default: 0)\n"
-		"-m NAME   Force the use of demuxer NAME (default, lavf, matroska, haalimpeg, haaliogg)"
 		<< std::endl;
 }
 
@@ -96,32 +89,16 @@ void ParseCMDLine(int argc, char *argv[]) {
 		} else if (!strcmp(Option, "-k")) {
 			WriteKF = true;
 		} else if (!strcmp(Option, "-t")) {
-			TrackMask = atoi(OPTION_ARG("t"));
+			IndexMask = atoll(OPTION_ARG("t"));
 			i++;
 		} else if (!strcmp(Option, "-d")) {
-			DumpMask = atoi(OPTION_ARG("d"));
+			DumpMask = atoll(OPTION_ARG("d"));
 			i++;
 		} else if (!strcmp(Option, "-a")) {
 			AudioFile = OPTION_ARG("a");
 			i++;
 		} else if (!strcmp(Option, "-s")) {
 			IgnoreErrors = atoi(OPTION_ARG("s"));
-			i++;
-		} else if (!strcmp(Option, "-m")) {
-			const char *arg = OPTION_ARG("m");
-			if (!strcmp(arg, "default"))
-				Demuxer = FFMS_SOURCE_DEFAULT;
-			else if (!strcmp(arg, "lavf"))
-				Demuxer = FFMS_SOURCE_LAVF;
-			else if (!strcmp(arg, "matroska"))
-				Demuxer = FFMS_SOURCE_MATROSKA;
-			else if (!strcmp(arg, "haalimpeg"))
-				Demuxer = FFMS_SOURCE_HAALIMPEG;
-			else if (!strcmp(arg, "haaliogg"))
-				Demuxer = FFMS_SOURCE_HAALIOGG;
-			else
-				std::cout << "Warning: invalid argument to -m (" << arg << "), using default instead" << std::endl;
-
 			i++;
 		} else if (!InputFile) {
 			InputFile = Option;
@@ -183,20 +160,43 @@ void DoIndexing() {
 
 	int Progress = 0;
 
-	Index = FFMS_ReadIndex(CacheFile.c_str(), &E);
-	if (!Overwrite && Index)
+	FFMS_Index *Index = FFMS_ReadIndex(CacheFile.c_str(), &E);
+	if (!Overwrite && Index) {
+		FFMS_DestroyIndex(Index);
 		throw Error("Error: index file already exists, use -f if you are sure you want to overwrite it.");
+	}
 
-	UpdateProgress(0, 100, 0);
+	UpdateProgress(0, 100, nullptr);
 	FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(InputFile, Demuxer, &E);
-	if (Indexer == NULL)
+	if (Indexer == nullptr)
 		throw Error("\nFailed to initialize indexing: ", E);
 
-	Index = FFMS_DoIndexing(Indexer, TrackMask, DumpMask, &GenAudioFilename, NULL, IgnoreErrors, UpdateProgress, &Progress, &E);
-	if (Index == NULL)
+	FFMS_SetAudioNameCallback(Indexer, GenAudioFilename, nullptr);
+	FFMS_SetProgressCallback(Indexer, UpdateProgress, &Progress);
+
+	// Treat -1 as meaning track numbers above sizeof(long long) * 8 too, dumping implies indexing
+	if (DumpMask == -1) {
+		FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 1);
+	} else if (IndexMask == -1) {
+		FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 0);
+	}
+
+	// Apply attributes to remaining tracks (will set the attributes again on some tracks)
+    for (int i = 0; i < static_cast<int>(sizeof(IndexMask) * 8); i++) {
+		int Temp = (((IndexMask >> i) & 1) | ((DumpMask >> i) & 1));
+		if (Temp)
+			FFMS_TrackIndexSettings(Indexer, i, Temp, (DumpMask >> i) & 1);
+	}
+
+	Index = FFMS_DoIndexing2(Indexer, IgnoreErrors, &E);
+
+	// The indexer is always freed
+	Indexer = nullptr;
+
+	if (Index == nullptr)
 		throw Error("\nIndexing error: ", E);
 
-	UpdateProgress(100, 100, 0);
+	UpdateProgress(100, 100, nullptr);
 
 	if (WriteTC) {
 		if (PrintProgress)
@@ -225,7 +225,7 @@ void DoIndexing() {
 			if (!Filename.empty()) {
 				std::ofstream kf(Filename.c_str());
 				kf << "# keyframe format v1\n"
-				      "fps 0\n";
+					"fps 0\n";
 
 				int FrameCount = FFMS_GetNumFrames(Track);
 				for (int CurFrameNum = 0; CurFrameNum < FrameCount; CurFrameNum++) {
@@ -241,7 +241,9 @@ void DoIndexing() {
 	if (PrintProgress)
 		std::cout << "Writing index... ";
 
-	if (FFMS_WriteIndex(CacheFile.c_str(), Index, &E))
+	int error = FFMS_WriteIndex(CacheFile.c_str(), Index, &E);
+	FFMS_DestroyIndex(Index);
+	if (error)
 		throw Error("Error writing index: ", E);
 
 	if (PrintProgress)
@@ -266,13 +268,13 @@ int wmain(int argc, wchar_t *_argv[]) {
 #endif
 	char **argv = (char**)malloc(argc*sizeof(char*));
 	for (int i=0; i<argc; i++) {
-		int len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, NULL, 0, NULL, NULL);
+		int len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, nullptr, 0, nullptr, nullptr);
 		if (!len) {
 			std::cout << "Failed to translate commandline to Unicode" << std::endl;
 			return 1;
 		}
 		char *temp = (char*)malloc(len*sizeof(char));
-		len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, temp, len, NULL, NULL);
+		len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, temp, len, nullptr, nullptr);
 		if (!len) {
 			std::cout << "Failed to translate commandline to Unicode" << std::endl;
 			return 1;
@@ -295,21 +297,14 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-#ifdef _WIN32
-	if (FAILED(CoInitializeEx(NULL, COINIT_MULTITHREADED))) {
-		std::cout << "COM initialization failure" << std::endl;
-		return 1;
-	}
-#endif /* _WIN32 */
-
 	FFMS_Init(0, 1);
 
 	switch (Verbose) {
-		case 0: FFMS_SetLogLevel(AV_LOG_QUIET); break;
-		case 1: FFMS_SetLogLevel(AV_LOG_WARNING); break;
-		case 2: FFMS_SetLogLevel(AV_LOG_INFO); break;
-		case 3:	FFMS_SetLogLevel(AV_LOG_VERBOSE); break;
-		default: FFMS_SetLogLevel(AV_LOG_DEBUG); // if user used -v 4 or more times, he deserves the spam
+		case 0: FFMS_SetLogLevel(FFMS_LOG_QUIET); break;
+		case 1: FFMS_SetLogLevel(FFMS_LOG_WARNING); break;
+		case 2: FFMS_SetLogLevel(FFMS_LOG_INFO); break;
+		case 3:	FFMS_SetLogLevel(FFMS_LOG_VERBOSE); break;
+		default: FFMS_SetLogLevel(FFMS_LOG_DEBUG); // if user used -v 4 or more times, he deserves the spam
 	}
 
 	try {
