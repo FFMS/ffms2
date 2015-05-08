@@ -84,10 +84,6 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 {
 	LAVFOpenFile(SourceFile, FormatContext);
 
-	if (SeekMode >= 0 && Frames.size() > 1 && Seek(0) < 0)
-		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-			"Video track is unseekable");
-
 	CodecContext = FormatContext->streams[VideoTrack]->codec;
 	CodecContext->thread_count = DecodingThreads;
 	CodecContext->has_b_frames = Frames.MaxBFrames;
@@ -138,6 +134,10 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	// Cannot "output" to PPFrame without doing all other initialization
 	// This is the additional mess required for seekmode=-1 to work in a reasonable way
 	OutputFrame(DecodeFrame);
+
+    if (SeekMode >= 0 && Frames.size() > 1 && Seek(0) < 0)
+        throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+        "Video track is unseekable");
 }
 
 void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime, int64_t *Pos) {
