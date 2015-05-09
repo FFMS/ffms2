@@ -52,7 +52,7 @@ SharedAudioContext::~SharedAudioContext() {
 	}
 }
 
-static void ffms_free_sha(AVSHA **ctx) { av_freep(ctx); }
+void ffms_free_sha(AVSHA **ctx) { av_freep(ctx); }
 
 void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]) {
 	FileHandle file(Filename, "rb", FFMS_ERROR_INDEX, FFMS_ERROR_FILE_READ);
