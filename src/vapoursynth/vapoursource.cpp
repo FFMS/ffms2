@@ -139,12 +139,11 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 			else // just make it one timebase if it's a single frame clip
 				num = 1;
 			int64_t DurNum = TB->Num * num;
-			int64_t DurDen = TB->Den;
+			int64_t DurDen = TB->Den * 1000;
 			muldivRational(&DurNum, &DurDen, 1, 1);
 			vsapi->propSetInt(Props, "_DurationNum", DurNum, paReplace);
 			vsapi->propSetInt(Props, "_DurationDen", DurDen, paReplace);
-			vsapi->propSetFloat(Props, "_AbsoluteTime",
-				((double)(TB->Num / 1000) *  FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, paReplace);
+			vsapi->propSetFloat(Props, "_AbsoluteTime", ((static_cast<double>(TB->Num) / 1000) *  FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, paReplace);
 		}
 
 		if (Frame == nullptr) {
