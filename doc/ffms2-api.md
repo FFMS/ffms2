@@ -751,12 +751,12 @@ Decoding a track means it will automatically be indexed regardless of what the `
 ##### `TAudioNameCallback ANC`
 A function pointer to a callback function that will generate the filename(s) for the dumped audio tracks.
 To get the default filename(s), pass `&FFMS_DefaultAudioFilename`.
-See [Callbacks][MakeIndex_Callbacks] below for details if you want to write your own function.
+See [Callbacks](#MakeIndex_Callbacks) below for details if you want to write your own function.
 If the `DumpMask` is 0, you may pass `NULL` here.
 
 ##### `void *ANCPrivate`
 A pointer of your choice that will be passed as an argument to the audio filename generation callback function.
-See [Callbacks][MakeIndex_Callbacks] below for details.
+See [Callbacks](#MakeIndex_Callbacks) below for details.
 If `DumpMask` is 0, you may pass `NULL` here.
 If you are using `FFMS_DefaultAudioFilename`, you must pass a format string here.
 See the [Audio Filename Format Strings section](#audio-filename-format-strings) for details.
