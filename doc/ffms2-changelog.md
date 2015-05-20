@@ -1,5 +1,8 @@
 # FFmpegSource2 Changelog
 
+- 2.22
+  - vapoursource: Fix swapped RGB channels bug introduced in 2.21 (Myrsloik)
+
 - 2.21
   - Add missing constants for log levels (Myrsloik)
   - Fix bad decoder flush that discards the palette of raw video (Myrsloik)

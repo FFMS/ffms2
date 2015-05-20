@@ -322,10 +322,17 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 }
 
 void VSVideoSource::OutputFrame(const FFMS_Frame *Frame, VSFrameRef *Dst, const VSAPI *vsapi) {
+	const int RGBPlaneOrder[3] = {2, 0, 1};
 	const VSFormat *fi = vsapi->getFrameFormat(Dst);
-	for (int i = 0; i < fi->numPlanes; i++)
-		vs_bitblt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i],
+	if (fi->colorFamily == cmRGB) {
+		for (int i = 0; i < fi->numPlanes; i++)
+			vs_bitblt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[RGBPlaneOrder[i]], Frame->Linesize[RGBPlaneOrder[i]],
 			vsapi->getFrameWidth(Dst, i) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, i));
+	} else {
+		for (int i = 0; i < fi->numPlanes; i++)
+			vs_bitblt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i],
+			vsapi->getFrameWidth(Dst, i) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, i));
+	}
 }
 
 void VSVideoSource::OutputAlphaFrame(const FFMS_Frame *Frame, int Plane, VSFrameRef *Dst, const VSAPI *vsapi) {
