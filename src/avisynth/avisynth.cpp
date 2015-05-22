@@ -311,17 +311,17 @@ static AVSValue __cdecl FFGetVersion(AVSValue Args, void* UserData, IScriptEnvir
 	return Env->Sprintf("%d.%d.%d.%d", Version >> 24, (Version & 0xFF0000) >> 16, (Version & 0xFF00) >> 8, Version & 0xFF);
 }
 
-const AVS_Linkage *AVS_linkage = 0;
+const AVS_Linkage *AVS_linkage = nullptr;
 
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScriptEnvironment* Env, const AVS_Linkage* const vectors) {
 	AVS_linkage = vectors;
 
-	Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b[demuxer]s", CreateFFIndex, 0);
-	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", CreateFFVideoSource, 0);
-	Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b[varprefix]s", CreateFFAudioSource, 0);
-	Env->AddFunction("FFGetLogLevel", "", FFGetLogLevel, 0);
-	Env->AddFunction("FFSetLogLevel", "i", FFSetLogLevel, 0);
-	Env->AddFunction("FFGetVersion", "", FFGetVersion, 0);
+	Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b[demuxer]s", CreateFFIndex, nullptr);
+	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", CreateFFVideoSource, nullptr);
+	Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b[varprefix]s", CreateFFAudioSource, nullptr);
+	Env->AddFunction("FFGetLogLevel", "", FFGetLogLevel, nullptr);
+	Env->AddFunction("FFSetLogLevel", "i", FFSetLogLevel, nullptr);
+	Env->AddFunction("FFGetVersion", "", FFGetVersion, nullptr);
 
 	return "FFmpegSource - The Second Coming V2.0 Final";
 }
