@@ -297,6 +297,47 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 	return Filter;
 }
 
+static AVSValue __cdecl CreateFFmpegSource2(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
+	const char *FFIArgNames[] = { "source", "cachefile", "indexmask", "overwrite", "utf8" };
+	const char *FFVArgNames[] = { "source", "track", "cache", "cachefile", "fpsnum", "fpsden", "threads", "timecodes", "seekmode", "rffmode", "width", "height", "resizer", "colorspace", "utf8", "varprefix" };
+	const char *FFAArgNames[] = { "source", "track", "cache", "cachefile", "adjustdelay", "utf8", "varprefix" };
+	const char *BCArgNames[] = { "audio_rate" };
+
+	bool Cache = Args[3].AsBool(true);
+	bool WithAudio = Args[2].AsInt(-2) > -2;
+	if (Cache) {
+		AVSValue FFIArgs[] = { Args[0], Args[4], WithAudio ? -1 : 0, Args[10], Args[17] };
+		Env->Invoke("FFIndex", AVSValue(FFIArgs, sizeof(FFIArgs) / sizeof(FFIArgs[0])), FFIArgNames);
+	}
+
+	AVSValue FFVArgs[] = { Args[0], Args[1], Args[3], Args[4], Args[5], Args[6], Args[7], Args[8], Args[9], Args[15], Args[11], Args[12], Args[13], Args[14], Args[17], Args[18] };
+	AVSValue Video = Env->Invoke("FFVideoSource", AVSValue(FFVArgs, sizeof(FFVArgs) / sizeof(FFVArgs[0])), FFVArgNames);
+
+	AVSValue Audio;
+	if (WithAudio) {
+		AVSValue FFAArgs[] = { Args[0], Args[2], Args[3], Args[4], Args[16], Args[17], Args[18] };
+		Audio = Env->Invoke("FFAudioSource", AVSValue(FFAArgs, sizeof(FFAArgs) / sizeof(FFAArgs[0])), FFAArgNames);
+		AVSValue ADArgs[] = { Video, Audio };
+		return Env->Invoke("AudioDubEx", AVSValue(ADArgs, sizeof(ADArgs) / sizeof(ADArgs[0])));
+	} else {
+		return Video;
+	}
+}
+
+static AVSValue __cdecl CreateFFImageSource(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
+	const char *ArgNames[] = { "source", "width", "height", "resizer", "colorspace", "utf8", "varprefix", "cache", "seekmode" };
+	AVSValue NewArgs[9];
+	for (int i = 0; i < 7; i++)
+		NewArgs[i] = Args[i];
+	NewArgs[7] = false;
+	NewArgs[8] = -1;
+	return Env->Invoke("FFVideoSource", AVSValue(NewArgs, sizeof(NewArgs) / sizeof(NewArgs[0])), ArgNames);
+}
+
+static AVSValue __cdecl CreateFFCopyrightInfringement(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
+	return Env->Invoke("FFVideoSource", Args);
+}
+
 static AVSValue __cdecl FFGetLogLevel(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	return FFMS_GetLogLevel();
 }
@@ -313,12 +354,24 @@ static AVSValue __cdecl FFGetVersion(AVSValue Args, void* UserData, IScriptEnvir
 
 const AVS_Linkage *AVS_linkage = nullptr;
 
-extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScriptEnvironment* Env, const AVS_Linkage* const vectors) {
+extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit3(IScriptEnvironment* Env, const AVS_Linkage* const vectors) {
 	AVS_linkage = vectors;
 
 	Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b[demuxer]s", CreateFFIndex, nullptr);
 	Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", CreateFFVideoSource, nullptr);
 	Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b[varprefix]s", CreateFFAudioSource, nullptr);
+
+	Env->AddFunction("FFmpegSource2", "[source]s[vtrack]i[atrack]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[overwrite]b[width]i[height]i[resizer]s[colorspace]s[rffmode]i[adjustdelay]i[utf8]b[varprefix]s", CreateFFmpegSource2, nullptr);
+	Env->AddFunction("FFMS2", "[source]s[vtrack]i[atrack]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[overwrite]b[width]i[height]i[resizer]s[colorspace]s[rffmode]i[adjustdelay]i[utf8]b[varprefix]s", CreateFFmpegSource2, nullptr);
+
+	Env->AddFunction("FFImageSource", "[source]s[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", CreateFFImageSource, nullptr);
+	Env->AddFunction("FFCopyrightInfringement", "[source]s", CreateFFCopyrightInfringement, nullptr);
+
+	/*
+	function FFInfo(clip c, bool "framenum", bool "frametype", bool "cfrtime", bool "vfrtime", string "varprefix",
+	\ bool "colorspace", bool "colorrange", bool "cropping", bool "sar", bool "version", bool "showprefix")
+	*/
+
 	Env->AddFunction("FFGetLogLevel", "", FFGetLogLevel, nullptr);
 	Env->AddFunction("FFSetLogLevel", "i", FFSetLogLevel, nullptr);
 	Env->AddFunction("FFGetVersion", "", FFGetVersion, nullptr);

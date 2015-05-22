@@ -31,7 +31,6 @@ static PixelFormat CSNameToPIXFMT(const char *CSName, PixelFormat Default) {
 	std::transform(s.begin(), s.end(), s.begin(), toupper);
 	if (s == "")
 		return Default;
-
 	if (s == "YUV9")
 		return PIX_FMT_YUV410P;
 	if (s == "YV411")
