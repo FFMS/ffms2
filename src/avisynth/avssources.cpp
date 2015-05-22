@@ -31,14 +31,26 @@ static PixelFormat CSNameToPIXFMT(const char *CSName, PixelFormat Default) {
 	std::transform(s.begin(), s.end(), s.begin(), toupper);
 	if (s == "")
 		return Default;
+
+	if (s == "YUV9")
+		return PIX_FMT_YUV410P;
+	if (s == "YV411")
+		return PIX_FMT_YUV411P;
 	if (s == "YV12")
 		return PIX_FMT_YUV420P;
+	if (s == "YV16")
+		return PIX_FMT_YUV422P;
+	if (s == "YV24")
+		return PIX_FMT_YUV444P;
+	if (s == "Y8")
+		return PIX_FMT_GRAY8;
 	if (s == "YUY2")
 		return PIX_FMT_YUYV422;
 	if (s == "RGB24")
 		return PIX_FMT_BGR24;
 	if (s == "RGB32")
 		return PIX_FMT_RGB32;
+
 	return PIX_FMT_NONE;
 }
 
@@ -197,11 +209,16 @@ void AvisynthVideoSource::InitOutputFormat(
 	if (!F)
 		Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
-	int TargetFormats[4];
-	TargetFormats[0] = FFMS_GetPixFmt("yuv420p");
-	TargetFormats[1] = FFMS_GetPixFmt("yuyv422");
-	TargetFormats[2] = FFMS_GetPixFmt("bgra");
-	TargetFormats[3] = -1;
+	int TargetFormats[9];
+	TargetFormats[0] = FFMS_GetPixFmt("yuv410p");
+	TargetFormats[1] = FFMS_GetPixFmt("yuv411p");
+	TargetFormats[2] = FFMS_GetPixFmt("yuv420p");
+	TargetFormats[3] = FFMS_GetPixFmt("yuv422p");
+	TargetFormats[4] = FFMS_GetPixFmt("yuv444p");
+	TargetFormats[5] = FFMS_GetPixFmt("gray8");
+	TargetFormats[6] = FFMS_GetPixFmt("yuyv422");
+	TargetFormats[7] = FFMS_GetPixFmt("bgra");
+	TargetFormats[8] = -1;
 
 	// PIX_FMT_NV21 is misused as a return value different to the defined ones in the function
 	PixelFormat TargetPixelFormat = CSNameToPIXFMT(ConvertToFormatName, PIX_FMT_NV21);
