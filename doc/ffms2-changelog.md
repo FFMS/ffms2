@@ -1,6 +1,9 @@
 # FFmpegSource2 Changelog
 
 - 2.22
+  - avisynth: Make FFMS2 a shorter alias for FFmpegSource2 to save some typing (Myrsloik)
+  - avisynth: Moved all source functions in ffms2.avsi into the actual plugin (Myrsloik)
+  - avisynth: Use 2.6 RC API and add output support for all new colorspaces (Myrsloik)
   - vapoursource: Fix swapped RGB channels bug introduced in 2.21 (Myrsloik)
 
 - 2.21

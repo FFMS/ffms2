@@ -335,7 +335,8 @@ static AVSValue __cdecl CreateFFImageSource(AVSValue Args, void* UserData, IScri
 }
 
 static AVSValue __cdecl CreateFFCopyrightInfringement(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-	return Env->Invoke("FFVideoSource", Args);
+	const char *ArgNames[] = { "source" };
+	return Env->Invoke("FFVideoSource", Args, ArgNames);
 }
 
 static AVSValue __cdecl FFGetLogLevel(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
