@@ -131,7 +131,6 @@
   <ItemGroup>
     <ClInclude Include="..\include\ffms.h" />
     <ClInclude Include="..\include\ffmscompat.h" />
-    <ClInclude Include="..\src\avisynth\avisynth.h" />
     <ClInclude Include="..\src\avisynth\avssources.h" />
     <ClInclude Include="..\src\config\msvc-config.h" />
     <ClInclude Include="..\src\core\audiosource.h" />

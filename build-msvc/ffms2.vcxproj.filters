@@ -104,9 +104,6 @@
     <ClInclude Include="..\src\core\wave64writer.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\avisynth\avisynth.h">
-      <Filter>Avisynth</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\avisynth\avssources.h">
       <Filter>Avisynth</Filter>
     </ClInclude>
