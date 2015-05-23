@@ -22,8 +22,6 @@ Collecting weird clips from the internet and making them play takes more time th
 
 ## Compatibility
 
-### Video
-
  - AVI, MKV, MP4, FLV: Frame accurate
  - WMV: Frame accurate(?) but avformat seems to pick keyframes relatively far away
  - OGM: Frame accurate(?)
@@ -43,9 +41,9 @@ If you want a progress report on the indexing, you can use the supplied `ffmsind
 
 ## Function reference
 
-### FFIndex
+### Index
 ```
-Index(string source[, string cachefile = source + ".ffindex", int[] indextracks = [],
+ffms2.Index(string source[, string cachefile = source + ".ffindex", int[] indextracks = [],
     int[] dumptracks = [], string audiofile = "%sourcefile%.%trackzn%.w64", int errorhandling = 3,
     bint overwrite = False, string demuxer])
 ```
@@ -106,7 +104,7 @@ Select which demuxer to use. Note that currently there only is one demuxer avail
 
 ### Source
 ```
-Source(string source[, int track = -1, bint cache = True,
+ffms2.Source(string source[, int track = -1, bint cache = True,
     string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1,
     int threads = -1, string timecodes = "", int seekmode = 1,
     int width = -1, int height = -1, string resizer = "BICUBIC",
@@ -167,13 +165,12 @@ Valid modes are:
 ##### int width = -1, int height = -1
 Sets the resolution of the output video, in pixels.
 Setting either dimension to less than or equal to zero means the resolution of the first decoded video frame is used for that dimension.
-These parameters are mostly useful because FFMS2 supports video streams that change resolution mid-stream; since Avisynth does not, these parameters are used to set single resolution for the output.
+These parameters are mostly useful because FFMS2 supports video streams that change resolution mid-stream which would otherwise have to be handled with a more complicated script.
 
 ##### string resizer = "BICUBIC"
 The resizing algorithm to use if rescaling the image is necessary.
 If the video uses subsampled chroma but your chosen output colorspace does not, the chosen resizer will be used to upscale the chroma planes, even if you did not request an image rescaling.
 The available choices are `FAST_BILINEAR`, `BILINEAR`, `BICUBIC` (default), `X`, `POINT`, `AREA`, `BICUBLIN`, `GAUSS`, `SINC`, `LANCZOS` and `SPLINE`.
-Note that `SPLINE` is completely different from Avisynth's builtin Spline resizers.
 
 ##### int format
 Convert the output from whatever it was to the given format. If not specified the best matching output format is used.
@@ -199,7 +196,7 @@ There are several useful frame properties that are set. See the VapourSynth manu
 
 ### SetLogLevel
 ```
-SetLogLevel(int Level = -8)
+ffms2.SetLogLevel(int Level = -8)
 ```
 Sets the FFmpeg logging level, i.e. how much diagnostic spam it prints to STDERR.
 Since many applications that open VapourSynth scripts do not provide a way to display things printed to STDERR, and since it's rather hard to make any sense of the printed messages unless you're quite familiar with FFmpeg internals, the usefulness of this function is rather limited for end users. It's mostly intended for debugging.
@@ -207,13 +204,13 @@ Defaults to quiet (no messages printed); a list of meaningful values can be foun
 
 ### GetLogLevel
 ```
-GetLogLevel()
+ffms2.GetLogLevel()
 ```
 Returns the current log level, as an integer.
 
 ### GetVersion
 ```
-GetVersion()
+ffms2.GetVersion()
 ```
 Returns the FFMS2 version, as a string.
 
