@@ -1,6 +1,6 @@
-# FFmpegSource2 User Manual
+# FFmpegSource2 Avisynth User Manual
 
-Opens files using FFmpeg and (almost) nothing else.
+Opens files using FFmpeg and nothing else.
 May be frame accurate on good days.
 The source is MIT licensed and can be obtained from https://github.com/FFMS/ffms2/.
 The precompiled binary is GPL3 licensed.
