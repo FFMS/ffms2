@@ -262,7 +262,7 @@ void FFMS_Track::GeneratePublicInfo() {
             continue;
         RealFrameNumbers.push_back(static_cast<int>(i));
 
-		FFMS_FrameInfo info = {Frames[i].PTS, Frames[i].RepeatPict, Frames[Frames[i].OriginalPos].KeyFrame};
+		FFMS_FrameInfo info = { Frames[i].PTS, Frames[i].RepeatPict, Frames[Frames[i].OriginalPos].KeyFrame, Frames[i].FilePos };
 		PublicFrameInfo.push_back(info);
 	}
 }
