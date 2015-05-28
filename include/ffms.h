@@ -364,6 +364,7 @@ typedef struct FFMS_FrameInfo {
 	int RepeatPict;
 	int KeyFrame;
 	int64_t FilePos;
+	int Frame;
 } FFMS_FrameInfo;
 
 typedef struct FFMS_VideoProperties {
@@ -436,6 +437,8 @@ FFMS_API(const char *) FFMS_GetCodecNameI(FFMS_Indexer *Indexer, int Track);
 FFMS_API(const char *) FFMS_GetFormatNameI(FFMS_Indexer *Indexer);
 FFMS_API(int) FFMS_GetNumFrames(FFMS_Track *T);
 FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFMS_Track *T, int Frame);
+FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfoFromPTS(FFMS_Track *T, int64_t PTS);
+FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfoFromPos(FFMS_Track *T, int64_t POS);
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track);
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromVideo(FFMS_VideoSource *V);
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromAudio(FFMS_AudioSource *A);

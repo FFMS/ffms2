@@ -311,6 +311,14 @@ FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFMS_Track *T, int Frame) {
 	return T->GetFrameInfo(static_cast<size_t>(Frame));
 }
 
+FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfoFromPTS(FFMS_Track *T, int64_t PTS) {
+	return T->GetFrameInfo(T->FrameFromPTS(PTS));
+}
+
+FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfoFromPos(FFMS_Track *T, int64_t Pos) {
+	return T->GetFrameInfo(T->FrameFromPos(Pos));
+}
+
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track) {
 	return &(*Index)[Track];
 }
