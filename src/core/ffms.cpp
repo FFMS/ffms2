@@ -174,6 +174,17 @@ FFMS_API(const FFMS_Frame *) FFMS_GetFrameByTime(FFMS_VideoSource *V, double Tim
 	}
 }
 
+FFMS_API(const FFMS_Frame *) FFMS_GetFrameByPosition(FFMS_VideoSource *V, int64_t Position, FFMS_ErrorInfo *ErrorInfo) {
+	ClearErrorInfo(ErrorInfo);
+	try {
+		return V->GetFrameByPosition(Position);
+	}
+	catch (FFMS_Exception &e) {
+		e.CopyOut(ErrorInfo);
+		return nullptr;
+	}
+}
+
 FFMS_API(int) FFMS_GetAudio(FFMS_AudioSource *A, void *Buf, int64_t Start, int64_t Count, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {

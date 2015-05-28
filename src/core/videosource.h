@@ -89,6 +89,7 @@ public:
 	virtual FFMS_Frame *GetFrame(int n) = 0;
 	void GetFrameCheck(int n);
 	FFMS_Frame *GetFrameByTime(double Time);
+	FFMS_Frame *GetFrameByPosition(int64_t Position);
 	void SetOutputFormat(const PixelFormat *TargetFormats, int Width, int Height, int Resizer);
 	void ResetOutputFormat();
 	void SetInputFormat(int ColorSpace, int ColorRange, PixelFormat Format);
