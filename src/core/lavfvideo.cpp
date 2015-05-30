@@ -135,19 +135,21 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 		VP.SARDen = FormatContext->streams[VideoTrack]->sample_aspect_ratio.den;
 	}
 
-	// Cannot "output" without doing all other initialization
-	// This is the additional mess required for seekmode=-1 to work in a reasonable way
-	OutputFrame(DecodeFrame);
-
 	if (SeekMode >= 0 && Frames.size() > 1) {
 		if (Seek(0) < 0) {
 			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 				"Video track is unseekable");
 		} else {
-			// Since we seeked to frame 0 we need to specify that frame 0 is once again the next frame that wil be decoded
+			Seek(0);
+			FlushBuffers(CodecContext);
+			// Since we seeked to frame 0 we need to specify that frame 0 is once again the next frame that wil be decoded		
 			CurrentFrame = 0;
 		}
 	}
+
+	// Cannot "output" without doing all other initialization
+	// This is the additional mess required for seekmode=-1 to work in a reasonable way
+	OutputFrame(DecodeFrame);
 }
 
 void FFLAVFVideo::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {

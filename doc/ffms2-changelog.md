@@ -1,6 +1,7 @@
 # FFmpegSource2 Changelog
 
 - 2.22
+  - Fix possible off by 1 frame until first seek issue introduced in 2.21 (Myrsloik)
   - avisynth: Make FFMS2 a shorter alias for FFmpegSource2 to save some typing (Myrsloik)
   - avisynth: Moved all source functions in ffms2.avsi into the actual plugin (Myrsloik)
   - avisynth: Use 2.6 RC API and add output support for all new colorspaces (Myrsloik)
