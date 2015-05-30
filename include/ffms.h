@@ -363,6 +363,8 @@ typedef struct FFMS_FrameInfo {
 	int64_t PTS;
 	int RepeatPict;
 	int KeyFrame;
+	int64_t FilePos;
+	int Frame;
 } FFMS_FrameInfo;
 
 typedef struct FFMS_VideoProperties {
@@ -412,6 +414,7 @@ FFMS_API(const FFMS_VideoProperties *) FFMS_GetVideoProperties(FFMS_VideoSource 
 FFMS_API(const FFMS_AudioProperties *) FFMS_GetAudioProperties(FFMS_AudioSource *A);
 FFMS_API(const FFMS_Frame *) FFMS_GetFrame(FFMS_VideoSource *V, int n, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(const FFMS_Frame *) FFMS_GetFrameByTime(FFMS_VideoSource *V, double Time, FFMS_ErrorInfo *ErrorInfo);
+FFMS_API(const FFMS_Frame *) FFMS_GetFrameByPosition(FFMS_VideoSource *V, int64_t Position, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_GetAudio(FFMS_AudioSource *A, void *Buf, int64_t Start, int64_t Count, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(int) FFMS_SetOutputFormatV2(FFMS_VideoSource *V, const int *TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo); /* Introduced in FFMS_VERSION ((2 << 24) | (15 << 16) | (3 << 8) | 0) */
 FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V);
@@ -434,6 +437,8 @@ FFMS_API(const char *) FFMS_GetCodecNameI(FFMS_Indexer *Indexer, int Track);
 FFMS_API(const char *) FFMS_GetFormatNameI(FFMS_Indexer *Indexer);
 FFMS_API(int) FFMS_GetNumFrames(FFMS_Track *T);
 FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFMS_Track *T, int Frame);
+FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfoFromPTS(FFMS_Track *T, int64_t PTS);
+FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfoFromPos(FFMS_Track *T, int64_t POS);
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track);
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromVideo(FFMS_VideoSource *V);
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromAudio(FFMS_AudioSource *A);

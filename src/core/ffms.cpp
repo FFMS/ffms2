@@ -174,6 +174,17 @@ FFMS_API(const FFMS_Frame *) FFMS_GetFrameByTime(FFMS_VideoSource *V, double Tim
 	}
 }
 
+FFMS_API(const FFMS_Frame *) FFMS_GetFrameByPosition(FFMS_VideoSource *V, int64_t Position, FFMS_ErrorInfo *ErrorInfo) {
+	ClearErrorInfo(ErrorInfo);
+	try {
+		return V->GetFrameByPosition(Position);
+	}
+	catch (FFMS_Exception &e) {
+		e.CopyOut(ErrorInfo);
+		return nullptr;
+	}
+}
+
 FFMS_API(int) FFMS_GetAudio(FFMS_AudioSource *A, void *Buf, int64_t Start, int64_t Count, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
@@ -298,6 +309,14 @@ FFMS_API(int) FFMS_GetNumFrames(FFMS_Track *T) {
 
 FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFMS_Track *T, int Frame) {
 	return T->GetFrameInfo(static_cast<size_t>(Frame));
+}
+
+FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfoFromPTS(FFMS_Track *T, int64_t PTS) {
+	return T->GetFrameInfo(T->FrameFromPTS(PTS));
+}
+
+FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfoFromPos(FFMS_Track *T, int64_t Pos) {
+	return T->GetFrameInfo(T->FrameFromPos(Pos));
 }
 
 FFMS_API(FFMS_Track *) FFMS_GetTrackFromIndex(FFMS_Index *Index, int Track) {

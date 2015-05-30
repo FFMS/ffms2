@@ -178,6 +178,11 @@ FFMS_Frame *FFMS_VideoSource::GetFrameByTime(double Time) {
 	return GetFrame(Frame);
 }
 
+FFMS_Frame *FFMS_VideoSource::GetFrameByPosition(int64_t Position) {
+	int Frame = Frames.FrameFromPos(Position);
+	return GetFrame(Frame);
+}
+
 static AVColorRange handle_jpeg(PixelFormat *format) {
 	switch (*format) {
 		case PIX_FMT_YUVJ420P: *format = PIX_FMT_YUV420P; return AVCOL_RANGE_JPEG;

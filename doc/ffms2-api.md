@@ -1159,6 +1159,7 @@ typedef struct {
     int64_t PTS;
     int RepeatPict;
     int KeyFrame;
+    int64_t FilePos;
 } FFMS_FrameInfo;
 ```
 A struct representing basic metadata about a given video frame.
@@ -1167,6 +1168,7 @@ The fields are:
    To convert this to a timestamp in wallclock milliseconds, use the relation `int64_t timestamp = (int64_t)((FFMS_FrameInfo->PTS * FFMS_TrackTimeBase->Num) / (double)FFMS_TrackTimeBase->Den)`.
  - `int RepeatPict` - RFF flag for the frame; same as in `FFMS_Frame`, see that structure for an explanation.
  - `int KeyFrame` - Non-zero if the frame is a keyframe, zero otherwise.
+ - `int64_t FilePos` - Position of the frame within the file in bytes.
 
 ### FFMS_VideoProperties
 
