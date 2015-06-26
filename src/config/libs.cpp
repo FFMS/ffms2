@@ -40,7 +40,8 @@ extern "C" {
 #pragma comment(lib, "zlib.lib")
 #endif /* WITH_GCC_LIBAV */
 
-// libav/ffmpeg libs are the same (name) regardless of their compiler.
+#ifdef WITH_GCC_LIBAV
+// libav/ffmpeg libs are the same (name) for GCC compiled binaries
 #pragma comment(lib, "libavutil.a")
 #pragma comment(lib, "libavcodec.a")
 #pragma comment(lib, "libavformat.a")
@@ -50,6 +51,19 @@ extern "C" {
 #endif
 #ifdef WITH_SWRESAMPLE
 #pragma comment(lib, "libswresample.a")
+#endif
+#else
+// libav/ffmpeg libs are the same (name) for Visual Studio compiled binaries (no matter static or shared)
+#pragma comment(lib, "avutil.lib")
+#pragma comment(lib, "avcodec.lib")
+#pragma comment(lib, "avformat.lib")
+#pragma comment(lib, "swscale.lib")
+#ifdef WITH_AVRESAMPLE
+#pragma comment(lib, "avresample.lib")
+#endif
+#ifdef WITH_SWRESAMPLE
+#pragma comment(lib, "swresample.lib")
+#endif
 #endif
 
 #ifdef WITH_OPENCORE_AMR_NB
