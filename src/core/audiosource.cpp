@@ -182,10 +182,15 @@ void FFMS_AudioSource::SetOutputFormat(FFMS_ResampleOptions const& opt) {
 		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
 			"Sample rate changes are currently unsupported.");
 
-#ifndef WITH_AVRESAMPLE
+#ifndef FFMS_RESAMPLING_ENABLED
 	if (opt.SampleFormat != AP.SampleFormat || opt.SampleRate != AP.SampleRate || opt.ChannelLayout != AP.ChannelLayout)
 		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
 			"FFMS was not built with resampling enabled. The only supported conversion is interleaving planar audio.");
+#endif
+#ifdef WITH_AVRESAMPLE
+	if (opt.SampleFormat != AP.SampleFormat || opt.ChannelLayout != AP.ChannelLayout)
+		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
+			"FFMS was not built with FFMPEG resampling enabled.");
 #endif
 
 	// Cache stores audio in the output format, so clear it and reopen the file
@@ -201,7 +206,7 @@ void FFMS_AudioSource::SetOutputFormat(FFMS_ResampleOptions const& opt) {
 		opt.ChannelLayout != AP.ChannelLayout ||
 		opt.ForceResample;
 
-#ifdef WITH_AVRESAMPLE
+#ifdef FFMS_RESAMPLING_ENABLED
 	if (!NeedsResample) return;
 
 	FFResampleContext newContext;
@@ -210,7 +215,14 @@ void FFMS_AudioSource::SetOutputFormat(FFMS_ResampleOptions const& opt) {
 	av_opt_set_int(newContext, "in_sample_fmt", CodecContext->sample_fmt, 0);
 	av_opt_set_int(newContext, "in_channel_layout", AP.ChannelLayout, 0);
 
-	if (avresample_open(newContext))
+	av_opt_set_int(newContext, "out_sample_rate", opt.SampleRate, 0);
+
+#ifdef WITH_SWRESAMPLE
+	av_opt_set_channel_layout(newContext, "out_channel_layout", opt.ChannelLayout, 0);
+	av_opt_set_sample_fmt(newContext, "out_sample_fmt", (AVSampleFormat)opt.SampleFormat, 0);
+#endif
+
+	if (ffms_open(newContext))
 		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
 			"Could not open avresample context");
 	newContext.swap(ResampleContext);
@@ -218,7 +230,7 @@ void FFMS_AudioSource::SetOutputFormat(FFMS_ResampleOptions const& opt) {
 }
 
 std::unique_ptr<FFMS_ResampleOptions> FFMS_AudioSource::CreateResampleOptions() const {
-#ifdef WITH_AVRESAMPLE
+#ifdef FFMS_RESAMPLING_ENABLED
 	auto ret = ReadOptions(ResampleContext, resample_options);
 #else
 	auto ret = make_unique<FFMS_ResampleOptions>();
@@ -236,13 +248,13 @@ void FFMS_AudioSource::ResampleAndCache(CacheIterator pos) {
 	size_t new_req = DecodeFrame->nb_samples * BytesPerSample;
 	block.Data.reserve(old_size + new_req);
 
-#ifdef WITH_AVRESAMPLE
+#ifdef FFMS_RESAMPLING_ENABLED
 	block.Data.resize(block.Data.capacity());
 
 	uint8_t *OutPlanes[1] = { static_cast<uint8_t *>(&block.Data[old_size]) };
-	avresample_convert(ResampleContext,
-		OutPlanes, new_req, DecodeFrame->nb_samples,
-		DecodeFrame->extended_data, DecodeFrame->nb_samples * av_get_bytes_per_sample(CodecContext->sample_fmt), DecodeFrame->nb_samples);
+	ffms_convert(ResampleContext,
+		OutPlanes, DecodeFrame->nb_samples, BytesPerSample, DecodeFrame->nb_samples,
+		DecodeFrame->extended_data, DecodeFrame->nb_samples, av_get_bytes_per_sample(CodecContext->sample_fmt), DecodeFrame->nb_samples);
 #else
 	int width = av_get_bytes_per_sample(CodecContext->sample_fmt);
 	uint8_t **Data = DecodeFrame->extended_data;
