@@ -6,6 +6,7 @@
   - avisynth: Moved all source functions in ffms2.avsi into the actual plugin (Myrsloik)
   - avisynth: Use 2.6 RC API and add output support for all new colorspaces (Myrsloik)
   - vapoursource: Fix swapped RGB channels bug introduced in 2.21 (Myrsloik)
+  - swscale: Drop pointless and slow bitexact flag from resizer settings (kodabb)
 
 - 2.21
   - Add missing constants for log levels (Myrsloik)
