@@ -32,6 +32,9 @@ extern "C" {
 #ifdef WITH_AVRESAMPLE
 #include <libavresample/avresample.h>
 #endif
+#ifdef WITH_SWRESAMPLE
+#include <libswresample/swresample.h>
+#endif
 }
 
 // must be included after ffmpeg headers
@@ -124,8 +127,8 @@ public:
 	}
 };
 
-#ifdef WITH_AVRESAMPLE
-typedef unknown_size<AVAudioResampleContext, avresample_alloc_context, avresample_free> FFResampleContext;
+#ifdef FFMS_RESAMPLING_ENABLED
+typedef unknown_size<FFMS_ResampleContext, ffms_resample_alloc_context, ffms_resample_free> FFResampleContext;
 #else
 typedef struct {} FFResampleContext;
 #endif
