@@ -82,9 +82,9 @@ void FFLAVFVideo::Free(bool CloseCodec) {
 
 FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	int Threads, int SeekMode)
-	: FFMS_VideoSource(SourceFile, Index, Track, Threads)
-	, SeekMode(SeekMode)
-	, Res(this)
+: FFMS_VideoSource(SourceFile, Index, Track, Threads)
+, SeekMode(SeekMode)
+, Res(this)
 {
 	LAVFOpenFile(SourceFile, FormatContext);
 
@@ -95,11 +95,11 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 	AVCodec *Codec = avcodec_find_decoder(CodecContext->codec_id);
 	if (Codec == nullptr)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-		"Video codec not found");
+			"Video codec not found");
 
 	if (avcodec_open2(CodecContext, Codec, nullptr) < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-		"Could not open video codec");
+			"Could not open video codec");
 
 	Res.CloseCodec(true);
 
@@ -142,7 +142,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 		} else {
 			Seek(0);
 			FlushBuffers(CodecContext);
-			// Since we seeked to frame 0 we need to specify that frame 0 is once again the next frame that wil be decoded		
+			// Since we seeked to frame 0 we need to specify that frame 0 is once again the next frame that wil be decoded
 			CurrentFrame = 0;
 		}
 	}

@@ -204,7 +204,7 @@ PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelForma
 
 	// If it's an evil paletted format pretend it's normal RGB when calculating loss
     if (Src == PIX_FMT_PAL8)
-        Src = PIX_FMT_RGB32;
+		Src = PIX_FMT_RGB32;
 
 	i = Dsts.begin();
 	LossAttributes Loss = CalculateLoss(*i++, Src);

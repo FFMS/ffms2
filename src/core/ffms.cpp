@@ -273,7 +273,7 @@ FFMS_API(int) FFMS_GetFirstIndexedTrackOfType(FFMS_Index *Index, int TrackType, 
 }
 
 FFMS_API(int) FFMS_GetNumTracks(FFMS_Index *Index) {
-    return static_cast<int>(Index->size());
+	return static_cast<int>(Index->size());
 }
 
 FFMS_API(int) FFMS_GetNumTracksI(FFMS_Indexer *Indexer) {
@@ -363,7 +363,7 @@ FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const
 	if (FileName)
 		strcpy(FileName, s.c_str());
 
-    return static_cast<int>(s.length() + 1);
+	return static_cast<int>(s.length() + 1);
 }
 
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo) {
@@ -384,7 +384,7 @@ FFMS_DEPRECATED_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int Ind
 	ClearErrorInfo(ErrorInfo);
 
 	IndexMask |= DumpMask;
-    for (int i = 0; i < static_cast<int>(sizeof(IndexMask) * 8); i++) {
+	for (int i = 0; i < static_cast<int>(sizeof(IndexMask) * 8); i++) {
 		if ((IndexMask >> i) & 1)
 			FFMS_TrackIndexSettings(Indexer, i, 1, ((DumpMask >> i) & 1));
 	}

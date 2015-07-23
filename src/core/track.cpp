@@ -144,7 +144,7 @@ int FFMS_Track::FrameFromPTS(int64_t PTS) const {
 int FFMS_Track::FrameFromPos(int64_t Pos) const {
 	for (size_t i = 0; i < size(); i++)
 	if (Frames[i].FilePos == Pos)
-        return static_cast<int>(i);
+		return static_cast<int>(i);
 	return -1;
 }
 
@@ -154,11 +154,11 @@ int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) const {
 
 	auto Pos = std::lower_bound(begin(), end(), F, PTSComparison);
 	if (Pos == end())
-        return static_cast<int>(size() - 1);
+		return static_cast<int>(size() - 1);
 	size_t Frame = std::distance(begin(), Pos);
 	if (Pos == begin() || FFABS(Pos->PTS - PTS) <= FFABS((Pos - 1)->PTS - PTS))
-        return static_cast<int>(Frame);
-    return static_cast<int>(Frame - 1);
+		return static_cast<int>(Frame);
+	return static_cast<int>(Frame - 1);
 }
 
 int FFMS_Track::FindClosestVideoKeyFrame(int Frame) const {
@@ -173,7 +173,7 @@ int FFMS_Track::RealFrameNumber(int Frame) const {
 }
 
 int FFMS_Track::VisibleFrameCount() const {
-    return TT == FFMS_TYPE_AUDIO ? static_cast<int>(Frames.size()) : static_cast<int>(RealFrameNumbers.size());
+	return TT == FFMS_TYPE_AUDIO ? static_cast<int>(Frames.size()) : static_cast<int>(RealFrameNumbers.size());
 }
 
 void FFMS_Track::MaybeReorderFrames() {
@@ -259,8 +259,8 @@ void FFMS_Track::GeneratePublicInfo() {
 	PublicFrameInfo.reserve(size());
 	for (size_t i = 0; i < size(); ++i) {
 		if (Frames[i].Hidden)
-            continue;
-        RealFrameNumbers.push_back(static_cast<int>(i));
+			continue;
+		RealFrameNumbers.push_back(static_cast<int>(i));
 
 		FFMS_FrameInfo info = {Frames[i].PTS, Frames[i].RepeatPict, Frames[Frames[i].OriginalPos].KeyFrame};
 		PublicFrameInfo.push_back(info);
