@@ -128,7 +128,7 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 		int i = 0;
 		while (Frames[i].PTS == ffms_av_nopts_value) ++i;
 		Delay += Frames[i].PTS * Frames.TB.Num * AP.SampleRate / (Frames.TB.Den * 1000);
-		for (; i >= 0; --i)
+		for (; i > 0; --i)
 			Delay -= Frames[i].SampleCount;
 	}
 
