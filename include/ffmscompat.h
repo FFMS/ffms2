@@ -101,8 +101,8 @@ static const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt) {
 
 #ifdef WITH_AVRESAMPLE
 #define FFMS_RESAMPLING_ENABLED
-#define ffms_convert(AVAudioResampleContext, output, out_plane_size, byte_per_sample_src, out_samples, input, in_plane_size, byte_per_sample_target, in_samples)	\
-		avresample_convert(AVAudioResampleContext, output, out_plane_size*byte_per_sample_src, out_samples, input, in_plane_size*byte_per_sample_target, in_samples)	
+#define ffms_convert(AVAudioResampleContext, output, out_plane_size, byte_per_sample_src, out_samples, input, in_plane_size, byte_per_sample_target, in_samples) \
+		avresample_convert(AVAudioResampleContext, output, out_plane_size*byte_per_sample_src, out_samples, input, in_plane_size*byte_per_sample_target, in_samples)
 #define ffms_open(context)			avresample_open(context)
 #define FFMS_ResampleContext		AVAudioResampleContext
 #define ffms_resample_alloc_context	avresample_alloc_context
@@ -111,8 +111,8 @@ static const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt) {
 
 #ifdef	WITH_SWRESAMPLE
 #define FFMS_RESAMPLING_ENABLED
-#define ffms_convert(AVAudioResampleContext, output, out_plane_size, byte_per_sample_src, out_samples, input, in_plane_size, bps, in_samples)	\
-		swr_convert(AVAudioResampleContext, output, out_samples, (const uint8_t**) input, in_samples)	
+#define ffms_convert(AVAudioResampleContext, output, out_plane_size, byte_per_sample_src, out_samples, input, in_plane_size, bps, in_samples) \
+		swr_convert(AVAudioResampleContext, output, out_samples, (const uint8_t**) input, in_samples)
 #define ffms_open(context)			swr_init(context)
 #define FFMS_ResampleContext		SwrContext	
 #define ffms_resample_alloc_context	swr_alloc
