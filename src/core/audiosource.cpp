@@ -314,7 +314,12 @@ void FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
 			const auto MissingSamples = static_cast<size_t>(CurrentFrame->SampleCount - CachedBlock->Samples);
 			CachedBlock->Samples += MissingSamples;
 			const auto MissingBytes = MissingSamples * BytesPerSample;
-			memset(CachedBlock->Grow(MissingBytes), AP.BitsPerSample == 8 ? 127 : 0, MissingBytes);
+			if (MissingSamples > 200 || MissingSamples > CachedBlock->Samples - MissingSamples)
+				memset(CachedBlock->Grow(MissingBytes), 0, MissingBytes);
+			else {
+				auto ptr = CachedBlock->Grow(MissingBytes);
+				memcpy(ptr, ptr - MissingBytes, MissingBytes);
+			}
 		}
 	}
 }
