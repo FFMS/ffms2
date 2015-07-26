@@ -210,7 +210,7 @@ void FFMS_AudioSource::SetOutputFormat(FFMS_ResampleOptions const& opt) {
 	av_opt_set_sample_fmt(newContext, "out_sample_fmt", (AVSampleFormat)opt.SampleFormat, 0);
 #endif
 
-	if (ffms_open(newContext))
+	if (ffms_open_resampler(newContext))
 		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
 			"Could not open avresample context");
 	newContext.swap(ResampleContext);
