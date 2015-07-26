@@ -29,11 +29,11 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
-#ifdef WITH_AVRESAMPLE
-#include <libavresample/avresample.h>
-#endif
+
 #ifdef WITH_SWRESAMPLE
 #include <libswresample/swresample.h>
+#else
+#include <libavresample/avresample.h>
 #endif
 }
 
@@ -127,11 +127,7 @@ public:
 	}
 };
 
-#ifdef FFMS_RESAMPLING_ENABLED
 typedef unknown_size<FFMS_ResampleContext, ffms_resample_alloc_context, ffms_resample_free> FFResampleContext;
-#else
-typedef struct {} FFResampleContext;
-#endif
 
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
 bool AudioFMTIsFloat(AVSampleFormat FMT);
