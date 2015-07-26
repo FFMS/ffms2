@@ -136,27 +136,19 @@ if test "$LIBAV_WORKS" = no; then
 AC_MSG_FAILURE([cannot link with $_lav_name])
 fi
 
-AC_ARG_ENABLE(avresample,
-              AS_HELP_STRING([--enable-avresample],
-                             [use libavresample for audio resampling]))
-AS_IF([test x$enable_avresample != xno], [
-  PKG_CHECK_MODULES(AVRESAMPLE, [libavresample >= 1.0.0], [enable_avresample=yes], [
-    AS_IF([test x$enable_avresample = xyes],
-          [AC_MSG_ERROR([--enable-avresample was specified, but avresample 1.0.0+ could not be found.])])
-    enable_avresample=no
+PKG_CHECK_MODULES(AVRESAMPLE, [libavresample >= 1.0.0], [], [
+  PKG_CHECK_MODULES(AVRESAMPLE, [libswresample >= 1.0.0], [
+    AC_DEFINE([WITH_SWRESAMPLE], [1], [Use libswresample rather than libavresample])
+  ], [
+    AC_MSG_ERROR([Either avresample or swresample is required.])
   ])
 ])
-
-AS_IF([test x$enable_avresample != xno],
-      [libavresample="libavresample"
-       AC_DEFINE([WITH_AVRESAMPLE], [1], [Use avresample])])
 
 dnl See similar thing for LIBAV_LIBS
 AVRESAMPLE_LIBS=$(echo $AVRESAMPLE_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
 
 AC_SUBST([AVRESAMPLE_CFLAGS])
 AC_SUBST([AVRESAMPLE_LIBS])
-AC_SUBST([libavresample])
 
 src_core_libffms2_la_LDFLAGS=""
 AC_MSG_CHECKING([whether -Wl,-Bsymbolic is needed])
