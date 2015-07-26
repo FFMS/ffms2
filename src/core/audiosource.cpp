@@ -291,36 +291,36 @@ void FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
 		// Should only ever happen if the user chose to ignore decoding errors
 		// during indexing, so continue to just ignore decoding errors
 		if (Ret < 0) break;
+		if (Ret == 0) continue;
 
-		if (Ret > 0) {
-			Packet.size -= Ret;
-			Packet.data += Ret;
-			if (GotFrame && DecodeFrame->nb_samples > 0) {
-				GotSamples = true;
-				if (pos)
-					CachedBlock = CacheBlock(*pos);
-			}
+		Packet.size -= Ret;
+		Packet.data += Ret;
+		if (GotFrame && DecodeFrame->nb_samples > 0) {
+			GotSamples = true;
+			if (pos)
+				CachedBlock = CacheBlock(*pos);
 		}
 	}
 	Packet.data = Data;
 	FreePacket(&Packet);
 
 	// Zero sample packets aren't included in the index
-	if (GotSamples) {
-		++PacketNumber;
+	if (!GotSamples)
+		return;
+	++PacketNumber;
 
-		// Add padding after the packet, if needed
-		if (CachedBlock && CachedBlock->Samples < CurrentFrame->SampleCount) {
-			const auto MissingSamples = static_cast<size_t>(CurrentFrame->SampleCount - CachedBlock->Samples);
-			CachedBlock->Samples += MissingSamples;
-			const auto MissingBytes = MissingSamples * BytesPerSample;
-			if (MissingSamples > 200 || MissingSamples > CachedBlock->Samples - MissingSamples)
-				memset(CachedBlock->Grow(MissingBytes), 0, MissingBytes);
-			else {
-				auto ptr = CachedBlock->Grow(MissingBytes);
-				memcpy(ptr, ptr - MissingBytes, MissingBytes);
-			}
-		}
+	// Add padding after the packet, if needed
+	if (!CachedBlock || CachedBlock->Samples == CurrentFrame->SampleCount)
+		return;
+
+	const auto MissingSamples = static_cast<size_t>(CurrentFrame->SampleCount - CachedBlock->Samples);
+	CachedBlock->Samples += MissingSamples;
+	const auto MissingBytes = MissingSamples * BytesPerSample;
+	if (MissingSamples > 200 || MissingSamples > CachedBlock->Samples - MissingSamples)
+		memset(CachedBlock->Grow(MissingBytes), 0, MissingBytes);
+	else {
+		auto ptr = CachedBlock->Grow(MissingBytes);
+		memcpy(ptr, ptr - MissingBytes, MissingBytes);
 	}
 }
 
