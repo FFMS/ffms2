@@ -379,6 +379,7 @@ htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
+libavresample = @libavresample@
 libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@

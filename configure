@@ -635,6 +635,7 @@ LTLIBOBJS
 LIBOBJS
 LTUNDEF
 src_core_libffms2_la_LDFLAGS
+libavresample
 AVRESAMPLE_LIBS
 AVRESAMPLE_CFLAGS
 LIBAV_LIBS
@@ -16386,6 +16387,7 @@ as_fn_error $? "cannot link with $_lav_name
 See \`config.log' for more details" "$LINENO" 5; }
 fi
 
+libavresample='libavresample'
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AVRESAMPLE" >&5
@@ -16523,6 +16525,7 @@ $as_echo "yes" >&6; }
 
 $as_echo "#define WITH_SWRESAMPLE 1" >>confdefs.h
 
+    libavresample='libswresample'
 
 fi
 
@@ -16607,6 +16610,7 @@ $as_echo "yes" >&6; }
 
 $as_echo "#define WITH_SWRESAMPLE 1" >>confdefs.h
 
+    libavresample='libswresample'
 
 fi
 
@@ -16619,6 +16623,7 @@ $as_echo "yes" >&6; }
 fi
 
 AVRESAMPLE_LIBS=$(echo $AVRESAMPLE_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
+
 
 
 
