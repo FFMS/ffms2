@@ -256,6 +256,16 @@ void AvisynthVideoSource::InitOutputFormat(
 
 	if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuvj420p") || F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv420p"))
 		VI.pixel_type = VideoInfo::CS_I420;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuvj422p") || F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv422p"))
+        VI.pixel_type = VideoInfo::CS_YV16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuvj444p") || F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv444p"))
+        VI.pixel_type = VideoInfo::CS_YV24;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv411p"))
+        VI.pixel_type = VideoInfo::CS_YV411;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv410p"))
+        VI.pixel_type = VideoInfo::CS_YUV9;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gray8"))
+        VI.pixel_type = VideoInfo::CS_Y8;
 	else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuyv422"))
 		VI.pixel_type = VideoInfo::CS_YUY2;
 	else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("rgb32"))
