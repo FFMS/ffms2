@@ -10,6 +10,10 @@
 /libtool
 /testing
 /todo.txt
+/NUL
+/ffmsdll.rc.h
+/ffmsindexexe.rc.h
+/rcinfo.h
 
 # /build-msvc/
 /build-msvc/*.sdf
