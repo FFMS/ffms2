@@ -29,7 +29,7 @@ extern "C" {
 #include <libavutil/opt.h>
 }
 
-SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, PixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags) {
+SwsContext *GetSwsContext(int SrcW, int SrcH, AVPixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, AVPixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags) {
 	Flags |= SWS_FULL_CHR_H_INT | SWS_FULL_CHR_H_INP | SWS_ACCURATE_RND;
 	SwsContext *Context = sws_alloc_context();
 	if (!Context) return nullptr;
@@ -120,9 +120,9 @@ enum BCSType {
 	cUNUSABLE
 };
 
-static BCSType GuessCSType(PixelFormat p) {
+static BCSType GuessCSType(AVPixelFormat p) {
 	// guessing the colorspace type from the name is kinda hackish but libav doesn't export this kind of metadata
-	if (av_pix_fmt_desc_get(p)->flags & PIX_FMT_HWACCEL)
+	if (av_pix_fmt_desc_get(p)->flags & AV_PIX_FMT_FLAG_HWACCEL)
 		return cUNUSABLE;
 	const char *n = av_get_pix_fmt_name(p);
 	if (strstr(n, "gray") || strstr(n, "mono") || strstr(n, "y400a"))
@@ -135,7 +135,7 @@ static BCSType GuessCSType(PixelFormat p) {
 }
 
 struct LossAttributes {
-	PixelFormat Format;
+	AVPixelFormat Format;
 	int ChromaUndersampling;
 	int ChromaOversampling;
 	int DepthDifference;
@@ -150,7 +150,7 @@ static int GetPseudoDepth(const AVPixFmtDescriptor &Desc) {
 	return depth + 1;
 }
 
-static LossAttributes CalculateLoss(PixelFormat Dst, PixelFormat Src) {
+static LossAttributes CalculateLoss(AVPixelFormat Dst, AVPixelFormat Src) {
 	const AVPixFmtDescriptor &SrcDesc = *av_pix_fmt_desc_get(Src);
 	const AVPixFmtDescriptor &DstDesc = *av_pix_fmt_desc_get(Dst);
 	BCSType SrcCS = GuessCSType(Src);
@@ -190,10 +190,10 @@ static LossAttributes CalculateLoss(PixelFormat Dst, PixelFormat Src) {
 	return Loss;
 }
 
-PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelFormat Src) {
+AVPixelFormat FindBestPixelFormat(const std::vector<AVPixelFormat> &Dsts, AVPixelFormat Src) {
 	// some trivial special cases to make sure there's as little conversion as possible
 	if (Dsts.empty())
-		return PIX_FMT_NONE;
+		return AV_PIX_FMT_NONE;
 	if (Dsts.size() == 1)
 		return Dsts[0];
 
@@ -203,8 +203,8 @@ PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelForma
 		return Src;
 
 	// If it's an evil paletted format pretend it's normal RGB when calculating loss
-    if (Src == PIX_FMT_PAL8)
-		Src = PIX_FMT_RGB32;
+    if (Src == AV_PIX_FMT_PAL8)
+		Src = AV_PIX_FMT_RGB32;
 
 	i = Dsts.begin();
 	LossAttributes Loss = CalculateLoss(*i++, Src);

@@ -187,7 +187,7 @@ FFMS_API(int) FFMS_GetAudio(FFMS_AudioSource *A, void *Buf, int64_t Start, int64
 FFMS_API(int) FFMS_SetOutputFormatV2(FFMS_VideoSource *V, const int *TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
-		V->SetOutputFormat(reinterpret_cast<const PixelFormat *>(TargetFormats), Width, Height, Resizer);
+		V->SetOutputFormat(reinterpret_cast<const AVPixelFormat *>(TargetFormats), Width, Height, Resizer);
 	} catch (FFMS_Exception &e) {
 		return e.CopyOut(ErrorInfo);
 	}
@@ -201,7 +201,7 @@ FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V) {
 FFMS_API(int) FFMS_SetInputFormatV(FFMS_VideoSource *V, int ColorSpace, int ColorRange, int Format, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
-		V->SetInputFormat(ColorSpace, ColorRange, static_cast<PixelFormat>(Format));
+		V->SetInputFormat(ColorSpace, ColorRange, static_cast<AVPixelFormat>(Format));
 	} catch (FFMS_Exception &e) {
 		return e.CopyOut(ErrorInfo);
 	}
