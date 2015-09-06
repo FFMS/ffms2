@@ -95,7 +95,7 @@ AC_DEFUN([TEST_IS_FFMPEG],
                 /* is ffmpeg */
                 #elif LIBAVCODEC_VERSION_INT < AV_VERSION_INT(53, 47, 100)
                 /* hopefully libav doesn''t add G2M before 53.47.... */
-                (void)AV_CODEC_ID_G2M;
+                (void)CODEC_ID_G2M;
                 #else
                 #error is libav or old enough that the distinction doesn't matter
                 #endif
@@ -121,10 +121,6 @@ AC_DEFUN([TEST_LIBAV],
             ]],[[
                 avcodec_register_all();
                 swscale_version();
-                #ifdef FFMS_USE_FFMPEG_COMPAT
-                int bogus = AV_CODEC_ID_G2M;
-                (void) bogus;
-                #endif
             ]])], [eval $1=yes], [eval $1=no])
         ])
 
