@@ -78,20 +78,25 @@ static void av_frame_free(AVFrame **frame) { av_freep(frame); }
 #		define av_get_packed_sample_fmt(fmt) (fmt < AV_SAMPLE_FMT_U8P ? fmt : fmt - (AV_SAMPLE_FMT_U8P - AV_SAMPLE_FMT_U8))
 #	endif
 #	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 51, 44, 0, 51, 76, 100)
+		// Needs to be included before the AVPixelFormat define
 #		include <libavutil/pixdesc.h>
+#	endif
 
-#		if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 51, 42, 0, 51, 74, 100)
-#			define AVPixelFormat PixelFormat
-#			define AV_PIX_FMT_NB PIX_FMT_NB
-#		endif
+#	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 51, 42, 0, 51, 74, 100)
+#		define AVPixelFormat PixelFormat
+#		define FFMS_PIX_FMT(x) PIX_FMT_##x
+#		define FFMS_PIX_FMT_FLAG(x) PIX_FMT_##x
+#	else
+#		define FFMS_PIX_FMT_FLAG(x) AV_PIX_FMT_FLAG_##x
+#	endif
 
+#	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 51, 44, 0, 51, 76, 100)
 static const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt) {
-	if (pix_fmt < 0 || pix_fmt >= AV_PIX_FMT_NB)
+	if (pix_fmt < 0 || pix_fmt >= FFMS_PIX_FMT(NB))
 		return NULL;
 
 	return &av_pix_fmt_descriptors[pix_fmt];
 }
-
 #	endif
 #	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 52, 9, 0, 52, 20, 100)
 #		define av_frame_alloc avcodec_alloc_frame
