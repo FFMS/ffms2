@@ -87,6 +87,7 @@ static void av_frame_free(AVFrame **frame) { av_freep(frame); }
 #		define FFMS_PIX_FMT(x) PIX_FMT_##x
 #		define FFMS_PIX_FMT_FLAG(x) PIX_FMT_##x
 #	else
+#		define FFMS_PIX_FMT(x) AV_PIX_FMT_##x
 #		define FFMS_PIX_FMT_FLAG(x) AV_PIX_FMT_FLAG_##x
 #	endif
 
