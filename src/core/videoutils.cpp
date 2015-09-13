@@ -89,7 +89,7 @@ void CorrectRationalFramerate(int *Num, int *Den) {
 			*Num = fpsList[i];
 			*Den = 1;
 			break;
-		} else if ((fpsList[i] % 25) && (abs(fps - static_cast<double>(fpsList[i]) / 1.001) < delta)) {
+		} else if ((fpsList[i] % 25) && (fabs(fps - static_cast<double>(fpsList[i]) / 1.001) < delta)) {
 			*Num = fpsList[i] * 1000;
 			*Den = 1001;
 			break;
