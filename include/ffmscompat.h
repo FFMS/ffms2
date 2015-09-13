@@ -102,6 +102,12 @@ static const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt) {
 #	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 52, 9, 0, 52, 20, 100)
 #		define av_frame_alloc avcodec_alloc_frame
 #	endif
+
+#	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >, 55, 0, 0, 55, 0, 100) || defined(FF_API_PLUS1_MINUS1)
+#		define FFMS_DEPTH(x) ((x).depth)
+#	else
+#		define FFMS_DEPTH(x) ((x).depth_minus1 + 1)
+#	endif
 #endif
 
 

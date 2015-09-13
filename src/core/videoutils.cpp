@@ -144,10 +144,10 @@ struct LossAttributes {
 
 static int GetPseudoDepth(const AVPixFmtDescriptor &Desc) {
 	// Comparing the pseudo depth makes sure that rgb565-ish formats get selected over rgb555-ish ones
-	int depth = -1;
+	int depth = 0;
 	for (int i = 0; i < Desc.nb_components; i++)
-		depth = FFMAX(depth, Desc.comp[i].depth_minus1);
-	return depth + 1;
+		depth = FFMAX(depth, FFMS_DEPTH(Desc.comp[i]));
+	return depth;
 }
 
 static LossAttributes CalculateLoss(AVPixelFormat Dst, AVPixelFormat Src) {

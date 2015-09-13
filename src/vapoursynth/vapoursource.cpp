@@ -40,11 +40,11 @@ static bool IsRealNativeEndianPlanar(const AVPixFmtDescriptor &desc) {
 	int used_planes = 0;
 	for (int i = 0; i < desc.nb_components; i++)
 		used_planes = std::max(used_planes, (int)desc.comp[i].plane + 1);
-	bool temp = (used_planes == desc.nb_components) && (desc.comp[0].depth_minus1 + 1 >= 8) &&
+	bool temp = (used_planes == desc.nb_components) && (FFMS_DEPTH(desc.comp[0]) >= 8) &&
 		(!(desc.flags & FFMS_PIX_FMT_FLAG(PAL)));
 	if (!temp)
 		return false;
-	else if (desc.comp[0].depth_minus1 + 1 == 8)
+	else if (FFMS_DEPTH(desc.comp[0]) == 8)
 		return temp;
 	else
 		return (FFMS_PIX_FMT(YUV420P10) == FFMS_PIX_FMT(YUV420P10BE) ? !!(desc.flags & FFMS_PIX_FMT_FLAG(BE)) : !(desc.flags & FFMS_PIX_FMT_FLAG(BE)));
@@ -76,7 +76,7 @@ static int FormatConversionToPixelFormat(int id, bool Alpha, VSCore *core, const
 			const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat)i);
 			if (IsRealNativeEndianPlanar(desc) && !HasAlpha(desc)
 				&& GetColorFamily(desc) == f->colorFamily
-				&& desc.comp[0].depth_minus1 + 1 == f->bitsPerSample
+				&& FFMS_DEPTH(desc.comp[0]) == f->bitsPerSample
 				&& desc.log2_chroma_w == f->subSamplingW
 				&& desc.log2_chroma_h == f->subSamplingH)
 				return i;
@@ -87,7 +87,7 @@ static int FormatConversionToPixelFormat(int id, bool Alpha, VSCore *core, const
 		const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat)i);
 		if (IsRealNativeEndianPlanar(desc) && HasAlpha(desc)
 			&& GetColorFamily(desc) == f->colorFamily
-			&& desc.comp[0].depth_minus1 + 1 == f->bitsPerSample
+			&& FFMS_DEPTH(desc.comp[0]) == f->bitsPerSample
 			&& desc.log2_chroma_w == f->subSamplingW
 			&& desc.log2_chroma_h == f->subSamplingH)
 			return i;
@@ -97,7 +97,7 @@ static int FormatConversionToPixelFormat(int id, bool Alpha, VSCore *core, const
 
 static const VSFormat *FormatConversionToVS(int id, VSCore *core, const VSAPI *vsapi) {
 	return vsapi->registerFormat(GetColorFamily(*av_pix_fmt_desc_get((AVPixelFormat)id)), stInteger,
-		av_pix_fmt_desc_get((AVPixelFormat)id)->comp[0].depth_minus1 + 1,
+		FFMS_DEPTH(av_pix_fmt_desc_get((AVPixelFormat)id)->comp[0]),
 		av_pix_fmt_desc_get((AVPixelFormat)id)->log2_chroma_w,
 		av_pix_fmt_desc_get((AVPixelFormat)id)->log2_chroma_h, core);
 }
