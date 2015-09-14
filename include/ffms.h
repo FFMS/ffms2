@@ -97,7 +97,7 @@
 #define FFMS_DestroyIndex _FFMS_DestroyIndex
 #define FFMS_DestroyResampleOptions _FFMS_DestroyResampleOptions
 #define FFMS_DestroyVideoSource _FFMS_DestroyVideoSource
-#define FFMS_DoIndexing _FFMS_DoIndexing
+#define FFMS_DoIndexing2 _FFMS_DoIndexing2
 #define FFMS_GetAudio _FFMS_GetAudio
 #define FFMS_GetAudioProperties _FFMS_GetAudioProperties
 #define FFMS_GetCodecNameI _FFMS_GetCodecNameI
@@ -127,14 +127,17 @@
 #define FFMS_GetVideoProperties _FFMS_GetVideoProperties
 #define FFMS_IndexBelongsToFile _FFMS_IndexBelongsToFile
 #define FFMS_Init _FFMS_Init
-#define FFMS_MakeIndex _FFMS_MakeIndex
 #define FFMS_ReadIndex _FFMS_ReadIndex
 #define FFMS_ResetInputFormatV _FFMS_ResetInputFormatV
 #define FFMS_ResetOutputFormatV _FFMS_ResetOutputFormatV
+#define FFMS_SetAudioNameCallback _FFMS_SetAudioNameCallback
 #define FFMS_SetInputFormatV _FFMS_SetInputFormatV
 #define FFMS_SetLogLevel _FFMS_SetLogLevel
 #define FFMS_SetOutputFormatA _FFMS_SetOutputFormatA
 #define FFMS_SetOutputFormatV2 _FFMS_SetOutputFormatV2
+#define FFMS_SetProgressCallback _FFMS_SetProgressCallback
+#define FFMS_TrackIndexSettings _FFMS_TrackIndexSettings
+#define FFMS_TrackTypeIndexSettings _FFMS_TrackTypeIndexSettings
 #define FFMS_WriteIndex _FFMS_WriteIndex
 #define FFMS_WriteTimecodes _FFMS_WriteTimecodes
 #endif
