@@ -39,7 +39,7 @@
 #  define VERSION_CHECK(LIB, cmp, major, minor, micro, u1, u2, u3) ((LIB) cmp (AV_VERSION_INT(major, minor, micro)))
 #endif
 
-#if defined(_WIN32) && !defined(__MINGW64_VERSION_MAJOR)
+#if defined(_WIN32) && !defined(__MINGW64_VERSION_MAJOR) && _MSC_VER < 1900
 #	define snprintf _snprintf
 #endif
 
@@ -78,24 +78,53 @@ static void av_frame_free(AVFrame **frame) { av_freep(frame); }
 #		define av_get_packed_sample_fmt(fmt) (fmt < AV_SAMPLE_FMT_U8P ? fmt : fmt - (AV_SAMPLE_FMT_U8P - AV_SAMPLE_FMT_U8))
 #	endif
 #	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 51, 44, 0, 51, 76, 100)
+		// Needs to be included before the AVPixelFormat define
 #		include <libavutil/pixdesc.h>
+#	endif
 
-#		if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 51, 42, 0, 51, 74, 100)
-#			define AVPixelFormat PixelFormat
-#			define AV_PIX_FMT_NB PIX_FMT_NB
-#		endif
+#	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 51, 42, 0, 51, 74, 100)
+#		define AVPixelFormat PixelFormat
+#		define FFMS_PIX_FMT(x) PIX_FMT_##x
+#		define FFMS_PIX_FMT_FLAG(x) PIX_FMT_##x
+#	else
+#		define FFMS_PIX_FMT(x) AV_PIX_FMT_##x
+#		define FFMS_PIX_FMT_FLAG(x) AV_PIX_FMT_FLAG_##x
+#	endif
 
+#	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 51, 44, 0, 51, 76, 100)
 static const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt) {
-	if (pix_fmt < 0 || pix_fmt >= AV_PIX_FMT_NB)
+	if (pix_fmt < 0 || pix_fmt >= FFMS_PIX_FMT(NB))
 		return NULL;
 
 	return &av_pix_fmt_descriptors[pix_fmt];
 }
-
 #	endif
 #	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 52, 9, 0, 52, 20, 100)
 #		define av_frame_alloc avcodec_alloc_frame
 #	endif
+
+#	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >, 55, 0, 0, 55, 0, 100) || defined(FF_API_PLUS1_MINUS1)
+#		define FFMS_DEPTH(x) ((x).depth)
+#	else
+#		define FFMS_DEPTH(x) ((x).depth_minus1 + 1)
+#	endif
+#endif
+
+
+#ifndef WITH_SWRESAMPLE
+#define ffms_convert(AVAudioResampleContext, output, out_plane_size, byte_per_sample_src, out_samples, input, in_plane_size, byte_per_sample_target, in_samples) \
+		avresample_convert(AVAudioResampleContext, output, out_plane_size*byte_per_sample_src, out_samples, input, in_plane_size*byte_per_sample_target, in_samples)
+#define ffms_open_resampler(context) avresample_open(context)
+#define FFMS_ResampleContext         AVAudioResampleContext
+#define ffms_resample_alloc_context  avresample_alloc_context
+#define ffms_resample_free           avresample_free
+#else
+#define ffms_convert(AVAudioResampleContext, output, out_plane_size, byte_per_sample_src, out_samples, input, in_plane_size, bps, in_samples) \
+		swr_convert(AVAudioResampleContext, output, out_samples, (const uint8_t**) input, in_samples)
+#define ffms_open_resampler(context) swr_init(context)
+#define FFMS_ResampleContext         SwrContext
+#define ffms_resample_alloc_context  swr_alloc
+#define ffms_resample_free           swr_free
 #endif
 
 #endif // FFMSCOMPAT_H

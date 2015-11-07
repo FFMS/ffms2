@@ -49,6 +49,7 @@ private:
 
 	void MaybeReorderFrames();
 	void MaybeHideFrames();
+	void FillAudioGaps();
 	void GeneratePublicInfo();
 
 public:
@@ -57,6 +58,7 @@ public:
 	int MaxBFrames = 0;
 	bool UseDTS = false;
 	bool HasTS = false;
+	int SampleRate = 0; // not persisted
 
 	void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, bool Invisible = false);
 	void AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0);

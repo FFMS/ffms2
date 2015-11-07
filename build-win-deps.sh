@@ -144,18 +144,12 @@ ffmpeg_common_flags="        \
   --disable-devices          \
   --disable-doc              \
   --disable-encoders         \
-  --disable-ffmpeg           \
-  --disable-ffplay           \
-  --disable-ffprobe          \
-  --disable-ffserver         \
   --disable-filters          \
   --disable-hwaccels         \
   --disable-muxers           \
   --disable-network          \
-  --disable-postproc         \
   --disable-pthreads         \
   --disable-shared           \
-  --disable-swresample       \
   --enable-avresample        \
   --enable-gpl               \
   --enable-version3          \
@@ -170,12 +164,32 @@ ffmpeg_common_flags="        \
   --toolchain=$toolchain     \
   --prefix=$work_dir/junk"
 
+if [ $fork = 'libav' ]; then
+ffmpeg_common_flags="  \
+  $ffmpeg_common_flags \
+  --disable-avconv     \
+  --disable-avplay     \
+  --disable-avprobe    \
+"
+ffmpeg_debug_flags=""
+else
+ffmpeg_common_flags="  \
+  $ffmpeg_common_flags \
+  --disable-ffmpeg     \
+  --disable-ffplay     \
+  --disable-ffprobe    \
+  --disable-ffserver   \
+  --disable-postproc   \
+"
+ffmpeg_debug_flags="--disable-stripping"
+fi
+
 cd $work_dir/$fork
 
 git clean -xfd
 ./configure $ffmpeg_common_flags \
   --enable-debug \
-  --disable-stripping \
+  $ffmpeg_debug_flags \
   --extra-cflags=-I$debug_prefix/include \
   --extra-cflags=-MTd \
   --extra-ldflags=-LIBPATH:$(echo $debug_prefix/lib | sed 's@^/\([a-z]\)/@\1:/@') \
@@ -188,7 +202,6 @@ make install
 git clean -xfd
 ./configure $ffmpeg_common_flags \
   --disable-debug \
-  --enable-stripping \
   --extra-cflags=-I$release_prefix/include \
   --extra-ldflags=-LIBPATH:$(echo $release_prefix/lib | sed 's@^/\([a-z]\)/@\1:/@') \
   --libdir=$release_prefix/lib \

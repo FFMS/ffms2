@@ -63,5 +63,5 @@
 /* Version number of package */
 #undef VERSION
 
-/* Use avresample */
-#undef WITH_AVRESAMPLE
+/* Use libswresample rather than libavresample */
+#undef WITH_SWRESAMPLE

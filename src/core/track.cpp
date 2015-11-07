@@ -20,6 +20,7 @@
 
 #include "track.h"
 
+#include "utils.h"
 #include "zipfile.h"
 
 #include <algorithm>
@@ -144,7 +145,7 @@ int FFMS_Track::FrameFromPTS(int64_t PTS) const {
 int FFMS_Track::FrameFromPos(int64_t Pos) const {
 	for (size_t i = 0; i < size(); i++)
 	if (Frames[i].FilePos == Pos)
-        return static_cast<int>(i);
+		return static_cast<int>(i);
 	return -1;
 }
 
@@ -154,11 +155,11 @@ int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) const {
 
 	auto Pos = std::lower_bound(begin(), end(), F, PTSComparison);
 	if (Pos == end())
-        return static_cast<int>(size() - 1);
+		return static_cast<int>(size() - 1);
 	size_t Frame = std::distance(begin(), Pos);
 	if (Pos == begin() || FFABS(Pos->PTS - PTS) <= FFABS((Pos - 1)->PTS - PTS))
-        return static_cast<int>(Frame);
-    return static_cast<int>(Frame - 1);
+		return static_cast<int>(Frame);
+	return static_cast<int>(Frame - 1);
 }
 
 int FFMS_Track::FindClosestVideoKeyFrame(int Frame) const {
@@ -173,7 +174,7 @@ int FFMS_Track::RealFrameNumber(int Frame) const {
 }
 
 int FFMS_Track::VisibleFrameCount() const {
-    return TT == FFMS_TYPE_AUDIO ? static_cast<int>(Frames.size()) : static_cast<int>(RealFrameNumbers.size());
+	return TT == FFMS_TYPE_AUDIO ? static_cast<int>(Frames.size()) : static_cast<int>(RealFrameNumbers.size());
 }
 
 void FFMS_Track::MaybeReorderFrames() {
@@ -225,11 +226,67 @@ void FFMS_Track::MaybeHideFrames() {
 	}
 }
 
+void FFMS_Track::FillAudioGaps() {
+	// There may not be audio data for the entire duration of the audio track,
+	// as some formats support gaps between the end time of one packet and the
+	// PTS of the next audio packet, and we should zero-fill those gaps.
+	// However, garbage or missing timestamps for audio tracks are very common,
+	// so we only want to trust them if they're all present, monotonically
+	// increasing, and result in a total duration meaningfully longer than the
+	// samples we have would cover.
+	if (size() < 2 || !HasTS || front().PTS == ffms_av_nopts_value || back().PTS == ffms_av_nopts_value)
+		return;
+
+	const auto DurationToSamples = [this](int64_t Dur) {
+		auto Num = TB.Num * SampleRate;
+		auto Den = TB.Den * 1000;
+		return av_rescale(Dur, Num, Den);
+	};
+
+	const auto ActualSamples = back().SampleStart + back().SampleCount;
+	const auto ExpectedSamples = DurationToSamples(back().PTS - front().PTS);
+	if (ActualSamples + 5 > ExpectedSamples) // arbitrary threshold to cover rounding/not worth adjusting
+		return;
+
+	// Verify that every frame has a timestamp and that they monotonically
+	// increase, as otherwise we can't trust them
+	auto PrevPTS = front().PTS - 1;
+	for (auto const& frame : *this) {
+		if (frame.PTS == ffms_av_nopts_value || frame.PTS <= PrevPTS)
+			return;
+		PrevPTS = frame.PTS;
+	}
+
+	// There are some missing samples and the timestamps appear to all be valid,
+	// so go ahead and extend the frames to cover the gaps
+	const auto FirstPTS = front().PTS;
+	auto PrevFrame = &Frames.front();
+	int32_t Shift = 0;
+	for (auto& Frame : Frames) {
+		if (Shift > 0)
+			Frame.SampleStart += Shift;
+
+		const auto ExpectedStartSample = DurationToSamples(Frame.PTS - FirstPTS);
+		const auto Gap = static_cast<int32_t>(ExpectedStartSample - Frame.SampleStart);
+		if (Gap > 0) {
+			PrevFrame->SampleCount += Gap;
+			Frame.SampleStart = ExpectedStartSample;
+		}
+		Shift += Gap;
+		PrevFrame = &Frame;
+	}
+}
+
 void FFMS_Track::FinalizeTrack() {
 	// With some formats (such as Vorbis) a bad final packet results in a
 	// frame with PTS 0, which we don't want to sort to the beginning
 	if (size() > 2 && front().PTS >= back().PTS)
 		Frames.pop_back();
+
+	if (TT == FFMS_TYPE_AUDIO) {
+		FillAudioGaps();
+		return;
+	}
 
 	if (TT != FFMS_TYPE_VIDEO)
 		return;
@@ -259,8 +316,8 @@ void FFMS_Track::GeneratePublicInfo() {
 	PublicFrameInfo.reserve(size());
 	for (size_t i = 0; i < size(); ++i) {
 		if (Frames[i].Hidden)
-            continue;
-        RealFrameNumbers.push_back(static_cast<int>(i));
+			continue;
+		RealFrameNumbers.push_back(static_cast<int>(i));
 
 		FFMS_FrameInfo info = {Frames[i].PTS, Frames[i].RepeatPict, Frames[Frames[i].OriginalPos].KeyFrame};
 		PublicFrameInfo.push_back(info);

@@ -29,17 +29,34 @@
 
 struct FFMS_AudioSource {
 	struct AudioBlock {
+		struct Free {
+			void operator()(uint8_t *ptr) const  {
+				free(ptr);
+			}
+		};
+
 		int64_t Age;
 		int64_t Start;
-		int64_t Samples;
-		std::vector<uint8_t> Data;
+		int64_t Samples = 0;
+		size_t DataSize = 0;
+		std::unique_ptr<uint8_t, Free> Data;
 
 		AudioBlock(int64_t Start)
 		: Start(Start)
-		, Samples(0)
 		{
 			static int64_t Now = 0;
 			Age = Now++;
+		}
+
+		uint8_t *Grow(size_t size) {
+			auto ptr = static_cast<uint8_t *>(realloc(Data.get(), DataSize + size));
+			if (!ptr)
+				throw std::bad_alloc();
+			Data.release();
+			Data.reset(ptr);
+			ptr += DataSize;
+			DataSize += size;
+			return ptr;
 		}
 	};
 	typedef std::list<AudioBlock>::iterator CacheIterator;
@@ -52,14 +69,14 @@ struct FFMS_AudioSource {
 	size_t MaxCacheBlocks = 50;
 	// pointer to last element of the cache which should never be deleted
 	CacheIterator CacheNoDelete;
-	// bytes per sample * number of channels
+	// bytes per sample * number of channels, *after* resampling if applicable
 	size_t BytesPerSample = 0;
 
 	bool NeedsResample = false;
 	FFResampleContext ResampleContext;
 
 	// Insert the current audio frame into the cache
-	void CacheBlock(CacheIterator &pos);
+	AudioBlock *CacheBlock(CacheIterator &pos);
 
 	// Interleave the current audio frame and insert it into the cache
 	void ResampleAndCache(CacheIterator pos);

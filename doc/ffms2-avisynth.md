@@ -1,6 +1,6 @@
-# FFmpegSource2 User Manual
+# FFmpegSource2 Avisynth User Manual
 
-Opens files using FFmpeg and (almost) nothing else.
+Opens files using FFmpeg and nothing else.
 May be frame accurate on good days.
 The source is MIT licensed and can be obtained from https://github.com/FFMS/ffms2/.
 The precompiled binary is GPL3 licensed.
@@ -115,10 +115,10 @@ Available variables:
 Controls what happens if an audio decoding error is encountered during indexing.
 Possible values are:
 
- - **0**: Raise an error and abort indexing. No index file is written.</li>
- - **1**: Clear the affected track (effectively making it silent) and continue.</li>
- - **2**: Stop indexing the track but keep all the index entries so far, effectively ending the track where the error occured.</li>
- - **3**: Pretend it's raining and continue anyway. This is the default; if you encounter odd noises in the audio, try mode 0 instead and see if it's FFMS2's fault.</li>
+ - **0**: Raise an error and abort indexing. No index file is written.
+ - **1**: Clear the affected track (effectively making it silent) and continue.
+ - **2**: Stop indexing the track but keep all the index entries so far, effectively ending the track where the error occured.
+ - **3**: Pretend it's raining and continue anyway. This is the default; if you encounter odd noises in the audio, try mode 0 instead and see if it's FFMS2's fault.
 
 ##### bool overwrite = false
 If set to true, `FFIndex()` will reindex the source file and overwrite the index file even if the index file already exists and is valid.
@@ -188,12 +188,12 @@ Mostly useful for getting uncooperative files to work.
 Valid modes are:
 
  - **-1**: Linear access without rewind; i.e. will throw an error if each successive requested frame number isn't bigger than the last one.
-   Only intended for opening images but might work on well with some obscure video format.</li>
+   Only intended for opening images but might work on well with some obscure video format.
  - **0**: Linear access (i.e. if you request frame `n` without having requested all frames from 0 to `n-1` in order first, all frames from 0 to `n` will have to be decoded before `n` can be delivered).
    The definition of slow, but should make some formats "usable".
- - **1**: Safe normal. Bases seeking decisions on the keyframe positions reported by libavformat.</li>
- - **2**: Unsafe normal. Same as mode 1, but no error will be thrown if the exact seek destination has to be guessed.</li>
- - **3**: Aggressive. Seeks in the forward direction even if no closer keyframe is known to exist. Only useful for testing and containers where libavformat doesn't report keyframes properly.</li>
+ - **1**: Safe normal. Bases seeking decisions on the keyframe positions reported by libavformat.
+ - **2**: Unsafe normal. Same as mode 1, but no error will be thrown if the exact seek destination has to be guessed.
+ - **3**: Aggressive. Seeks in the forward direction even if no closer keyframe is known to exist. Only useful for testing and containers where libavformat doesn't report keyframes properly.
 
 ##### int rffmode = 0
 Controls how RFF flags in the video stream are treated; in other words it's equivalent to the "field operation" mode switch in DVD2AVI/DGIndex.
@@ -258,9 +258,9 @@ The following arguments are valid:
 -2 obviously does the same thing as -1 if the first video frame of the first video track starts at time zero.
 In some containers this will always be the case, in others (most notably 188-byte MPEG TS) it will almost never happen.
 
-### FFmpegSource2
+### FFmpegSource2/FFMS2
 ```
-FFmpegSource2(string source, int vtrack = -1, int atrack = -2, bool cache = true,
+FFmpegSource2/FFMS2(string source, int vtrack = -1, int atrack = -2, bool cache = true,
     string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1,
     int threads = -1, string timecodes = "", int seekmode = 1,
     bool overwrite = false, int width = -1, int height = -1,
@@ -271,7 +271,7 @@ A convenience function that combines the functionality of `FFVideoSource` and `F
 The arguments do the same thing as in `FFVideoSource` and `FFAudioSource`; see those functions for details.
 `vtrack` and `atrack` are the video and audio track to open, respectively; setting `atrack` <= -2 means audio is disabled.
 
-**Note:** this function is provided by `FFMS2.avsi` and is not available unless that script has been imported or autoloaded.</p>
+**Note:** the shorter FFMS2 alias was added in 2.22
 
 ### FFImageSource
 ```
@@ -281,24 +281,59 @@ FFImageSource(string source, int width = -1, int height = -1,
 A convenience alias for `FFVideoSource`, with the options set optimally for using it as an image reader.
 Disables caching and seeking for maximum compatiblity.
 
-**Note:** this function is provided by `FFMS2.avsi` and is not available unless that script has been imported or autoloaded.
-
-### FFFormatTime
-<pre>FFFormatTime(int ms)</pre>
-A helper function used to format a time given in milliseconds into a h:mm:ss.ttt string.
-Used internally by `FFInfo`.
-
-**Note:** this function is provided by `FFMS2.avsi` and is not available unless that script has been imported or autoloaded.
-
 ### FFInfo
 ```
 FFInfo(clip c, bool framenum = true, bool frametype = true, bool cfrtime = true,
-    bool vfrtime = true, string varprefix = "")
+    bool vfrtime = true, string varprefix = "", bool colorspace = true,
+    bool colorrange = true, bool cropping = true, bool sar =true, bool version = true,
+    bool showprefix = false)
 ```
 A helper function similar to Avisynth's internal `Info()` function; shows general information about the current frame.
 Note that not all values are exported in all source modes, so some information may not always be shown.
 The arguments can be used to disable the drawing of certain information if so desired.
 Use the varprefix argument to determine which clip you want information about.
+
+**Note:** this function is provided by `FFMS2.avsi` and is not available unless that script has been imported or autoloaded.
+
+### FFFormatTime
+FFFormatTime(int ms)
+A helper function used to format a time given in milliseconds into a h:mm:ss.ttt string.
+Used internally by `FFInfo`.
+
+**Note:** this function is provided by `FFMS2.avsi` and is not available unless that script has been imported or autoloaded.
+
+### FFColorSpace
+FFColorSpace(int i)
+A helper function used to convert a colorspace number into a human readable string.
+Used internally by `FFInfo`.
+
+**Note:** this function is provided by `FFMS2.avsi` and is not available unless that script has been imported or autoloaded.
+
+### FFColorRange
+FFColorRange(int i)
+A helper function used to convert a color range number into a human readable string.
+Used internally by `FFInfo`.
+
+**Note:** this function is provided by `FFMS2.avsi` and is not available unless that script has been imported or autoloaded.
+
+### FFCropping
+FFCropping(int l, int t, int r, int b)
+A helper function used to convert cropping information into a human readable string.
+Used internally by `FFInfo`.
+
+**Note:** this function is provided by `FFMS2.avsi` and is not available unless that script has been imported or autoloaded.
+
+### FFSampAR
+FFSampAR(int num,int den)
+A helper function used to convert the sample aspect ratio into a human readable string.
+Used internally by `FFInfo`.
+
+**Note:** this function is provided by `FFMS2.avsi` and is not available unless that script has been imported or autoloaded.
+
+### FFPictType
+FFPictType(int ch)
+A helper function used to convert a picture type character into a human readable string.
+Used internally by `FFInfo`.
 
 **Note:** this function is provided by `FFMS2.avsi` and is not available unless that script has been imported or autoloaded.
 
@@ -308,7 +343,7 @@ FFSetLogLevel(int Level = -8)
 ```
 Sets the FFmpeg logging level, i.e. how much diagnostic spam it prints to STDERR.
 Since most applications that open Avisynth scripts do not provide a way to display things printed to STDERR, and since it's rather hard to make any sense of the printed messages unless you're quite familiar with FFmpeg internals, the usefulness of this function is rather limited for end users. It's mostly intended for debugging.
-Defaults to quiet (no messages printed); a list of meaningful values can be found in `libavutil/log.h`.
+Defaults to quiet (no messages printed); a list of meaningful values can be found in `ffms.h`.
 
 ### FFGetLogLevel
 ```
@@ -323,7 +358,7 @@ FFGetVersion()
 Returns the FFMS2 version, as a string.
 
 ## Exported Avisynth variables
-All variable names are prefixed by the `varprefix` argument to the respective `FFVideoSource` or `FFAudioSource` call that generated them.</p>
+All variable names are prefixed by the `varprefix` argument to the respective `FFVideoSource` or `FFAudioSource` call that generated them.
 
 ##### FFSAR_NUM, FFSAR_DEN, FFSAR
 The playback aspect ratio specified by the container.
@@ -377,7 +412,7 @@ Only set when no type of CFR conversion is being done (`rffmode` and `fpsnum` le
 ##### FFCHANNEL_LAYOUT
 The audio channel layout of the audio stream.
 This is exported as a very cryptic integer that is constructed in the same way as the `dwChannelMask` property of the Windows `WAVEFORMATEXTENSIBLE` struct.
-If you don't know what a `WAVEFORMATEXTENSIBLE` is or what the `dwChannelMask` does, don't worry about it.</dd>
+If you don't know what a `WAVEFORMATEXTENSIBLE` is or what the `dwChannelMask` does, don't worry about it.
 
 ##### FFVAR_PREFIX
 The variable prefix of the last called FFMS source function.

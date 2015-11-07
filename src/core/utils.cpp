@@ -166,7 +166,7 @@ void FlushBuffers(AVCodecContext *CodecContext) {
 		const AVCodec *codec = CodecContext->codec;
 
 		// Raw video codec forgets the palette if "flushed" this way
-		if (codec->id != AV_CODEC_ID_RAWVIDEO) {
+		if (codec->id != FFMS_ID(RAWVIDEO)) {
 			avcodec_close(CodecContext);
 			// Whether or not codec is const varies between versions
 			if (avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), nullptr) < 0)

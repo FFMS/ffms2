@@ -1,14 +1,24 @@
 # FFmpegSource2 Changelog
 
+- 2.22
+  - Fix possible off by 1 frame until first seek issue introduced in 2.21 (Myrsloik)
+  - avisynth: Make FFMS2 a shorter alias for FFmpegSource2 to save some typing (Myrsloik)
+  - avisynth: Moved all source functions in ffms2.avsi into the actual plugin (Myrsloik)
+  - avisynth: Use 2.6 RC API and add output support for all new colorspaces (Myrsloik)
+  - vapoursource: Fix swapped RGB channels bug introduced in 2.21 (Myrsloik)
+  - swscale: Drop pointless and slow bitexact flag from resizer settings (kodabb)
+  - Add support for files with gaps between the audio packets (Plorkyeran)
+
 - 2.21
-  - Fix bad decoder flush that discarded the palette of raw video (Myrsloik)
-  - Removed the SWScale function from Avisynth since SWScale is useless (Myrsloik)
+  - Add missing constants for log levels (Myrsloik)
+  - Fix bad decoder flush that discards the palette of raw video (Myrsloik)
+  - Remove the SWScale function from Avisynth since SWScale is useless (Myrsloik)
   - Fix common framerate correction (Myrsloik)
   - vapoursource: The framerate and frame durations are now normalized (Myrsloik)
   - vapoursource: Add support for outputting the alpha channel too (Myrsloik)
   - vapoursource: Fix resizer selection so bicubic isn't always used (Myrsloik)
   - vapoursource: Set chroma location and full colorspace information (Myrsloik)
-  - Added support for indexing files with more than 32 tracks and the possibility to skip indexing of video tracks (Myrsloik)
+  - Add support for indexing files with more than 32 tracks and the possibility to skip indexing of video tracks (Myrsloik)
   - The Avisynth plugin now sets all per frame variables in all modes to avoid ugly and slow FFInfo() errors (Myrsloik)
   - vapoursource: Fix crash on single frame files (Myrsloik)
   - Remove the Matroska and Haali demuxers (qyot27, Plorkyeran)

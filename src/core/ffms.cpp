@@ -37,7 +37,10 @@ extern "C" {
 #endif
 
 static bool FFmpegInited = false;
+
+#ifdef _WIN32
 bool GlobalUseUTF8Paths = false;
+#endif
 
 #ifdef FFMS_WIN_DEBUG
 
@@ -184,7 +187,7 @@ FFMS_API(int) FFMS_GetAudio(FFMS_AudioSource *A, void *Buf, int64_t Start, int64
 FFMS_API(int) FFMS_SetOutputFormatV2(FFMS_VideoSource *V, const int *TargetFormats, int Width, int Height, int Resizer, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
-		V->SetOutputFormat(reinterpret_cast<const PixelFormat *>(TargetFormats), Width, Height, Resizer);
+		V->SetOutputFormat(reinterpret_cast<const AVPixelFormat *>(TargetFormats), Width, Height, Resizer);
 	} catch (FFMS_Exception &e) {
 		return e.CopyOut(ErrorInfo);
 	}
@@ -198,7 +201,7 @@ FFMS_API(void) FFMS_ResetOutputFormatV(FFMS_VideoSource *V) {
 FFMS_API(int) FFMS_SetInputFormatV(FFMS_VideoSource *V, int ColorSpace, int ColorRange, int Format, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
-		V->SetInputFormat(ColorSpace, ColorRange, static_cast<PixelFormat>(Format));
+		V->SetInputFormat(ColorSpace, ColorRange, static_cast<AVPixelFormat>(Format));
 	} catch (FFMS_Exception &e) {
 		return e.CopyOut(ErrorInfo);
 	}
@@ -270,7 +273,7 @@ FFMS_API(int) FFMS_GetFirstIndexedTrackOfType(FFMS_Index *Index, int TrackType, 
 }
 
 FFMS_API(int) FFMS_GetNumTracks(FFMS_Index *Index) {
-    return static_cast<int>(Index->size());
+	return static_cast<int>(Index->size());
 }
 
 FFMS_API(int) FFMS_GetNumTracksI(FFMS_Indexer *Indexer) {
@@ -360,7 +363,7 @@ FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const
 	if (FileName)
 		strcpy(FileName, s.c_str());
 
-    return static_cast<int>(s.length() + 1);
+	return static_cast<int>(s.length() + 1);
 }
 
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo) {
@@ -381,7 +384,7 @@ FFMS_DEPRECATED_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int Ind
 	ClearErrorInfo(ErrorInfo);
 
 	IndexMask |= DumpMask;
-    for (int i = 0; i < static_cast<int>(sizeof(IndexMask) * 8); i++) {
+	for (int i = 0; i < static_cast<int>(sizeof(IndexMask) * 8); i++) {
 		if ((IndexMask >> i) & 1)
 			FFMS_TrackIndexSettings(Indexer, i, 1, ((DumpMask >> i) & 1));
 	}

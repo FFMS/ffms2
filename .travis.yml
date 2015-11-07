@@ -14,7 +14,7 @@ install:
   - sudo apt-get install yasm
   - git clone $FFMPEG --depth=1 ffmpeg
   - cd ffmpeg
-  - ./configure --disable-avfilter --disable-devices --disable-doc --disable-encoders --disable-filters --disable-hwaccels --disable-muxers --disable-network --enable-avresample
+  - ./configure --disable-avfilter --disable-devices --disable-doc --disable-encoders --disable-filters --disable-hwaccels --disable-muxers --disable-network
   - make -j2
   - sudo make install
   - cd ..

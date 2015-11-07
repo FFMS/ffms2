@@ -31,7 +31,7 @@
 
 static int GetNumPixFmts() {
 	int n = 0;
-	while (av_get_pix_fmt_name((PixelFormat)n))
+	while (av_get_pix_fmt_name((AVPixelFormat)n))
 		n++;
 	return n;
 }
@@ -40,24 +40,28 @@ static bool IsRealNativeEndianPlanar(const AVPixFmtDescriptor &desc) {
 	int used_planes = 0;
 	for (int i = 0; i < desc.nb_components; i++)
 		used_planes = std::max(used_planes, (int)desc.comp[i].plane + 1);
-	bool temp = (used_planes == desc.nb_components) && (desc.comp[0].depth_minus1 + 1 >= 8) &&
-		(!(desc.flags & PIX_FMT_PAL));
+	bool temp = (used_planes == desc.nb_components) && (FFMS_DEPTH(desc.comp[0]) >= 8) &&
+		(!(desc.flags & FFMS_PIX_FMT_FLAG(PAL)));
 	if (!temp)
 		return false;
-	else if (desc.comp[0].depth_minus1 + 1 == 8)
+	else if (FFMS_DEPTH(desc.comp[0]) == 8)
 		return temp;
 	else
-		return (PIX_FMT_YUV420P10 == PIX_FMT_YUV420P10BE ? !!(desc.flags & PIX_FMT_BE) : !(desc.flags & PIX_FMT_BE));
+		return (FFMS_PIX_FMT(YUV420P10) == FFMS_PIX_FMT(YUV420P10BE) ? !!(desc.flags & FFMS_PIX_FMT_FLAG(BE)) : !(desc.flags & FFMS_PIX_FMT_FLAG(BE)));
 }
 
 static bool HasAlpha(const AVPixFmtDescriptor &desc) {
-	return !!(desc.flags & PIX_FMT_ALPHA);
+#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >, 52, 2, 0, 52, 8, 100)
+	return !!(desc.flags & FFMS_PIX_FMT_FLAG(ALPHA));
+#else
+	return false;
+#endif
 }
 
 static int GetColorFamily(const AVPixFmtDescriptor &desc) {
 	if (desc.nb_components <= 2)
 		return cmGray;
-	else if (desc.flags & PIX_FMT_RGB)
+	else if (desc.flags & FFMS_PIX_FMT_FLAG(RGB))
 		return cmRGB;
 	else
 		return cmYUV;
@@ -72,7 +76,7 @@ static int FormatConversionToPixelFormat(int id, bool Alpha, VSCore *core, const
 			const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat)i);
 			if (IsRealNativeEndianPlanar(desc) && !HasAlpha(desc)
 				&& GetColorFamily(desc) == f->colorFamily
-				&& desc.comp[0].depth_minus1 + 1 == f->bitsPerSample
+				&& FFMS_DEPTH(desc.comp[0]) == f->bitsPerSample
 				&& desc.log2_chroma_w == f->subSamplingW
 				&& desc.log2_chroma_h == f->subSamplingH)
 				return i;
@@ -83,17 +87,17 @@ static int FormatConversionToPixelFormat(int id, bool Alpha, VSCore *core, const
 		const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat)i);
 		if (IsRealNativeEndianPlanar(desc) && HasAlpha(desc)
 			&& GetColorFamily(desc) == f->colorFamily
-			&& desc.comp[0].depth_minus1 + 1 == f->bitsPerSample
+			&& FFMS_DEPTH(desc.comp[0]) == f->bitsPerSample
 			&& desc.log2_chroma_w == f->subSamplingW
 			&& desc.log2_chroma_h == f->subSamplingH)
 			return i;
 	}
-	return PIX_FMT_NONE;
+	return FFMS_PIX_FMT(NONE);
 }
 
 static const VSFormat *FormatConversionToVS(int id, VSCore *core, const VSAPI *vsapi) {
 	return vsapi->registerFormat(GetColorFamily(*av_pix_fmt_desc_get((AVPixelFormat)id)), stInteger,
-		av_pix_fmt_desc_get((AVPixelFormat)id)->comp[0].depth_minus1 + 1,
+		FFMS_DEPTH(av_pix_fmt_desc_get((AVPixelFormat)id)->comp[0]),
 		av_pix_fmt_desc_get((AVPixelFormat)id)->log2_chroma_w,
 		av_pix_fmt_desc_get((AVPixelFormat)id)->log2_chroma_h, core);
 }
@@ -139,12 +143,11 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 			else // just make it one timebase if it's a single frame clip
 				num = 1;
 			int64_t DurNum = TB->Num * num;
-			int64_t DurDen = TB->Den;
+			int64_t DurDen = TB->Den * 1000;
 			muldivRational(&DurNum, &DurDen, 1, 1);
 			vsapi->propSetInt(Props, "_DurationNum", DurNum, paReplace);
 			vsapi->propSetInt(Props, "_DurationDen", DurDen, paReplace);
-			vsapi->propSetFloat(Props, "_AbsoluteTime",
-				((double)(TB->Num / 1000) *  FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, paReplace);
+			vsapi->propSetFloat(Props, "_AbsoluteTime", ((static_cast<double>(TB->Num) / 1000) *  FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, paReplace);
 		}
 
 		if (Frame == nullptr) {
@@ -270,12 +273,12 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	for (int i = 0; i < npixfmt; i++)
 		if (IsRealNativeEndianPlanar(*av_pix_fmt_desc_get((AVPixelFormat)i)))
 			TargetFormats.push_back(i);
-	TargetFormats.push_back(PIX_FMT_NONE);
+	TargetFormats.push_back(FFMS_PIX_FMT(NONE));
 
-	int TargetPixelFormat = PIX_FMT_NONE;
+	int TargetPixelFormat = FFMS_PIX_FMT(NONE);
 	if (ConvertToFormat != pfNone) {
 		TargetPixelFormat = FormatConversionToPixelFormat(ConvertToFormat, OutputAlpha, core, vsapi);
-		if (TargetPixelFormat == PIX_FMT_NONE)
+		if (TargetPixelFormat == FFMS_PIX_FMT(NONE))
 			throw std::runtime_error(std::string("Source: Invalid output colorspace specified"));
 
 		TargetFormats.clear();
@@ -323,10 +326,17 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 }
 
 void VSVideoSource::OutputFrame(const FFMS_Frame *Frame, VSFrameRef *Dst, const VSAPI *vsapi) {
+	const int RGBPlaneOrder[3] = {2, 0, 1};
 	const VSFormat *fi = vsapi->getFrameFormat(Dst);
-	for (int i = 0; i < fi->numPlanes; i++)
-		vs_bitblt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i],
+	if (fi->colorFamily == cmRGB) {
+		for (int i = 0; i < fi->numPlanes; i++)
+			vs_bitblt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[RGBPlaneOrder[i]], Frame->Linesize[RGBPlaneOrder[i]],
 			vsapi->getFrameWidth(Dst, i) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, i));
+	} else {
+		for (int i = 0; i < fi->numPlanes; i++)
+			vs_bitblt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i],
+			vsapi->getFrameWidth(Dst, i) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, i));
+	}
 }
 
 void VSVideoSource::OutputAlphaFrame(const FFMS_Frame *Frame, int Plane, VSFrameRef *Dst, const VSAPI *vsapi) {

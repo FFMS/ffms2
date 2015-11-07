@@ -35,7 +35,7 @@ extern "C" {
 
 // swscale and pp-related functions
 int64_t GetSWSCPUFlags();
-SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, PixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags);
+SwsContext *GetSwsContext(int SrcW, int SrcH, AVPixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, AVPixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags);
 AVColorSpace GetAssumedColorSpace(int Width, int Height);
 
 // timebase-related functions
@@ -43,6 +43,6 @@ void CorrectRationalFramerate(int *Num, int *Den);
 void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase);
 
 // our implementation of avcodec_find_best_pix_fmt()
-PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelFormat Src);
+AVPixelFormat FindBestPixelFormat(const std::vector<AVPixelFormat> &Dsts, AVPixelFormat Src);
 
 void RegisterCustomParsers();
