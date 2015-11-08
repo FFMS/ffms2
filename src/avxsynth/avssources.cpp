@@ -20,9 +20,28 @@
 
 #define NOMINMAX
 #include "avssources.h"
-#include "avsutils.h"
+#include "../core/utils.h"
 
 #include <algorithm>
+
+extern AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default) {
+	if (!CSName)
+		return FFMS_PIX_FMT(NONE);
+	std::string s = CSName;
+	std::transform(s.begin(), s.end(), s.begin(), toupper);
+	if (s == "")
+		return Default;
+	if (s == "YV12")
+		return FFMS_PIX_FMT(YUV420P);
+	if (s == "YUY2")
+		return FFMS_PIX_FMT(YUYV422);
+	if (s == "RGB24")
+		return FFMS_PIX_FMT(BGR24);
+	if (s == "RGB32")
+		return FFMS_PIX_FMT(RGB32);
+
+	return FFMS_PIX_FMT(NONE);
+}
 
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
 		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
@@ -186,11 +205,11 @@ void AvisynthVideoSource::InitOutputFormat(
 	TargetFormats[3] = -1;
 
 	// PIX_FMT_NV21 is misused as a return value different to the defined ones in the function
-	PixelFormat TargetPixelFormat = CSNameToPIXFMT(ConvertToFormatName, PIX_FMT_NV21);
-	if (TargetPixelFormat == PIX_FMT_NONE)
+	AVPixelFormat TargetPixelFormat = CSNameToPIXFMT(ConvertToFormatName, FFMS_PIX_FMT(NV21));
+	if (TargetPixelFormat == FFMS_PIX_FMT(NONE))
 		Env->ThrowError("FFVideoSource: Invalid colorspace name specified");
 
-	if (TargetPixelFormat != PIX_FMT_NV21) {
+	if (TargetPixelFormat != FFMS_PIX_FMT(NV21)) {
 		TargetFormats[0] = TargetPixelFormat;
 		TargetFormats[1] = -1;
 	}
@@ -234,7 +253,7 @@ void AvisynthVideoSource::InitOutputFormat(
 	if (RFFMode > 0 && ResizeToHeight != F->EncodedHeight)
 		Env->ThrowError("FFVideoSource: Vertical scaling not allowed in RFF mode");
 
-	if (RFFMode > 0 && TargetPixelFormat != PIX_FMT_NV21)
+	if (RFFMode > 0 && TargetPixelFormat != FFMS_PIX_FMT(NV21))
 		Env->ThrowError("FFVideoSource: Only the default output colorspace can be used in RFF mode");
 
 	// set color information variables
@@ -319,7 +338,7 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 	ErrorInfo E;
 	if (RFFMode > 0) {
 		const FFMS_Frame *Frame = FFMS_GetFrame(V, std::min(FieldList[n].Top, FieldList[n].Bottom), &E);
-		if (Frame == NULL)
+		if (Frame == nullptr)
 			Env->ThrowError("FFVideoSource: %s", E.Buffer);
 		if (FieldList[n].Top == FieldList[n].Bottom) {
 			OutputFrame(Frame, Dst, Env);
@@ -327,7 +346,7 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 			int FirstField = std::min(FieldList[n].Top, FieldList[n].Bottom) == FieldList[n].Bottom;
 			OutputField(Frame, Dst, FirstField, Env);
 			Frame = FFMS_GetFrame(V, std::max(FieldList[n].Top, FieldList[n].Bottom), &E);
-			if (Frame == NULL)
+			if (Frame == nullptr)
 				Env->ThrowError("FFVideoSource: %s", E.Buffer);
 			OutputField(Frame, Dst, !FirstField, Env);
 		}
@@ -347,7 +366,7 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 			Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), static_cast<int>(FFMS_GetFrameInfo(T, n)->PTS * static_cast<double>(TB->Num) / TB->Den));
 		}
 
-		if (Frame == NULL)
+		if (Frame == nullptr)
 			Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
 		Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>(Frame->PictType));
