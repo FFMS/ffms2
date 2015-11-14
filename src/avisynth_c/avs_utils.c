@@ -25,7 +25,7 @@
 #include <libavutil/opt.h>
 #include <ffms.h>
 
-enum AVPixelFormat csp_name_to_pix_fmt_25( const char *csp_name, enum AVPixelFormat def )
+enum AVPixelFormat csp_name_to_pix_fmt( const char *csp_name, enum AVPixelFormat def )
 {
     if( !csp_name || !strcmp( csp_name, "" ) )
         return def;
@@ -37,28 +37,19 @@ enum AVPixelFormat csp_name_to_pix_fmt_25( const char *csp_name, enum AVPixelFor
         return PIX_FMT_BGR24;
     if( !stricmp( csp_name, "RGB32" ) )
         return PIX_FMT_BGRA;
-    return PIX_FMT_NONE;
-}
-
-enum AVPixelFormat csp_name_to_pix_fmt_26( const char *csp_name, enum AVPixelFormat def )
-{
-    enum PixelFormat ret = csp_name_to_pix_fmt_25( csp_name, def );
-    if( ret != PIX_FMT_NONE )
-        return ret;
-    else if( !stricmp( csp_name, "YV16" ) )
+    if( !stricmp( csp_name, "YV16" ) )
         return PIX_FMT_YUV422P;
-    else if( !stricmp( csp_name, "YV24" ) )
+    if( !stricmp( csp_name, "YV24" ) )
         return PIX_FMT_YUV444P;
-    else if( !stricmp( csp_name, "Y8" ) )
+    if( !stricmp( csp_name, "Y8" ) )
         return PIX_FMT_GRAY8;
-    else if( !stricmp( csp_name, "YV411" ) )
+    if( !stricmp( csp_name, "YV411" ) )
         return PIX_FMT_YUV411P;
     return PIX_FMT_NONE;
 }
 
-enum AVPixelFormat vi_to_pix_fmt_25( const AVS_VideoInfo *vi )
+enum AVPixelFormat vi_to_pix_fmt( const AVS_VideoInfo *vi )
 {
-    // so i can still use this entire function in the 2.6 version
     if( ffms_avs_lib->avs_is_yv12( vi ) )
         return PIX_FMT_YUV420P;
     else if( avs_is_yuy2( vi ) )
@@ -67,15 +58,6 @@ enum AVPixelFormat vi_to_pix_fmt_25( const AVS_VideoInfo *vi )
         return PIX_FMT_BGR24;
     else if( avs_is_rgb32( vi ) )
         return PIX_FMT_BGRA;
-    else
-        return PIX_FMT_NONE;
-}
-
-enum AVPixelFormat vi_to_pix_fmt_26( const AVS_VideoInfo *vi )
-{
-    enum PixelFormat ret = vi_to_pix_fmt_25( vi );
-    if( ret != PIX_FMT_NONE )
-        return ret;
     else if( avs_is_yv16( vi ) )
         return PIX_FMT_YUV422P;
     else if( avs_is_yv24( vi ) )
