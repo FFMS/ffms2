@@ -24,50 +24,51 @@
 #include <libswscale/swscale.h>
 #include <libavutil/opt.h>
 #include <ffms.h>
+#include <ffmscompat.h>
 
 enum AVPixelFormat csp_name_to_pix_fmt( const char *csp_name, enum AVPixelFormat def )
 {
     if( !csp_name || !strcmp( csp_name, "" ) )
         return def;
     if( !stricmp( csp_name, "YV12" ) )
-        return PIX_FMT_YUV420P;
+        return FFMS_PIX_FMT(YUV420P);
     if( !stricmp( csp_name, "YUY2" ) )
-        return PIX_FMT_YUYV422;
+        return FFMS_PIX_FMT(YUYV422);
     if( !stricmp( csp_name, "RGB24" ) )
-        return PIX_FMT_BGR24;
+        return FFMS_PIX_FMT(BGR24);
     if( !stricmp( csp_name, "RGB32" ) )
-        return PIX_FMT_BGRA;
+        return FFMS_PIX_FMT(BGRA);
     if( !stricmp( csp_name, "YV16" ) )
-        return PIX_FMT_YUV422P;
+        return FFMS_PIX_FMT(YUV422P);
     if( !stricmp( csp_name, "YV24" ) )
-        return PIX_FMT_YUV444P;
+        return FFMS_PIX_FMT(YUV444P);
     if( !stricmp( csp_name, "Y8" ) )
-        return PIX_FMT_GRAY8;
+        return FFMS_PIX_FMT(GRAY8);
     if( !stricmp( csp_name, "YV411" ) )
-        return PIX_FMT_YUV411P;
-    return PIX_FMT_NONE;
+        return FFMS_PIX_FMT(YUV411P);
+    return FFMS_PIX_FMT(NONE);
 }
 
 enum AVPixelFormat vi_to_pix_fmt( const AVS_VideoInfo *vi )
 {
     if( ffms_avs_lib->avs_is_yv12( vi ) )
-        return PIX_FMT_YUV420P;
+        return FFMS_PIX_FMT(YUV420P);
     else if( avs_is_yuy2( vi ) )
-        return PIX_FMT_YUYV422;
+        return FFMS_PIX_FMT(YUYV422);
     else if( avs_is_rgb24( vi ) )
-        return PIX_FMT_BGR24;
+        return FFMS_PIX_FMT(BGR24);
     else if( avs_is_rgb32( vi ) )
-        return PIX_FMT_BGRA;
+        return FFMS_PIX_FMT(BGRA);
     else if( avs_is_yv16( vi ) )
-        return PIX_FMT_YUV422P;
+        return FFMS_PIX_FMT(YUV422P);
     else if( avs_is_yv24( vi ) )
-        return PIX_FMT_YUV444P;
+        return FFMS_PIX_FMT(YUV444P);
     else if( avs_is_y8( vi ) )
-        return PIX_FMT_GRAY8;
+        return FFMS_PIX_FMT(GRAY8);
     else if( avs_is_yv411( vi ) )
-        return PIX_FMT_YUV411P;
+        return FFMS_PIX_FMT(YUV411P);
     else
-        return PIX_FMT_NONE;
+        return FFMS_PIX_FMT(NONE);
 }
 
 int resizer_name_to_swscale_name( const char *resizer )
