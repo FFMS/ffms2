@@ -125,7 +125,7 @@ else
 	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(libdir))
 ifeq ($(AVXSYNTH), yes)
 	install -d $(DESTDIR)$(avxplugindir)
-	install -m 644 etc/FFMS2-avx.avsi $(DESTDIR)$(avxplugindir)/FFMS2.avsi
+	install -m 644 etc/FFMS2.avsi $(DESTDIR)$(avxplugindir)/FFMS2.avsi
 	$(if $(SONAME), ln -f -s $(libdir)/$(SONAME) $(DESTDIR)$(avxplugindir)/libavxffms2.so)
 endif
 ifeq ($(VAPOURSYNTH), yes)
@@ -140,6 +140,7 @@ install-avs:
 	install ffmsindex$(EXE) $(DESTDIR)$(bindir)
 ifeq ($(SYS),MINGW)
 	cp etc/* $(DESTDIR)$(bindir)
+	mv $(DESTDIR)$(bindir)/FFMS2-cplugin.avsi $(DESTDIR)$(bindir)/FFMS2.avsi
 	cp -R doc $(DESTDIR)$(bindir)
 	$(if $(SONAME), install -m 755 $(SONAME) $(DESTDIR)$(bindir))
 endif
