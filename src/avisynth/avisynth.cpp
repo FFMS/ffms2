@@ -336,7 +336,9 @@ static AVSValue __cdecl CreateFFImageSource(AVSValue Args, void* UserData, IScri
 
 static AVSValue __cdecl CreateFFCopyrightInfringement(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
 	const char *ArgNames[] = { "source" };
-	return Env->Invoke("FFVideoSource", Args, ArgNames);
+	Env->Invoke("FFIndex", Args, ArgNames);
+	AVSValue ExArgs[2] = { Env->Invoke("FFVideoSource", Args, ArgNames), Env->Invoke("FFAudioSource", Args, ArgNames) };
+	return Env->Invoke("AudioDubEx", AVSValue(ExArgs, sizeof(ExArgs) / sizeof(ExArgs[0])));
 }
 
 static AVSValue __cdecl FFGetLogLevel(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
@@ -367,11 +369,6 @@ extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit3(IScri
 
 	Env->AddFunction("FFImageSource", "[source]s[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", CreateFFImageSource, nullptr);
 	Env->AddFunction("FFCopyrightInfringement", "[source]s", CreateFFCopyrightInfringement, nullptr);
-
-	/*
-	function FFInfo(clip c, bool "framenum", bool "frametype", bool "cfrtime", bool "vfrtime", string "varprefix",
-	\ bool "colorspace", bool "colorrange", bool "cropping", bool "sar", bool "version", bool "showprefix")
-	*/
 
 	Env->AddFunction("FFGetLogLevel", "", FFGetLogLevel, nullptr);
 	Env->AddFunction("FFSetLogLevel", "i", FFSetLogLevel, nullptr);
