@@ -143,7 +143,7 @@ std::wstring widen_path(const char *s) {
 
 // End of filename hackery.
 
-void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
+void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext, int Track) {
 	if (avformat_open_input(&FormatContext, SourceFile, nullptr, nullptr) != 0)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Couldn't open '") + SourceFile + "'");
@@ -154,6 +154,10 @@ void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			"Couldn't find stream information");
 	}
+
+	for (int i = 0; i < (int) FormatContext->nb_streams; i++)
+		if (i != Track)
+			FormatContext->streams[i]->discard = AVDISCARD_ALL;
 }
 
 void FlushBuffers(AVCodecContext *CodecContext) {

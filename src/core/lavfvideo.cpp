@@ -86,7 +86,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 , SeekMode(SeekMode)
 , Res(this)
 {
-	LAVFOpenFile(SourceFile, FormatContext);
+	LAVFOpenFile(SourceFile, FormatContext, VideoTrack);
 
 	CodecContext = FormatContext->streams[VideoTrack]->codec;
 	CodecContext->thread_count = DecodingThreads;
