@@ -29,6 +29,7 @@ extern "C" {
 #include <libavutil/pixdesc.h>
 }
 
+#include <mutex>
 #include <sstream>
 #include <iomanip>
 
@@ -36,6 +37,7 @@ extern "C" {
 #	include <windows.h>
 #endif
 
+static std::once_flag FFmpegOnce;
 static bool FFmpegInited = false;
 
 #ifdef _WIN32
@@ -79,7 +81,7 @@ void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl)
 #endif
 
 FFMS_API(void) FFMS_Init(int, int UseUTF8Paths) {
-	if (!FFmpegInited) {
+	std::call_once(FFmpegOnce, [](int UseUTF8Paths) {
 		av_register_all();
 		avformat_network_init();
 		RegisterCustomParsers();
@@ -95,7 +97,7 @@ FFMS_API(void) FFMS_Init(int, int UseUTF8Paths) {
 		av_log_set_level(AV_LOG_QUIET);
 #endif
 		FFmpegInited = true;
-	}
+	}, UseUTF8Paths);
 }
 
 FFMS_API(int) FFMS_GetVersion() {
