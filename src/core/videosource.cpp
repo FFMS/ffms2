@@ -27,7 +27,7 @@
 #include <thread>
 
 namespace {
-void CopyAVPictureFields(AVPicture &Picture, FFMS_Frame &Dst) {
+void CopyAVFrameFields(AVFrame &Picture, FFMS_Frame &Dst) {
 	for (int i = 0; i < 4; i++) {
 		Dst.Data[i] = Picture.data[i];
 		Dst.Linesize[i] = Picture.linesize[i];
@@ -68,7 +68,7 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 
 	if (SWS) {
 		sws_scale(SWS, Frame->data, Frame->linesize, 0, CodecContext->height, SWSFrame.data, SWSFrame.linesize);
-		CopyAVPictureFields(SWSFrame, LocalFrame);
+		CopyAVFrameFields(SWSFrame, LocalFrame);
 	} else {
 		// Special case to avoid ugly casts
 		for (int i = 0; i < 4; i++) {
@@ -157,7 +157,9 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 	LastDecodedFrame = av_frame_alloc();
 
 	// Dummy allocations so the unallocated case doesn't have to be handled later
-	avpicture_alloc(&SWSFrame, FFMS_PIX_FMT(GRAY8), 16, 16);
+	if (av_image_alloc(SWSFrame.data, SWSFrame.linesize, 16, 16, FFMS_PIX_FMT(GRAY8), 1) < 0)
+		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_ALLOCATION_FAILED,
+			"Could not allocate dummy frame.");
 
 	Index.AddRef();
 }
@@ -166,7 +168,7 @@ FFMS_VideoSource::~FFMS_VideoSource() {
 	if (SWS)
 		sws_freeContext(SWS);
 
-	avpicture_free(&SWSFrame);
+	av_freep(&SWSFrame.data[0]);
 	av_freep(&DecodeFrame);
 	av_freep(&LastDecodedFrame);
 
@@ -279,8 +281,10 @@ void FFMS_VideoSource::ReAdjustOutputFormat() {
 		}
 	}
 
-	avpicture_free(&SWSFrame);
-	avpicture_alloc(&SWSFrame, OutputFormat, TargetWidth, TargetHeight);
+	av_freep(&SWSFrame.data[0]);
+	if (av_image_alloc(SWSFrame.data, SWSFrame.linesize, TargetWidth, TargetHeight, OutputFormat, 1) < 0)
+		throw FFMS_Exception(FFMS_ERROR_SCALING, FFMS_ERROR_ALLOCATION_FAILED,
+			"Could not allocate frame with new resolution.");
 }
 
 void FFMS_VideoSource::ResetOutputFormat() {

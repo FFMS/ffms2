@@ -29,7 +29,7 @@ class FFLAVFAudio : public FFMS_AudioSource {
 	std::string SourceFile;
 
 	bool ReadPacket(AVPacket *) override;
-	void FreePacket(AVPacket *Packet) override { av_free_packet(Packet); }
+	void FreePacket(AVPacket *Packet) override { av_packet_unref(Packet); }
 	void Seek() override;
 
 	int64_t FrameTS(size_t Packet) const;
@@ -128,7 +128,7 @@ bool FFLAVFAudio::ReadPacket(AVPacket *Packet) {
 				return true;
 			}
 		}
-		av_free_packet(Packet);
+		av_packet_unref(Packet);
 	}
 	return false;
 }
