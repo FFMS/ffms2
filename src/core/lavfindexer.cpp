@@ -138,7 +138,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 					"Cancelled by user");
 		}
 		if (!IndexMask.count(Packet.stream_index)) {
-			av_free_packet(&Packet);
+			av_packet_unref(&Packet);
 			continue;
 		}
 
@@ -186,7 +186,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 				StartSample, SampleCount, KeyFrame, Packet.pos);
 		}
 
-		av_free_packet(&Packet);
+		av_packet_unref(&Packet);
 	}
 
 	TrackIndices->Finalize(VideoContexts);
