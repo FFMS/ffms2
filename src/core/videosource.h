@@ -25,6 +25,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
+#include <libavutil/imgutils.h>
 }
 
 #include <vector>
@@ -55,7 +56,7 @@ private:
 	AVColorRange InputColorRange;
 	AVColorSpace InputColorSpace;
 
-	AVPicture SWSFrame;
+	AVFrame SWSFrame;
 
 	void DetectInputFormat();
 
