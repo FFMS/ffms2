@@ -42,14 +42,9 @@ public:
 				"Couldn't find stream information");
 		}
 
-		for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {
-			if (IndexMask.count(i)) {
-				if (FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
-					IndexMask[i] = false;
-			} else {
-				FormatContext->streams[i]->discard = AVDISCARD_ALL;
-			}
-		}
+		for (unsigned int i = 0; i < FormatContext->nb_streams; i++)
+			if (FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+				IndexMask[i] = false;
 	}
 
 	~FFLAVFIndexer() {
@@ -86,6 +81,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 		if (IndexMask.count(i) && FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
 			AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codec->codec_id);
 			if (!VideoCodec) {
+				FormatContext->streams[i]->discard = AVDISCARD_ALL;
 				IndexMask.erase(i);
 				continue;
 			}
@@ -99,10 +95,12 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			if (VideoContexts[i].Parser)
 				VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
 
-			if (FormatContext->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
+			if (FormatContext->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC) {
+				FormatContext->streams[i]->discard = AVDISCARD_ALL;
 				IndexMask.erase(i);
-			else
+			} else {
 				IndexMask[i] = false;
+			}
 		}
 		else if (IndexMask.count(i) && FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
 			AVCodecContext *AudioCodecContext = FormatContext->streams[i]->codec;
@@ -119,6 +117,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			AudioContexts[i].CodecContext = AudioCodecContext;
 			(*TrackIndices)[i].HasTS = false;
 		} else {
+			FormatContext->streams[i]->discard = AVDISCARD_ALL;
 			IndexMask.erase(i);
 		}
 	}
