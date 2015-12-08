@@ -42,14 +42,9 @@ public:
 				"Couldn't find stream information");
 		}
 
-		for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {
-			if (IndexMask.count(i)) {
-				if (FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
-					IndexMask[i] = false;
-			} else {
-				FormatContext->streams[i]->discard = AVDISCARD_ALL;
-			}
-		}
+		for (unsigned int i = 0; i < FormatContext->nb_streams; i++)
+			if (FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+				IndexMask[i] = false;
 	}
 
 	~FFLAVFIndexer() {
