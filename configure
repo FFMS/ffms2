@@ -354,19 +354,25 @@ else
 fi
 
 #find ffmpeg
-if ${cross_prefix}pkg-config --exists libavformat libavcodec libswscale libavutil libavresample 2>$DEVNULL; then
-    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavformat libavcodec libswscale libavutil libavresample)"
-    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libavformat libavcodec libswscale libavutil libavresample)"
+if ${cross_prefix}pkg-config --exists libavformat libavcodec libswscale libavutil 2>$DEVNULL; then
+    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavformat libavcodec libswscale libavutil)"
+    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libavformat libavcodec libswscale libavutil)"
 fi
-# libavcore - for when ffmpeg decided to make this library out of nowhere and have a number of things depend on it
-if  ${cross_prefix}pkg-config --exist libavcore 2>$DEVNULL; then
-    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavcore)"
-    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libavcore)"
+
+#check for the presence of swresample and avresample, prefer swresample if present
+if ${cross_prefix}pkg-config --exists libswresample 2>$DEVNULL; then
+    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libswresample)"
+    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libswresample) -DWITH_SWRESAMPLE"
+    RESAMPLE_LIB="swresample"
+elif ${cross_prefix}pkg-config --exists libavresample 2>$DEVNULL; then
+    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavresample)"
+    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libavresample)"
+    RESAMPLE_LIB="avresample"
 fi
 
 if [ -z "$FFMPEG_LIBS" -a -z "$FFMPEG_CFLAGS" ]; then
     FFMPEG_LIBS="-lavformat -lavcodec -lswscale -lavresample"
-    for lib in -lavcore -lavutil -lm -lz -lbz2 -lpthread -lavifil32 -lrt; do
+    for lib in -l$RESAMPLE_LIB -lavutil -lm -lz -lbz2 -lpthread -lavifil32 -lrt; do
         cc_check "" $lib && FFMPEG_LIBS="$FFMPEG_LIBS $lib"
     done
 fi
@@ -418,11 +424,6 @@ fi
 if [ "$avs" = "yes" ] ; then
     CFLAGS="$CFLAGS -DFFMS_CPLUGIN_SHARED"
     CXXFLAGS="$CXXFLAGS -DFFMS_CPLUGIN_SHARED"
-fi
-
-if [ "$avx" = "yes" -a "$avs" = "no" ] ; then
-    # the AvxSynth plugin doesn't need the LoadCPlugin line
-    sed '3s/^/#/' etc/FFMS2.avsi > etc/FFMS2-avx.avsi
 fi
 
 if [ "$pic" = "yes" ] ; then
@@ -572,7 +573,7 @@ includedir=$includedir
 
 Name: ffms2
 Description: The Fabulous FM Library 2
-Requires.private: libavformat libavcodec libswscale libavutil libavresample
+Requires.private: libavformat libavcodec libswscale libavutil lib$RESAMPLE_LIB
 Version: $version
 Libs.private:  -lz
 Libs: -L$libdirpc -lffms2

@@ -28,25 +28,19 @@
 
 class Wave64Writer;
 
-class SharedVideoContext {
-	bool FreeCodecContext;
-public:
+struct SharedVideoContext {
 	AVCodecContext *CodecContext = nullptr;
 	AVCodecParserContext *Parser = nullptr;
 	AVBitStreamFilterContext *BitStreamFilter = nullptr;
 
-	SharedVideoContext(bool FreeCodecContext);
 	~SharedVideoContext();
 };
 
-class SharedAudioContext {
-	bool FreeCodecContext;
-public:
+struct SharedAudioContext {
 	AVCodecContext *CodecContext = nullptr;
 	Wave64Writer *W64Writer = nullptr;
 	int64_t CurrentSample = 0;
 
-	SharedAudioContext(bool FreeCodecContext);
 	~SharedAudioContext();
 };
 

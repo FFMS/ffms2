@@ -24,7 +24,7 @@
 
 extern "C" {
 #include <libavutil/avutil.h>
-};
+}
 
 namespace {
 class FFLAVFIndexer : public FFMS_Indexer {
@@ -68,15 +68,15 @@ public:
 };
 
 FFMS_Index *FFLAVFIndexer::DoIndexing() {
-	std::vector<SharedAudioContext> AudioContexts(FormatContext->nb_streams, SharedAudioContext(false));
-	std::vector<SharedVideoContext> VideoContexts(FormatContext->nb_streams, SharedVideoContext(false));
+	std::vector<SharedAudioContext> AudioContexts(FormatContext->nb_streams);
+	std::vector<SharedVideoContext> VideoContexts(FormatContext->nb_streams);
 
-	std::unique_ptr<FFMS_Index> TrackIndices(new FFMS_Index(Filesize, Digest, FFMS_SOURCE_LAVF, ErrorHandling));
+	auto TrackIndices = make_unique<FFMS_Index>(Filesize, Digest, FFMS_SOURCE_LAVF, ErrorHandling);
 
 	for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {
-		TrackIndices->push_back(FFMS_Track((int64_t)FormatContext->streams[i]->time_base.num * 1000,
+		TrackIndices->emplace_back((int64_t)FormatContext->streams[i]->time_base.num * 1000,
 			FormatContext->streams[i]->time_base.den,
-			static_cast<FFMS_TrackType>(FormatContext->streams[i]->codec->codec_type)));
+			static_cast<FFMS_TrackType>(FormatContext->streams[i]->codec->codec_type));
 
 		if (IndexMask.count(i) && FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
 			AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codec->codec_id);
@@ -175,6 +175,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 
 			int64_t StartSample = AudioContexts[Track].CurrentSample;
 			uint32_t SampleCount = IndexAudioPacket(Track, &Packet, AudioContexts[Track], *TrackIndices);
+			TrackInfo.SampleRate = AudioContexts[Track].CodecContext->sample_rate;
 
 			TrackInfo.AddAudioFrame(LastValidTS[Track],
 				StartSample, SampleCount, KeyFrame, Packet.pos);

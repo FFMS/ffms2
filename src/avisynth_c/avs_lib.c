@@ -63,31 +63,13 @@ int ffms_load_avs_lib( AVS_ScriptEnvironment *env )
 
     ffms_avs_lib->env = env;
 
-    // begin backwards compatibility support
-    // this returns 0 on success - '5' is the magic number for 2.6
-    if( !ffms_avs_lib->avs_check_version( env, 5 ) )
-    {
-        // 2.6
-        OutputDebugString( "FFMS2 - avs 2.6 mode" );
-        ffms_avs_lib->is_avs_26 = 1;
-        ffms_avs_lib->AVS_CS_I420 = AVS_CS_I420;
-        ffms_avs_lib->avs_get_height_p = avs_get_height_p;
-        ffms_avs_lib->avs_get_row_size_p = avs_get_row_size_p;
-        ffms_avs_lib->avs_is_yv12 = avs_is_yv12;
-        ffms_avs_lib->csp_name_to_pix_fmt = csp_name_to_pix_fmt_26;
-        ffms_avs_lib->vi_to_pix_fmt = vi_to_pix_fmt_26;
-    }
-    else
-    {
-        // 2.5
-        OutputDebugString( "FFMS2 - avs 2.5 mode" );
-        ffms_avs_lib->AVS_CS_I420 = AVS_CS_I420_25;
-        ffms_avs_lib->avs_get_height_p = avs_get_height_p_25;
-        ffms_avs_lib->avs_get_row_size_p = avs_get_row_size_p_25;
-        ffms_avs_lib->avs_is_yv12 = avs_is_yv12_25;
-        ffms_avs_lib->csp_name_to_pix_fmt = csp_name_to_pix_fmt_25;
-        ffms_avs_lib->vi_to_pix_fmt = vi_to_pix_fmt_25;
-    }
+    ffms_avs_lib->is_avs_26 = 1;
+    ffms_avs_lib->AVS_CS_I420 = AVS_CS_I420;
+    ffms_avs_lib->avs_get_height_p = avs_get_height_p;
+    ffms_avs_lib->avs_get_row_size_p = avs_get_row_size_p;
+    ffms_avs_lib->avs_is_yv12 = avs_is_yv12;
+    ffms_avs_lib->csp_name_to_pix_fmt = csp_name_to_pix_fmt;
+    ffms_avs_lib->vi_to_pix_fmt = vi_to_pix_fmt;
 
     return 0;
 fail:

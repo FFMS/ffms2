@@ -39,19 +39,19 @@ private:
 
 	int LastFrameHeight;
 	int LastFrameWidth;
-	PixelFormat LastFramePixelFormat;
+	AVPixelFormat LastFramePixelFormat;
 
 	int TargetHeight;
 	int TargetWidth;
-	std::vector<PixelFormat> TargetPixelFormats;
+	std::vector<AVPixelFormat> TargetPixelFormats;
 	int TargetResizer;
 
-	PixelFormat OutputFormat;
+	AVPixelFormat OutputFormat;
 	AVColorRange OutputColorRange;
 	AVColorSpace OutputColorSpace;
 
 	bool InputFormatOverridden;
-	PixelFormat InputFormat;
+	AVPixelFormat InputFormat;
 	AVColorRange InputColorRange;
 	AVColorSpace InputColorSpace;
 
@@ -89,9 +89,9 @@ public:
 	virtual FFMS_Frame *GetFrame(int n) = 0;
 	void GetFrameCheck(int n);
 	FFMS_Frame *GetFrameByTime(double Time);
-	void SetOutputFormat(const PixelFormat *TargetFormats, int Width, int Height, int Resizer);
+	void SetOutputFormat(const AVPixelFormat *TargetFormats, int Width, int Height, int Resizer);
 	void ResetOutputFormat();
-	void SetInputFormat(int ColorSpace, int ColorRange, PixelFormat Format);
+	void SetInputFormat(int ColorSpace, int ColorRange, AVPixelFormat Format);
 	void ResetInputFormat();
 };
 

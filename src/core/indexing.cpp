@@ -36,33 +36,19 @@ extern "C" {
 
 #define INDEXID 0x53920873
 
-SharedVideoContext::SharedVideoContext(bool FreeCodecContext)
-: FreeCodecContext(FreeCodecContext)
-{
-}
-
 SharedVideoContext::~SharedVideoContext() {
 	if (CodecContext) {
 		avcodec_close(CodecContext);
-		if (FreeCodecContext)
-			av_freep(&CodecContext);
 	}
 	av_parser_close(Parser);
 	if (BitStreamFilter)
 		av_bitstream_filter_close(BitStreamFilter);
 }
 
-SharedAudioContext::SharedAudioContext(bool FreeCodecContext)
-: FreeCodecContext(FreeCodecContext)
-{
-}
-
 SharedAudioContext::~SharedAudioContext() {
 	delete W64Writer;
 	if (CodecContext) {
 		avcodec_close(CodecContext);
-		if (FreeCodecContext)
-			av_freep(&CodecContext);
 	}
 }
 
@@ -193,7 +179,7 @@ FFMS_Index::FFMS_Index(const char *IndexFile) {
 	reserve(Tracks);
 	try {
 		for (size_t i = 0; i < Tracks; ++i)
-			push_back(FFMS_Track(zf));
+			emplace_back(zf);
 	}
 	catch (FFMS_Exception const&) {
 		throw;

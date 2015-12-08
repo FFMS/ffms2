@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2015 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -28,12 +28,16 @@ class FFLAVFVideo : public FFMS_VideoSource {
 	bool SeekByPos = false;
 	int PosOffset = 0;
 
-	void DecodeNextFrame(int64_t *PTS, int64_t *Pos);
+	void DecodeNextFrame(int64_t &PTS, int64_t &Pos);
 	bool SeekTo(int n, int SeekOffset);
 	void Free(bool CloseCodec) override;
 
 	int Seek(int n) {
 		int ret = -1;
+
+		DelayCounter = 0;
+		InitialDecode = 1;
+
 		if (!SeekByPos || Frames[n].FilePos < 0) {
 			ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].PTS, AVSEEK_FLAG_BACKWARD);
 			if (ret >= 0)
@@ -84,10 +88,6 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 {
 	LAVFOpenFile(SourceFile, FormatContext);
 
-	if (SeekMode >= 0 && Frames.size() > 1 && Seek(0) < 0)
-		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-			"Video track is unseekable");
-
 	CodecContext = FormatContext->streams[VideoTrack]->codec;
 	CodecContext->thread_count = DecodingThreads;
 	CodecContext->has_b_frames = Frames.MaxBFrames;
@@ -105,7 +105,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 
 	// Always try to decode a frame to make sure all required parameters are known
 	int64_t DummyPTS = 0, DummyPos = 0;
-	DecodeNextFrame(&DummyPTS, &DummyPos);
+	DecodeNextFrame(DummyPTS, DummyPos);
 
 	//VP.image_type = VideoInfo::IT_TFF;
 	VP.FPSDenominator = FormatContext->streams[VideoTrack]->time_base.num;
@@ -122,7 +122,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 		double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
 		double TD = (double)(Frames.TB.Den);
 		double TN = (double)(Frames.TB.Num);
-		VP.FPSDenominator = (unsigned int)(PTSDiff * TN/TD * 1000.0 / (Frames.size() - 1));
+		VP.FPSDenominator = (unsigned int)(PTSDiff * TN / TD * 1000.0 / (Frames.size() - 1));
 		VP.FPSNumerator = 1000000;
 	}
 
@@ -135,14 +135,27 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 		VP.SARDen = FormatContext->streams[VideoTrack]->sample_aspect_ratio.den;
 	}
 
-	// Cannot "output" to PPFrame without doing all other initialization
+	if (SeekMode >= 0 && Frames.size() > 1) {
+		if (Seek(0) < 0) {
+			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+				"Video track is unseekable");
+		} else {
+			Seek(0);
+			FlushBuffers(CodecContext);
+			// Since we seeked to frame 0 we need to specify that frame 0 is once again the next frame that wil be decoded
+			CurrentFrame = 0;
+		}
+	}
+
+	// Cannot "output" without doing all other initialization
 	// This is the additional mess required for seekmode=-1 to work in a reasonable way
 	OutputFrame(DecodeFrame);
 }
 
-void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime, int64_t *Pos) {
-	*AStartTime = -1;
-	if (HasPendingDelayedFrames()) return;
+void FFLAVFVideo::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
+	AStartTime = -1;
+	if (HasPendingDelayedFrames())
+		return;
 
 	AVPacket Packet;
 	InitNullPacket(Packet);
@@ -153,15 +166,16 @@ void FFLAVFVideo::DecodeNextFrame(int64_t *AStartTime, int64_t *Pos) {
 			continue;
 		}
 
-		if (*AStartTime < 0)
-			*AStartTime = Frames.UseDTS ? Packet.dts : Packet.pts;
+		if (AStartTime < 0)
+			AStartTime = Frames.UseDTS ? Packet.dts : Packet.pts;
 
-		if (*Pos < 0)
-			*Pos = Packet.pos;
+		if (Pos < 0)
+			Pos = Packet.pos;
 
 		bool FrameFinished = DecodePacket(&Packet);
 		av_free_packet(&Packet);
-		if (FrameFinished) return;
+		if (FrameFinished)
+			return;
 	}
 
 	FlushFinalFrames();
@@ -182,16 +196,12 @@ bool FFLAVFVideo::SeekTo(int n, int SeekOffset) {
 				Seek(0);
 				FlushBuffers(CodecContext);
 				CurrentFrame = 0;
-				DelayCounter = 0;
-				InitialDecode = 1;
 			}
 		} else {
 			// 10 frames is used as a margin to prevent excessive seeking since the predicted best keyframe isn't always selected by avformat
 			if (n < CurrentFrame || TargetFrame > CurrentFrame + 10 || (SeekMode == 3 && n > CurrentFrame + 10)) {
 				Seek(TargetFrame);
 				FlushBuffers(CodecContext);
-				DelayCounter = 0;
-				InitialDecode = 1;
 				return true;
 			}
 		}
@@ -225,7 +235,7 @@ FFMS_Frame *FFLAVFVideo::GetFrame(int n) {
 			CodecContext->skip_frame = AVDISCARD_NONREF;
 
 		int64_t StartTime = ffms_av_nopts_value, FilePos = -1;
-		DecodeNextFrame(&StartTime, &FilePos);
+		DecodeNextFrame(StartTime, FilePos);
 
 		if (!HasSeeked)
 			continue;

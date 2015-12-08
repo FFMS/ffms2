@@ -29,8 +29,8 @@ extern "C" {
 #include <libavutil/opt.h>
 }
 
-SwsContext *GetSwsContext(int SrcW, int SrcH, PixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, PixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags) {
-	Flags |= SWS_FULL_CHR_H_INT | SWS_FULL_CHR_H_INP | SWS_ACCURATE_RND | SWS_BITEXACT;
+SwsContext *GetSwsContext(int SrcW, int SrcH, AVPixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, AVPixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags) {
+	Flags |= SWS_FULL_CHR_H_INT | SWS_FULL_CHR_H_INP | SWS_ACCURATE_RND;
 	SwsContext *Context = sws_alloc_context();
 	if (!Context) return nullptr;
 
@@ -89,7 +89,7 @@ void CorrectRationalFramerate(int *Num, int *Den) {
 			*Num = fpsList[i];
 			*Den = 1;
 			break;
-		} else if ((fpsList[i] % 25) && (abs(fps - static_cast<double>(fpsList[i]) / 1.001) < delta)) {
+		} else if ((fpsList[i] % 25) && (fabs(fps - static_cast<double>(fpsList[i]) / 1.001) < delta)) {
 			*Num = fpsList[i] * 1000;
 			*Den = 1001;
 			break;
@@ -120,9 +120,9 @@ enum BCSType {
 	cUNUSABLE
 };
 
-static BCSType GuessCSType(PixelFormat p) {
+static BCSType GuessCSType(AVPixelFormat p) {
 	// guessing the colorspace type from the name is kinda hackish but libav doesn't export this kind of metadata
-	if (av_pix_fmt_desc_get(p)->flags & PIX_FMT_HWACCEL)
+	if (av_pix_fmt_desc_get(p)->flags & FFMS_PIX_FMT_FLAG(HWACCEL))
 		return cUNUSABLE;
 	const char *n = av_get_pix_fmt_name(p);
 	if (strstr(n, "gray") || strstr(n, "mono") || strstr(n, "y400a"))
@@ -135,7 +135,7 @@ static BCSType GuessCSType(PixelFormat p) {
 }
 
 struct LossAttributes {
-	PixelFormat Format;
+	AVPixelFormat Format;
 	int ChromaUndersampling;
 	int ChromaOversampling;
 	int DepthDifference;
@@ -144,13 +144,13 @@ struct LossAttributes {
 
 static int GetPseudoDepth(const AVPixFmtDescriptor &Desc) {
 	// Comparing the pseudo depth makes sure that rgb565-ish formats get selected over rgb555-ish ones
-	int depth = -1;
+	int depth = 0;
 	for (int i = 0; i < Desc.nb_components; i++)
-		depth = FFMAX(depth, Desc.comp[i].depth_minus1);
-	return depth + 1;
+		depth = FFMAX(depth, FFMS_DEPTH(Desc.comp[i]));
+	return depth;
 }
 
-static LossAttributes CalculateLoss(PixelFormat Dst, PixelFormat Src) {
+static LossAttributes CalculateLoss(AVPixelFormat Dst, AVPixelFormat Src) {
 	const AVPixFmtDescriptor &SrcDesc = *av_pix_fmt_desc_get(Src);
 	const AVPixFmtDescriptor &DstDesc = *av_pix_fmt_desc_get(Dst);
 	BCSType SrcCS = GuessCSType(Src);
@@ -190,10 +190,10 @@ static LossAttributes CalculateLoss(PixelFormat Dst, PixelFormat Src) {
 	return Loss;
 }
 
-PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelFormat Src) {
+AVPixelFormat FindBestPixelFormat(const std::vector<AVPixelFormat> &Dsts, AVPixelFormat Src) {
 	// some trivial special cases to make sure there's as little conversion as possible
 	if (Dsts.empty())
-		return PIX_FMT_NONE;
+		return FFMS_PIX_FMT(NONE);
 	if (Dsts.size() == 1)
 		return Dsts[0];
 
@@ -203,8 +203,8 @@ PixelFormat FindBestPixelFormat(const std::vector<PixelFormat> &Dsts, PixelForma
 		return Src;
 
 	// If it's an evil paletted format pretend it's normal RGB when calculating loss
-    if (Src == PIX_FMT_PAL8)
-        Src = PIX_FMT_RGB32;
+    if (Src == FFMS_PIX_FMT(PAL8))
+		Src = FFMS_PIX_FMT(RGB32);
 
 	i = Dsts.begin();
 	LossAttributes Loss = CalculateLoss(*i++, Src);

@@ -22,6 +22,7 @@
 #include "ff_filters.h"
 #include <libavutil/common.h>
 #include <libavutil/pixfmt.h>
+#include <ffmscompat.h>
 
 typedef struct
 {
@@ -156,29 +157,23 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
     if( !frame )
         return avs_new_value_error( ffms_avs_sprintf( "FFVideoSource: %s", ei.Buffer ) );
 
-    int is_avs_26 = ffms_avs_lib->is_avs_26;
     int pix_fmts[9];
-    pix_fmts[ 0 ] = PIX_FMT_YUV420P;
-    pix_fmts[ 1 ] = PIX_FMT_YUYV422;
-    pix_fmts[ 2 ] = PIX_FMT_BGRA;
-    pix_fmts[ 3 ] = PIX_FMT_BGR24;
-    if( is_avs_26 )
-    {
-        pix_fmts[ 4 ] = PIX_FMT_YUV422P;
-        pix_fmts[ 5 ] = PIX_FMT_YUV444P;
-        pix_fmts[ 6 ] = PIX_FMT_YUV411P;
-        pix_fmts[ 7 ] = PIX_FMT_GRAY8;
-        pix_fmts[ 8 ] = -1;
-    }
-    else
-        pix_fmts[ 4 ] = -1;
+    pix_fmts[ 0 ] = FFMS_PIX_FMT(YUV420P);
+    pix_fmts[ 1 ] = FFMS_PIX_FMT(YUYV422);
+    pix_fmts[ 2 ] = FFMS_PIX_FMT(BGRA);
+    pix_fmts[ 3 ] = FFMS_PIX_FMT(BGR24);
+    pix_fmts[ 4 ] = FFMS_PIX_FMT(YUV422P);
+    pix_fmts[ 5 ] = FFMS_PIX_FMT(YUV444P);
+    pix_fmts[ 6 ] = FFMS_PIX_FMT(YUV411P);
+    pix_fmts[ 7 ] = FFMS_PIX_FMT(GRAY8);
+    pix_fmts[ 8 ] = -1;
 
-    // PIX_FMT_NV21 is misused as a return value different to the defined ones in the function
-    enum PixelFormat dst_pix_fmt = ffms_avs_lib->csp_name_to_pix_fmt( csp_name, PIX_FMT_NV21 );
-    if( dst_pix_fmt == PIX_FMT_NONE )
+    // FFMS_PIX_FMT(NV21) is misused as a return value different to the defined ones in the function
+    enum AVPixelFormat dst_pix_fmt = ffms_avs_lib->csp_name_to_pix_fmt( csp_name, FFMS_PIX_FMT(NV21) );
+    if( dst_pix_fmt == FFMS_PIX_FMT(NONE) )
         return avs_new_value_error( "FFVideoSource: Invalid colorspace name specified" );
 
-    if( dst_pix_fmt != PIX_FMT_NV21 )
+    if( dst_pix_fmt != FFMS_PIX_FMT(NV21) )
     {
         pix_fmts[ 0 ] = dst_pix_fmt;
         pix_fmts[ 1 ] = -1;
@@ -208,23 +203,23 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
 
     frame = FFMS_GetFrame( filter->vid, 0, &ei );
 
-    enum PixelFormat pix_fmt = frame->ConvertedPixelFormat;
+    enum AVPixelFormat pix_fmt = frame->ConvertedPixelFormat;
 
-    if( pix_fmt == PIX_FMT_YUVJ420P || pix_fmt == PIX_FMT_YUV420P )
+    if( pix_fmt == FFMS_PIX_FMT(YUVJ420P) || pix_fmt == FFMS_PIX_FMT(YUV420P) )
         filter->fi->vi.pixel_type = ffms_avs_lib->AVS_CS_I420;
-    else if( pix_fmt == PIX_FMT_YUYV422 )
+    else if( pix_fmt == FFMS_PIX_FMT(YUYV422) )
         filter->fi->vi.pixel_type = AVS_CS_YUY2;
-    else if( pix_fmt == PIX_FMT_BGRA )
+    else if( pix_fmt == FFMS_PIX_FMT(BGRA) )
         filter->fi->vi.pixel_type = AVS_CS_BGR32;
-    else if( pix_fmt == PIX_FMT_BGR24 )
+    else if( pix_fmt == FFMS_PIX_FMT(BGR24) )
         filter->fi->vi.pixel_type = AVS_CS_BGR24;
-    else if( pix_fmt == PIX_FMT_YUVJ422P || pix_fmt == PIX_FMT_YUV422P )
+    else if( pix_fmt == FFMS_PIX_FMT(YUVJ422P) || pix_fmt == FFMS_PIX_FMT(YUV422P) )
         filter->fi->vi.pixel_type = AVS_CS_YV16;
-    else if( pix_fmt == PIX_FMT_YUVJ444P || pix_fmt == PIX_FMT_YUV444P )
+    else if( pix_fmt == FFMS_PIX_FMT(YUVJ444P) || pix_fmt == FFMS_PIX_FMT(YUV444P) )
         filter->fi->vi.pixel_type = AVS_CS_YV24;
-    else if( pix_fmt == PIX_FMT_GRAY8 )
+    else if( pix_fmt == FFMS_PIX_FMT(GRAY8) )
         filter->fi->vi.pixel_type = AVS_CS_Y8;
-    else if( pix_fmt == PIX_FMT_YUV411P )
+    else if( pix_fmt == FFMS_PIX_FMT(YUV411P) )
         filter->fi->vi.pixel_type = AVS_CS_YV411;
     else
         return avs_new_value_error( "FFVideoSource: No suitable output format found" );
@@ -232,7 +227,7 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
     if( filter->rff_mode > 0 && dst_height != frame->EncodedHeight )
         return avs_new_value_error( "FFVideoSource: Vertical scaling not allowed in RFF mode" );
 
-    if( filter->rff_mode > 0 && dst_pix_fmt != PIX_FMT_NV21 )
+    if( filter->rff_mode > 0 && dst_pix_fmt != FFMS_PIX_FMT(NV21) )
         return avs_new_value_error( "FFVideoSource: Only the default output colorspace can be used in RFF mode" );
 
     // Set color information

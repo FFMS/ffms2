@@ -23,23 +23,22 @@
 #include "utils.h"
 
 #include <cstdarg>
-#include <cstdio>
+
+extern "C" {
+#include <libavformat/avio.h>
+}
 
 static AVIOContext *ffms_fopen(const char *filename, const char *mode) {
-	AVIOContext *ctx;
-	std::string smode(mode);
 	int flags = 0;
-	int ret;
-
-	if (smode.find('r') != std::string::npos)
+	if (strchr(mode, 'r'))
 		flags |= AVIO_FLAG_READ;
-	if (smode.find('w') != std::string::npos)
+	if (strchr(mode, 'w'))
 		flags |= AVIO_FLAG_WRITE;
 
-	ret = avio_open2(&ctx, filename, flags, nullptr, nullptr);
+	AVIOContext *ctx;
+	int ret = avio_open2(&ctx, filename, flags, nullptr, nullptr);
 	if (ret < 0)
 		return nullptr;
-
 	return ctx;
 }
 
@@ -52,6 +51,10 @@ FileHandle::FileHandle(const char *filename, const char *mode, int error_source,
 	if (!avio)
 		throw FFMS_Exception(error_source, FFMS_ERROR_NO_FILE,
 			"Failed to open '" + this->filename + "'");
+}
+
+FileHandle::~FileHandle() {
+	avio_close(avio);
 }
 
 void FileHandle::Seek(int64_t offset, int origin) {

@@ -20,6 +20,7 @@
 
 #include "ffswscale.h"
 #include "avsutils.h"
+#include "../core/utils.h"
 #include "../core/videoutils.h"
 
 SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env) : GenericVideoFilter(Child) {
@@ -28,15 +29,15 @@ SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char 
 	OrigHeight = vi.height;
 	FlipOutput = vi.IsYUV();
 
-	PixelFormat ConvertFromFormat = PIX_FMT_NONE;
+	AVPixelFormat ConvertFromFormat = FFMS_PIX_FMT(NONE);
 	if (vi.IsYV12())
-		ConvertFromFormat = PIX_FMT_YUV420P;
+		ConvertFromFormat = FFMS_PIX_FMT(YUV420P);
 	if (vi.IsYUY2())
-		ConvertFromFormat = PIX_FMT_YUYV422;
+		ConvertFromFormat = FFMS_PIX_FMT(YUYV422);
 	if (vi.IsRGB24())
-		ConvertFromFormat = PIX_FMT_BGR24;
+		ConvertFromFormat = FFMS_PIX_FMT(BGR24);
 	if (vi.IsRGB32())
-		ConvertFromFormat = PIX_FMT_RGB32;
+		ConvertFromFormat = FFMS_PIX_FMT(RGB32);
 
 	if (ResizeToHeight <= 0)
 		ResizeToHeight = OrigHeight;
@@ -48,15 +49,15 @@ SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char 
 	else
 		vi.width = ResizeToWidth;
 
-	PixelFormat ConvertToFormat = CSNameToPIXFMT(ConvertToFormatName, ConvertFromFormat);
-	if (ConvertToFormat == PIX_FMT_NONE)
+	AVPixelFormat ConvertToFormat = CSNameToPIXFMT(ConvertToFormatName, ConvertFromFormat);
+	if (ConvertToFormat == FFMS_PIX_FMT(NONE))
 		Env->ThrowError("SWScale: Invalid colorspace specified (%s)", ConvertToFormatName);
 
 	switch (ConvertToFormat) {
-		case PIX_FMT_YUV420P: vi.pixel_type = VideoInfo::CS_I420; break;
-		case PIX_FMT_YUYV422: vi.pixel_type = VideoInfo::CS_YUY2; break;
-		case PIX_FMT_BGR24: vi.pixel_type = VideoInfo::CS_BGR24; break;
-		case PIX_FMT_RGB32: vi.pixel_type = VideoInfo::CS_BGR32; break;
+		case FFMS_PIX_FMT(YUV420P): vi.pixel_type = VideoInfo::CS_I420; break;
+		case FFMS_PIX_FMT(YUYV422): vi.pixel_type = VideoInfo::CS_YUY2; break;
+		case FFMS_PIX_FMT(BGR24): vi.pixel_type = VideoInfo::CS_BGR24; break;
+		case FFMS_PIX_FMT(RGB32): vi.pixel_type = VideoInfo::CS_BGR32; break;
 		default:
 			break;
 	}
@@ -67,10 +68,10 @@ SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char 
 	if (Resizer == 0)
 		Env->ThrowError("SWScale: Invalid resizer specified (%s)", ResizerName);
 
-	if (ConvertToFormat == PIX_FMT_YUV420P && vi.height & 1)
+	if (ConvertToFormat == FFMS_PIX_FMT(YUV420P) && vi.height & 1)
 		Env->ThrowError("SWScale: mod 2 output height required");
 
-	if ((ConvertToFormat == PIX_FMT_YUV420P || ConvertToFormat == PIX_FMT_YUYV422) && vi.width & 1)
+	if ((ConvertToFormat == FFMS_PIX_FMT(YUV420P) || ConvertToFormat == FFMS_PIX_FMT(YUYV422)) && vi.width & 1)
 		Env->ThrowError("SWScale: mod 2 output width required");
 
 	Context = GetSwsContext(

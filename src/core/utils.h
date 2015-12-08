@@ -29,7 +29,10 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
-#ifdef WITH_AVRESAMPLE
+
+#ifdef WITH_SWRESAMPLE
+#include <libswresample/swresample.h>
+#else
 #include <libavresample/avresample.h>
 #endif
 }
@@ -44,7 +47,7 @@ extern "C" {
 
 const int64_t ffms_av_nopts_value = static_cast<int64_t>(UINT64_C(0x8000000000000000));
 
-class FFMS_Exception : public std::exception {
+class FFMS_Exception {
 	std::string _Message;
 	int _ErrorType;
 	int _SubType;
@@ -52,7 +55,6 @@ class FFMS_Exception : public std::exception {
 public:
 	FFMS_Exception(int ErrorType, int SubType, const char *Message = "");
 	FFMS_Exception(int ErrorType, int SubType, const std::string &Message);
-	~FFMS_Exception() throw() { }
 	const std::string &GetErrorMessage() const { return _Message; }
 	int CopyOut(FFMS_ErrorInfo *ErrorInfo) const;
 };
@@ -125,11 +127,7 @@ public:
 	}
 };
 
-#ifdef WITH_AVRESAMPLE
-typedef unknown_size<AVAudioResampleContext, avresample_alloc_context, avresample_free> FFResampleContext;
-#else
-typedef struct {} FFResampleContext;
-#endif
+typedef unknown_size<FFMS_ResampleContext, ffms_resample_alloc_context, ffms_resample_free> FFResampleContext;
 
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
 bool AudioFMTIsFloat(AVSampleFormat FMT);

@@ -28,7 +28,7 @@ extern "C" {
 #include "ffmscompat.h"
 
 
-PixelFormat CSNameToPIXFMT(const char *CSName, PixelFormat Default);
+AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default);
 int ResizerNameToSWSResizer(const char *ResizerName);
 
 #endif

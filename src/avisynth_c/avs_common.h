@@ -25,7 +25,6 @@
 #undef EXTERN_C
 #define AVSC_NO_DECLSPEC
 #include "avisynth_c.h"
-#include "avisynth_c_25.h" // 2.5 specific defines - for backwards compatibility
 #include "avs_lib.h"
 #include "avs_utils.h"
 #include "avs_convert.h"

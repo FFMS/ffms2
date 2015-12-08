@@ -23,7 +23,7 @@
 
 #include <vector>
 #include <windows.h>
-#include "avisynth.h"
+#include <avisynth.h>
 #include "ffms.h"
 
 struct ErrorInfo : FFMS_ErrorInfo {
@@ -59,7 +59,7 @@ public:
 		const char *ConvertToFormatName, const char *VarPrefix, IScriptEnvironment* Env);
 	~AvisynthVideoSource();
 	bool __stdcall GetParity(int n);
-	void __stdcall SetCacheHints(int cachehints, int frame_range) { }
+	int __stdcall SetCacheHints(int cachehints, int frame_range) { return 0; }
 	const VideoInfo& __stdcall GetVideoInfo() { return VI; }
 	void __stdcall GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env) { }
 	PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment *Env);
@@ -73,7 +73,7 @@ public:
 		int AdjustDelay, const char *VarPrefix, IScriptEnvironment* Env);
 	~AvisynthAudioSource();
 	bool __stdcall GetParity(int n) { return false; }
-	void __stdcall SetCacheHints(int cachehints, int frame_range) { }
+	int __stdcall SetCacheHints(int cachehints, int frame_range) { return 0; }
 	const VideoInfo& __stdcall GetVideoInfo() { return VI; }
 	void __stdcall GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env);
 	PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment *Env) { return nullptr; };

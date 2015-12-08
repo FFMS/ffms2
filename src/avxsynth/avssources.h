@@ -78,7 +78,7 @@ public:
 	void __stdcall SetCacheHints(int cachehints, int frame_range) { }
 	const VideoInfo& __stdcall GetVideoInfo() { return VI; }
 	void __stdcall GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env);
-	PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment *Env) { return NULL; };
+	PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment *Env) { return nullptr; };
 };
 
 #endif
