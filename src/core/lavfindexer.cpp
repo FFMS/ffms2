@@ -81,6 +81,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 		if (IndexMask.count(i) && FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
 			AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codec->codec_id);
 			if (!VideoCodec) {
+				FormatContext->streams[i]->discard = AVDISCARD_ALL;
 				IndexMask.erase(i);
 				continue;
 			}
@@ -94,10 +95,12 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			if (VideoContexts[i].Parser)
 				VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
 
-			if (FormatContext->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
+			if (FormatContext->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC) {
+				FormatContext->streams[i]->discard = AVDISCARD_ALL;
 				IndexMask.erase(i);
-			else
+			} else {
 				IndexMask[i] = false;
+			}
 		}
 		else if (IndexMask.count(i) && FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
 			AVCodecContext *AudioCodecContext = FormatContext->streams[i]->codec;
@@ -114,6 +117,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			AudioContexts[i].CodecContext = AudioCodecContext;
 			(*TrackIndices)[i].HasTS = false;
 		} else {
+			FormatContext->streams[i]->discard = AVDISCARD_ALL;
 			IndexMask.erase(i);
 		}
 	}
