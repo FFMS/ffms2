@@ -190,6 +190,7 @@ void FFMS_Init(int Unused, int Unused2);
 ```
 Initializes the FFMS2 library.
 This function must be called once at the start of your program, before doing any other FFMS2 function calls.
+This function is threadsafe and will only run once.
 
 #### Arguments
 
