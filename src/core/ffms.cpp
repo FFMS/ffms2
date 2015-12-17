@@ -40,10 +40,6 @@ extern "C" {
 static std::once_flag FFmpegOnce;
 static bool FFmpegInited = false;
 
-#ifdef _WIN32
-bool GlobalUseUTF8Paths = false;
-#endif
-
 #ifdef FFMS_WIN_DEBUG
 
 void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl) {
@@ -80,16 +76,11 @@ void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl)
 
 #endif
 
-FFMS_API(void) FFMS_Init(int, int UseUTF8Paths) {
-	std::call_once(FFmpegOnce, [](int UseUTF8Paths) {
+FFMS_API(void) FFMS_Init(int, int) {
+	std::call_once(FFmpegOnce, []() {
 		av_register_all();
 		avformat_network_init();
 		RegisterCustomParsers();
-#ifdef _WIN32
-		GlobalUseUTF8Paths = !!UseUTF8Paths;
-#else
-		(void)UseUTF8Paths;
-#endif
 #ifdef FFMS_WIN_DEBUG
 		av_log_set_callback(av_log_windebug_callback);
 		av_log_set_level(AV_LOG_INFO);
@@ -97,7 +88,7 @@ FFMS_API(void) FFMS_Init(int, int UseUTF8Paths) {
 		av_log_set_level(AV_LOG_QUIET);
 #endif
 		FFmpegInited = true;
-	}, UseUTF8Paths);
+	});
 }
 
 FFMS_API(int) FFMS_GetVersion() {

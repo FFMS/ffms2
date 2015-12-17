@@ -134,7 +134,6 @@ bool AudioFMTIsFloat(AVSampleFormat FMT);
 void InitNullPacket(AVPacket &pkt);
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);
 
-std::wstring widen_path(const char *s);
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext, int Track);
 
 void FlushBuffers(AVCodecContext *CodecContext);
