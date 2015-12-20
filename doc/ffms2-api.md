@@ -186,10 +186,11 @@ How many characters you want to allocate to the error message is up to you; if y
 
 [Init]: #ffms_init---initializes-the-library
 ```c++
-void FFMS_Init(int Unused, int UseUTF8Paths);
+void FFMS_Init(int Unused, int Unused2);
 ```
 Initializes the FFMS2 library.
 This function must be called once at the start of your program, before doing any other FFMS2 function calls.
+This function is threadsafe and will only run once.
 
 #### Arguments
 
@@ -197,15 +198,9 @@ This function must be called once at the start of your program, before doing any
 
 This argument is no longer used and is left only for API/ABI compatibility. Pass 0.
 
-##### `int UseUTF8Paths`
+##### `int Unused2`
 
-Controls filename handling on Windows; on all other operating systems this parameter does nothing and should be ignored.
-
-On Windows, setting this parameter to a true value will make FFMS assume that all filename strings passed to it are UTF-8 encoded; setting it to false will make it assume filenames are in the system default codepage for non-Unicode programs.
-Setting this to true is one of two known ways to make FFMS2 open files with filenames containing characters that are not expressible in said codepage; the other is using the short (DOS 8.3 notation) filename.
-You can use the Win32 API function `WideCharToMultiByte()` to convert your `wchar_t*` Unicode strings to UTF-8 in `char*`, if necessary.
-
-Prior to API version 2.14.0.0 this functionality was a compile-time option and was controlled via `FFMS_USE_UTF8_PATHS`.
+This argument is also no longer used and is left only for API/ABI compatibility. Pass 0.
 
 ### FFMS_GetLogLevel - gets FFmpeg message level
 

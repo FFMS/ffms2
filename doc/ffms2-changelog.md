@@ -1,5 +1,11 @@
 # FFmpegSource2 Changelog
 
+- 2.23
+  - Tell libavformat to discard packets we don't want (Daemon404)
+  - Restore original FFCopyrightInfringement behavior (Myrsloik)
+  - Make FFMS_Init threadsafe (Daemon404)
+  - Support latest libav* APIs (Daemon404)
+
 - 2.22
   - Fix possible off by 1 frame until first seek issue introduced in 2.21 (Myrsloik)
   - avisynth: Make FFMS2 a shorter alias for FFmpegSource2 to save some typing (Myrsloik)
