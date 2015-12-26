@@ -238,7 +238,7 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
 		return vsapi->setError(out, e.what());
 	}
 
-	vsapi->createFilter(in, out, "Source", VSVideoSource::Init, VSVideoSource::GetFrame, VSVideoSource::Free, fmUnordered, 0,vs, core);
+	vsapi->createFilter(in, out, "Source", VSVideoSource::Init, VSVideoSource::GetFrame, VSVideoSource::Free, fmUnordered, nfMakeLinear, vs, core);
 
 	FFMS_DestroyIndex(Index);
 }

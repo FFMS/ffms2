@@ -1,6 +1,7 @@
 # FFmpegSource2 Changelog
 
 - 2.23
+  - vapoursource: Add nfMakeLinear flag to better performance in most cases (Myrsloik)
   - Remove bad colorspace matrix guessing for YUV (Myrsloik)
   - Tell libavformat to discard packets we don't want (Daemon404)
   - Restore original FFCopyrightInfringement behavior (Myrsloik)
