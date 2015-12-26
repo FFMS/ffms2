@@ -234,8 +234,6 @@ void FFMS_VideoSource::DetectInputFormat() {
 
 	if (InputColorSpace == AVCOL_SPC_UNSPECIFIED)
 		InputColorSpace = CodecContext->colorspace;
-	if (InputColorSpace == AVCOL_SPC_UNSPECIFIED)
-		InputColorSpace = GetAssumedColorSpace(CodecContext->width, CodecContext->height);
 }
 
 void FFMS_VideoSource::ReAdjustOutputFormat() {

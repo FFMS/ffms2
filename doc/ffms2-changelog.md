@@ -1,6 +1,7 @@
 # FFmpegSource2 Changelog
 
 - 2.23
+  - Remove bad colorspace matrix guessing for YUV (Myrsloik)
   - Tell libavformat to discard packets we don't want (Daemon404)
   - Restore original FFCopyrightInfringement behavior (Myrsloik)
   - Make FFMS_Init threadsafe (Daemon404)
