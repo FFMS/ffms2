@@ -88,9 +88,13 @@ static void av_frame_free(AVFrame **frame) { av_freep(frame); }
 #	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 51, 42, 0, 51, 74, 100)
 #		define AVPixelFormat PixelFormat
 #		define FFMS_PIX_FMT(x) PIX_FMT_##x
-#		define FFMS_PIX_FMT_FLAG(x) PIX_FMT_##x
 #	else
 #		define FFMS_PIX_FMT(x) AV_PIX_FMT_##x
+#	endif
+
+#	if VERSION_CHECK(LIBAVUTIL_VERSION_INT, <, 52, 11, 0, 52, 32, 100)
+#		define FFMS_PIX_FMT_FLAG(x) PIX_FMT_##x
+#	else
 #		define FFMS_PIX_FMT_FLAG(x) AV_PIX_FMT_FLAG_##x
 #	endif
 
