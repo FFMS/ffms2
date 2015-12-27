@@ -25,8 +25,11 @@
 
 #include <algorithm>
 
+extern "C" {
 #include <libavutil/avutil.h>
 #include <libavutil/common.h>
+#include <libavutil/mathematics.h>
+}
 
 namespace {
 FrameInfo ReadFrame(ZipFile &stream, FrameInfo const& prev, const FFMS_TrackType TT) {
