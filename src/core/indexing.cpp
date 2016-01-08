@@ -35,6 +35,7 @@ extern "C" {
 }
 
 #define INDEXID 0x53920873
+#define INDEX_VERSION 1
 
 SharedVideoContext::~SharedVideoContext() {
 	if (CodecContext) {
@@ -130,6 +131,7 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 	// Write the index file header
 	zf.Write<uint32_t>(INDEXID);
 	zf.Write<uint32_t>(FFMS_VERSION);
+	zf.Write<uint16_t>(INDEX_VERSION);
 	zf.Write<uint32_t>(size());
 	zf.Write<uint32_t>(Decoder);
 	zf.Write<uint32_t>(ErrorHandling);
@@ -155,6 +157,10 @@ FFMS_Index::FFMS_Index(const char *IndexFile) {
 			std::string("'") + IndexFile + "' is not a valid index file");
 
 	if (zf.Read<uint32_t>() != FFMS_VERSION)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+			std::string("'") + IndexFile + "' was not created with the expected FFMS2 version");
+
+	if (zf.Read<uint16_t>() != INDEX_VERSION)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("'") + IndexFile + "' is not the expected index version");
 
