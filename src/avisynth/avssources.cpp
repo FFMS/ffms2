@@ -23,6 +23,7 @@
 #include "../core/utils.h"
 
 #include <algorithm>
+#include <cassert>
 
 static AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default) {
 	if (!CSName)
@@ -316,18 +317,22 @@ static void BlitPlane(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironm
 }
 
 void AvisynthVideoSource::OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env) {
-	if (VI.pixel_type == VideoInfo::CS_I420) {
+	if (VI.IsPlanar()) {
 		BlitPlane(Frame, Dst, Env, 0);
-		BlitPlane(Frame, Dst, Env, 1);
-		BlitPlane(Frame, Dst, Env, 2);
+        if (!VI.IsY8()) {
+            BlitPlane(Frame, Dst, Env, 1);
+            BlitPlane(Frame, Dst, Env, 2);
+        }
 	} else if (VI.IsYUY2()) {
 		BlitPlane(Frame, Dst, Env, 0);
-	} else { // RGB
+    } else if (VI.IsRGB24() || VI.IsRGB32()) {
 		Env->BitBlt(
 			Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1), -Dst->GetPitch(),
 			Frame->Data[0], Frame->Linesize[0],
 			Dst->GetRowSize(), Dst->GetHeight());
-	}
+    } else {
+        assert(false);
+    }
 }
 
 static void BlitField(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env, int Plane, int Field) {
@@ -341,18 +346,22 @@ static void BlitField(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironm
 void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst, int Field, IScriptEnvironment *Env) {
 	const FFMS_Frame *SrcPicture = (Frame);
 
-	if (VI.pixel_type == VideoInfo::CS_I420) {
+	if (VI.IsPlanar()) {
 		BlitField(Frame, Dst, Env, 0, Field);
-		BlitField(Frame, Dst, Env, 1, Field);
-		BlitField(Frame, Dst, Env, 2, Field);
+        if (!VI.IsY8()) {
+            BlitField(Frame, Dst, Env, 1, Field);
+            BlitField(Frame, Dst, Env, 2, Field);
+        }
 	} else if (VI.IsYUY2()) {
 		BlitField(Frame, Dst, Env, 0, Field);
-	} else { // RGB
+	} else if (VI.IsRGB24() || VI.IsRGB32()) {
 		Env->BitBlt(
 			Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1 - Field), -Dst->GetPitch() * 2,
 			SrcPicture->Data[0] + SrcPicture->Linesize[0] * Field, SrcPicture->Linesize[0] * 2,
 			Dst->GetRowSize(), Dst->GetHeight() / 2);
-	}
+    } else {
+        assert(false);
+    }
 }
 
 PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
