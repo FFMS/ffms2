@@ -147,7 +147,6 @@ ffmpeg_common_flags="        \
   --disable-filters          \
   --disable-hwaccels         \
   --disable-muxers           \
-  --disable-network          \
   --disable-pthreads         \
   --disable-shared           \
   --enable-avresample        \
