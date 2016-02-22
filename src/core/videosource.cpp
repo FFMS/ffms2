@@ -157,7 +157,7 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 	LastDecodedFrame = av_frame_alloc();
 
 	// Dummy allocations so the unallocated case doesn't have to be handled later
-	if (av_image_alloc(SWSFrame.data, SWSFrame.linesize, 16, 16, FFMS_PIX_FMT(GRAY8), 1) < 0)
+	if (av_image_alloc(SWSFrame.data, SWSFrame.linesize, 16, 16, FFMS_PIX_FMT(GRAY8), 4) < 0)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_ALLOCATION_FAILED,
 			"Could not allocate dummy frame.");
 
@@ -280,7 +280,7 @@ void FFMS_VideoSource::ReAdjustOutputFormat() {
 	}
 
 	av_freep(&SWSFrame.data[0]);
-	if (av_image_alloc(SWSFrame.data, SWSFrame.linesize, TargetWidth, TargetHeight, OutputFormat, 1) < 0)
+	if (av_image_alloc(SWSFrame.data, SWSFrame.linesize, TargetWidth, TargetHeight, OutputFormat, 4) < 0)
 		throw FFMS_Exception(FFMS_ERROR_SCALING, FFMS_ERROR_ALLOCATION_FAILED,
 			"Could not allocate frame with new resolution.");
 }
