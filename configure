@@ -410,6 +410,14 @@ LDFLAGS="$FFMPEG_LIBS $LDFLAGS"
 #    CXXFLAGS="-Wshadow $CXXFLAGS"
 #fi
 
+if [ "$shared" = "no" ] ; then
+    CFLAGS="$CFLAGS -DFFMS_STATIC"
+    CXXFLAGS="$CXXFLAGS -DFFMS_STATIC"
+    STATICDEF="-DFFMS_STATIC"
+else
+    STATICDEF=""
+fi
+
 if [ "$avs" = "yes" -o "$avx" = "yes" -o "$vapoursynth" = "yes" ] ; then
     if [ "$shared" = "no" ] ; then
         msg="plugin support is invalid when not building a shared library"
@@ -577,7 +585,7 @@ Requires.private: libavformat libavcodec libswscale libavutil lib$RESAMPLE_LIB
 Version: $version
 Libs.private:  -lz
 Libs: -L$libdirpc -lffms2
-Cflags: -I$includedirpc
+Cflags: -I$includedirpc $STATICDEF
 EOF
 
 cat > conftest.log <<EOF
