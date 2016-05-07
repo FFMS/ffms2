@@ -1,9 +1,11 @@
 
 # /
 /.gitignore
+/.depend
 /Makefile
 /autom4te.cache
 /config.log
+/config.mak
 /config.status
 /deps
 /ffms2.pc
@@ -15,6 +17,10 @@
 /ffmsindexexe.rc.h
 /rcinfo.h
 *.orig
+*.dll
+*.a
+*.o
+*.exe
 
 # /build-msvc/
 /build-msvc/*.sdf
