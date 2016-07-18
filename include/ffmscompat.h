@@ -21,6 +21,12 @@
 #ifndef FFMSCOMPAT_H
 #define	FFMSCOMPAT_H
 
+#ifdef __GNUC__
+#	define ffms_used __attribute__((used))
+#else
+#	define ffms_used
+#endif
+
 // Defaults to libav compatibility, uncomment (when building with msvc) to force ffmpeg compatibility.
 //#define FFMS_USE_FFMPEG_COMPAT
 
@@ -73,6 +79,13 @@ static void av_frame_free(AVFrame **frame) { av_freep(frame); }
 #   endif
 #	if VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 57, 8, 0, 57, 12, 100)
 #		define av_packet_unref av_free_packet
+#	endif
+#	if VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 57, 14, 0, 57, 33, 100)
+#		define FFMSCODEC codec
+static ffms_used int make_context(AVCodecContext *dst, AVStream *src) { return avcodec_copy_context(dst, src->codec); }
+#	else
+#		define FFMSCODEC codecpar
+static ffms_used int make_context(AVCodecContext *dst, AVStream *src) { return avcodec_parameters_to_context(dst, src->codecpar); }
 #	endif
 #endif
 
