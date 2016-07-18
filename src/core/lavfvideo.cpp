@@ -76,7 +76,7 @@ public:
 
 void FFLAVFVideo::Free(bool CloseCodec) {
 	if (CloseCodec)
-		avcodec_close(CodecContext);
+		avcodec_free_context(&CodecContext);
 	avformat_close_input(&FormatContext);
 }
 
@@ -88,14 +88,20 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 {
 	LAVFOpenFile(SourceFile, FormatContext, VideoTrack);
 
-	CodecContext = FormatContext->streams[VideoTrack]->codec;
-	CodecContext->thread_count = DecodingThreads;
-	CodecContext->has_b_frames = Frames.MaxBFrames;
-
-	AVCodec *Codec = avcodec_find_decoder(CodecContext->codec_id);
+	AVCodec *Codec = avcodec_find_decoder(FormatContext->streams[VideoTrack]->FFMSCODEC->codec_id);
 	if (Codec == nullptr)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Video codec not found");
+
+	CodecContext = avcodec_alloc_context3(Codec);
+	if (CodecContext == nullptr)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
+			"Could not allocate video codec context.");
+	if (make_context(CodecContext, FormatContext->streams[VideoTrack]) < 0)
+		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+			"Could not copy video decoder paramaters.");
+	CodecContext->thread_count = DecodingThreads;
+	CodecContext->has_b_frames = Frames.MaxBFrames;
 
 	if (avcodec_open2(CodecContext, Codec, nullptr) < 0)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
