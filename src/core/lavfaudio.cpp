@@ -34,20 +34,31 @@ class FFLAVFAudio : public FFMS_AudioSource {
 
 	int64_t FrameTS(size_t Packet) const;
 
-	void ReopenFile() override {
-		avcodec_close(CodecContext);
-		avformat_close_input(&FormatContext);
+	void OpenFile() override {
+		AVCodecContext *Context = CodecContext;
+
+		if (avcodec_is_open(Context)) {
+			avcodec_free_context(&Context);
+			avformat_close_input(&FormatContext);
+		}
 
 		LAVFOpenFile(SourceFile.c_str(), FormatContext, TrackNumber);
-		CodecContext.reset(FormatContext->streams[TrackNumber]->codec);
-		OpenCodec();
-	}
 
-	void OpenCodec() {
-		AVCodec *Codec = avcodec_find_decoder(CodecContext->codec_id);
-		if (!Codec)
+		AVCodec *Codec = avcodec_find_decoder(FormatContext->streams[TrackNumber]->FFMSCODEC->codec_id);
+		if (Codec == nullptr)
 			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 				"Audio codec not found");
+
+		AVCodecContext *NewContext = avcodec_alloc_context3(Codec);
+		if (NewContext == nullptr)
+			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
+				"Could not allocate audio decoding context");
+
+		if (make_context(NewContext, FormatContext->streams[TrackNumber]) < 0)
+			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+				"Could not copy audio codec parameters");
+
+		CodecContext.reset(NewContext);
 
 		if (avcodec_open2(CodecContext, Codec, nullptr) < 0)
 			throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
@@ -64,15 +75,12 @@ FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, i
 , LastValidTS(ffms_av_nopts_value)
 , SourceFile(SourceFile)
 {
-	LAVFOpenFile(SourceFile, FormatContext, TrackNumber);
-
-	CodecContext.reset(FormatContext->streams[TrackNumber]->codec);
-	assert(CodecContext);
-
 	try {
-		OpenCodec();
+		OpenFile();
 	}
 	catch (...) {
+		AVCodecContext *Context = CodecContext;
+		avcodec_free_context(&Context);
 		avformat_close_input(&FormatContext);
 		throw;
 	}
@@ -85,7 +93,9 @@ FFLAVFAudio::FFLAVFAudio(const char *SourceFile, int Track, FFMS_Index &Index, i
 }
 
 FFLAVFAudio::~FFLAVFAudio() {
-	avcodec_close(CodecContext);
+	AVCodecContext *Context = CodecContext;
+
+	avcodec_free_context(&Context);
 	avformat_close_input(&FormatContext);
 }
 

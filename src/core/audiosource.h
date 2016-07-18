@@ -92,7 +92,9 @@ struct FFMS_AudioSource {
 
     // Close and reopen the source file to seek back to the beginning. Only
 	// needs to do anything for formats that can't seek to the beginning otherwise.
-	virtual void ReopenFile() { }
+	//
+	// If the file is not already open, it is merely just opened.
+	virtual void OpenFile() { }
 protected:
 	// First sample which is stored in the decoding buffer
 	int64_t CurrentSample = -1;
