@@ -39,7 +39,7 @@ extern "C" {
 
 SharedVideoContext::~SharedVideoContext() {
 	if (CodecContext) {
-		avcodec_close(CodecContext);
+		avcodec_free_context(&CodecContext);
 	}
 	av_parser_close(Parser);
 	if (BitStreamFilter)
