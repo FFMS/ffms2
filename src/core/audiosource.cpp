@@ -185,7 +185,7 @@ void FFMS_AudioSource::SetOutputFormat(FFMS_ResampleOptions const& opt) {
 	// Cache stores audio in the output format, so clear it and reopen the file
 	Cache.clear();
 	PacketNumber = 0;
-	ReopenFile();
+	OpenFile();
 	FlushBuffers(CodecContext);
 
 	BytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(opt.SampleFormat)) * av_get_channel_layout_nb_channels(opt.ChannelLayout);

@@ -43,7 +43,7 @@ public:
 		}
 
 		for (unsigned int i = 0; i < FormatContext->nb_streams; i++)
-			if (FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+			if (FormatContext->streams[i]->FFMSCODEC->codec_type == AVMEDIA_TYPE_VIDEO)
 				IndexMask[i] = false;
 	}
 
@@ -58,11 +58,11 @@ public:
 	FFMS_Sources GetSourceType() override { return FFMS_SOURCE_LAVF; }
 
 	FFMS_TrackType GetTrackType(int Track) override {
-		return static_cast<FFMS_TrackType>(FormatContext->streams[Track]->codec->codec_type);
+		return static_cast<FFMS_TrackType>(FormatContext->streams[Track]->FFMSCODEC->codec_type);
 	}
 
 	const char *GetTrackCodec(int Track) override {
-		AVCodec *codec = avcodec_find_decoder(FormatContext->streams[Track]->codec->codec_id);
+		AVCodec *codec = avcodec_find_decoder(FormatContext->streams[Track]->FFMSCODEC->codec_id);
 		return codec ? codec->name : nullptr;
 	}
 };
@@ -76,22 +76,31 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 	for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {
 		TrackIndices->emplace_back((int64_t)FormatContext->streams[i]->time_base.num * 1000,
 			FormatContext->streams[i]->time_base.den,
-			static_cast<FFMS_TrackType>(FormatContext->streams[i]->codec->codec_type));
+			static_cast<FFMS_TrackType>(FormatContext->streams[i]->FFMSCODEC->codec_type));
 
-		if (IndexMask.count(i) && FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-			AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codec->codec_id);
+		if (IndexMask.count(i) && FormatContext->streams[i]->FFMSCODEC->codec_type == AVMEDIA_TYPE_VIDEO) {
+			AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->FFMSCODEC->codec_id);
 			if (!VideoCodec) {
 				FormatContext->streams[i]->discard = AVDISCARD_ALL;
 				IndexMask.erase(i);
 				continue;
 			}
 
-			if (avcodec_open2(FormatContext->streams[i]->codec, VideoCodec, nullptr) < 0)
+			AVCodecContext *VideoCodecContext = avcodec_alloc_context3(VideoCodec);
+			if (VideoCodecContext == nullptr)
+				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_ALLOCATION_FAILED,
+					"Could not allocate video codec context");
+
+			if (make_context(VideoCodecContext, FormatContext->streams[i]) < 0)
+				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
+					"Could not copy video codec paramaters");
+
+			if (avcodec_open2(VideoCodecContext, VideoCodec, nullptr) < 0)
 				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
 					"Could not open video codec");
 
-			VideoContexts[i].CodecContext = FormatContext->streams[i]->codec;
-			VideoContexts[i].Parser = av_parser_init(FormatContext->streams[i]->codec->codec_id);
+			VideoContexts[i].CodecContext = VideoCodecContext;
+			VideoContexts[i].Parser = av_parser_init(FormatContext->streams[i]->FFMSCODEC->codec_id);
 			if (VideoContexts[i].Parser)
 				VideoContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
 
@@ -102,13 +111,20 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 				IndexMask[i] = false;
 			}
 		}
-		else if (IndexMask.count(i) && FormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-			AVCodecContext *AudioCodecContext = FormatContext->streams[i]->codec;
-
-			AVCodec *AudioCodec = avcodec_find_decoder(AudioCodecContext->codec_id);
+		else if (IndexMask.count(i) && FormatContext->streams[i]->FFMSCODEC->codec_type == AVMEDIA_TYPE_AUDIO) {
+			AVCodec *AudioCodec = avcodec_find_decoder(FormatContext->streams[i]->FFMSCODEC->codec_id);
 			if (AudioCodec == nullptr)
 				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
 					"Audio codec not found");
+
+			AVCodecContext *AudioCodecContext = avcodec_alloc_context3(AudioCodec);
+			if (AudioCodecContext == nullptr)
+				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_ALLOCATION_FAILED,
+					"Could not allocate audio codec context");
+
+			if (make_context(AudioCodecContext, FormatContext->streams[i]) < 0)
+				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
+					"Could not copy audio codec paramaters");
 
 			if (avcodec_open2(AudioCodecContext, AudioCodec, nullptr) < 0)
 				throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
@@ -146,7 +162,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 		bool KeyFrame = !!(Packet.flags & AV_PKT_FLAG_KEY);
 		ReadTS(Packet, LastValidTS[Track], (*TrackIndices)[Track].UseDTS);
 
-		if (FormatContext->streams[Track]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
+		if (FormatContext->streams[Track]->FFMSCODEC->codec_type == AVMEDIA_TYPE_VIDEO) {
 			int64_t PTS = TrackInfo.UseDTS ? Packet.dts : Packet.pts;
 			if (PTS == ffms_av_nopts_value) {
 				if (Packet.duration == 0)
@@ -170,7 +186,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 			TrackInfo.AddVideoFrame(PTS, RepeatPict, KeyFrame,
 				FrameType, Packet.pos, Invisible);
 		}
-		else if (FormatContext->streams[Track]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+		else if (FormatContext->streams[Track]->FFMSCODEC->codec_type == AVMEDIA_TYPE_AUDIO) {
 			// For video seeking timestamps are used only if all packets have
 			// timestamps, while for audio they're used if any have timestamps,
 			// as it's pretty common for only some packets to have timestamps
