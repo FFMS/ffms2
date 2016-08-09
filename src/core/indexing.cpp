@@ -42,8 +42,6 @@ SharedVideoContext::~SharedVideoContext() {
 		avcodec_free_context(&CodecContext);
 	}
 	av_parser_close(Parser);
-	if (BitStreamFilter)
-		av_bitstream_filter_close(BitStreamFilter);
 }
 
 SharedAudioContext::~SharedAudioContext() {

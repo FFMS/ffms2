@@ -31,7 +31,6 @@ class Wave64Writer;
 struct SharedVideoContext {
 	AVCodecContext *CodecContext = nullptr;
 	AVCodecParserContext *Parser = nullptr;
-	AVBitStreamFilterContext *BitStreamFilter = nullptr;
 
 	~SharedVideoContext();
 };
