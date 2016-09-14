@@ -150,6 +150,14 @@ void FFMS_Index::WriteIndexFile(const char *IndexFile) {
 	WriteIndex(zf);
 }
 
+uint8_t *FFMS_Index::WriteIndexBuffer(size_t *Size) {
+	ZipFile zf;
+
+	WriteIndex(zf);
+
+	return zf.GetBuffer(Size);
+}
+
 void FFMS_Index::ReadIndex(ZipFile &zf, const char *IndexFile) {
 	// Read the index file header
 	if (zf.Read<uint32_t>() != INDEXID)
@@ -200,6 +208,12 @@ FFMS_Index::FFMS_Index(const char *IndexFile) {
 	ZipFile zf(IndexFile, "rb");
 
 	ReadIndex(zf, IndexFile);
+}
+
+FFMS_Index::FFMS_Index(const uint8_t *Buffer, size_t Size) {
+	ZipFile zf(Buffer, Size);
+
+	ReadIndex(zf, "User supplied buffer");
 }
 
 FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling)

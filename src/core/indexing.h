@@ -64,8 +64,10 @@ public:
 	void Finalize(std::vector<SharedVideoContext> const& video_contexts);
 	bool CompareFileSignature(const char *Filename);
 	void WriteIndexFile(const char *IndexFile);
+	uint8_t *WriteIndexBuffer(size_t *Size);
 
 	FFMS_Index(const char *IndexFile);
+	FFMS_Index(const uint8_t *Buffer, size_t Size);
 	FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling);
 };
 
