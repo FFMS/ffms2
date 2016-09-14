@@ -18,6 +18,9 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
+#ifndef ZIPFILE_H
+#define ZIPFILE_H
+
 #include "filehandle.h"
 
 #include <vector>
@@ -53,3 +56,5 @@ public:
 		Write(&value, sizeof value);
 	}
 };
+
+#endif
