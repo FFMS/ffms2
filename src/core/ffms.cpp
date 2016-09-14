@@ -26,6 +26,7 @@
 #include "videoutils.h"
 
 extern "C" {
+#include <libavutil/avutil.h>
 #include <libavutil/pixdesc.h>
 }
 
@@ -441,6 +442,16 @@ FFMS_API(FFMS_Index *) FFMS_ReadIndex(const char *IndexFile, FFMS_ErrorInfo *Err
 	}
 }
 
+FFMS_API(FFMS_Index *) FFMS_ReadIndexFromBuffer(const uint8_t *Buffer, size_t Size, FFMS_ErrorInfo *ErrorInfo) {
+	ClearErrorInfo(ErrorInfo);
+	try {
+		return new FFMS_Index(Buffer, Size);
+	} catch (FFMS_Exception &e) {
+		e.CopyOut(ErrorInfo);
+		return nullptr;
+	}
+}
+
 FFMS_API(int) FFMS_IndexBelongsToFile(FFMS_Index *Index, const char *SourceFile, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
@@ -461,6 +472,27 @@ FFMS_API(int) FFMS_WriteIndex(const char *IndexFile, FFMS_Index *Index, FFMS_Err
 		return e.CopyOut(ErrorInfo);
 	}
 	return FFMS_ERROR_SUCCESS;
+}
+
+FFMS_API(int) FFMS_WriteIndexToBuffer(uint8_t **BufferPtr, size_t *Size, FFMS_Index *Index, FFMS_ErrorInfo *ErrorInfo) {
+	ClearErrorInfo(ErrorInfo);
+	uint8_t *buf;
+
+	try {
+		buf = Index->WriteIndexBuffer(Size);
+	} catch (FFMS_Exception &e) {
+		*Size = 0;
+		*BufferPtr = nullptr;
+		return e.CopyOut(ErrorInfo);
+	}
+
+	*BufferPtr = buf;
+
+	return FFMS_ERROR_SUCCESS;
+}
+
+FFMS_API(void) FFMS_FreeIndexBuffer(uint8_t **BufferPtr) {
+	av_freep(BufferPtr);
 }
 
 FFMS_API(int) FFMS_GetPixFmt(const char *Name) {

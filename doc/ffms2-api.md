@@ -889,6 +889,16 @@ FFMS_Index *FFMS_ReadIndex(const char *IndexFile, FFMS_ErrorInfo *ErrorInfo);
 Attempts to read indexing information from the given `IndexFile`, which can be an absolute or relative path.
 Returns the `FFMS_Index` on success; returns `NULL` and sets `ErrorMsg` on failure.
 
+### FFMS_ReadIndexFromBuffer - reads an index from a user-supplied buffer
+
+[ReadIndexFromBuffer]: #ffms_readindexfrombffer---reads-an-index-from-a-user-supplied-buffer
+```c++
+FFMS_Index *FFMS_ReadIndexFromBuffer(const uint8_t *Buffer, size_t Size, FFMS_ErrorInfo *ErrorInfo);
+```
+
+Attempts to read indexing information from the super supplied buffer, `Buffer, of size `Size`.
+Returns the `FFMS_Index` on success; returns `NULL` and sets `ErrorMsg` on failure.
+
 ### FFMS_IndexBelongsToFile - check if a given index belongs to a given file
 
 [IndexBelongsToFile]: #ffms_indexbelongstofile---check-if-a-given-index-belongs-to-a-given-file
@@ -918,6 +928,25 @@ int FFMS_WriteIndex(const char *IndexFile, FFMS_Index *TrackIndices, FFMS_ErrorI
 ```
 Writes the indexing information from the given `FFMS_Index` to the given `IndexFile` (which can be an absolute or relative path; it will be truncated and overwritten if it already exists).
 Returns 0 on success; returns non-0 and sets `ErrorMsg` on failure.
+
+### FFMS_WriteIndexToBuffer - writes an index to memory
+
+[WriteIndexToBuffer]: #ffms_writeindextobuffer---writes-an-index-to-memory
+```c++
+int FFMS_WriteIndexToBuffer(uint8_t **BufferPtr, size_t *Size, FFMS_Index *Index, FFMS_ErrorInfo *ErrorInfo)
+```
+
+Writes the indexing information from the given `FFMS_Index` to memory, and sets `BufferPtr` to point to the buffer, and `Size` to the size of the returned buffer. Users are required to free the resulting buffer with [FFMS_FreeIndexBuffer][FreeIndexBuffer].
+Returns 0 on success; returns non-0 and sets `ErrorMsg` on failure.
+
+### FFMS_FreeIndexBuffer - frees a buffer allocated by [FFMS_WriteIndexToBuffer][WriteIndexToBuffer]
+
+[FreeIndexBuffer]: #ffms_freeindexbuffer---frees-a-buffer-alloctaed-by-ffms_writeindextobuffer
+```c++
+void FFMS_FreeIndexBuffer(uint8_t **BufferPtr)
+```
+
+Frees the buffer pointed to by `BufferPtr` and sets it to NULL.
 
 ### FFMS_GetPixFmt - gets a colorspace identifier from a colorspace name
 
