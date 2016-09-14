@@ -123,9 +123,7 @@ bool FFMS_Index::CompareFileSignature(const char *Filename) {
 	return (CFilesize == Filesize && !memcmp(CDigest, Digest, sizeof(Digest)));
 }
 
-void FFMS_Index::WriteIndex(const char *IndexFile) {
-	ZipFile zf(IndexFile, "wb");
-
+void FFMS_Index::WriteIndex(ZipFile &zf) {
 	// Write the index file header
 	zf.Write<uint32_t>(INDEXID);
 	zf.Write<uint32_t>(FFMS_VERSION);
@@ -146,9 +144,13 @@ void FFMS_Index::WriteIndex(const char *IndexFile) {
 	zf.Finish();
 }
 
-FFMS_Index::FFMS_Index(const char *IndexFile) {
-	ZipFile zf(IndexFile, "rb");
+void FFMS_Index::WriteIndexFile(const char *IndexFile) {
+	ZipFile zf(IndexFile, "wb");
 
+	WriteIndex(zf);
+}
+
+void FFMS_Index::ReadIndex(ZipFile &zf, const char *IndexFile) {
 	// Read the index file header
 	if (zf.Read<uint32_t>() != INDEXID)
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
@@ -192,6 +194,12 @@ FFMS_Index::FFMS_Index(const char *IndexFile) {
 		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
 			std::string("Unknown error while reading index information in '") + IndexFile + "'");
 	}
+}
+
+FFMS_Index::FFMS_Index(const char *IndexFile) {
+	ZipFile zf(IndexFile, "rb");
+
+	ReadIndex(zf, IndexFile);
 }
 
 FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling)

@@ -456,7 +456,7 @@ FFMS_API(int) FFMS_IndexBelongsToFile(FFMS_Index *Index, const char *SourceFile,
 FFMS_API(int) FFMS_WriteIndex(const char *IndexFile, FFMS_Index *Index, FFMS_ErrorInfo *ErrorInfo) {
 	ClearErrorInfo(ErrorInfo);
 	try {
-		Index->WriteIndex(IndexFile);
+		Index->WriteIndexFile(IndexFile);
 	} catch (FFMS_Exception &e) {
 		return e.CopyOut(ErrorInfo);
 	}
