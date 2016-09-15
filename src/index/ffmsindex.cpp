@@ -161,9 +161,10 @@ void DoIndexing() {
 	int Progress = 0;
 
 	FFMS_Index *Index = FFMS_ReadIndex(CacheFile.c_str(), &E);
-	if (!Overwrite && Index) {
+	if (Index) {
 		FFMS_DestroyIndex(Index);
-		throw Error("Error: index file already exists, use -f if you are sure you want to overwrite it.");
+		if (!Overwrite)
+			throw Error("Error: index file already exists, use -f if you are sure you want to overwrite it.");
 	}
 
 	UpdateProgress(0, 100, nullptr);
