@@ -27,6 +27,7 @@
 #include <memory>
 
 class Wave64Writer;
+class ZipFile;
 
 struct SharedVideoContext {
 	AVCodecContext *CodecContext = nullptr;
@@ -47,6 +48,8 @@ struct FFMS_Index : public std::vector<FFMS_Track> {
 	int RefCount = 1;
 	FFMS_Index(FFMS_Index const&) = delete;
 	FFMS_Index& operator=(FFMS_Index const&) = delete;
+	void ReadIndex(ZipFile &zf, const char* IndexFile);
+	void WriteIndex(ZipFile &zf);
 public:
 	static void CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]);
 
@@ -60,9 +63,11 @@ public:
 
 	void Finalize(std::vector<SharedVideoContext> const& video_contexts);
 	bool CompareFileSignature(const char *Filename);
-	void WriteIndex(const char *IndexFile);
+	void WriteIndexFile(const char *IndexFile);
+	uint8_t *WriteIndexBuffer(size_t *Size);
 
 	FFMS_Index(const char *IndexFile);
+	FFMS_Index(const uint8_t *Buffer, size_t Size);
 	FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling);
 };
 

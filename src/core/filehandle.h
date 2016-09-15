@@ -33,6 +33,7 @@ class FileHandle {
 
 public:
 	FileHandle(const char *filename, const char *mode, int error_source, int error_cause);
+	FileHandle() : avio(nullptr) {}
 	~FileHandle();
 
 	void Seek(int64_t offset, int origin);

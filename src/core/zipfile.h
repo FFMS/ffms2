@@ -18,6 +18,9 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
+#ifndef ZIPFILE_H
+#define ZIPFILE_H
+
 #include "filehandle.h"
 
 #include <vector>
@@ -26,6 +29,8 @@
 class ZipFile {
 	FileHandle file;
 	std::vector<char> buffer;
+	std::vector<uint8_t> index_buffer;
+	bool is_file;
 	z_stream z;
 	enum {
 		Initial,
@@ -35,11 +40,14 @@ class ZipFile {
 
 public:
 	ZipFile(const char *filename, const char *mode);
+	ZipFile(const uint8_t *in_buffer, const size_t size);
+	ZipFile();
 	~ZipFile();
 
 	void Read(void *buffer, size_t size);
 	int Write(const void *buffer, size_t size);
 	void Finish();
+	uint8_t *GetBuffer(size_t *size);
 
 	template<typename T>
 	T Read() {
@@ -53,3 +61,5 @@ public:
 		Write(&value, sizeof value);
 	}
 };
+
+#endif

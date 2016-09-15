@@ -20,13 +20,34 @@
 
 #include "zipfile.h"
 
+extern "C" {
+#include <libavutil/avutil.h>
+}
+
 #include "utils.h"
 
 ZipFile::ZipFile(const char *filename, const char *mode)
 : file(filename, mode, FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ)
+, is_file(true)
 , state(Initial)
 {
 	buffer.resize(65536);
+	z = {};
+}
+
+ZipFile::ZipFile()
+: is_file(false)
+, state(Initial)
+{
+	buffer.resize(65536);
+	z = {};
+}
+
+ZipFile::ZipFile(const uint8_t *in_buffer, const size_t size)
+: is_file(false)
+, index_buffer(in_buffer, in_buffer + size)
+, state(Initial)
+{
 	z = {};
 }
 
@@ -50,13 +71,21 @@ void ZipFile::Read(void *data, size_t size) {
 
 	z.next_out = static_cast<unsigned char *>(data);
 	z.avail_out = size;
+	if (!z.avail_in && !is_file) {
+		z.next_in = reinterpret_cast<Bytef*>(&index_buffer[0]);
+		z.avail_in = index_buffer.size();
+	}
 	do {
-		if (!z.avail_in) {
+		if (!z.avail_in && is_file) {
 			z.next_in = reinterpret_cast<Bytef*>(&buffer[0]);
 			z.avail_in = file.Read(&buffer[0], buffer.size());
 		}
-		if (!z.avail_in && !file.Tell())
-			throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to read data: File is empty");
+		if (!z.avail_in) {
+			if (!is_file)
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to read data: Buffer is empty");
+			else if (!file.Tell())
+				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Failed to read data: File is empty");
+		}
 
 		switch (inflate(&z, Z_SYNC_FLUSH)) {
 		case Z_NEED_DICT:
@@ -91,8 +120,12 @@ int ZipFile::Write(const void *data, size_t size) {
 		z.next_out = reinterpret_cast<Bytef*>(&buffer[0]);
 		ret = deflate(&z, size > 0 ? Z_NO_FLUSH : Z_FINISH);
 		uInt written = buffer.size() - z.avail_out;
-		if (written)
-			file.Write(&buffer[0], written);
+		if (written) {
+			if (is_file)
+				file.Write(&buffer[0], written);
+			else
+				index_buffer.insert(index_buffer.end(), &buffer[0], &buffer[written]);
+		}
 	} while (z.avail_out == 0);
 	return ret;
 }
@@ -101,4 +134,15 @@ void ZipFile::Finish() {
 	while (Write(nullptr, 0) != Z_STREAM_END) ;
 	deflateEnd(&z);
 	state = Initial;
+}
+
+uint8_t *ZipFile::GetBuffer(size_t *size) {
+	uint8_t *ret = (uint8_t *) av_malloc(index_buffer.size());
+	if (ret == nullptr)
+		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED, "Failed to allocate index return buffer");
+
+	memcpy(ret, reinterpret_cast<uint8_t *>(&index_buffer[0]), index_buffer.size());
+	*size = index_buffer.size();
+
+	return ret;
 }
