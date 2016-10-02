@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2015 Fredrik Mellbin
+//  Copyright (c) 2007-2016 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,22 @@ static AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default) {
 		return FFMS_PIX_FMT(BGR24);
 	if (s == "RGB32")
 		return FFMS_PIX_FMT(RGB32);
+    if (s == "YUV420P16")
+        return FFMS_PIX_FMT(YUV420P16);
+    if (s == "YUV422P16")
+        return FFMS_PIX_FMT(YUV422P16);
+    if (s == "YUV444P16")
+        return FFMS_PIX_FMT(YUV444P16);
+    if (s == "YUV420P10")
+        return FFMS_PIX_FMT(YUV420P10);
+    if (s == "YUV422P10")
+        return FFMS_PIX_FMT(YUV422P10);
+    if (s == "YUV444P10")
+        return FFMS_PIX_FMT(YUV444P10);
+    if (s == "RGBP16")
+        return FFMS_PIX_FMT(GBRP16);
+    if (s == "GRAY16")
+        return FFMS_PIX_FMT(GRAY16);
 
 	return FFMS_PIX_FMT(NONE);
 }
@@ -209,16 +225,24 @@ void AvisynthVideoSource::InitOutputFormat(
 	if (!F)
 		Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
-	int TargetFormats[9];
-	TargetFormats[0] = FFMS_GetPixFmt("yuv410p");
-	TargetFormats[1] = FFMS_GetPixFmt("yuv411p");
-	TargetFormats[2] = FFMS_GetPixFmt("yuv420p");
-	TargetFormats[3] = FFMS_GetPixFmt("yuv422p");
-	TargetFormats[4] = FFMS_GetPixFmt("yuv444p");
-	TargetFormats[5] = FFMS_GetPixFmt("gray8");
-	TargetFormats[6] = FFMS_GetPixFmt("yuyv422");
-	TargetFormats[7] = FFMS_GetPixFmt("bgra");
-	TargetFormats[8] = -1;
+    int TargetFormats[] = {
+    FFMS_GetPixFmt("yuv420p16"),
+    FFMS_GetPixFmt("yuv422p16"),
+    FFMS_GetPixFmt("yuv444p16"),
+    FFMS_GetPixFmt("yuv420p10"),
+    FFMS_GetPixFmt("yuv422p10"),
+    FFMS_GetPixFmt("yuv444p10"),
+    FFMS_GetPixFmt("gbrp16"),
+    FFMS_GetPixFmt("gray16"),
+    FFMS_GetPixFmt("yuv410p"),
+    FFMS_GetPixFmt("yuv411p"),
+    FFMS_GetPixFmt("yuv420p"),
+    FFMS_GetPixFmt("yuv422p"),
+    FFMS_GetPixFmt("yuv444p"),
+    FFMS_GetPixFmt("gray8"),
+    FFMS_GetPixFmt("yuyv422"),
+    FFMS_GetPixFmt("bgra"),
+    -1 };
 
 	// PIX_FMT_NV21 is misused as a return value different to the defined ones in the function
 	AVPixelFormat TargetPixelFormat = CSNameToPIXFMT(ConvertToFormatName, FFMS_PIX_FMT(NV21));
@@ -273,6 +297,22 @@ void AvisynthVideoSource::InitOutputFormat(
 		VI.pixel_type = VideoInfo::CS_BGR32;
 	else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("bgr24"))
 		VI.pixel_type = VideoInfo::CS_BGR24;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv420p16"))
+        VI.pixel_type = VideoInfo::CS_YUV420P16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv422p16"))
+        VI.pixel_type = VideoInfo::CS_YUV422P16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv444p16"))
+        VI.pixel_type = VideoInfo::CS_YUV444P16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv420p10"))
+        VI.pixel_type = VideoInfo::CS_YUV420P10;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv422p10"))
+        VI.pixel_type = VideoInfo::CS_YUV422P10;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv444p10"))
+        VI.pixel_type = VideoInfo::CS_YUV444P10;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrp16"))
+        VI.pixel_type = VideoInfo::CS_RGBP16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gray16"))
+        VI.pixel_type = VideoInfo::CS_Y16;
 	else
 		Env->ThrowError("FFVideoSource: No suitable output format found");
 
@@ -309,8 +349,7 @@ void AvisynthVideoSource::InitOutputFormat(
 	}
 }
 
-static void BlitPlane(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env, int Plane) {
-	int PlaneId = 1 << Plane;
+static void BlitPlane(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env, int Plane, int PlaneId) {
 	Env->BitBlt(Dst->GetWritePtr(PlaneId), Dst->GetPitch(PlaneId),
 		Frame->Data[Plane], Frame->Linesize[Plane],
 		Dst->GetRowSize(PlaneId), Dst->GetHeight(PlaneId));
@@ -318,13 +357,13 @@ static void BlitPlane(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironm
 
 void AvisynthVideoSource::OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env) {
 	if (VI.IsPlanar()) {
-		BlitPlane(Frame, Dst, Env, 0);
-        if (!VI.IsY8()) {
-            BlitPlane(Frame, Dst, Env, 1);
-            BlitPlane(Frame, Dst, Env, 2);
+		BlitPlane(Frame, Dst, Env, 0, VI.IsRGB() ? PLANAR_G : PLANAR_Y);
+        if (!VI.IsY()) {
+            BlitPlane(Frame, Dst, Env, 1, VI.IsRGB() ? PLANAR_B : PLANAR_U);
+            BlitPlane(Frame, Dst, Env, 2, VI.IsRGB() ? PLANAR_R : PLANAR_V);
         }
 	} else if (VI.IsYUY2()) {
-		BlitPlane(Frame, Dst, Env, 0);
+		BlitPlane(Frame, Dst, Env, 0, 0);
     } else if (VI.IsRGB24() || VI.IsRGB32()) {
 		Env->BitBlt(
 			Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1), -Dst->GetPitch(),
@@ -335,8 +374,7 @@ void AvisynthVideoSource::OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst,
     }
 }
 
-static void BlitField(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env, int Plane, int Field) {
-	int PlaneId = 1 << Plane;
+static void BlitField(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env, int Plane, int PlaneId, int Field) {
 	Env->BitBlt(
 		Dst->GetWritePtr(PlaneId) + Dst->GetPitch(PlaneId) * Field, Dst->GetPitch(PlaneId) * 2,
 		Frame->Data[Plane] + Frame->Linesize[Plane] * Field, Frame->Linesize[Plane] * 2,
@@ -344,16 +382,15 @@ static void BlitField(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironm
 }
 
 void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst, int Field, IScriptEnvironment *Env) {
-	const FFMS_Frame *SrcPicture = (Frame);
-
+	const FFMS_Frame *SrcPicture = Frame;
 	if (VI.IsPlanar()) {
-		BlitField(Frame, Dst, Env, 0, Field);
-        if (!VI.IsY8()) {
-            BlitField(Frame, Dst, Env, 1, Field);
-            BlitField(Frame, Dst, Env, 2, Field);
+		BlitField(Frame, Dst, Env, 0, VI.IsRGB() ? PLANAR_G : PLANAR_Y, Field);
+        if (!VI.IsY()) {
+            BlitField(Frame, Dst, Env, 1, VI.IsRGB() ? PLANAR_B : PLANAR_U, Field);
+            BlitField(Frame, Dst, Env, 2, VI.IsRGB() ? PLANAR_R : PLANAR_V, Field);
         }
 	} else if (VI.IsYUY2()) {
-		BlitField(Frame, Dst, Env, 0, Field);
+		BlitField(Frame, Dst, Env, 0, 0, Field);
 	} else if (VI.IsRGB24() || VI.IsRGB32()) {
 		Env->BitBlt(
 			Dst->GetWritePtr() + Dst->GetPitch() * (Dst->GetHeight() - 1 - Field), -Dst->GetPitch() * 2,
