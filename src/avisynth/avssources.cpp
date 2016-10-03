@@ -215,6 +215,20 @@ AvisynthVideoSource::~AvisynthVideoSource() {
 	FFMS_DestroyVideoSource(V);
 }
 
+static int GetSubSamplingH(const VideoInfo &vi) {
+    if (vi.IsYUV() && vi.IsPlanar())
+        return vi.GetPlaneHeightSubsampling(PLANAR_U);
+    else
+        return 0;
+}
+
+static int GetSubSamplingW(const VideoInfo &vi) {
+    if (vi.IsYUV() && vi.IsPlanar())
+        return vi.GetPlaneWidthSubsampling(PLANAR_U);
+    else
+        return 0;
+}
+
 void AvisynthVideoSource::InitOutputFormat(
 	int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
 	const char *ConvertToFormatName, IScriptEnvironment *Env) {
@@ -334,19 +348,9 @@ void AvisynthVideoSource::InitOutputFormat(
 	VI.width = F->ScaledWidth;
 	VI.height = F->ScaledHeight;
 
-	// Crop to obey avisynth's even width/height requirements
-	if (VI.pixel_type == VideoInfo::CS_I420) {
-		VI.height -= VI.height & 1;
-		VI.width -= VI.width & 1;
-	}
-
-	if (VI.pixel_type == VideoInfo::CS_YUY2) {
-		VI.width -= VI.width & 1;
-	}
-
-	if (RFFMode > 0) {
-		VI.height -= VI.height & 1;
-	}
+	// Crop to obey subsampling width/height requirements
+    VI.width -= VI.width % (1 << GetSubSamplingW(VI));
+    VI.height -= VI.height % (1 << (GetSubSamplingH(VI) + (RFFMode > 0 ? 1 : 0)));
 }
 
 static void BlitPlane(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env, int Plane, int PlaneId) {

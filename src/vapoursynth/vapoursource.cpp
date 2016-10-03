@@ -322,7 +322,9 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	VI[0].width = F->ScaledWidth;
 	VI[0].height = F->ScaledHeight;
 
-	// fixme? Crop to obey sane even width/height requirements
+    // Crop to obey subsampling width/height requirements
+    VI[0].width -= VI[0].width % (1 << VI[0].format->subSamplingW);
+    VI[0].height -= VI[0].height % (1 << VI[0].format->subSamplingH);
 }
 
 void VSVideoSource::OutputFrame(const FFMS_Frame *Frame, VSFrameRef *Dst, const VSAPI *vsapi) {
