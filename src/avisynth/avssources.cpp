@@ -25,7 +25,7 @@
 #include <algorithm>
 #include <cassert>
 
-static AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default) {
+static AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default, bool HighBitDepth) {
 	if (!CSName)
 		return FFMS_PIX_FMT(NONE);
 	std::string s = CSName;
@@ -50,22 +50,24 @@ static AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default) {
 		return FFMS_PIX_FMT(BGR24);
 	if (s == "RGB32")
 		return FFMS_PIX_FMT(RGB32);
-    if (s == "YUV420P16")
-        return FFMS_PIX_FMT(YUV420P16);
-    if (s == "YUV422P16")
-        return FFMS_PIX_FMT(YUV422P16);
-    if (s == "YUV444P16")
-        return FFMS_PIX_FMT(YUV444P16);
-    if (s == "YUV420P10")
-        return FFMS_PIX_FMT(YUV420P10);
-    if (s == "YUV422P10")
-        return FFMS_PIX_FMT(YUV422P10);
-    if (s == "YUV444P10")
-        return FFMS_PIX_FMT(YUV444P10);
-    if (s == "RGBP16")
-        return FFMS_PIX_FMT(GBRP16);
-    if (s == "GRAY16")
-        return FFMS_PIX_FMT(GRAY16);
+    if (HighBitDepth) {
+        if (s == "YUV420P16")
+            return FFMS_PIX_FMT(YUV420P16);
+        if (s == "YUV422P16")
+            return FFMS_PIX_FMT(YUV422P16);
+        if (s == "YUV444P16")
+            return FFMS_PIX_FMT(YUV444P16);
+        if (s == "YUV420P10")
+            return FFMS_PIX_FMT(YUV420P10);
+        if (s == "YUV422P10")
+            return FFMS_PIX_FMT(YUV422P10);
+        if (s == "YUV444P10")
+            return FFMS_PIX_FMT(YUV444P10);
+        if (s == "RGBP16")
+            return FFMS_PIX_FMT(GBRP16);
+        if (s == "GRAY16")
+            return FFMS_PIX_FMT(GRAY16);
+    }
 
 	return FFMS_PIX_FMT(NONE);
 }
@@ -80,6 +82,11 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 , VarPrefix(VarPrefix)
 {
 	VI = {};
+
+    // check if the two functions we need for many bits are present
+    VI.pixel_type = VideoInfo::CS_Y8;
+    HighBitDepth = (VI.ComponentSize() && VI.IsY());
+    VI.pixel_type = VideoInfo::CS_UNKNOWN;
 
 	ErrorInfo E;
 	V = FFMS_CreateVideoSource(SourceFile, Track, Index, Threads, SeekMode, &E);
@@ -239,33 +246,36 @@ void AvisynthVideoSource::InitOutputFormat(
 	if (!F)
 		Env->ThrowError("FFVideoSource: %s", E.Buffer);
 
-    int TargetFormats[] = {
-    FFMS_GetPixFmt("yuv420p16"),
-    FFMS_GetPixFmt("yuv422p16"),
-    FFMS_GetPixFmt("yuv444p16"),
-    FFMS_GetPixFmt("yuv420p10"),
-    FFMS_GetPixFmt("yuv422p10"),
-    FFMS_GetPixFmt("yuv444p10"),
-    FFMS_GetPixFmt("gbrp16"),
-    FFMS_GetPixFmt("gray16"),
-    FFMS_GetPixFmt("yuv410p"),
-    FFMS_GetPixFmt("yuv411p"),
-    FFMS_GetPixFmt("yuv420p"),
-    FFMS_GetPixFmt("yuv422p"),
-    FFMS_GetPixFmt("yuv444p"),
-    FFMS_GetPixFmt("gray8"),
-    FFMS_GetPixFmt("yuyv422"),
-    FFMS_GetPixFmt("bgra"),
-    -1 };
+    std::vector<int> TargetFormats;
+    if (HighBitDepth) {
+        TargetFormats.push_back(FFMS_GetPixFmt("yuv420p16"));
+        TargetFormats.push_back(FFMS_GetPixFmt("yuv422p16"));
+        TargetFormats.push_back(FFMS_GetPixFmt("yuv444p16"));
+        TargetFormats.push_back(FFMS_GetPixFmt("yuv420p10"));
+        TargetFormats.push_back(FFMS_GetPixFmt("yuv422p10"));
+        TargetFormats.push_back(FFMS_GetPixFmt("yuv444p10"));
+        TargetFormats.push_back(FFMS_GetPixFmt("gbrp16"));
+        TargetFormats.push_back(FFMS_GetPixFmt("gray16"));
+    }
+    TargetFormats.push_back(FFMS_GetPixFmt("yuv410p"));
+    TargetFormats.push_back(FFMS_GetPixFmt("yuv411p"));
+    TargetFormats.push_back(FFMS_GetPixFmt("yuv420p"));
+    TargetFormats.push_back(FFMS_GetPixFmt("yuv422p"));
+    TargetFormats.push_back(FFMS_GetPixFmt("yuv444p"));
+    TargetFormats.push_back(FFMS_GetPixFmt("gray8"));
+    TargetFormats.push_back(FFMS_GetPixFmt("yuyv422"));
+    TargetFormats.push_back(FFMS_GetPixFmt("bgra"));
+    TargetFormats.push_back(-1);
 
 	// PIX_FMT_NV21 is misused as a return value different to the defined ones in the function
-	AVPixelFormat TargetPixelFormat = CSNameToPIXFMT(ConvertToFormatName, FFMS_PIX_FMT(NV21));
+	AVPixelFormat TargetPixelFormat = CSNameToPIXFMT(ConvertToFormatName, FFMS_PIX_FMT(NV21), HighBitDepth);
 	if (TargetPixelFormat == FFMS_PIX_FMT(NONE))
 		Env->ThrowError("FFVideoSource: Invalid colorspace name specified");
 
 	if (TargetPixelFormat != FFMS_PIX_FMT(NV21)) {
-		TargetFormats[0] = TargetPixelFormat;
-		TargetFormats[1] = -1;
+        TargetFormats.clear();
+        TargetFormats.push_back(TargetPixelFormat);
+        TargetFormats.push_back(-1);
 	}
 
 	if (ResizeToWidth <= 0)
@@ -278,16 +288,17 @@ void AvisynthVideoSource::InitOutputFormat(
 	if (Resizer == 0)
 		Env->ThrowError("FFVideoSource: Invalid resizer name specified");
 
-	if (FFMS_SetOutputFormatV2(V, TargetFormats,
+	if (FFMS_SetOutputFormatV2(V, TargetFormats.data(),
 		ResizeToWidth, ResizeToHeight, Resizer, &E))
 		Env->ThrowError("FFVideoSource: No suitable output format found");
 
 	F = FFMS_GetFrame(V, 0, &E);
-	TargetFormats[0] = F->ConvertedPixelFormat;
-	TargetFormats[1] = -1;
+    TargetFormats.clear();
+    TargetFormats.push_back(TargetPixelFormat);
+    TargetFormats.push_back(-1);
 
 		// This trick is required to first get the "best" default format and then set only that format as the output
-	if (FFMS_SetOutputFormatV2(V, TargetFormats,
+	if (FFMS_SetOutputFormatV2(V, TargetFormats.data(),
 		ResizeToWidth, ResizeToHeight, Resizer, &E))
 		Env->ThrowError("FFVideoSource: No suitable output format found");
 
@@ -362,7 +373,7 @@ static void BlitPlane(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironm
 void AvisynthVideoSource::OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env) {
 	if (VI.IsPlanar()) {
 		BlitPlane(Frame, Dst, Env, 0, VI.IsRGB() ? PLANAR_G : PLANAR_Y);
-        if (!VI.IsY()) {
+        if (HighBitDepth ? !VI.IsY() : !VI.IsY8()) {
             BlitPlane(Frame, Dst, Env, 1, VI.IsRGB() ? PLANAR_B : PLANAR_U);
             BlitPlane(Frame, Dst, Env, 2, VI.IsRGB() ? PLANAR_R : PLANAR_V);
         }
@@ -389,7 +400,7 @@ void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst,
 	const FFMS_Frame *SrcPicture = Frame;
 	if (VI.IsPlanar()) {
 		BlitField(Frame, Dst, Env, 0, VI.IsRGB() ? PLANAR_G : PLANAR_Y, Field);
-        if (!VI.IsY()) {
+        if (HighBitDepth ? !VI.IsY() : !VI.IsY8()) {
             BlitField(Frame, Dst, Env, 1, VI.IsRGB() ? PLANAR_B : PLANAR_U, Field);
             BlitField(Frame, Dst, Env, 2, VI.IsRGB() ? PLANAR_R : PLANAR_V, Field);
         }

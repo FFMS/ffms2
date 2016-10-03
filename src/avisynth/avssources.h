@@ -41,6 +41,7 @@ class AvisynthVideoSource : public IClip {
 	};
 
 	VideoInfo VI;
+    bool HighBitDepth;
 	FFMS_VideoSource *V;
 	int FPSNum;
 	int FPSDen;
