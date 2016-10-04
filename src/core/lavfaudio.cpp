@@ -37,7 +37,7 @@ class FFLAVFAudio : public FFMS_AudioSource {
 	void OpenFile() override {
 		AVCodecContext *Context = CodecContext;
 
-		if (avcodec_is_open(Context)) {
+		if (Context && avcodec_is_open(Context)) {
 			avcodec_free_context(&Context);
 			avformat_close_input(&FormatContext);
 		}
