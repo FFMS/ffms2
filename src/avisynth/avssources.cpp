@@ -32,17 +32,17 @@ static AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default, b
 	std::transform(s.begin(), s.end(), s.begin(), toupper);
 	if (s == "")
 		return Default;
-	if (s == "YUV9")
+	if (s == "YUV9" || s == "YUV410P8")
 		return FFMS_PIX_FMT(YUV410P);
-	if (s == "YV411")
+	if (s == "YV411" || s == "YUV411P8")
 		return FFMS_PIX_FMT(YUV411P);
-	if (s == "YV12")
+	if (s == "YV12" || s == "YUV420P8")
 		return FFMS_PIX_FMT(YUV420P);
-	if (s == "YV16")
+	if (s == "YV16" || s == "YUV422P8")
 		return FFMS_PIX_FMT(YUV422P);
-	if (s == "YV24")
+	if (s == "YV24" || s == "YUV411P8")
 		return FFMS_PIX_FMT(YUV444P);
-	if (s == "Y8")
+	if (s == "Y8" || s == "GRAY8")
 		return FFMS_PIX_FMT(GRAY8);
 	if (s == "YUY2")
 		return FFMS_PIX_FMT(YUYV422);
@@ -65,7 +65,7 @@ static AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default, b
             return FFMS_PIX_FMT(YUV444P10);
         if (s == "RGBP16")
             return FFMS_PIX_FMT(GBRP16);
-        if (s == "GRAY16")
+        if (s == "Y16" || s == "GRAY16")
             return FFMS_PIX_FMT(GRAY16);
     }
 
@@ -294,7 +294,7 @@ void AvisynthVideoSource::InitOutputFormat(
 
 	F = FFMS_GetFrame(V, 0, &E);
     TargetFormats.clear();
-    TargetFormats.push_back(TargetPixelFormat);
+    TargetFormats.push_back(F->ConvertedPixelFormat);
     TargetFormats.push_back(-1);
 
 		// This trick is required to first get the "best" default format and then set only that format as the output
