@@ -130,7 +130,6 @@ public:
 typedef unknown_size<FFMS_ResampleContext, ffms_resample_alloc_context, ffms_resample_free> FFResampleContext;
 
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
-bool AudioFMTIsFloat(AVSampleFormat FMT);
 void InitNullPacket(AVPacket &pkt);
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);
 
