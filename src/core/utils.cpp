@@ -144,8 +144,13 @@ void FlushBuffers(AVCodecContext *CodecContext) {
 		// close and reopen the codec
 		const AVCodec *codec = CodecContext->codec;
 
-		// Raw video codec forgets the palette if "flushed" this way
-		if (codec->id != FFMS_ID(RAWVIDEO)) {
+		// Only flush blacklisted codecs, closing and reopening breaks far too
+        // many decoders to always do as a fallback!!!
+
+        // Further notes: VC1 does have a flush in recent versions so
+        // maybe just remove all this junk unless more formats are found that
+        // need it
+		if (codec->id == FFMS_ID(VC1)) {
 			avcodec_close(CodecContext);
 			// Whether or not codec is const varies between versions
 			if (avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), nullptr) < 0)
