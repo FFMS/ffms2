@@ -62,7 +62,7 @@ static void output_frame( AVS_FilterInfo *fi, AVS_VideoFrame *avs_frame, char fi
 {
     const static int planes[3] = { AVS_PLANAR_Y, AVS_PLANAR_U, AVS_PLANAR_V };
     uint8_t *dst[3];
-    int dst_stride[3], plane = (avs_is_yuv( &fi->vi ) && !avs_is_y8( &fi->vi )) ? 3 : 1;
+    int dst_stride[3], plane = (avs_is_yuv( &fi->vi ) && !ffms_avs_lib->avs_is_y8( &fi->vi )) ? 3 : 1;
     fill_avs_frame_data( avs_frame, dst, dst_stride, 0, avs_is_rgb( &fi->vi ) );
     for( int i = 0; i < plane; i++ )
     {
@@ -88,7 +88,7 @@ static AVS_VideoFrame * AVSC_CC get_frame( AVS_FilterInfo *fi, int n )
 
     init_ErrorInfo( ei );
 
-    AVS_VideoFrame *dst = ffms_avs_lib->avs_new_video_frame_a( fi->env, &fi->vi, AVS_FRAME_ALIGN );
+    AVS_VideoFrame *dst = ffms_avs_lib->avs_new_video_frame_a( fi->env, &fi->vi, FRAME_ALIGN );
     if( filter->rff_mode > 0 )
     {
         const FFMS_Frame *frame = FFMS_GetFrame( filter->vid, FFMIN( filter->field_list[n].top, filter->field_list[n].bottom ), &ei );
@@ -206,7 +206,7 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
     enum AVPixelFormat pix_fmt = frame->ConvertedPixelFormat;
 
     if( pix_fmt == FFMS_PIX_FMT(YUVJ420P) || pix_fmt == FFMS_PIX_FMT(YUV420P) )
-        filter->fi->vi.pixel_type = ffms_avs_lib->AVS_CS_I420;
+        filter->fi->vi.pixel_type = AVS_CS_I420;
     else if( pix_fmt == FFMS_PIX_FMT(YUYV422) )
         filter->fi->vi.pixel_type = AVS_CS_YUY2;
     else if( pix_fmt == FFMS_PIX_FMT(BGRA) )
@@ -248,7 +248,7 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
     int pixel_type = filter->fi->vi.pixel_type;
 
     // Crop to obey avisynth's width/height requirements
-    if( pixel_type == ffms_avs_lib->AVS_CS_I420 )
+    if( pixel_type == AVS_CS_I420 )
     {
         filter->fi->vi.height &= ~1;
         filter->fi->vi.width  &= ~1;

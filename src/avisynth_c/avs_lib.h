@@ -38,7 +38,19 @@ typedef struct
     AVSC_DECLARE_FUNC( avs_get_audio );
     AVSC_DECLARE_FUNC( avs_get_cpu_flags );
     AVSC_DECLARE_FUNC( avs_get_frame );
+    AVSC_DECLARE_FUNC( avs_get_height_p );
+    AVSC_DECLARE_FUNC( avs_get_pitch_p );
+    AVSC_DECLARE_FUNC( avs_get_read_ptr_p );
+    AVSC_DECLARE_FUNC( avs_get_row_size_p );
     AVSC_DECLARE_FUNC( avs_get_video_info );
+    AVSC_DECLARE_FUNC( avs_get_write_ptr_p );
+    AVSC_DECLARE_FUNC( avs_is_rgb48 );
+    AVSC_DECLARE_FUNC( avs_is_rgb64 );
+    AVSC_DECLARE_FUNC( avs_is_yv12 );
+    AVSC_DECLARE_FUNC( avs_is_yv16 );
+    AVSC_DECLARE_FUNC( avs_is_yv24 );
+    AVSC_DECLARE_FUNC( avs_is_yv411 );
+    AVSC_DECLARE_FUNC( avs_is_y8 );
     AVSC_DECLARE_FUNC( avs_new_c_filter );
     AVSC_DECLARE_FUNC( avs_new_video_frame_a );
     AVSC_DECLARE_FUNC( avs_release_video_frame );
@@ -49,13 +61,13 @@ typedef struct
 
     AVS_ScriptEnvironment *env; /* the actual script environment */
 
-    // begin backwards compatability support
+/*    // begin backwards compatability support
     int is_avs_26;
     int AVS_CS_I420;
 
     int (*avs_get_height_p)(const AVS_VideoFrame * p, int plane);
     int (*avs_get_row_size_p)(const AVS_VideoFrame * p, int plane);
-    int (*avs_is_yv12)(const AVS_VideoInfo * p);
+    int (*avs_is_yv12)(const AVS_VideoInfo * p);*/
 
     enum AVPixelFormat (*csp_name_to_pix_fmt)( const char *csp_name, enum AVPixelFormat def );
     enum AVPixelFormat (*vi_to_pix_fmt)( const AVS_VideoInfo *vi );

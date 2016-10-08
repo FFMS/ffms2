@@ -52,7 +52,19 @@ int ffms_load_avs_lib( AVS_ScriptEnvironment *env )
     LOAD_AVS_FUNC( avs_get_audio );
     LOAD_AVS_FUNC( avs_get_cpu_flags );
     LOAD_AVS_FUNC( avs_get_frame );
+    LOAD_AVS_FUNC( avs_get_height_p );
+    LOAD_AVS_FUNC( avs_get_pitch_p );
+    LOAD_AVS_FUNC( avs_get_read_ptr_p );
+    LOAD_AVS_FUNC( avs_get_row_size_p );
     LOAD_AVS_FUNC( avs_get_video_info );
+    LOAD_AVS_FUNC( avs_get_write_ptr_p );
+    LOAD_AVS_FUNC( avs_is_rgb48 );
+    LOAD_AVS_FUNC( avs_is_rgb64 );
+    LOAD_AVS_FUNC( avs_is_yv12 );
+    LOAD_AVS_FUNC( avs_is_yv16 );
+    LOAD_AVS_FUNC( avs_is_yv24 );
+    LOAD_AVS_FUNC( avs_is_yv411 );
+    LOAD_AVS_FUNC( avs_is_y8 );
     LOAD_AVS_FUNC( avs_new_c_filter );
     LOAD_AVS_FUNC( avs_new_video_frame_a );
     LOAD_AVS_FUNC( avs_release_video_frame );
@@ -63,11 +75,11 @@ int ffms_load_avs_lib( AVS_ScriptEnvironment *env )
 
     ffms_avs_lib->env = env;
 
-    ffms_avs_lib->is_avs_26 = 1;
+/*    ffms_avs_lib->is_avs_26 = 1;
     ffms_avs_lib->AVS_CS_I420 = AVS_CS_I420;
     ffms_avs_lib->avs_get_height_p = avs_get_height_p;
     ffms_avs_lib->avs_get_row_size_p = avs_get_row_size_p;
-    ffms_avs_lib->avs_is_yv12 = avs_is_yv12;
+    ffms_avs_lib->avs_is_yv12 = avs_is_yv12;*/
     ffms_avs_lib->csp_name_to_pix_fmt = csp_name_to_pix_fmt;
     ffms_avs_lib->vi_to_pix_fmt = vi_to_pix_fmt;
 
