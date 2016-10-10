@@ -37,9 +37,40 @@
 #ifndef __AVISYNTH_C__
 #define __AVISYNTH_C__
 
-#include "avs/config.h"
-#include "avs/capi.h"
-#include "avs/types.h"
+#ifdef __cplusplus
+#  define EXTERN_C extern "C"
+#else
+#  define EXTERN_C
+#endif
+
+#define AVSC_USE_STDCALL 1
+
+#ifndef AVSC_USE_STDCALL
+#  define AVSC_CC __cdecl
+#else
+#  define AVSC_CC __stdcall
+#endif
+
+#define AVSC_INLINE static __inline
+
+#ifdef AVISYNTH_C_EXPORTS
+#  define AVSC_EXPORT EXTERN_C
+#  define AVSC_API(ret, name) EXTERN_C __declspec(dllexport) ret AVSC_CC name
+#else
+#  define AVSC_EXPORT EXTERN_C __declspec(dllexport)
+#  ifndef AVSC_NO_DECLSPEC
+#    define AVSC_API(ret, name) EXTERN_C __declspec(dllimport) ret AVSC_CC name
+#  else
+#    define AVSC_API(ret, name) typedef ret (AVSC_CC *name##_func)
+#  endif
+#endif
+
+typedef unsigned char BYTE;
+#ifdef __GNUC__
+typedef long long int INT64;
+#else
+typedef __int64 INT64;
+#endif
 
 
 /////////////////////////////////////////////////////////////////////
@@ -295,14 +326,7 @@ enum {
     AVS_CACHE_ACCESS_SEQ1=263, // Filter needs sequential access (high cost)
   };
 
-#ifdef BUILDING_AVSCORE
-struct AVS_ScriptEnvironment {
-        IScriptEnvironment * env;
-        const char * error;
-        AVS_ScriptEnvironment(IScriptEnvironment * e = 0)
-                : env(e), error(0) {}
-};
-#endif
+#define AVS_FRAME_ALIGN 32
 
 typedef struct AVS_Clip AVS_Clip;
 typedef struct AVS_ScriptEnvironment AVS_ScriptEnvironment;
@@ -814,12 +838,12 @@ AVSC_API(AVS_VideoFrame *, avs_new_video_frame_a)(AVS_ScriptEnvironment *,
 AVSC_INLINE
 AVS_VideoFrame * avs_new_video_frame(AVS_ScriptEnvironment * env,
                                      const AVS_VideoInfo * vi)
-  {return avs_new_video_frame_a(env,vi,FRAME_ALIGN);}
+  {return avs_new_video_frame_a(env,vi,AVS_FRAME_ALIGN);}
 
 AVSC_INLINE
 AVS_VideoFrame * avs_new_frame(AVS_ScriptEnvironment * env,
                                const AVS_VideoInfo * vi)
-  {return avs_new_video_frame_a(env,vi,FRAME_ALIGN);}
+  {return avs_new_video_frame_a(env,vi,AVS_FRAME_ALIGN);}
 #endif
 
 

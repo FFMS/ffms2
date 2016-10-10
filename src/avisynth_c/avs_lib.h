@@ -27,10 +27,10 @@
 
 enum AVPixelFormat; // predeclare this - to use it in the below prototypes
 
-#define AVSC_DECLARE_FUNC(name) name##_func name
-
-typedef struct
+typedef struct ffms_avs_lib_t
 {
+    void *library;
+#define AVSC_DECLARE_FUNC(name) name ## _func name
     AVSC_DECLARE_FUNC( avs_add_function );
     AVSC_DECLARE_FUNC( avs_at_exit );
     AVSC_DECLARE_FUNC( avs_bit_blt );
@@ -61,21 +61,13 @@ typedef struct
 
     AVS_ScriptEnvironment *env; /* the actual script environment */
 
-/*    // begin backwards compatability support
-    int is_avs_26;
-    int AVS_CS_I420;
-
-    int (*avs_get_height_p)(const AVS_VideoFrame * p, int plane);
-    int (*avs_get_row_size_p)(const AVS_VideoFrame * p, int plane);
-    int (*avs_is_yv12)(const AVS_VideoInfo * p);*/
-
     enum AVPixelFormat (*csp_name_to_pix_fmt)( const char *csp_name, enum AVPixelFormat def );
     enum AVPixelFormat (*vi_to_pix_fmt)( const AVS_VideoInfo *vi );
 
 } ffms_avs_lib_t;
 
 /* it is highly convenient to have this library globally available to avoid having to pass it around */
-extern       ffms_avs_lib_t *ffms_avs_lib;
+extern       ffms_avs_lib_t ffms_avs_lib;
 int          ffms_load_avs_lib( AVS_ScriptEnvironment *env );
 void AVSC_CC ffms_free_avs_lib( void *user_data, AVS_ScriptEnvironment *env );
 

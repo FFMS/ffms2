@@ -66,7 +66,7 @@ AVS_Value FFAudioSource_create( AVS_ScriptEnvironment *env, const char *src, int
     if( !filter )
         return avs_void;
 
-    AVS_Clip *clip = ffms_avs_lib->avs_new_c_filter( env, &filter->fi, avs_void, 0 );
+    AVS_Clip *clip = ffms_avs_lib.avs_new_c_filter( env, &filter->fi, avs_void, 0 );
     if( !clip )
     {
         free( filter );
@@ -87,8 +87,8 @@ AVS_Value FFAudioSource_create( AVS_ScriptEnvironment *env, const char *src, int
 
     char buf[512] = {0};
     ffms_avs_sprintf2( buf, sizeof(buf), "%sFFCHANNEL_LAYOUT", var_prefix );
-    ffms_avs_lib->avs_set_var( env, buf, avs_new_value_int( (int)audp->ChannelLayout ) );
-    ffms_avs_lib->avs_set_global_var( env, "FFVAR_PREFIX", avs_new_value_string( var_prefix ) );
+    ffms_avs_lib.avs_set_var( env, buf, avs_new_value_int( (int)audp->ChannelLayout ) );
+    ffms_avs_lib.avs_set_global_var( env, "FFVAR_PREFIX", avs_new_value_string( var_prefix ) );
 
     switch( audp->SampleFormat )
     {

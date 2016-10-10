@@ -51,7 +51,7 @@ enum AVPixelFormat csp_name_to_pix_fmt( const char *csp_name, enum AVPixelFormat
 
 enum AVPixelFormat vi_to_pix_fmt( const AVS_VideoInfo *vi )
 {
-    if( ffms_avs_lib->avs_is_yv12( vi ) )
+    if( ffms_avs_lib.avs_is_yv12( vi ) )
         return FFMS_PIX_FMT(YUV420P);
     else if( avs_is_yuy2( vi ) )
         return FFMS_PIX_FMT(YUYV422);
@@ -59,13 +59,13 @@ enum AVPixelFormat vi_to_pix_fmt( const AVS_VideoInfo *vi )
         return FFMS_PIX_FMT(BGR24);
     else if( avs_is_rgb32( vi ) )
         return FFMS_PIX_FMT(BGRA);
-    else if( ffms_avs_lib->avs_is_yv16( vi ) )
+    else if( ffms_avs_lib.avs_is_yv16( vi ) )
         return FFMS_PIX_FMT(YUV422P);
-    else if( ffms_avs_lib->avs_is_yv24( vi ) )
+    else if( ffms_avs_lib.avs_is_yv24( vi ) )
         return FFMS_PIX_FMT(YUV444P);
-    else if( ffms_avs_lib->avs_is_y8( vi ) )
+    else if( ffms_avs_lib.avs_is_y8( vi ) )
         return FFMS_PIX_FMT(GRAY8);
-    else if( ffms_avs_lib->avs_is_yv411( vi ) )
+    else if( ffms_avs_lib.avs_is_yv411( vi ) )
         return FFMS_PIX_FMT(YUV411P);
     else
         return FFMS_PIX_FMT(NONE);
@@ -102,19 +102,19 @@ void fill_avs_frame_data( AVS_VideoFrame *frm, uint8_t *ptr[3], int stride[3], c
 {
     const static int plane[3] = { AVS_PLANAR_Y, AVS_PLANAR_U, AVS_PLANAR_V };
     uint8_t *(*p_get_ptr)( AVS_VideoFrame *frm, int plane );
-    p_get_ptr = read ? ffms_avs_lib->avs_get_read_ptr_p : ffms_avs_lib->avs_get_write_ptr_p; /* this causes a compiler warning - ignore it */
+    p_get_ptr = read ? ffms_avs_lib.avs_get_read_ptr_p : ffms_avs_lib.avs_get_write_ptr_p; /* this causes a compiler warning - ignore it */
     for( int i = 0; i < 3; i++ )
     {
         if( vertical_flip )
         {
-            stride[i] = - ffms_avs_lib->avs_get_pitch_p( frm, plane[i] );
+            stride[i] = - ffms_avs_lib.avs_get_pitch_p( frm, plane[i] );
             ptr[i] = p_get_ptr( frm, plane[i] )
-                 - stride[i] * (ffms_avs_lib->avs_get_height_p( frm, plane[i] ) - 1);
+                 - stride[i] * (ffms_avs_lib.avs_get_height_p( frm, plane[i] ) - 1);
         }
         else
         {
             ptr[i] = p_get_ptr( frm, plane[i] );
-            stride[i] = ffms_avs_lib->avs_get_pitch_p( frm, plane[i] );
+            stride[i] = ffms_avs_lib.avs_get_pitch_p( frm, plane[i] );
         }
     }
 }

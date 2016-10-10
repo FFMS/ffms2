@@ -26,62 +26,56 @@
 #include <malloc.h>
 #include "avs_common.h"
 
-#define LOAD_AVS_FUNC(name) \
-{\
-    ffms_avs_lib->name = (name##_func)GetProcAddress( GetModuleHandle(TEXT("avisynth")), #name );\
-    if( !ffms_avs_lib->name )\
-        goto fail;\
-}
-
-ffms_avs_lib_t *ffms_avs_lib = NULL;
+ffms_avs_lib_t ffms_avs_lib;
 static volatile LONG ref = 0;
 
 int ffms_load_avs_lib( AVS_ScriptEnvironment *env )
 {
     if( InterlockedIncrement( &ref ) > 1 ) /* already initted - exit */
         return 0;
-    ffms_avs_lib = calloc( 1, sizeof(ffms_avs_lib_t) );
-    if( !ffms_avs_lib )
+    ffms_avs_lib.library = LoadLibrary("avisynth");
+    if (!ffms_avs_lib.library)
         return -1;
+
+#define LOAD_AVS_FUNC(name, continue_on_fail)                  \
+    ffms_avs_lib.name =                                        \
+         (void *)GetProcAddress(ffms_avs_lib.library, #name ); \
+    if( !continue_on_fail && !ffms_avs_lib.name )              \
+        goto fail;
     OutputDebugString( "FFMS2 avs plugin: Initializing..." );
 
-    LOAD_AVS_FUNC( avs_add_function );
-    LOAD_AVS_FUNC( avs_at_exit );
-    LOAD_AVS_FUNC( avs_bit_blt );
-    LOAD_AVS_FUNC( avs_check_version );
-    LOAD_AVS_FUNC( avs_get_audio );
-    LOAD_AVS_FUNC( avs_get_cpu_flags );
-    LOAD_AVS_FUNC( avs_get_frame );
-    LOAD_AVS_FUNC( avs_get_height_p );
-    LOAD_AVS_FUNC( avs_get_pitch_p );
-    LOAD_AVS_FUNC( avs_get_read_ptr_p );
-    LOAD_AVS_FUNC( avs_get_row_size_p );
-    LOAD_AVS_FUNC( avs_get_video_info );
-    LOAD_AVS_FUNC( avs_get_write_ptr_p );
-    LOAD_AVS_FUNC( avs_is_rgb48 );
-    LOAD_AVS_FUNC( avs_is_rgb64 );
-    LOAD_AVS_FUNC( avs_is_yv12 );
-    LOAD_AVS_FUNC( avs_is_yv16 );
-    LOAD_AVS_FUNC( avs_is_yv24 );
-    LOAD_AVS_FUNC( avs_is_yv411 );
-    LOAD_AVS_FUNC( avs_is_y8 );
-    LOAD_AVS_FUNC( avs_new_c_filter );
-    LOAD_AVS_FUNC( avs_new_video_frame_a );
-    LOAD_AVS_FUNC( avs_release_video_frame );
-    LOAD_AVS_FUNC( avs_set_to_clip );
-    LOAD_AVS_FUNC( avs_set_var );
-    LOAD_AVS_FUNC( avs_set_global_var );
-    LOAD_AVS_FUNC( avs_take_clip );
+    LOAD_AVS_FUNC( avs_add_function, 0 );
+    LOAD_AVS_FUNC( avs_at_exit, 0 );
+    LOAD_AVS_FUNC( avs_bit_blt, 0 );
+    LOAD_AVS_FUNC( avs_check_version, 0 );
+    LOAD_AVS_FUNC( avs_get_audio, 0 );
+    LOAD_AVS_FUNC( avs_get_cpu_flags, 0 );
+    LOAD_AVS_FUNC( avs_get_frame, 0 );
+    LOAD_AVS_FUNC( avs_get_height_p, 1 );
+    LOAD_AVS_FUNC( avs_get_pitch_p, 1 );
+    LOAD_AVS_FUNC( avs_get_read_ptr_p, 1 );
+    LOAD_AVS_FUNC( avs_get_row_size_p, 1 );
+    LOAD_AVS_FUNC( avs_get_video_info, 0 );
+    LOAD_AVS_FUNC( avs_get_write_ptr_p, 1 );
+    LOAD_AVS_FUNC( avs_is_rgb48, 1 );
+    LOAD_AVS_FUNC( avs_is_rgb64, 1 );
+    LOAD_AVS_FUNC( avs_is_yv12, 1 );
+    LOAD_AVS_FUNC( avs_is_yv16, 1 );
+    LOAD_AVS_FUNC( avs_is_yv24, 1 );
+    LOAD_AVS_FUNC( avs_is_yv411, 1 );
+    LOAD_AVS_FUNC( avs_is_y8, 1 );
+    LOAD_AVS_FUNC( avs_new_c_filter, 0 );
+    LOAD_AVS_FUNC( avs_new_video_frame_a, 0 );
+    LOAD_AVS_FUNC( avs_release_video_frame, 0 );
+    LOAD_AVS_FUNC( avs_set_to_clip, 0 );
+    LOAD_AVS_FUNC( avs_set_var, 0 );
+    LOAD_AVS_FUNC( avs_set_global_var, 0 );
+    LOAD_AVS_FUNC( avs_take_clip, 0 );
 
-    ffms_avs_lib->env = env;
+    ffms_avs_lib.env = env;
 
-/*    ffms_avs_lib->is_avs_26 = 1;
-    ffms_avs_lib->AVS_CS_I420 = AVS_CS_I420;
-    ffms_avs_lib->avs_get_height_p = avs_get_height_p;
-    ffms_avs_lib->avs_get_row_size_p = avs_get_row_size_p;
-    ffms_avs_lib->avs_is_yv12 = avs_is_yv12;*/
-    ffms_avs_lib->csp_name_to_pix_fmt = csp_name_to_pix_fmt;
-    ffms_avs_lib->vi_to_pix_fmt = vi_to_pix_fmt;
+    ffms_avs_lib.csp_name_to_pix_fmt = csp_name_to_pix_fmt;
+    ffms_avs_lib.vi_to_pix_fmt = vi_to_pix_fmt;
 
     return 0;
 fail:
@@ -92,9 +86,9 @@ fail:
 void AVSC_CC ffms_free_avs_lib( void *user_data, AVS_ScriptEnvironment *env )
 {
     /* only free the memory if there are no more referencess */
-    if( !InterlockedDecrement( &ref ) && ffms_avs_lib )
+    if( !InterlockedDecrement( &ref ) && ffms_avs_lib.library )
     {
-        free( ffms_avs_lib );
-        ffms_avs_lib = NULL;
+        free( ffms_avs_lib.library );
+        ffms_avs_lib.library = NULL;
     }
 }
