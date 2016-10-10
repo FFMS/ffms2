@@ -40,7 +40,7 @@ static AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default, b
 		return FFMS_PIX_FMT(YUV420P);
 	if (s == "YV16" || s == "YUV422P8")
 		return FFMS_PIX_FMT(YUV422P);
-	if (s == "YV24" || s == "YUV411P8")
+	if (s == "YV24" || s == "YUV444P8")
 		return FFMS_PIX_FMT(YUV444P);
 	if (s == "Y8" || s == "GRAY8")
 		return FFMS_PIX_FMT(GRAY8);
@@ -51,20 +51,40 @@ static AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default, b
 	if (s == "RGB32")
 		return FFMS_PIX_FMT(RGB32);
     if (HighBitDepth) {
+        if (s == "YUVA420P8")
+            return FFMS_PIX_FMT(YUVA420P);
+        if (s == "YUVA422P8")
+            return FFMS_PIX_FMT(YUVA422P);
+        if (s == "YUVA444P8")
+            return FFMS_PIX_FMT(YUVA444P);
         if (s == "YUV420P16")
             return FFMS_PIX_FMT(YUV420P16);
+        if (s == "YUVA420P16")
+            return FFMS_PIX_FMT(YUVA420P16);
         if (s == "YUV422P16")
             return FFMS_PIX_FMT(YUV422P16);
+        if (s == "YUVA422P16")
+            return FFMS_PIX_FMT(YUVA422P16);
         if (s == "YUV444P16")
             return FFMS_PIX_FMT(YUV444P16);
+        if (s == "YUVA444P16")
+            return FFMS_PIX_FMT(YUVA444P16);
         if (s == "YUV420P10")
             return FFMS_PIX_FMT(YUV420P10);
+        if (s == "YUVA420P10")
+            return FFMS_PIX_FMT(YUVA420P10);
         if (s == "YUV422P10")
             return FFMS_PIX_FMT(YUV422P10);
+        if (s == "YUVA422P10")
+            return FFMS_PIX_FMT(YUVA422P10);
         if (s == "YUV444P10")
             return FFMS_PIX_FMT(YUV444P10);
+        if (s == "YUVA444P10")
+            return FFMS_PIX_FMT(YUVA444P10);
         if (s == "RGBP16")
             return FFMS_PIX_FMT(GBRP16);
+        if (s == "RGBAP16")
+            return FFMS_PIX_FMT(GBRAP16);
         if (s == "Y16" || s == "GRAY16")
             return FFMS_PIX_FMT(GRAY16);
     }
@@ -84,8 +104,8 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 	VI = {};
 
     // check if the two functions we need for many bits are present
-    VI.pixel_type = VideoInfo::CS_Y8;
-    HighBitDepth = (VI.ComponentSize() && VI.IsY());
+    VI.pixel_type = VideoInfo::CS_Y16;
+    HighBitDepth = (VI.ComponentSize() == 2 && VI.IsY());
     VI.pixel_type = VideoInfo::CS_UNKNOWN;
 
 	ErrorInfo E;
@@ -249,13 +269,23 @@ void AvisynthVideoSource::InitOutputFormat(
     std::vector<int> TargetFormats;
     if (HighBitDepth) {
         TargetFormats.push_back(FFMS_GetPixFmt("yuv420p16"));
+        TargetFormats.push_back(FFMS_GetPixFmt("yuva420p16"));
         TargetFormats.push_back(FFMS_GetPixFmt("yuv422p16"));
+        TargetFormats.push_back(FFMS_GetPixFmt("yuva422p16"));
         TargetFormats.push_back(FFMS_GetPixFmt("yuv444p16"));
+        TargetFormats.push_back(FFMS_GetPixFmt("yuva444p16"));
         TargetFormats.push_back(FFMS_GetPixFmt("yuv420p10"));
+        TargetFormats.push_back(FFMS_GetPixFmt("yuva420p10"));
         TargetFormats.push_back(FFMS_GetPixFmt("yuv422p10"));
+        TargetFormats.push_back(FFMS_GetPixFmt("yuva422p10"));
         TargetFormats.push_back(FFMS_GetPixFmt("yuv444p10"));
+        TargetFormats.push_back(FFMS_GetPixFmt("yuva444p10"));
         TargetFormats.push_back(FFMS_GetPixFmt("gbrp16"));
+        TargetFormats.push_back(FFMS_GetPixFmt("gbrap16"));
         TargetFormats.push_back(FFMS_GetPixFmt("gray16"));
+        TargetFormats.push_back(FFMS_GetPixFmt("yuva420p"));
+        TargetFormats.push_back(FFMS_GetPixFmt("yuva422p"));
+        TargetFormats.push_back(FFMS_GetPixFmt("yuva444p"));
     }
     TargetFormats.push_back(FFMS_GetPixFmt("yuv410p"));
     TargetFormats.push_back(FFMS_GetPixFmt("yuv411p"));
@@ -265,6 +295,10 @@ void AvisynthVideoSource::InitOutputFormat(
     TargetFormats.push_back(FFMS_GetPixFmt("gray8"));
     TargetFormats.push_back(FFMS_GetPixFmt("yuyv422"));
     TargetFormats.push_back(FFMS_GetPixFmt("bgra"));
+
+    // Remove unsupported formats from list so they don't appear as an early termination
+    TargetFormats.erase(std::remove(TargetFormats.begin(), TargetFormats.end(), -1), TargetFormats.end());
+
     TargetFormats.push_back(-1);
 
 	// PIX_FMT_NV21 is misused as a return value different to the defined ones in the function
@@ -306,10 +340,16 @@ void AvisynthVideoSource::InitOutputFormat(
 
 	if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuvj420p") || F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv420p"))
 		VI.pixel_type = VideoInfo::CS_I420;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuva420p"))
+        VI.pixel_type = VideoInfo::CS_YUVA420;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuvj422p") || F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv422p"))
         VI.pixel_type = VideoInfo::CS_YV16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuva422p"))
+        VI.pixel_type = VideoInfo::CS_YUVA422;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuvj444p") || F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv444p"))
         VI.pixel_type = VideoInfo::CS_YV24;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuva444p"))
+        VI.pixel_type = VideoInfo::CS_YUVA444;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv411p"))
         VI.pixel_type = VideoInfo::CS_YV411;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv410p"))
@@ -324,18 +364,32 @@ void AvisynthVideoSource::InitOutputFormat(
 		VI.pixel_type = VideoInfo::CS_BGR24;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv420p16"))
         VI.pixel_type = VideoInfo::CS_YUV420P16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuva420p16"))
+        VI.pixel_type = VideoInfo::CS_YUVA420P16;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv422p16"))
         VI.pixel_type = VideoInfo::CS_YUV422P16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuva422p16"))
+        VI.pixel_type = VideoInfo::CS_YUVA422P16;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv444p16"))
         VI.pixel_type = VideoInfo::CS_YUV444P16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuva444p16"))
+        VI.pixel_type = VideoInfo::CS_YUVA444P16;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv420p10"))
         VI.pixel_type = VideoInfo::CS_YUV420P10;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuva420p10"))
+        VI.pixel_type = VideoInfo::CS_YUVA420P10;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv422p10"))
         VI.pixel_type = VideoInfo::CS_YUV422P10;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuva422p10"))
+        VI.pixel_type = VideoInfo::CS_YUVA422P10;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuv444p10"))
         VI.pixel_type = VideoInfo::CS_YUV444P10;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuva444p10"))
+        VI.pixel_type = VideoInfo::CS_YUVA444P10;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrp16"))
         VI.pixel_type = VideoInfo::CS_RGBP16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrap16"))
+        VI.pixel_type = VideoInfo::CS_RGBAP16;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gray16"))
         VI.pixel_type = VideoInfo::CS_Y16;
 	else
@@ -377,6 +431,8 @@ void AvisynthVideoSource::OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst,
             BlitPlane(Frame, Dst, Env, 1, VI.IsRGB() ? PLANAR_B : PLANAR_U);
             BlitPlane(Frame, Dst, Env, 2, VI.IsRGB() ? PLANAR_R : PLANAR_V);
         }
+        if (VI.IsYUVA() || VI.IsPlanarRGBA())
+            BlitPlane(Frame, Dst, Env, 3, PLANAR_A);
 	} else if (VI.IsYUY2()) {
 		BlitPlane(Frame, Dst, Env, 0, 0);
     } else if (VI.IsRGB24() || VI.IsRGB32()) {
@@ -404,6 +460,8 @@ void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst,
             BlitField(Frame, Dst, Env, 1, VI.IsRGB() ? PLANAR_B : PLANAR_U, Field);
             BlitField(Frame, Dst, Env, 2, VI.IsRGB() ? PLANAR_R : PLANAR_V, Field);
         }
+        if (VI.IsYUVA() || VI.IsPlanarRGBA())
+            BlitField(Frame, Dst, Env, 3, PLANAR_A, Field);
 	} else if (VI.IsYUY2()) {
 		BlitField(Frame, Dst, Env, 0, 0, Field);
 	} else if (VI.IsRGB24() || VI.IsRGB32()) {
