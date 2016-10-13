@@ -222,8 +222,10 @@ The available choices are `FAST_BILINEAR`, `BILINEAR`, `BICUBIC` (default), `X`,
 Note that `SPLINE` is completely different from Avisynth's builtin Spline resizers.
 
 ##### string colorspace = ""
-Convert the output from whatever it was to the given colorspace, which can be one of `YV12`, `YUY2`, `RGB24` or `RGB32`.
-Setting this to an empty string (the default) means keeping the same colorspace as the input.
+Convert the output from whatever it was to the given colorspace, which can be one of `YV12`, `YV16`, `YV24`, `Y8`, `YUY2`, `YV411`, `YUV9`, `RGB24` or `RGB32`.
+They can also be referred to with the more systematic names of `YUVsssPx`, `YUVAsssPx`, `Yx`, `RGBPx` or `RGBAPx` where `x` is the desired bitdepth and `sss` represents the subsampling. Formats with an `A` also have an alpha channel.
+Examples: `YUV420P8`, `RGBAP16`, `Y16`
+Setting this to an empty string (the default) means keeping the same colorspace as the input or in case it's not supported it'll be converted to the closest existing match.
 
 ##### bool utf8 = false
 Does the same thing as in `FFIndex()`; see that function for details.
