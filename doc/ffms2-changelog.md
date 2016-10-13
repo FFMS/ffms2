@@ -1,6 +1,8 @@
 # FFmpegSource2 Changelog
 
 - 2.23
+  - Updated FFmpeg APIs used (Daemon404)
+  - Added new API that can read/write indexes to a memory buffer (Daemon404)
   - Added support for high bitdepth output in Avisynth+ (Myrsloik)
   - vapoursource: Add nfMakeLinear flag to better performance in most cases (Myrsloik)
   - Remove bad colorspace matrix guessing for YUV (Myrsloik)
