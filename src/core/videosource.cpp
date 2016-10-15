@@ -27,10 +27,10 @@
 #include <thread>
 
 namespace {
-void CopyAVFrameFields(AVFrame &Picture, FFMS_Frame &Dst) {
+void CopyAVFrameFields(uint8_t *data[4], int linesize[4], FFMS_Frame &Dst) {
 	for (int i = 0; i < 4; i++) {
-		Dst.Data[i] = Picture.data[i];
-		Dst.Linesize[i] = Picture.linesize[i];
+		Dst.Data[i] = data[i];
+		Dst.Linesize[i] = linesize[i];
 	}
 }
 
@@ -67,8 +67,8 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 	}
 
 	if (SWS) {
-		sws_scale(SWS, Frame->data, Frame->linesize, 0, CodecContext->height, SWSFrame.data, SWSFrame.linesize);
-		CopyAVFrameFields(SWSFrame, LocalFrame);
+		sws_scale(SWS, Frame->data, Frame->linesize, 0, CodecContext->height, SWSFrameData, SWSFrameLinesize);
+		CopyAVFrameFields(SWSFrameData, SWSFrameLinesize, LocalFrame);
 	} else {
 		// Special case to avoid ugly casts
 		for (int i = 0; i < 4; i++) {
@@ -157,7 +157,7 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 	LastDecodedFrame = av_frame_alloc();
 
 	// Dummy allocations so the unallocated case doesn't have to be handled later
-	if (av_image_alloc(SWSFrame.data, SWSFrame.linesize, 16, 16, FFMS_PIX_FMT(GRAY8), 4) < 0)
+	if (av_image_alloc(SWSFrameData, SWSFrameLinesize, 16, 16, FFMS_PIX_FMT(GRAY8), 4) < 0)
 		throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_ALLOCATION_FAILED,
 			"Could not allocate dummy frame.");
 
@@ -168,7 +168,7 @@ FFMS_VideoSource::~FFMS_VideoSource() {
 	if (SWS)
 		sws_freeContext(SWS);
 
-	av_freep(&SWSFrame.data[0]);
+	av_freep(&SWSFrameData[0]);
 	av_freep(&DecodeFrame);
 	av_freep(&LastDecodedFrame);
 
@@ -279,8 +279,8 @@ void FFMS_VideoSource::ReAdjustOutputFormat() {
 		}
 	}
 
-	av_freep(&SWSFrame.data[0]);
-	if (av_image_alloc(SWSFrame.data, SWSFrame.linesize, TargetWidth, TargetHeight, OutputFormat, 4) < 0)
+	av_freep(&SWSFrameData[0]);
+	if (av_image_alloc(SWSFrameData, SWSFrameLinesize, TargetWidth, TargetHeight, OutputFormat, 4) < 0)
 		throw FFMS_Exception(FFMS_ERROR_SCALING, FFMS_ERROR_ALLOCATION_FAILED,
 			"Could not allocate frame with new resolution.");
 }

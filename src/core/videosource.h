@@ -56,7 +56,8 @@ private:
 	AVColorRange InputColorRange;
 	AVColorSpace InputColorSpace;
 
-	AVFrame SWSFrame;
+    uint8_t *SWSFrameData[4];
+    int SWSFrameLinesize[4];
 
 	void DetectInputFormat();
 
