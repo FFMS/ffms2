@@ -61,13 +61,6 @@ SwsContext *GetSwsContext(int SrcW, int SrcH, AVPixelFormat SrcFormat, int SrcCo
 	return Context;
 }
 
-AVColorSpace GetAssumedColorSpace(int W, int H) {
-	if (W > 1024 || H >= 600)
-		return AVCOL_SPC_BT709;
-	else
-		return AVCOL_SPC_BT470BG;
-}
-
 /***************************
 **
 ** Two functions for making FFMS pretend it's not quite as VFR-based as it really is.
