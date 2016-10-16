@@ -139,7 +139,7 @@ static int GetPseudoDepth(const AVPixFmtDescriptor &Desc) {
 	// Comparing the pseudo depth makes sure that rgb565-ish formats get selected over rgb555-ish ones
 	int depth = 0;
 	for (int i = 0; i < Desc.nb_components; i++)
-		depth = FFMAX(depth, FFMS_DEPTH(Desc.comp[i]));
+		depth = FFMAX(depth, Desc.comp[i].depth);
 	return depth;
 }
 

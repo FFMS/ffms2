@@ -29,12 +29,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
-
-#ifdef WITH_SWRESAMPLE
 #include <libswresample/swresample.h>
-#else
-#include <libavresample/avresample.h>
-#endif
 }
 
 // must be included after ffmpeg headers
@@ -127,7 +122,7 @@ public:
 	}
 };
 
-typedef unknown_size<FFMS_ResampleContext, ffms_resample_alloc_context, ffms_resample_free> FFResampleContext;
+typedef unknown_size<SwrContext, swr_alloc, swr_free> FFResampleContext;
 
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
 void InitNullPacket(AVPacket &pkt);

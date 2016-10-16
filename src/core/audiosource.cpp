@@ -204,13 +204,10 @@ void FFMS_AudioSource::SetOutputFormat(FFMS_ResampleOptions const& opt) {
 	av_opt_set_int(newContext, "in_channel_layout", AP.ChannelLayout, 0);
 
 	av_opt_set_int(newContext, "out_sample_rate", opt.SampleRate, 0);
-
-#ifdef WITH_SWRESAMPLE
 	av_opt_set_channel_layout(newContext, "out_channel_layout", opt.ChannelLayout, 0);
 	av_opt_set_sample_fmt(newContext, "out_sample_fmt", (AVSampleFormat)opt.SampleFormat, 0);
-#endif
 
-	if (ffms_open_resampler(newContext))
+	if (swr_init(newContext))
 		throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
 			"Could not open avresample context");
 	newContext.swap(ResampleContext);
@@ -231,9 +228,8 @@ void FFMS_AudioSource::ResampleAndCache(CacheIterator pos) {
 	auto dst = block.Grow(size);
 
 	uint8_t *OutPlanes[1] = { dst };
-	ffms_convert(ResampleContext,
-		OutPlanes, DecodeFrame->nb_samples, BytesPerSample, DecodeFrame->nb_samples,
-		DecodeFrame->extended_data, DecodeFrame->nb_samples, av_get_bytes_per_sample(CodecContext->sample_fmt), DecodeFrame->nb_samples);
+
+    swr_convert(ResampleContext, OutPlanes, DecodeFrame->nb_samples, (const uint8_t **)DecodeFrame->extended_data, DecodeFrame->nb_samples);
 }
 
 FFMS_AudioSource::AudioBlock *FFMS_AudioSource::CacheBlock(CacheIterator &pos) {
