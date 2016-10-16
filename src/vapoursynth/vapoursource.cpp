@@ -118,7 +118,7 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 		VSFrameRef *Dst = vsapi->newVideoFrame(vs->VI[OutputIndex].format, vs->VI[OutputIndex].width, vs->VI[OutputIndex].height, nullptr, core);
 		VSMap *Props = vsapi->getFramePropsRW(Dst);
 
-		const FFMS_Frame *Frame;
+		const FFMS_Frame *Frame = nullptr;
 
 		if (vs->FPSNum > 0 && vs->FPSDen > 0) {
 			double currentTime = FFMS_GetVideoProperties(vs->V)->FirstTime +

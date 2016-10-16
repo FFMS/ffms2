@@ -334,7 +334,7 @@ typedef struct FFMS_ResampleOptions {
 
 
 typedef struct FFMS_Frame {
-	uint8_t *Data[4];
+	const uint8_t *Data[4];
 	int Linesize[4];
 	int EncodedWidth;
 	int EncodedHeight;
