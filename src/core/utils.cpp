@@ -18,10 +18,9 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-// avcodec.h includes audioconvert.h, but we need to include audioconvert.h
-// ourselves later
-#define FF_API_OLD_AUDIOCONVERT 0
-#define AVUTIL_AUDIOCONVERT_H
+extern "C" {
+#include <libavutil/channel_layout.h>
+}
 
 #include "utils.h"
 
@@ -69,10 +68,6 @@ void InitNullPacket(AVPacket &pkt) {
 	pkt.size = 0;
 }
 
-extern "C" {
-#include <libavutil/channel_layout.h>
-}
-
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
 	AP.SampleFormat = static_cast<FFMS_SampleFormat>(av_get_packed_sample_fmt(CTX->sample_fmt));
 	AP.BitsPerSample = av_get_bytes_per_sample(CTX->sample_fmt) * 8;
@@ -88,8 +83,6 @@ void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
 	if (AP.ChannelLayout == 0)
 		AP.ChannelLayout = av_get_default_channel_layout(AP.Channels);
 }
-
-// End of filename hackery.
 
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext, int Track) {
 	if (avformat_open_input(&FormatContext, SourceFile, nullptr, nullptr) != 0)
