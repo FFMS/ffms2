@@ -87,10 +87,10 @@
 // we now return you to your regularly scheduled programming.
 
 typedef struct FFMS_ErrorInfo {
-	int ErrorType;
-	int SubType;
-	int BufferSize;
-	char *Buffer;
+    int ErrorType;
+    int SubType;
+    int BufferSize;
+    char *Buffer;
 } FFMS_ErrorInfo;
 
 typedef struct FFMS_VideoSource FFMS_VideoSource;
@@ -100,300 +100,300 @@ typedef struct FFMS_Index FFMS_Index;
 typedef struct FFMS_Track FFMS_Track;
 
 typedef enum FFMS_Errors {
-	// No error
-	FFMS_ERROR_SUCCESS = 0,
+    // No error
+    FFMS_ERROR_SUCCESS = 0,
 
-	// Main types - where the error occurred
-	FFMS_ERROR_INDEX = 1,			// index file handling
-	FFMS_ERROR_INDEXING,			// indexing
-	FFMS_ERROR_POSTPROCESSING,		// video postprocessing (libpostproc)
-	FFMS_ERROR_SCALING,				// image scaling (libswscale)
-	FFMS_ERROR_DECODING,			// audio/video decoding
-	FFMS_ERROR_SEEKING,				// seeking
-	FFMS_ERROR_PARSER,				// file parsing
-	FFMS_ERROR_TRACK,				// track handling
-	FFMS_ERROR_WAVE_WRITER,			// WAVE64 file writer
-	FFMS_ERROR_CANCELLED,			// operation aborted
-	FFMS_ERROR_RESAMPLING,			// audio resampling (libavresample)
+    // Main types - where the error occurred
+    FFMS_ERROR_INDEX = 1,			// index file handling
+    FFMS_ERROR_INDEXING,			// indexing
+    FFMS_ERROR_POSTPROCESSING,		// video postprocessing (libpostproc)
+    FFMS_ERROR_SCALING,				// image scaling (libswscale)
+    FFMS_ERROR_DECODING,			// audio/video decoding
+    FFMS_ERROR_SEEKING,				// seeking
+    FFMS_ERROR_PARSER,				// file parsing
+    FFMS_ERROR_TRACK,				// track handling
+    FFMS_ERROR_WAVE_WRITER,			// WAVE64 file writer
+    FFMS_ERROR_CANCELLED,			// operation aborted
+    FFMS_ERROR_RESAMPLING,			// audio resampling (libavresample)
 
-	// Subtypes - what caused the error
-	FFMS_ERROR_UNKNOWN = 20,		// unknown error
-	FFMS_ERROR_UNSUPPORTED,			// format or operation is not supported with this binary
-	FFMS_ERROR_FILE_READ,			// cannot read from file
-	FFMS_ERROR_FILE_WRITE,			// cannot write to file
-	FFMS_ERROR_NO_FILE,				// no such file or directory
-	FFMS_ERROR_VERSION,				// wrong version
-	FFMS_ERROR_ALLOCATION_FAILED,	// out of memory
-	FFMS_ERROR_INVALID_ARGUMENT,	// invalid or nonsensical argument
-	FFMS_ERROR_CODEC,				// decoder error
-	FFMS_ERROR_NOT_AVAILABLE,		// requested mode or operation unavailable in this binary
-	FFMS_ERROR_FILE_MISMATCH,		// provided index does not match the file
-	FFMS_ERROR_USER					// problem exists between keyboard and chair
+    // Subtypes - what caused the error
+    FFMS_ERROR_UNKNOWN = 20,		// unknown error
+    FFMS_ERROR_UNSUPPORTED,			// format or operation is not supported with this binary
+    FFMS_ERROR_FILE_READ,			// cannot read from file
+    FFMS_ERROR_FILE_WRITE,			// cannot write to file
+    FFMS_ERROR_NO_FILE,				// no such file or directory
+    FFMS_ERROR_VERSION,				// wrong version
+    FFMS_ERROR_ALLOCATION_FAILED,	// out of memory
+    FFMS_ERROR_INVALID_ARGUMENT,	// invalid or nonsensical argument
+    FFMS_ERROR_CODEC,				// decoder error
+    FFMS_ERROR_NOT_AVAILABLE,		// requested mode or operation unavailable in this binary
+    FFMS_ERROR_FILE_MISMATCH,		// provided index does not match the file
+    FFMS_ERROR_USER					// problem exists between keyboard and chair
 } FFMS_Errors;
 
 typedef enum FFMS_Sources {
-	FFMS_SOURCE_DEFAULT		= 0x00,
-	FFMS_SOURCE_LAVF		= 0x01,
-	FFMS_SOURCE_MATROSKA	= 0x02,
-	FFMS_SOURCE_HAALIMPEG	= 0x04,
-	FFMS_SOURCE_HAALIOGG	= 0x08
+    FFMS_SOURCE_DEFAULT = 0x00,
+    FFMS_SOURCE_LAVF = 0x01,
+    FFMS_SOURCE_MATROSKA = 0x02,
+    FFMS_SOURCE_HAALIMPEG = 0x04,
+    FFMS_SOURCE_HAALIOGG = 0x08
 } FFMS_Sources;
 
 typedef enum FFMS_CPUFeatures {
-	FFMS_CPU_CAPS_MMX		= 0x01,
-	FFMS_CPU_CAPS_MMX2		= 0x02,
-	FFMS_CPU_CAPS_3DNOW		= 0x04,
-	FFMS_CPU_CAPS_ALTIVEC	= 0x08,
-	FFMS_CPU_CAPS_BFIN		= 0x10,
-	FFMS_CPU_CAPS_SSE2		= 0x20
+    FFMS_CPU_CAPS_MMX = 0x01,
+    FFMS_CPU_CAPS_MMX2 = 0x02,
+    FFMS_CPU_CAPS_3DNOW = 0x04,
+    FFMS_CPU_CAPS_ALTIVEC = 0x08,
+    FFMS_CPU_CAPS_BFIN = 0x10,
+    FFMS_CPU_CAPS_SSE2 = 0x20
 } FFMS_CPUFeatures;
 
 typedef enum FFMS_SeekMode {
-	FFMS_SEEK_LINEAR_NO_RW	= -1,
-	FFMS_SEEK_LINEAR		= 0,
-	FFMS_SEEK_NORMAL		= 1,
-	FFMS_SEEK_UNSAFE		= 2,
-	FFMS_SEEK_AGGRESSIVE	= 3
+    FFMS_SEEK_LINEAR_NO_RW = -1,
+    FFMS_SEEK_LINEAR = 0,
+    FFMS_SEEK_NORMAL = 1,
+    FFMS_SEEK_UNSAFE = 2,
+    FFMS_SEEK_AGGRESSIVE = 3
 } FFMS_SeekMode;
 
 typedef enum FFMS_IndexErrorHandling {
-	FFMS_IEH_ABORT = 0,
-	FFMS_IEH_CLEAR_TRACK = 1,
-	FFMS_IEH_STOP_TRACK = 2,
-	FFMS_IEH_IGNORE = 3
+    FFMS_IEH_ABORT = 0,
+    FFMS_IEH_CLEAR_TRACK = 1,
+    FFMS_IEH_STOP_TRACK = 2,
+    FFMS_IEH_IGNORE = 3
 } FFMS_IndexErrorHandling;
 
 typedef enum FFMS_TrackType {
-	FFMS_TYPE_UNKNOWN = -1,
-	FFMS_TYPE_VIDEO,
-	FFMS_TYPE_AUDIO,
-	FFMS_TYPE_DATA,
-	FFMS_TYPE_SUBTITLE,
-	FFMS_TYPE_ATTACHMENT
+    FFMS_TYPE_UNKNOWN = -1,
+    FFMS_TYPE_VIDEO,
+    FFMS_TYPE_AUDIO,
+    FFMS_TYPE_DATA,
+    FFMS_TYPE_SUBTITLE,
+    FFMS_TYPE_ATTACHMENT
 } FFMS_TrackType;
 
 typedef enum FFMS_SampleFormat {
-	FFMS_FMT_U8 = 0,
-	FFMS_FMT_S16,
-	FFMS_FMT_S32,
-	FFMS_FMT_FLT,
-	FFMS_FMT_DBL
+    FFMS_FMT_U8 = 0,
+    FFMS_FMT_S16,
+    FFMS_FMT_S32,
+    FFMS_FMT_FLT,
+    FFMS_FMT_DBL
 } FFMS_SampleFormat;
 
 typedef enum FFMS_AudioChannel {
-	FFMS_CH_FRONT_LEFT				= 0x00000001,
-	FFMS_CH_FRONT_RIGHT				= 0x00000002,
-	FFMS_CH_FRONT_CENTER			= 0x00000004,
-	FFMS_CH_LOW_FREQUENCY			= 0x00000008,
-	FFMS_CH_BACK_LEFT				= 0x00000010,
-	FFMS_CH_BACK_RIGHT				= 0x00000020,
-	FFMS_CH_FRONT_LEFT_OF_CENTER	= 0x00000040,
-	FFMS_CH_FRONT_RIGHT_OF_CENTER	= 0x00000080,
-	FFMS_CH_BACK_CENTER				= 0x00000100,
-	FFMS_CH_SIDE_LEFT				= 0x00000200,
-	FFMS_CH_SIDE_RIGHT				= 0x00000400,
-	FFMS_CH_TOP_CENTER				= 0x00000800,
-	FFMS_CH_TOP_FRONT_LEFT			= 0x00001000,
-	FFMS_CH_TOP_FRONT_CENTER		= 0x00002000,
-	FFMS_CH_TOP_FRONT_RIGHT			= 0x00004000,
-	FFMS_CH_TOP_BACK_LEFT			= 0x00008000,
-	FFMS_CH_TOP_BACK_CENTER			= 0x00010000,
-	FFMS_CH_TOP_BACK_RIGHT			= 0x00020000,
-	FFMS_CH_STEREO_LEFT				= 0x20000000,
-	FFMS_CH_STEREO_RIGHT			= 0x40000000
+    FFMS_CH_FRONT_LEFT = 0x00000001,
+    FFMS_CH_FRONT_RIGHT = 0x00000002,
+    FFMS_CH_FRONT_CENTER = 0x00000004,
+    FFMS_CH_LOW_FREQUENCY = 0x00000008,
+    FFMS_CH_BACK_LEFT = 0x00000010,
+    FFMS_CH_BACK_RIGHT = 0x00000020,
+    FFMS_CH_FRONT_LEFT_OF_CENTER = 0x00000040,
+    FFMS_CH_FRONT_RIGHT_OF_CENTER = 0x00000080,
+    FFMS_CH_BACK_CENTER = 0x00000100,
+    FFMS_CH_SIDE_LEFT = 0x00000200,
+    FFMS_CH_SIDE_RIGHT = 0x00000400,
+    FFMS_CH_TOP_CENTER = 0x00000800,
+    FFMS_CH_TOP_FRONT_LEFT = 0x00001000,
+    FFMS_CH_TOP_FRONT_CENTER = 0x00002000,
+    FFMS_CH_TOP_FRONT_RIGHT = 0x00004000,
+    FFMS_CH_TOP_BACK_LEFT = 0x00008000,
+    FFMS_CH_TOP_BACK_CENTER = 0x00010000,
+    FFMS_CH_TOP_BACK_RIGHT = 0x00020000,
+    FFMS_CH_STEREO_LEFT = 0x20000000,
+    FFMS_CH_STEREO_RIGHT = 0x40000000
 } FFMS_AudioChannel;
 
 typedef enum FFMS_Resizers {
-	FFMS_RESIZER_FAST_BILINEAR	= 0x0001,
-	FFMS_RESIZER_BILINEAR		= 0x0002,
-	FFMS_RESIZER_BICUBIC		= 0x0004,
-	FFMS_RESIZER_X				= 0x0008,
-	FFMS_RESIZER_POINT			= 0x0010,
-	FFMS_RESIZER_AREA			= 0x0020,
-	FFMS_RESIZER_BICUBLIN		= 0x0040,
-	FFMS_RESIZER_GAUSS			= 0x0080,
-	FFMS_RESIZER_SINC			= 0x0100,
-	FFMS_RESIZER_LANCZOS		= 0x0200,
-	FFMS_RESIZER_SPLINE			= 0x0400
+    FFMS_RESIZER_FAST_BILINEAR = 0x0001,
+    FFMS_RESIZER_BILINEAR = 0x0002,
+    FFMS_RESIZER_BICUBIC = 0x0004,
+    FFMS_RESIZER_X = 0x0008,
+    FFMS_RESIZER_POINT = 0x0010,
+    FFMS_RESIZER_AREA = 0x0020,
+    FFMS_RESIZER_BICUBLIN = 0x0040,
+    FFMS_RESIZER_GAUSS = 0x0080,
+    FFMS_RESIZER_SINC = 0x0100,
+    FFMS_RESIZER_LANCZOS = 0x0200,
+    FFMS_RESIZER_SPLINE = 0x0400
 } FFMS_Resizers;
 
 typedef enum FFMS_AudioDelayModes {
-	FFMS_DELAY_NO_SHIFT				= -3,
-	FFMS_DELAY_TIME_ZERO			= -2,
-	FFMS_DELAY_FIRST_VIDEO_TRACK	= -1
+    FFMS_DELAY_NO_SHIFT = -3,
+    FFMS_DELAY_TIME_ZERO = -2,
+    FFMS_DELAY_FIRST_VIDEO_TRACK = -1
 } FFMS_AudioDelayModes;
 
 typedef enum FFMS_ColorPrimaries {
-	FFMS_PRI_RESERVED0		= 0,
-	FFMS_PRI_BT709			= 1,
-	FFMS_PRI_UNSPECIFIED	= 2,
-	FFMS_PRI_RESERVED		= 3,
-	FFMS_PRI_BT470M			= 4,
-	FFMS_PRI_BT470BG		= 5,
-	FFMS_PRI_SMPTE170M		= 6,
-	FFMS_PRI_SMPTE240M		= 7,
-	FFMS_PRI_FILM			= 8,
-	FFMS_PRI_BT2020			= 9
+    FFMS_PRI_RESERVED0 = 0,
+    FFMS_PRI_BT709 = 1,
+    FFMS_PRI_UNSPECIFIED = 2,
+    FFMS_PRI_RESERVED = 3,
+    FFMS_PRI_BT470M = 4,
+    FFMS_PRI_BT470BG = 5,
+    FFMS_PRI_SMPTE170M = 6,
+    FFMS_PRI_SMPTE240M = 7,
+    FFMS_PRI_FILM = 8,
+    FFMS_PRI_BT2020 = 9
 } FFMS_ColorPrimaries;
 
 typedef enum FFMS_TransferCharacteristic {
-	FFMS_TRC_RESERVED0		= 0,
-	FFMS_TRC_BT709			= 1,
-	FFMS_TRC_UNSPECIFIED	= 2,
-	FFMS_TRC_RESERVED		= 3,
-	FFMS_TRC_GAMMA22		= 4,
-	FFMS_TRC_GAMMA28		= 5,
-	FFMS_TRC_SMPTE170M		= 6,
-	FFMS_TRC_SMPTE240M		= 7,
-	FFMS_TRC_LINEAR			= 8,
-	FFMS_TRC_LOG			= 9,
-	FFMS_TRC_LOG_SQRT		= 10,
-	FFMS_TRC_IEC61966_2_4	= 11,
-	FFMS_TRC_BT1361_ECG		= 12,
-	FFMS_TRC_IEC61966_2_1	= 13,
-	FFMS_TRC_BT2020_10		= 14,
-	FFMS_TRC_BT2020_12		= 15
+    FFMS_TRC_RESERVED0 = 0,
+    FFMS_TRC_BT709 = 1,
+    FFMS_TRC_UNSPECIFIED = 2,
+    FFMS_TRC_RESERVED = 3,
+    FFMS_TRC_GAMMA22 = 4,
+    FFMS_TRC_GAMMA28 = 5,
+    FFMS_TRC_SMPTE170M = 6,
+    FFMS_TRC_SMPTE240M = 7,
+    FFMS_TRC_LINEAR = 8,
+    FFMS_TRC_LOG = 9,
+    FFMS_TRC_LOG_SQRT = 10,
+    FFMS_TRC_IEC61966_2_4 = 11,
+    FFMS_TRC_BT1361_ECG = 12,
+    FFMS_TRC_IEC61966_2_1 = 13,
+    FFMS_TRC_BT2020_10 = 14,
+    FFMS_TRC_BT2020_12 = 15
 } FFMS_TransferCharacteristic;
 
 typedef enum FFMS_ColorSpaces {
-	FFMS_CS_RGB			= 0,
-	FFMS_CS_BT709		= 1,
-	FFMS_CS_UNSPECIFIED	= 2,
-	FFMS_CS_FCC			= 4,
-	FFMS_CS_BT470BG		= 5,
-	FFMS_CS_SMPTE170M	= 6,
-	FFMS_CS_SMPTE240M	= 7,
-	FFMS_CS_YCOCG		= 8,
-	FFMS_CS_BT2020_NCL	= 9,
-	FFMS_CS_BT2020_CL	= 10
+    FFMS_CS_RGB = 0,
+    FFMS_CS_BT709 = 1,
+    FFMS_CS_UNSPECIFIED = 2,
+    FFMS_CS_FCC = 4,
+    FFMS_CS_BT470BG = 5,
+    FFMS_CS_SMPTE170M = 6,
+    FFMS_CS_SMPTE240M = 7,
+    FFMS_CS_YCOCG = 8,
+    FFMS_CS_BT2020_NCL = 9,
+    FFMS_CS_BT2020_CL = 10
 } FFMS_ColorSpaces;
 
 typedef enum FFMS_ColorRanges {
-	FFMS_CR_UNSPECIFIED = 0,
-	FFMS_CR_MPEG		= 1, // 219*2^(n-8), i.e. 16-235 with 8-bit samples
-	FFMS_CR_JPEG		= 2 // 2^n-1, or "fullrange"
+    FFMS_CR_UNSPECIFIED = 0,
+    FFMS_CR_MPEG = 1, // 219*2^(n-8), i.e. 16-235 with 8-bit samples
+    FFMS_CR_JPEG = 2 // 2^n-1, or "fullrange"
 } FFMS_ColorRanges;
 
 typedef enum FFMS_MixingCoefficientType {
-	FFMS_MIXING_COEFFICIENT_Q8  = 0,
-	FFMS_MIXING_COEFFICIENT_Q15 = 1,
-	FFMS_MIXING_COEFFICIENT_FLT = 2
+    FFMS_MIXING_COEFFICIENT_Q8 = 0,
+    FFMS_MIXING_COEFFICIENT_Q15 = 1,
+    FFMS_MIXING_COEFFICIENT_FLT = 2
 } FFMS_MixingCoefficientType;
 
 typedef enum FFMS_MatrixEncoding {
-	FFMS_MATRIX_ENCODING_NONE         = 0,
-	FFMS_MATRIX_ENCODING_DOBLY        = 1,
-	FFMS_MATRIX_ENCODING_PRO_LOGIC_II = 2
+    FFMS_MATRIX_ENCODING_NONE = 0,
+    FFMS_MATRIX_ENCODING_DOBLY = 1,
+    FFMS_MATRIX_ENCODING_PRO_LOGIC_II = 2
 } FFMS_MatrixEncoding;
 
 typedef enum FFMS_ResampleFilterType {
-	FFMS_RESAMPLE_FILTER_CUBIC  = 0,
-	FFMS_RESAMPLE_FILTER_SINC   = 1,
-	FFMS_RESAMPLE_FILTER_KAISER = 2
+    FFMS_RESAMPLE_FILTER_CUBIC = 0,
+    FFMS_RESAMPLE_FILTER_SINC = 1,
+    FFMS_RESAMPLE_FILTER_KAISER = 2
 } FFMS_ResampleFilterType;
 
 typedef enum FFMS_AudioDitherMethod {
-	FFMS_RESAMPLE_DITHER_NONE                    = 0,
-	FFMS_RESAMPLE_DITHER_RECTANGULAR             = 1,
-	FFMS_RESAMPLE_DITHER_TRIANGULAR              = 2,
-	FFMS_RESAMPLE_DITHER_TRIANGULAR_HIGHPASS     = 3,
-	FFMS_RESAMPLE_DITHER_TRIANGULAR_NOISESHAPING = 4
+    FFMS_RESAMPLE_DITHER_NONE = 0,
+    FFMS_RESAMPLE_DITHER_RECTANGULAR = 1,
+    FFMS_RESAMPLE_DITHER_TRIANGULAR = 2,
+    FFMS_RESAMPLE_DITHER_TRIANGULAR_HIGHPASS = 3,
+    FFMS_RESAMPLE_DITHER_TRIANGULAR_NOISESHAPING = 4
 } FFMS_AudioDitherMethod;
 
 typedef enum FFMS_LogLevels {
-	FFMS_LOG_QUIET    = -8,
-	FFMS_LOG_PANIC    =  0,
-	FFMS_LOG_FATAL    =  8,
-	FFMS_LOG_ERROR    = 16,
-	FFMS_LOG_WARNING  = 24,
-	FFMS_LOG_INFO     = 32,
-	FFMS_LOG_VERBOSE  = 40,
-	FFMS_LOG_DEBUG    = 48,
-	FFMS_LOG_TRACE    = 56
+    FFMS_LOG_QUIET = -8,
+    FFMS_LOG_PANIC = 0,
+    FFMS_LOG_FATAL = 8,
+    FFMS_LOG_ERROR = 16,
+    FFMS_LOG_WARNING = 24,
+    FFMS_LOG_INFO = 32,
+    FFMS_LOG_VERBOSE = 40,
+    FFMS_LOG_DEBUG = 48,
+    FFMS_LOG_TRACE = 56
 } FFMS_LogLevels;
 
 typedef struct FFMS_ResampleOptions {
-	int64_t ChannelLayout;
-	FFMS_SampleFormat SampleFormat;
-	int SampleRate;
-	FFMS_MixingCoefficientType MixingCoefficientType;
-	double CenterMixLevel;
-	double SurroundMixLevel;
-	double LFEMixLevel;
-	int Normalize;
-	int ForceResample;
-	int ResampleFilterSize;
-	int ResamplePhaseShift;
-	int LinearInterpolation;
-	double CutoffFrequencyRatio;
-	FFMS_MatrixEncoding MatrixedStereoEncoding;
-	FFMS_ResampleFilterType FilterType;
-	int KaiserBeta;
-	FFMS_AudioDitherMethod DitherMethod;
+    int64_t ChannelLayout;
+    FFMS_SampleFormat SampleFormat;
+    int SampleRate;
+    FFMS_MixingCoefficientType MixingCoefficientType;
+    double CenterMixLevel;
+    double SurroundMixLevel;
+    double LFEMixLevel;
+    int Normalize;
+    int ForceResample;
+    int ResampleFilterSize;
+    int ResamplePhaseShift;
+    int LinearInterpolation;
+    double CutoffFrequencyRatio;
+    FFMS_MatrixEncoding MatrixedStereoEncoding;
+    FFMS_ResampleFilterType FilterType;
+    int KaiserBeta;
+    FFMS_AudioDitherMethod DitherMethod;
 } FFMS_ResampleOptions;
 
 
 typedef struct FFMS_Frame {
-	const uint8_t *Data[4];
-	int Linesize[4];
-	int EncodedWidth;
-	int EncodedHeight;
-	int EncodedPixelFormat;
-	int ScaledWidth;
-	int ScaledHeight;
-	int ConvertedPixelFormat;
-	int KeyFrame;
-	int RepeatPict;
-	int InterlacedFrame;
-	int TopFieldFirst;
-	char PictType;
-	int ColorSpace;
-	int ColorRange;
-	/* Introduced in FFMS_VERSION ((2 << 24) | (21 << 16) | (0 << 8) | 0) */
-	int ColorPrimaries;
-	int TransferCharateristics;
-	int ChromaLocation;
+    const uint8_t *Data[4];
+    int Linesize[4];
+    int EncodedWidth;
+    int EncodedHeight;
+    int EncodedPixelFormat;
+    int ScaledWidth;
+    int ScaledHeight;
+    int ConvertedPixelFormat;
+    int KeyFrame;
+    int RepeatPict;
+    int InterlacedFrame;
+    int TopFieldFirst;
+    char PictType;
+    int ColorSpace;
+    int ColorRange;
+    /* Introduced in FFMS_VERSION ((2 << 24) | (21 << 16) | (0 << 8) | 0) */
+    int ColorPrimaries;
+    int TransferCharateristics;
+    int ChromaLocation;
 } FFMS_Frame;
 
 typedef struct FFMS_TrackTimeBase {
-	int64_t Num;
-	int64_t Den;
+    int64_t Num;
+    int64_t Den;
 } FFMS_TrackTimeBase;
 
 typedef struct FFMS_FrameInfo {
-	int64_t PTS;
-	int RepeatPict;
-	int KeyFrame;
+    int64_t PTS;
+    int RepeatPict;
+    int KeyFrame;
 } FFMS_FrameInfo;
 
 typedef struct FFMS_VideoProperties {
-	int FPSDenominator;
-	int FPSNumerator;
-	int RFFDenominator;
-	int RFFNumerator;
-	int NumFrames;
-	int SARNum;
-	int SARDen;
-	int CropTop;
-	int CropBottom;
-	int CropLeft;
-	int CropRight;
-	int TopFieldFirst;
-	FFMS_DEPRECATED int ColorSpace;
-	FFMS_DEPRECATED int ColorRange;
-	double FirstTime;
-	double LastTime;
+    int FPSDenominator;
+    int FPSNumerator;
+    int RFFDenominator;
+    int RFFNumerator;
+    int NumFrames;
+    int SARNum;
+    int SARDen;
+    int CropTop;
+    int CropBottom;
+    int CropLeft;
+    int CropRight;
+    int TopFieldFirst;
+    FFMS_DEPRECATED int ColorSpace;
+    FFMS_DEPRECATED int ColorRange;
+    double FirstTime;
+    double LastTime;
 } FFMS_VideoProperties;
 
 typedef struct FFMS_AudioProperties {
-	int SampleFormat;
-	int SampleRate;
-	int BitsPerSample;
-	int Channels;
-	int64_t ChannelLayout; // should probably be a plain int, none of the constants are >32 bits long
-	int64_t NumSamples;
-	double FirstTime;
-	double LastTime;
+    int SampleFormat;
+    int SampleRate;
+    int BitsPerSample;
+    int Channels;
+    int64_t ChannelLayout; // should probably be a plain int, none of the constants are >32 bits long
+    int64_t NumSamples;
+    double FirstTime;
+    double LastTime;
 } FFMS_AudioProperties;
 
 typedef int (FFMS_CC *TIndexCallback)(int64_t Current, int64_t Total, void *ICPrivate);

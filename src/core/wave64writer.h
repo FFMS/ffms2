@@ -29,29 +29,29 @@ struct AVFrame;
 
 // this is to avoid depending on windows.h etc.
 typedef struct FFMS_WAVEFORMATEX {
-	uint16_t wFormatTag;
-	uint16_t nChannels;
-	uint32_t nSamplesPerSec;
-	uint32_t nAvgBytesPerSec;
-	uint16_t nBlockAlign;
-	uint16_t wBitsPerSample;
-	uint16_t cbSize;
+    uint16_t wFormatTag;
+    uint16_t nChannels;
+    uint32_t nSamplesPerSec;
+    uint32_t nAvgBytesPerSec;
+    uint16_t nBlockAlign;
+    uint16_t wBitsPerSample;
+    uint16_t cbSize;
 } FFMS_WAVEFORMATEX;
 
 class Wave64Writer {
-	FileHandle WavFile;
-	uint64_t BytesWritten = 0;
-	uint32_t SamplesPerSec;
-	uint16_t BytesPerSample;
-	uint16_t Channels;
-	bool IsFloat;
+    FileHandle WavFile;
+    uint64_t BytesWritten = 0;
+    uint32_t SamplesPerSec;
+    uint16_t BytesPerSample;
+    uint16_t Channels;
+    bool IsFloat;
 
-	void WriteHeader(bool Initial, bool IsFloat);
+    void WriteHeader(bool Initial, bool IsFloat);
 
 public:
-	Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat);
-	~Wave64Writer();
-	void WriteData(AVFrame const& Frame);
+    Wave64Writer(const char *Filename, uint16_t BitsPerSample, uint16_t Channels, uint32_t SamplesPerSec, bool IsFloat);
+    ~Wave64Writer();
+    void WriteData(AVFrame const& Frame);
 };
 
 #endif

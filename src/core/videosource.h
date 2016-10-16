@@ -34,67 +34,67 @@ extern "C" {
 #include "utils.h"
 
 struct FFMS_VideoSource {
-friend class FFSourceResources<FFMS_VideoSource>;
+    friend class FFSourceResources<FFMS_VideoSource>;
 private:
-	SwsContext *SWS;
+    SwsContext *SWS;
 
-	int LastFrameHeight;
-	int LastFrameWidth;
-	AVPixelFormat LastFramePixelFormat;
+    int LastFrameHeight;
+    int LastFrameWidth;
+    AVPixelFormat LastFramePixelFormat;
 
-	int TargetHeight;
-	int TargetWidth;
-	std::vector<AVPixelFormat> TargetPixelFormats;
-	int TargetResizer;
+    int TargetHeight;
+    int TargetWidth;
+    std::vector<AVPixelFormat> TargetPixelFormats;
+    int TargetResizer;
 
-	AVPixelFormat OutputFormat;
-	AVColorRange OutputColorRange;
-	AVColorSpace OutputColorSpace;
+    AVPixelFormat OutputFormat;
+    AVColorRange OutputColorRange;
+    AVColorSpace OutputColorSpace;
 
-	bool InputFormatOverridden;
-	AVPixelFormat InputFormat;
-	AVColorRange InputColorRange;
-	AVColorSpace InputColorSpace;
+    bool InputFormatOverridden;
+    AVPixelFormat InputFormat;
+    AVColorRange InputColorRange;
+    AVColorSpace InputColorSpace;
 
     uint8_t *SWSFrameData[4];
     int SWSFrameLinesize[4];
 
-	void DetectInputFormat();
+    void DetectInputFormat();
 
 protected:
-	FFMS_VideoProperties VP;
-	FFMS_Frame LocalFrame;
-	AVFrame *DecodeFrame;
-	AVFrame *LastDecodedFrame;
-	int LastFrameNum;
-	FFMS_Index &Index;
-	FFMS_Track Frames;
-	int VideoTrack;
-	int CurrentFrame;
-	int DelayCounter;
-	int InitialDecode;
-	int DecodingThreads;
-	AVCodecContext *CodecContext;
+    FFMS_VideoProperties VP;
+    FFMS_Frame LocalFrame;
+    AVFrame *DecodeFrame;
+    AVFrame *LastDecodedFrame;
+    int LastFrameNum;
+    FFMS_Index &Index;
+    FFMS_Track Frames;
+    int VideoTrack;
+    int CurrentFrame;
+    int DelayCounter;
+    int InitialDecode;
+    int DecodingThreads;
+    AVCodecContext *CodecContext;
 
-	FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads);
-	void ReAdjustOutputFormat();
-	FFMS_Frame *OutputFrame(AVFrame *Frame);
-	virtual void Free(bool CloseCodec) = 0;
-	void SetVideoProperties();
-	bool DecodePacket(AVPacket *Packet);
-	void FlushFinalFrames();
-	bool HasPendingDelayedFrames();
+    FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads);
+    void ReAdjustOutputFormat();
+    FFMS_Frame *OutputFrame(AVFrame *Frame);
+    virtual void Free(bool CloseCodec) = 0;
+    void SetVideoProperties();
+    bool DecodePacket(AVPacket *Packet);
+    void FlushFinalFrames();
+    bool HasPendingDelayedFrames();
 public:
-	virtual ~FFMS_VideoSource();
-	const FFMS_VideoProperties& GetVideoProperties() { return VP; }
-	FFMS_Track *GetTrack() { return &Frames; }
-	virtual FFMS_Frame *GetFrame(int n) = 0;
-	void GetFrameCheck(int n);
-	FFMS_Frame *GetFrameByTime(double Time);
-	void SetOutputFormat(const AVPixelFormat *TargetFormats, int Width, int Height, int Resizer);
-	void ResetOutputFormat();
-	void SetInputFormat(int ColorSpace, int ColorRange, AVPixelFormat Format);
-	void ResetInputFormat();
+    virtual ~FFMS_VideoSource();
+    const FFMS_VideoProperties& GetVideoProperties() { return VP; }
+    FFMS_Track *GetTrack() { return &Frames; }
+    virtual FFMS_Frame *GetFrame(int n) = 0;
+    void GetFrameCheck(int n);
+    FFMS_Frame *GetFrameByTime(double Time);
+    void SetOutputFormat(const AVPixelFormat *TargetFormats, int Width, int Height, int Resizer);
+    void ResetOutputFormat();
+    void SetInputFormat(int ColorSpace, int ColorRange, AVPixelFormat Format);
+    void ResetInputFormat();
 };
 
 FFMS_VideoSource *CreateLavfVideoSource(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode);

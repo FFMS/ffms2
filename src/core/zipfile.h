@@ -27,39 +27,39 @@
 #include <zlib.h>
 
 class ZipFile {
-	FileHandle file;
-	std::vector<char> buffer;
-	std::vector<uint8_t> index_buffer;
-	bool is_file;
-	z_stream z;
-	enum {
-		Initial,
-		Inflate,
-		Deflate
-	} state;
+    FileHandle file;
+    std::vector<char> buffer;
+    std::vector<uint8_t> index_buffer;
+    bool is_file;
+    z_stream z;
+    enum {
+        Initial,
+        Inflate,
+        Deflate
+    } state;
 
 public:
-	ZipFile(const char *filename, const char *mode);
-	ZipFile(const uint8_t *in_buffer, const size_t size);
-	ZipFile();
-	~ZipFile();
+    ZipFile(const char *filename, const char *mode);
+    ZipFile(const uint8_t *in_buffer, const size_t size);
+    ZipFile();
+    ~ZipFile();
 
-	void Read(void *buffer, size_t size);
-	int Write(const void *buffer, size_t size);
-	void Finish();
-	uint8_t *GetBuffer(size_t *size);
+    void Read(void *buffer, size_t size);
+    int Write(const void *buffer, size_t size);
+    void Finish();
+    uint8_t *GetBuffer(size_t *size);
 
-	template<typename T>
-	T Read() {
-		T ret = T();
-		Read(&ret, sizeof(T));
-		return ret;
-	}
+    template<typename T>
+    T Read() {
+        T ret = T();
+        Read(&ret, sizeof(T));
+        return ret;
+    }
 
-	template<typename T>
-	void Write(T const& value) {
-		Write(&value, sizeof value);
-	}
+    template<typename T>
+    void Write(T const& value) {
+        Write(&value, sizeof value);
+    }
 };
 
 #endif

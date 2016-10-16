@@ -29,80 +29,80 @@
 class ZipFile;
 
 struct FrameInfo {
-	int64_t PTS;
-	int64_t FilePos;
-	int64_t SampleStart;
-	uint32_t SampleCount;
-	size_t OriginalPos;
-	int FrameType;
-	int RepeatPict;
-	bool KeyFrame;
-	bool Hidden;
+    int64_t PTS;
+    int64_t FilePos;
+    int64_t SampleStart;
+    uint32_t SampleCount;
+    size_t OriginalPos;
+    int FrameType;
+    int RepeatPict;
+    bool KeyFrame;
+    bool Hidden;
 };
 
 struct FFMS_Track {
 private:
-	typedef std::vector<FrameInfo> frame_vec;
-	frame_vec Frames;
-	std::vector<int> RealFrameNumbers;
-	std::vector<FFMS_FrameInfo> PublicFrameInfo;
+    typedef std::vector<FrameInfo> frame_vec;
+    frame_vec Frames;
+    std::vector<int> RealFrameNumbers;
+    std::vector<FFMS_FrameInfo> PublicFrameInfo;
 
-	void MaybeReorderFrames();
-	void MaybeHideFrames();
-	void FillAudioGaps();
-	void GeneratePublicInfo();
+    void MaybeReorderFrames();
+    void MaybeHideFrames();
+    void FillAudioGaps();
+    void GeneratePublicInfo();
 
 public:
-	FFMS_TrackType TT = FFMS_TYPE_UNKNOWN;
-	FFMS_TrackTimeBase TB = FFMS_TrackTimeBase{0, 0};
-	int MaxBFrames = 0;
-	bool UseDTS = false;
-	bool HasTS = false;
-	int SampleRate = 0; // not persisted
+    FFMS_TrackType TT = FFMS_TYPE_UNKNOWN;
+    FFMS_TrackTimeBase TB = FFMS_TrackTimeBase{ 0, 0 };
+    int MaxBFrames = 0;
+    bool UseDTS = false;
+    bool HasTS = false;
+    int SampleRate = 0; // not persisted
 
-	void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, bool Invisible = false);
-	void AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0);
+    void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, bool Invisible = false);
+    void AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0);
 
-	void FinalizeTrack();
+    void FinalizeTrack();
 
-	int FindClosestVideoKeyFrame(int Frame) const;
-	int FrameFromPTS(int64_t PTS) const;
-	int FrameFromPos(int64_t Pos) const;
-	int ClosestFrameFromPTS(int64_t PTS) const;
-	int RealFrameNumber(int Frame) const;
-	int VisibleFrameCount() const;
+    int FindClosestVideoKeyFrame(int Frame) const;
+    int FrameFromPTS(int64_t PTS) const;
+    int FrameFromPos(int64_t Pos) const;
+    int ClosestFrameFromPTS(int64_t PTS) const;
+    int RealFrameNumber(int Frame) const;
+    int VisibleFrameCount() const;
 
-	const FFMS_FrameInfo *GetFrameInfo(size_t N) const;
+    const FFMS_FrameInfo *GetFrameInfo(size_t N) const;
 
-	void WriteTimecodes(const char *TimecodeFile) const;
-	void Write(ZipFile &Stream) const;
+    void WriteTimecodes(const char *TimecodeFile) const;
+    void Write(ZipFile &Stream) const;
 
-	typedef frame_vec::allocator_type allocator_type;
-	typedef frame_vec::size_type size_type;
-	typedef frame_vec::difference_type difference_type;
-	typedef frame_vec::const_pointer pointer;
-	typedef frame_vec::const_reference reference;
-	typedef frame_vec::value_type value_type;
-	typedef frame_vec::const_iterator iterator;
-	typedef frame_vec::const_reverse_iterator reverse_iterator;
+    typedef frame_vec::allocator_type allocator_type;
+    typedef frame_vec::size_type size_type;
+    typedef frame_vec::difference_type difference_type;
+    typedef frame_vec::const_pointer pointer;
+    typedef frame_vec::const_reference reference;
+    typedef frame_vec::value_type value_type;
+    typedef frame_vec::const_iterator iterator;
+    typedef frame_vec::const_reverse_iterator reverse_iterator;
 
-	void clear() {
-		Frames.clear();
-		RealFrameNumbers.clear();
-		PublicFrameInfo.clear();
-	}
+    void clear() {
+        Frames.clear();
+        RealFrameNumbers.clear();
+        PublicFrameInfo.clear();
+    }
 
-	bool empty() const { return Frames.empty(); }
-	size_type size() const { return Frames.size(); }
-	reference operator[](size_type pos) const { return Frames[pos]; }
-	reference front() const { return Frames.front(); }
-	reference back() const { return Frames.back(); }
-	iterator begin() const { return Frames.begin(); }
-	iterator end() const { return Frames.end(); }
+    bool empty() const { return Frames.empty(); }
+    size_type size() const { return Frames.size(); }
+    reference operator[](size_type pos) const { return Frames[pos]; }
+    reference front() const { return Frames.front(); }
+    reference back() const { return Frames.back(); }
+    iterator begin() const { return Frames.begin(); }
+    iterator end() const { return Frames.end(); }
 
-	FFMS_Track() = default;
-	FFMS_Track(ZipFile &Stream);
-	FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false, bool HasTS = true);
+    FFMS_Track() = default;
+    FFMS_Track(ZipFile &Stream);
+    FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false, bool HasTS = true);
 };
 
 #endif
