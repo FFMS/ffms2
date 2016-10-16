@@ -40,7 +40,7 @@ extern "C" {
 #include <string>
 #include <vector>
 
-const int64_t ffms_av_nopts_value = static_cast<int64_t>(UINT64_C(0x8000000000000000));
+const int64_t ffms_av_nopts_value = AV_NOPTS_VALUE;
 
 class FFMS_Exception {
 	std::string _Message;
