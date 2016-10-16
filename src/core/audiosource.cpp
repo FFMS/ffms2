@@ -385,7 +385,7 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
 					PacketNumber = NewPacketNumber;
 					CurrentSample = -1;
 					DecodeFrame.reset();
-					avcodec_flush_buffers(CodecContext);
+                    FlushBuffers(CodecContext);
 					Seek();
 				}
 			}
