@@ -25,11 +25,13 @@ extern "C" {
 // fixme, just move to project already
 #ifdef _MSC_VER
 
-#pragma comment(lib, "zlib.lib")
 #pragma comment(lib, "libavutil.a")
 #pragma comment(lib, "libavcodec.a")
 #pragma comment(lib, "libavformat.a")
 #pragma comment(lib, "libswscale.a")
 #pragma comment(lib, "libswresample.a")
+#pragma comment(lib, "zlib.lib")
+#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "secur32.lib")
 
 #endif /* _MSC_VER */

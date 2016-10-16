@@ -56,12 +56,7 @@ void ffms_free_sha(AVSHA **ctx) { av_freep(ctx); }
 void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]) {
 	FileHandle file(Filename, "rb", FFMS_ERROR_INDEX, FFMS_ERROR_FILE_READ);
 
-#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 51, 43, 0, 51, 75, 100)
 	unknown_size<AVSHA, av_sha_alloc, ffms_free_sha> ctx;
-#else
-	std::vector<uint8_t> ctxmem(av_sha_size);
-	AVSHA *ctx = (AVSHA*)(ctxmem.data());
-#endif
 	av_sha_init(ctx, 160);
 
 	try {

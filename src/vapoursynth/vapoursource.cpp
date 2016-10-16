@@ -41,27 +41,23 @@ static bool IsRealNativeEndianPlanar(const AVPixFmtDescriptor &desc) {
 	for (int i = 0; i < desc.nb_components; i++)
 		used_planes = std::max(used_planes, (int)desc.comp[i].plane + 1);
 	bool temp = (used_planes == desc.nb_components) && (desc.comp[0].depth >= 8) &&
-		(!(desc.flags & FFMS_PIX_FMT_FLAG(PAL)));
+		(!(desc.flags & AV_PIX_FMT_FLAG_PAL));
 	if (!temp)
 		return false;
 	else if (desc.comp[0].depth == 8)
 		return temp;
 	else
-		return (FFMS_PIX_FMT(YUV420P10) == FFMS_PIX_FMT(YUV420P10BE) ? !!(desc.flags & FFMS_PIX_FMT_FLAG(BE)) : !(desc.flags & FFMS_PIX_FMT_FLAG(BE)));
+		return (AV_PIX_FMT_YUV420P10 == AV_PIX_FMT_YUV420P10BE ? !!(desc.flags & AV_PIX_FMT_FLAG_BE) : !(desc.flags & AV_PIX_FMT_FLAG_BE));
 }
 
 static bool HasAlpha(const AVPixFmtDescriptor &desc) {
-#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >, 52, 2, 0, 52, 8, 100)
-	return !!(desc.flags & FFMS_PIX_FMT_FLAG(ALPHA));
-#else
-	return false;
-#endif
+	return !!(desc.flags & AV_PIX_FMT_FLAG_ALPHA);
 }
 
 static int GetColorFamily(const AVPixFmtDescriptor &desc) {
 	if (desc.nb_components <= 2)
 		return cmGray;
-	else if (desc.flags & FFMS_PIX_FMT_FLAG(RGB))
+	else if (desc.flags & AV_PIX_FMT_FLAG_RGB)
 		return cmRGB;
 	else
 		return cmYUV;
@@ -92,7 +88,7 @@ static int FormatConversionToPixelFormat(int id, bool Alpha, VSCore *core, const
 			&& desc.log2_chroma_h == f->subSamplingH)
 			return i;
 	}
-	return FFMS_PIX_FMT(NONE);
+	return AV_PIX_FMT_NONE;
 }
 
 static const VSFormat *FormatConversionToVS(int id, VSCore *core, const VSAPI *vsapi) {
@@ -273,12 +269,12 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
 	for (int i = 0; i < npixfmt; i++)
 		if (IsRealNativeEndianPlanar(*av_pix_fmt_desc_get((AVPixelFormat)i)))
 			TargetFormats.push_back(i);
-	TargetFormats.push_back(FFMS_PIX_FMT(NONE));
+	TargetFormats.push_back(AV_PIX_FMT_NONE);
 
-	int TargetPixelFormat = FFMS_PIX_FMT(NONE);
+	int TargetPixelFormat = AV_PIX_FMT_NONE;
 	if (ConvertToFormat != pfNone) {
 		TargetPixelFormat = FormatConversionToPixelFormat(ConvertToFormat, OutputAlpha, core, vsapi);
-		if (TargetPixelFormat == FFMS_PIX_FMT(NONE))
+		if (TargetPixelFormat == AV_PIX_FMT_NONE)
 			throw std::runtime_error(std::string("Source: Invalid output colorspace specified"));
 
 		TargetFormats.clear();

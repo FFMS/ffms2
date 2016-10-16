@@ -70,34 +70,7 @@ void InitNullPacket(AVPacket &pkt) {
 }
 
 extern "C" {
-#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 52, 2, 0, 52, 6, 100)
 #include <libavutil/channel_layout.h>
-#else
-#undef AVUTIL_AUDIOCONVERT_H
-
-// Whether or not av_get_default_channel_layout exists in a given version
-// depends on which branch that version is from, since FFmpeg doesn't
-// understand the concept of version numbers. Work around this by always using
-// our copy, since that's less effort than detecting whether or not it's
-// available.
-#define av_get_default_channel_layout av_get_default_channel_layout_hurr
-#include "libavutil/audioconvert.h"
-#undef av_get_default_channel_layout
-
-static int64_t av_get_default_channel_layout(int nb_channels) {
-	switch(nb_channels) {
-		case 1: return AV_CH_LAYOUT_MONO;
-		case 2: return AV_CH_LAYOUT_STEREO;
-		case 3: return AV_CH_LAYOUT_SURROUND;
-		case 4: return AV_CH_LAYOUT_QUAD;
-		case 5: return AV_CH_LAYOUT_5POINT0;
-		case 6: return AV_CH_LAYOUT_5POINT1;
-		case 7: return AV_CH_LAYOUT_6POINT1;
-		case 8: return AV_CH_LAYOUT_7POINT1;
-		default: return 0;
-	}
-}
-#endif
 }
 
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
@@ -150,10 +123,10 @@ void FlushBuffers(AVCodecContext *CodecContext) {
         // Further notes: VC1 does have a flush in recent versions so
         // maybe just remove all this junk unless more formats are found that
         // need it
-		if (codec->id == FFMS_ID(VC1)) {
+		if (codec->id == AV_CODEC_ID_VC1) {
 			avcodec_close(CodecContext);
 			// Whether or not codec is const varies between versions
-			if (avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), nullptr) < 0)
+			if (avcodec_open2(CodecContext, codec, nullptr) < 0)
 				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_CODEC,
 				"Couldn't re-open codec.");
 		}

@@ -88,7 +88,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 {
 	LAVFOpenFile(SourceFile, FormatContext, VideoTrack);
 
-	AVCodec *Codec = avcodec_find_decoder(FormatContext->streams[VideoTrack]->FFMSCODEC->codec_id);
+	AVCodec *Codec = avcodec_find_decoder(FormatContext->streams[VideoTrack]->codecpar->codec_id);
 	if (Codec == nullptr)
 		throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
 			"Video codec not found");

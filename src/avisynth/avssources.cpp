@@ -27,69 +27,69 @@
 
 static AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default, bool HighBitDepth) {
 	if (!CSName)
-		return FFMS_PIX_FMT(NONE);
+		return AV_PIX_FMT_NONE;
 	std::string s = CSName;
 	std::transform(s.begin(), s.end(), s.begin(), toupper);
 	if (s == "")
 		return Default;
 	if (s == "YUV9" || s == "YUV410P8")
-		return FFMS_PIX_FMT(YUV410P);
+		return AV_PIX_FMT_YUV410P;
 	if (s == "YV411" || s == "YUV411P8")
-		return FFMS_PIX_FMT(YUV411P);
+		return AV_PIX_FMT_YUV411P;
 	if (s == "YV12" || s == "YUV420P8")
-		return FFMS_PIX_FMT(YUV420P);
+		return AV_PIX_FMT_YUV420P;
 	if (s == "YV16" || s == "YUV422P8")
-		return FFMS_PIX_FMT(YUV422P);
+		return AV_PIX_FMT_YUV422P;
 	if (s == "YV24" || s == "YUV444P8")
-		return FFMS_PIX_FMT(YUV444P);
+		return AV_PIX_FMT_YUV444P;
 	if (s == "Y8" || s == "GRAY8")
-		return FFMS_PIX_FMT(GRAY8);
+		return AV_PIX_FMT_GRAY8;
 	if (s == "YUY2")
-		return FFMS_PIX_FMT(YUYV422);
+		return AV_PIX_FMT_YUYV422;
 	if (s == "RGB24")
-		return FFMS_PIX_FMT(BGR24);
+		return AV_PIX_FMT_BGR24;
 	if (s == "RGB32")
-		return FFMS_PIX_FMT(RGB32);
+		return AV_PIX_FMT_RGB32;
     if (HighBitDepth) {
         if (s == "YUVA420P8")
-            return FFMS_PIX_FMT(YUVA420P);
+            return AV_PIX_FMT_YUVA420P;
         if (s == "YUVA422P8")
-            return FFMS_PIX_FMT(YUVA422P);
+            return AV_PIX_FMT_YUVA422P;
         if (s == "YUVA444P8")
-            return FFMS_PIX_FMT(YUVA444P);
+            return AV_PIX_FMT_YUVA444P;
         if (s == "YUV420P16")
-            return FFMS_PIX_FMT(YUV420P16);
+            return AV_PIX_FMT_YUV420P16;
         if (s == "YUVA420P16")
-            return FFMS_PIX_FMT(YUVA420P16);
+            return AV_PIX_FMT_YUVA420P16;
         if (s == "YUV422P16")
-            return FFMS_PIX_FMT(YUV422P16);
+            return AV_PIX_FMT_YUV422P16;
         if (s == "YUVA422P16")
-            return FFMS_PIX_FMT(YUVA422P16);
+            return AV_PIX_FMT_YUVA422P16;
         if (s == "YUV444P16")
-            return FFMS_PIX_FMT(YUV444P16);
+            return AV_PIX_FMT_YUV444P16;
         if (s == "YUVA444P16")
-            return FFMS_PIX_FMT(YUVA444P16);
+            return AV_PIX_FMT_YUVA444P16;
         if (s == "YUV420P10")
-            return FFMS_PIX_FMT(YUV420P10);
+            return AV_PIX_FMT_YUV420P10;
         if (s == "YUVA420P10")
-            return FFMS_PIX_FMT(YUVA420P10);
+            return AV_PIX_FMT_YUVA420P10;
         if (s == "YUV422P10")
-            return FFMS_PIX_FMT(YUV422P10);
+            return AV_PIX_FMT_YUV422P10;
         if (s == "YUVA422P10")
-            return FFMS_PIX_FMT(YUVA422P10);
+            return AV_PIX_FMT_YUVA422P10;
         if (s == "YUV444P10")
-            return FFMS_PIX_FMT(YUV444P10);
+            return AV_PIX_FMT_YUV444P10;
         if (s == "YUVA444P10")
-            return FFMS_PIX_FMT(YUVA444P10);
+            return AV_PIX_FMT_YUVA444P10;
         if (s == "RGBP16")
-            return FFMS_PIX_FMT(GBRP16);
+            return AV_PIX_FMT_GBRP16;
         if (s == "RGBAP16")
-            return FFMS_PIX_FMT(GBRAP16);
+            return AV_PIX_FMT_GBRAP16;
         if (s == "Y16" || s == "GRAY16")
-            return FFMS_PIX_FMT(GRAY16);
+            return AV_PIX_FMT_GRAY16;
     }
 
-	return FFMS_PIX_FMT(NONE);
+	return AV_PIX_FMT_NONE;
 }
 
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
@@ -302,11 +302,11 @@ void AvisynthVideoSource::InitOutputFormat(
     TargetFormats.push_back(-1);
 
 	// PIX_FMT_NV21 is misused as a return value different to the defined ones in the function
-	AVPixelFormat TargetPixelFormat = CSNameToPIXFMT(ConvertToFormatName, FFMS_PIX_FMT(NV21), HighBitDepth);
-	if (TargetPixelFormat == FFMS_PIX_FMT(NONE))
+	AVPixelFormat TargetPixelFormat = CSNameToPIXFMT(ConvertToFormatName, AV_PIX_FMT_NV21, HighBitDepth);
+	if (TargetPixelFormat == AV_PIX_FMT_NONE)
 		Env->ThrowError("FFVideoSource: Invalid colorspace name specified");
 
-	if (TargetPixelFormat != FFMS_PIX_FMT(NV21)) {
+	if (TargetPixelFormat != AV_PIX_FMT_NV21) {
         TargetFormats.clear();
         TargetFormats.push_back(TargetPixelFormat);
         TargetFormats.push_back(-1);
@@ -398,7 +398,7 @@ void AvisynthVideoSource::InitOutputFormat(
 	if (RFFMode > 0 && ResizeToHeight != F->EncodedHeight)
 		Env->ThrowError("FFVideoSource: Vertical scaling not allowed in RFF mode");
 
-	if (RFFMode > 0 && TargetPixelFormat != FFMS_PIX_FMT(NV21))
+	if (RFFMode > 0 && TargetPixelFormat != AV_PIX_FMT_NV21)
 		Env->ThrowError("FFVideoSource: Only the default output colorspace can be used in RFF mode");
 
 	// set color information variables

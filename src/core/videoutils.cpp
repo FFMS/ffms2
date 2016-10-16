@@ -115,7 +115,7 @@ enum BCSType {
 
 static BCSType GuessCSType(AVPixelFormat p) {
 	// guessing the colorspace type from the name is kinda hackish but libav doesn't export this kind of metadata
-	if (av_pix_fmt_desc_get(p)->flags & FFMS_PIX_FMT_FLAG(HWACCEL))
+	if (av_pix_fmt_desc_get(p)->flags & AV_PIX_FMT_FLAG_HWACCEL)
 		return cUNUSABLE;
 	const char *n = av_get_pix_fmt_name(p);
 	if (strstr(n, "gray") || strstr(n, "mono") || strstr(n, "y400a"))
@@ -186,7 +186,7 @@ static LossAttributes CalculateLoss(AVPixelFormat Dst, AVPixelFormat Src) {
 AVPixelFormat FindBestPixelFormat(const std::vector<AVPixelFormat> &Dsts, AVPixelFormat Src) {
 	// some trivial special cases to make sure there's as little conversion as possible
 	if (Dsts.empty())
-		return FFMS_PIX_FMT(NONE);
+		return AV_PIX_FMT_NONE;
 	if (Dsts.size() == 1)
 		return Dsts[0];
 
@@ -196,8 +196,8 @@ AVPixelFormat FindBestPixelFormat(const std::vector<AVPixelFormat> &Dsts, AVPixe
 		return Src;
 
 	// If it's an evil paletted format pretend it's normal RGB when calculating loss
-    if (Src == FFMS_PIX_FMT(PAL8))
-		Src = FFMS_PIX_FMT(RGB32);
+    if (Src == AV_PIX_FMT_PAL8)
+		Src = AV_PIX_FMT_RGB32;
 
 	i = Dsts.begin();
 	LossAttributes Loss = CalculateLoss(*i++, Src);
@@ -239,7 +239,7 @@ int parse_vp8(AVCodecParserContext *s,
 	return buf_size;
 }
 
-AVCodecParser ffms_vp8_parser = { { FFMS_ID(VP8) }, 0, nullptr, parse_vp8, nullptr, nullptr, nullptr };
+AVCodecParser ffms_vp8_parser = { { AV_CODEC_ID_VP8 }, 0, nullptr, parse_vp8, nullptr, nullptr, nullptr };
 }
 
 void RegisterCustomParsers() {

@@ -26,9 +26,7 @@
 #include <cassert>
 
 extern "C" {
-#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 52, 2, 0, 52, 6, 100)
 #include <libavutil/channel_layout.h>
-#endif
 }
 
 namespace {
