@@ -25,6 +25,7 @@
 
 #include <map>
 #include <memory>
+#include <atomic>
 
 class Wave64Writer;
 class ZipFile;
@@ -45,7 +46,7 @@ struct SharedAudioContext {
 };
 
 struct FFMS_Index : public std::vector<FFMS_Track> {
-	int RefCount = 1;
+	std::atomic<int> RefCount = 1;
 	FFMS_Index(FFMS_Index const&) = delete;
 	FFMS_Index& operator=(FFMS_Index const&) = delete;
 	void ReadIndex(ZipFile &zf, const char* IndexFile);
