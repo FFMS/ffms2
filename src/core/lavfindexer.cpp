@@ -90,7 +90,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_ALLOCATION_FAILED,
                     "Could not allocate video codec context");
 
-            if (make_context(VideoCodecContext, FormatContext->streams[i]) < 0)
+            if (avcodec_parameters_to_context(VideoCodecContext, FormatContext->streams[i]->codecpar) < 0)
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
                     "Could not copy video codec paramaters");
 
@@ -120,7 +120,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_ALLOCATION_FAILED,
                     "Could not allocate audio codec context");
 
-            if (make_context(AudioCodecContext, FormatContext->streams[i]) < 0)
+            if (avcodec_parameters_to_context(AudioCodecContext, FormatContext->streams[i]->codecpar) < 0)
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
                     "Could not copy audio codec paramaters");
 

@@ -96,7 +96,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
     if (CodecContext == nullptr)
         throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
             "Could not allocate video codec context.");
-    if (make_context(CodecContext, FormatContext->streams[VideoTrack]) < 0)
+    if (avcodec_parameters_to_context(CodecContext, FormatContext->streams[VideoTrack]->codecpar) < 0)
         throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
             "Could not copy video decoder paramaters.");
     CodecContext->thread_count = DecodingThreads;

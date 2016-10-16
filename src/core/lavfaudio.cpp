@@ -54,7 +54,7 @@ class FFLAVFAudio : public FFMS_AudioSource {
             throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
                 "Could not allocate audio decoding context");
 
-        if (make_context(NewContext, FormatContext->streams[TrackNumber]) < 0)
+        if (avcodec_parameters_to_context(NewContext, FormatContext->streams[TrackNumber]->codecpar) < 0)
             throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
                 "Could not copy audio codec parameters");
 

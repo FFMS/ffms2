@@ -32,7 +32,5 @@
 // Compatibility with older/newer ffmpegs
 
 #define FFMS_CALCULATE_DELAY (CodecContext->has_b_frames + (CodecContext->thread_count - 1))
-static ffms_used int make_context(AVCodecContext *dst, AVStream *src) { return avcodec_parameters_to_context(dst, src->codecpar); }
-
 
 #endif // FFMSCOMPAT_H
