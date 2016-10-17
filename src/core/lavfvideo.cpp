@@ -140,6 +140,18 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
         VP.SARDen = FormatContext->streams[VideoTrack]->sample_aspect_ratio.den;
     }
 
+    VP.Stereo3DType = FFMS_S3D_TYPE_2D;
+    VP.Stereo3DFlags = 0;
+
+    for (int i = 0; i < FormatContext->streams[VideoTrack]->nb_side_data; i++) {
+        if (FormatContext->streams[VideoTrack]->side_data->type == AV_PKT_DATA_STEREO3D) {
+            const AVStereo3D *StereoSideData = (const AVStereo3D *)FormatContext->streams[VideoTrack]->side_data->data;
+            VP.Stereo3DType = StereoSideData->type;
+            VP.Stereo3DFlags = StereoSideData->flags;
+            break;
+        }
+    }
+
     if (SeekMode >= 0 && Frames.size() > 1) {
         if (Seek(0) < 0) {
             throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,

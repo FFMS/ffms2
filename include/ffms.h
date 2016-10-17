@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (22 << 16) | (1 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (24 << 16) | (0 << 8) | 0)
 
 #include <stdint.h>
 #include <stddef.h>
@@ -274,6 +274,21 @@ typedef enum FFMS_ColorRanges {
     FFMS_CR_JPEG = 2 // 2^n-1, or "fullrange"
 } FFMS_ColorRanges;
 
+typedef enum FFMS_Stereo3DType {
+    FFMS_S3D_TYPE_2D = 0,
+    FFMS_S3D_TYPE_SIDEBYSIDE,
+    FFMS_S3D_TYPE_TOPBOTTOM,
+    FFMS_S3D_TYPE_FRAMESEQUENCE,
+    FFMS_S3D_TYPE_CHECKERBOARD,
+    FFMS_S3D_TYPE_SIDEBYSIDE_QUINCUNX,
+    FFMS_S3D_TYPE_LINES,
+    FFMS_S3D_TYPE_COLUMNS
+} FFMS_Stereo3DType;
+
+typedef enum FFMS_Stereo3DFlags {
+    FFMS_S3D_FLAGS_INVERT = 1
+} FFMS_Stereo3DFlags;
+
 typedef enum FFMS_MixingCoefficientType {
     FFMS_MIXING_COEFFICIENT_Q8 = 0,
     FFMS_MIXING_COEFFICIENT_Q15 = 1,
@@ -383,6 +398,9 @@ typedef struct FFMS_VideoProperties {
     FFMS_DEPRECATED int ColorRange;
     double FirstTime;
     double LastTime;
+    /* Introduced in FFMS_VERSION ((2 << 24) | (24 << 16) | (0 << 8) | 0) */
+    int Stereo3DType;
+    int Stereo3DFlags;
 } FFMS_VideoProperties;
 
 typedef struct FFMS_AudioProperties {

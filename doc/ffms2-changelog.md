@@ -1,5 +1,10 @@
 # FFmpegSource2 Changelog
 
+- 2.2000
+  - Add stereoscopic metadata export (Myrsloik)
+  - Removed support for old FFmpeg versions
+  - Removed libav support
+
 - 2.23
   - Updated FFmpeg APIs used (Daemon404)
   - Added new API that can read/write indexes to a memory buffer (Daemon404)
