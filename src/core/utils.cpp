@@ -136,28 +136,7 @@ void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext, int T
 }
 
 void FlushBuffers(AVCodecContext *CodecContext) {
-	if (CodecContext->codec->flush)
-		avcodec_flush_buffers(CodecContext);
-	else {
-		// If the codec doesn't have flush(), it might not need it... or it
-		// might need it and just not implement it as in the case of VC-1, so
-		// close and reopen the codec
-		const AVCodec *codec = CodecContext->codec;
-
-		// Only flush blacklisted codecs, closing and reopening breaks far too
-        // many decoders to always do as a fallback!!!
-
-        // Further notes: VC1 does have a flush in recent versions so
-        // maybe just remove all this junk unless more formats are found that
-        // need it
-		if (codec->id == FFMS_ID(VC1)) {
-			avcodec_close(CodecContext);
-			// Whether or not codec is const varies between versions
-			if (avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), nullptr) < 0)
-				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_CODEC,
-				"Couldn't re-open codec.");
-		}
-	}
+	avcodec_flush_buffers(CodecContext);
 }
 
 int ResizerNameToSWSResizer(const char *ResizerName) {
