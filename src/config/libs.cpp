@@ -31,6 +31,8 @@ extern "C" {
 #pragma comment(lib, "libswscale.a")
 #pragma comment(lib, "libswresample.a")
 #pragma comment(lib, "zlib.lib")
+#pragma comment(lib, "opencore-amrnb.lib")
+#pragma comment(lib, "opencore-amrwb.lib")
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "secur32.lib")
 
