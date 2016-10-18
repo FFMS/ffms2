@@ -195,7 +195,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
             TrackInfo.SampleRate = AudioContexts[Track].CodecContext->sample_rate;
 
             TrackInfo.AddAudioFrame(LastValidTS[Track],
-                StartSample, SampleCount, KeyFrame, Packet.pos);
+                StartSample, SampleCount, KeyFrame, Packet.pos, Packet.flags & AV_PKT_FLAG_DISCARD);
         }
 
         av_packet_unref(&Packet);

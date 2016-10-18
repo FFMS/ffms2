@@ -37,6 +37,7 @@ FrameInfo ReadFrame(ZipFile &stream, FrameInfo const& prev, const FFMS_TrackType
     f.PTS = stream.Read<int64_t>() + prev.PTS;
     f.KeyFrame = !!stream.Read<int8_t>();
     f.FilePos = stream.Read<int64_t>() + prev.FilePos;
+    f.Hidden = !!stream.Read<int8_t>();
 
     if (TT == FFMS_TYPE_AUDIO) {
         f.SampleStart = prev.SampleStart + prev.SampleCount;
@@ -44,7 +45,6 @@ FrameInfo ReadFrame(ZipFile &stream, FrameInfo const& prev, const FFMS_TrackType
     } else if (TT == FFMS_TYPE_VIDEO) {
         f.OriginalPos = static_cast<size_t>(stream.Read<uint64_t>() + prev.OriginalPos + 1);
         f.RepeatPict = stream.Read<int32_t>();
-        f.Hidden = !!stream.Read<uint8_t>();
     }
     return f;
 }
@@ -53,13 +53,13 @@ static void WriteFrame(ZipFile &stream, FrameInfo const& f, FrameInfo const& pre
     stream.Write(f.PTS - prev.PTS);
     stream.Write<int8_t>(f.KeyFrame);
     stream.Write(f.FilePos - prev.FilePos);
+    stream.Write<uint8_t>(f.Hidden);
 
     if (TT == FFMS_TYPE_AUDIO)
         stream.Write(f.SampleCount - prev.SampleCount);
     else if (TT == FFMS_TYPE_VIDEO) {
         stream.Write(static_cast<uint64_t>(f.OriginalPos) - prev.OriginalPos - 1);
         stream.Write<int32_t>(f.RepeatPict);
-        stream.Write<uint8_t>(f.Hidden);
     }
 }
 }
@@ -112,10 +112,10 @@ void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int F
     Frames.push_back({ PTS, FilePos, 0, 0, 0, FrameType, RepeatPict, KeyFrame, Hidden });
 }
 
-void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos) {
+void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos, bool Hidden) {
     if (SampleCount > 0) {
         Frames.push_back({ PTS, FilePos, SampleStart, SampleCount,
-            0, 0, 0, KeyFrame, false });
+            0, 0, 0, KeyFrame, Hidden });
     }
 }
 

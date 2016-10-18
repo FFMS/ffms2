@@ -35,7 +35,7 @@ extern "C" {
 }
 
 #define INDEXID 0x53920873
-#define INDEX_VERSION 1
+#define INDEX_VERSION 2
 
 SharedVideoContext::~SharedVideoContext() {
     if (CodecContext) {
