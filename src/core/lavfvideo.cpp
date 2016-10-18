@@ -168,7 +168,6 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
             throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
                 "Video track is unseekable");
         } else {
-            Seek(0);
             FlushBuffers(CodecContext);
             // Since we seeked to frame 0 we need to specify that frame 0 is once again the next frame that wil be decoded
             CurrentFrame = 0;
