@@ -140,6 +140,7 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
         VP.SARDen = FormatContext->streams[VideoTrack]->sample_aspect_ratio.den;
     }
 
+    // Set stereoscopic 3d type
     VP.Stereo3DType = FFMS_S3D_TYPE_2D;
     VP.Stereo3DFlags = 0;
 
@@ -149,6 +150,16 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
             VP.Stereo3DType = StereoSideData->type;
             VP.Stereo3DFlags = StereoSideData->flags;
             break;
+        }
+    }
+
+    // Set rotation
+    VP.Rotation = 0;
+    const AVDictionaryEntry *RotationEntry = av_dict_get(FormatContext->streams[VideoTrack]->metadata, "rotate", nullptr, 0);
+    if (RotationEntry) {
+        try {
+            VP.Rotation = std::stoi(RotationEntry->value);
+        } catch (std::logic_error &) {
         }
     }
 

@@ -1,6 +1,7 @@
 # FFmpegSource2 Changelog
 
 - 2.2000
+  - Add rotation metadata export (Myrsloik)
   - Add stereoscopic metadata export (Myrsloik)
   - Removed support for old FFmpeg versions
   - Removed libav support

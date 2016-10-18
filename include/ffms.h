@@ -399,6 +399,7 @@ typedef struct FFMS_VideoProperties {
     double FirstTime;
     double LastTime;
     /* Introduced in FFMS_VERSION ((2 << 24) | (24 << 16) | (0 << 8) | 0) */
+    int Rotation;
     int Stereo3DType;
     int Stereo3DFlags;
 } FFMS_VideoProperties;
