@@ -132,22 +132,16 @@ if test "$LIBAV_WORKS" = no; then
 AC_MSG_FAILURE([cannot link with $_lav_name])
 fi
 
-libavresample='libavresample'
-PKG_CHECK_MODULES(AVRESAMPLE, [libavresample >= 1.0.0], [], [
-  PKG_CHECK_MODULES(AVRESAMPLE, [libswresample >= 1.0.0], [
-    AC_DEFINE([WITH_SWRESAMPLE], [1], [Use libswresample rather than libavresample])
-    libavresample='libswresample'
-  ], [
-    AC_MSG_ERROR([Either avresample or swresample is required.])
-  ])
+PKG_CHECK_MODULES(SWRESAMPLE, [libswresample >= 1.0.0], [], [
+  AC_MSG_ERROR([swresample is required.])
 ])
 
 dnl See similar thing for LIBAV_LIBS
-AVRESAMPLE_LIBS=$(echo $AVRESAMPLE_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
+SWRESAMPLE_LIBS=$(echo $SWRESAMPLE_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
 
-AC_SUBST([AVRESAMPLE_CFLAGS])
-AC_SUBST([AVRESAMPLE_LIBS])
-AC_SUBST([libavresample])
+AC_SUBST([SWRESAMPLE_CFLAGS])
+AC_SUBST([SWRESAMPLE_LIBS])
+AC_SUBST([libswresample])
 
 src_core_libffms2_la_LDFLAGS=""
 AC_MSG_CHECKING([whether -Wl,-Bsymbolic is needed])

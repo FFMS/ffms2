@@ -7,7 +7,7 @@ includedir=@includedir@
 
 Name: ffms2
 Description: The Fabulous FM Library 2
-Requires.private: libavformat libavcodec libswscale libavutil @libavresample@
+Requires.private: libavformat libavcodec libswscale libavutil libswresample
 Version: @FFMS_VERSION@
 Libs.private: @ZLIB_LDFLAGS@ -lz
 Libs: -L${libdir} -lffms2
