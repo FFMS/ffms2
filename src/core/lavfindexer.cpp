@@ -92,7 +92,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 
             if (avcodec_parameters_to_context(VideoCodecContext, FormatContext->streams[i]->codecpar) < 0)
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
-                    "Could not copy video codec paramaters");
+                    "Could not copy video codec parameters");
 
             if (avcodec_open2(VideoCodecContext, VideoCodec, nullptr) < 0)
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
@@ -122,7 +122,7 @@ FFMS_Index *FFLAVFIndexer::DoIndexing() {
 
             if (avcodec_parameters_to_context(AudioCodecContext, FormatContext->streams[i]->codecpar) < 0)
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
-                    "Could not copy audio codec paramaters");
+                    "Could not copy audio codec parameters");
 
             if (avcodec_open2(AudioCodecContext, AudioCodec, nullptr) < 0)
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
