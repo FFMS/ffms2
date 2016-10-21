@@ -22,15 +22,15 @@
 #include "ffmscompat.h"
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
+#include <codecvt>
 #endif
 
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <vector>
 #include <string>
 
 namespace {
@@ -44,7 +44,7 @@ bool Overwrite = false;
 bool PrintProgress = true;
 bool WriteTC = false;
 bool WriteKF = false;
-const char *InputFile = nullptr;
+std::string InputFile;
 std::string CacheFile;
 std::string AudioFile;
 
@@ -75,10 +75,10 @@ void PrintUsage() {
         << std::endl;
 }
 
-void ParseCMDLine(int argc, char *argv[]) {
+void ParseCMDLine(int argc, const char *argv[]) {
     for (int i = 1; i < argc; ++i) {
         const char *Option = argv[i];
-#define OPTION_ARG(flag) i + 1 < argc ? argv[i+1] : throw Error("Error: missing argument for -" flag)
+#define OPTION_ARG(dst, flag, parse) try { dst = parse(i + 1 < argc ? argv[i+1] : throw Error("Error: missing argument for -" flag)); } catch (std::logic_error &) { throw Error("Error: invalid argument specified for -" flag); }
 
         if (!strcmp(Option, "-f")) {
             Overwrite = true;
@@ -91,18 +91,18 @@ void ParseCMDLine(int argc, char *argv[]) {
         } else if (!strcmp(Option, "-k")) {
             WriteKF = true;
         } else if (!strcmp(Option, "-t")) {
-            IndexMask = atoll(OPTION_ARG("t"));
+            OPTION_ARG(IndexMask, "t", std::stoll);
             i++;
         } else if (!strcmp(Option, "-d")) {
-            DumpMask = atoll(OPTION_ARG("d"));
+            OPTION_ARG(DumpMask, "d", std::stoll);
             i++;
         } else if (!strcmp(Option, "-a")) {
-            AudioFile = OPTION_ARG("a");
+            OPTION_ARG(AudioFile, "a", );
             i++;
         } else if (!strcmp(Option, "-s")) {
-            IgnoreErrors = atoi(OPTION_ARG("s"));
+            OPTION_ARG(IgnoreErrors, "s", std::stoi);
             i++;
-        } else if (!InputFile) {
+        } else if (InputFile.empty()) {
             InputFile = Option;
         } else if (CacheFile.empty()) {
             CacheFile = Option;
@@ -113,7 +113,7 @@ void ParseCMDLine(int argc, char *argv[]) {
 
     if (IgnoreErrors < 0 || IgnoreErrors > 3)
         throw Error("Error: invalid error handling mode");
-    if (!InputFile)
+    if (InputFile.empty())
         throw Error("Error: no input file specified");
 
     if (CacheFile.empty()) {
@@ -170,7 +170,7 @@ void DoIndexing() {
     }
 
     UpdateProgress(0, 100, nullptr);
-    FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(InputFile, Demuxer, &E);
+    FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(InputFile.c_str(), Demuxer, &E);
     if (Indexer == nullptr)
         throw Error("\nFailed to initialize indexing: ", E);
 
@@ -201,7 +201,7 @@ void DoIndexing() {
 
     UpdateProgress(100, 100, nullptr);
 
-    std::cout << std::endl << std::flush;
+    std::cout << std::endl;
 
     if (WriteTC) {
         if (PrintProgress)
@@ -258,37 +258,20 @@ void DoIndexing() {
 } // namespace {
 
 #ifdef _WIN32
-#ifdef __MINGW32__
-// mingw doesn't support wmain
-extern int _CRT_glob;
-extern "C" void __wgetmainargs(int*, wchar_t***, wchar_t***, int, int*);
-int main() {
-    int argc;
-    wchar_t **_argv;
-    wchar_t **env;
-    int si = 0;
-    __wgetmainargs(&argc, &_argv, &env, _CRT_glob, &si);
-#else
 int wmain(int argc, wchar_t *_argv[]) {
-#endif
-    char **argv = (char**)malloc(argc * sizeof(char*));
+    std::vector<const char *> StringPtrs(argc);
+    std::vector<std::string> StringStorage(argc);
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> Conversion;
+
     for (int i = 0; i < argc; i++) {
-        int len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, nullptr, 0, nullptr, nullptr);
-        if (!len) {
-            std::cout << "Failed to translate commandline to Unicode" << std::endl;
-            return 1;
-        }
-        char *temp = (char*)malloc(len * sizeof(char));
-        len = WideCharToMultiByte(CP_UTF8, 0, _argv[i], -1, temp, len, nullptr, nullptr);
-        if (!len) {
-            std::cout << "Failed to translate commandline to Unicode" << std::endl;
-            return 1;
-        }
-        argv[i] = temp;
+        StringStorage[i] = Conversion.to_bytes(_argv[i]);
+        StringPtrs[i] = StringStorage[i].c_str();
     }
-#else /* defined(_WIN32) && !defined(__MINGW32__) */
+
+    const char **argv = StringPtrs.data();
+#else
 int main(int argc, char *argv[]) {
-#endif /* defined(_WIN32) && !defined(__MINGW32__) */
+#endif
     try {
         if (argc <= 1) {
             PrintUsage();
