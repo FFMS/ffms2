@@ -22,6 +22,8 @@
 #include "ffmscompat.h"
 
 #ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
 #endif
 
@@ -198,6 +200,8 @@ void DoIndexing() {
         throw Error("\nIndexing error: ", E);
 
     UpdateProgress(100, 100, nullptr);
+
+    std::cout << std::endl << std::flush;
 
     if (WriteTC) {
         if (PrintProgress)
