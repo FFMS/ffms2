@@ -78,7 +78,7 @@ void PrintUsage() {
 void ParseCMDLine(int argc, const char *argv[]) {
     for (int i = 1; i < argc; ++i) {
         const char *Option = argv[i];
-#define OPTION_ARG(dst, flag, parse) try { dst = parse(i + 1 < argc ? argv[i+1] : throw Error("Error: missing argument for -" flag)); } catch (std::logic_error &) { throw Error("Error: invalid argument specified for -" flag); }
+#define OPTION_ARG(dst, flag, parse) try { dst = parse(i + 1 < argc ? argv[i+1] : throw Error("Error: missing argument for -" flag)); i++; } catch (std::logic_error &) { throw Error("Error: invalid argument specified for -" flag); }
 
         if (!strcmp(Option, "-f")) {
             Overwrite = true;
@@ -92,16 +92,12 @@ void ParseCMDLine(int argc, const char *argv[]) {
             WriteKF = true;
         } else if (!strcmp(Option, "-t")) {
             OPTION_ARG(IndexMask, "t", std::stoll);
-            i++;
         } else if (!strcmp(Option, "-d")) {
             OPTION_ARG(DumpMask, "d", std::stoll);
-            i++;
         } else if (!strcmp(Option, "-a")) {
             OPTION_ARG(AudioFile, "a", );
-            i++;
         } else if (!strcmp(Option, "-s")) {
             OPTION_ARG(IgnoreErrors, "s", std::stoi);
-            i++;
         } else if (InputFile.empty()) {
             InputFile = Option;
         } else if (CacheFile.empty()) {
