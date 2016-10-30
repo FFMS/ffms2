@@ -115,13 +115,14 @@ enum BCSType {
 
 static BCSType GuessCSType(AVPixelFormat p) {
     // guessing the colorspace type from the name is kinda hackish but libav doesn't export this kind of metadata
+    // special case since pal8 is assumed to be rgb32
+    if (p == AV_PIX_FMT_PAL8)
+        return cRGB;
     if (av_pix_fmt_desc_get(p)->flags & AV_PIX_FMT_FLAG_HWACCEL)
         return cUNUSABLE;
+    if (av_pix_fmt_desc_get(p)->flags & AV_PIX_FMT_FLAG_PAL)
+        return cUNUSABLE;
     if (av_pix_fmt_desc_get(p)->flags & AV_PIX_FMT_FLAG_RGB)
-        return cRGB;
-    const char *n = av_get_pix_fmt_name(p);
-    // assume pal8 is rgb, the rest are mostly mono and thus grayscale
-    if (strstr(n, "pal8"))
         return cRGB;
     if (av_pix_fmt_desc_get(p)->nb_components <= 2)
         return cGRAY;
