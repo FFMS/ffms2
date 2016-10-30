@@ -1,7 +1,8 @@
 # FFmpegSource2 Changelog
 
 - 2.2000
-  - ffmsindex will now properly error out with invalied arguments (Myrsloik)
+  - fixed several bugs in output format selection (Myrsloik)
+  - ffmsindex will now properly error out with invalid arguments (Myrsloik)
   - Add rotation metadata export (Myrsloik)
   - Add stereoscopic metadata export (Myrsloik)
   - Removed old mingw version support

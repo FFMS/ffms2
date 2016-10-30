@@ -117,12 +117,15 @@ static BCSType GuessCSType(AVPixelFormat p) {
     // guessing the colorspace type from the name is kinda hackish but libav doesn't export this kind of metadata
     if (av_pix_fmt_desc_get(p)->flags & AV_PIX_FMT_FLAG_HWACCEL)
         return cUNUSABLE;
-    const char *n = av_get_pix_fmt_name(p);
-    if (strstr(n, "gray") || strstr(n, "mono") || strstr(n, "y400a"))
-        return cGRAY;
-    if (strstr(n, "rgb") || strstr(n, "bgr") || strstr(n, "gbr") || strstr(n, "pal8"))
+    if (av_pix_fmt_desc_get(p)->flags & AV_PIX_FMT_FLAG_RGB)
         return cRGB;
-    if (strstr(n, "yuv") || strstr(n, "yv") || strstr(n, "nv12") || strstr(n, "nv21"))
+    const char *n = av_get_pix_fmt_name(p);
+    // assume pal8 is rgb, the rest are mostly mono and thus grayscale
+    if (strstr(n, "pal8"))
+        return cRGB;
+    if (av_pix_fmt_desc_get(p)->nb_components <= 2)
+        return cGRAY;
+    if (av_pix_fmt_desc_get(p)->nb_components >= 3)
         return cYUV;
     return cUNUSABLE; // should never come here
 }
@@ -132,7 +135,8 @@ struct LossAttributes {
     int ChromaUndersampling;
     int ChromaOversampling;
     int DepthDifference;
-    int CSLoss; // 0 = no difference, 1 = no real loss (gray => yuv/rgb or alpha plane added), 2 = full conversion required, 3 = alpha loss, 4 = full conversion plus alpha loss, 5 = complete color loss
+    int CSLoss; // 0 = no difference, 1 = unused, 2 = full conversion required, 3 = alpha loss, 4 = full conversion plus alpha loss, 5 = complete color loss
+    int CSGain; // alpha plane added, gray converted to yuv/rgb
 };
 
 static int GetPseudoDepth(const AVPixFmtDescriptor &Desc) {
@@ -154,18 +158,20 @@ static LossAttributes CalculateLoss(AVPixelFormat Dst, AVPixelFormat Src) {
     Loss.DepthDifference = GetPseudoDepth(DstDesc) - GetPseudoDepth(SrcDesc);;
     Loss.ChromaOversampling = FFMAX(0, SrcDesc.log2_chroma_h - DstDesc.log2_chroma_h) + FFMAX(0, SrcDesc.log2_chroma_w - DstDesc.log2_chroma_w);
     Loss.ChromaUndersampling = FFMAX(0, DstDesc.log2_chroma_h - SrcDesc.log2_chroma_h) + FFMAX(0, DstDesc.log2_chroma_w - SrcDesc.log2_chroma_w);
+    Loss.CSGain = 0;
 
     if (SrcCS == DstCS) {
         Loss.CSLoss = 0;
     } else if (SrcCS == cGRAY) {
-        Loss.ChromaOversampling = 10; // 10 is kinda arbitrarily chosen here, mostly to make it bigger than over/undersampling value that actually could appear
+        Loss.CSGain = 1;
+        Loss.ChromaOversampling = 0;
         Loss.ChromaUndersampling = 0;
-        Loss.CSLoss = 0; // maybe set it to 1 as a special case but the chroma oversampling should have a similar effect
+        Loss.CSLoss = 0;
     } else if (DstCS == cGRAY) {
         Loss.ChromaOversampling = 0;
-        Loss.ChromaUndersampling = 10;
+        Loss.ChromaUndersampling = 0;
         Loss.CSLoss = 5;
-    } else { // conversions between RGB and YUV here
+    } else {
         Loss.CSLoss = 2;
     }
 
@@ -176,8 +182,9 @@ static LossAttributes CalculateLoss(AVPixelFormat Dst, AVPixelFormat Src) {
             Loss.CSLoss = 3;
     }
 
+    // Added alpha plane
     if (Loss.CSLoss == 0 && (SrcDesc.nb_components == DstDesc.nb_components - 1)) {
-        Loss.CSLoss = 1;
+        Loss.CSGain = 1;
     }
 
     return Loss;
@@ -218,6 +225,9 @@ AVPixelFormat FindBestPixelFormat(const std::vector<AVPixelFormat> &Dsts, AVPixe
                 || (CLoss.DepthDifference == Loss.DepthDifference && CLoss.ChromaUndersampling == Loss.ChromaUndersampling && CLoss.CSLoss < Loss.CSLoss)
                 || (CLoss.DepthDifference == Loss.DepthDifference && CLoss.ChromaUndersampling == Loss.ChromaUndersampling
                     && CLoss.CSLoss == Loss.CSLoss && CLoss.ChromaOversampling < Loss.ChromaOversampling))
+                Loss = CLoss;
+            else if (CLoss.DepthDifference == Loss.DepthDifference && CLoss.ChromaUndersampling == Loss.ChromaUndersampling
+                && CLoss.CSLoss == Loss.CSLoss && CLoss.ChromaOversampling == Loss.ChromaOversampling && CLoss.CSGain < Loss.CSGain)
                 Loss = CLoss;
         }
     }
