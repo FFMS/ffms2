@@ -207,9 +207,19 @@ AVPixelFormat FindBestPixelFormat(const std::vector<AVPixelFormat> &Dsts, AVPixe
     if (Src == AV_PIX_FMT_PAL8)
         Src = AV_PIX_FMT_RGB32;
 
-    i = Dsts.begin();
+    std::vector<AVPixelFormat> OutputDsts;
+    for (auto DstFmt = Dsts.begin(); DstFmt != Dsts.end(); ++DstFmt) {
+        // Skip outputing to formwats we can't convert to, this avoids swscale init failures later in the code
+        if (sws_isSupportedOutput(*DstFmt))
+            OutputDsts.push_back(*DstFmt);
+    }
+
+    if (OutputDsts.empty())
+        return AV_PIX_FMT_NONE;
+
+    i = OutputDsts.begin();
     LossAttributes Loss = CalculateLoss(*i++, Src);
-    for (; i != Dsts.end(); ++i) {
+    for (; i != OutputDsts.end(); ++i) {
         LossAttributes CLoss = CalculateLoss(*i, Src);
         if (Loss.CSLoss >= 3 && CLoss.CSLoss < Loss.CSLoss) { // favor the same color format output
             Loss = CLoss;
