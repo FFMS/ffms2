@@ -27,13 +27,6 @@
 #include <thread>
 
 namespace {
-void CopyAVFrameFields(uint8_t *data[4], int linesize[4], FFMS_Frame &Dst) {
-    for (int i = 0; i < 4; i++) {
-        Dst.Data[i] = data[i];
-        Dst.Linesize[i] = linesize[i];
-    }
-}
-
 // this might look stupid, but we have actually had crashes caused by not checking like this.
 void SanityCheckFrameForData(AVFrame *Frame) {
     for (int i = 0; i < 4; i++) {
@@ -68,7 +61,10 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 
     if (SWS) {
         sws_scale(SWS, Frame->data, Frame->linesize, 0, CodecContext->height, SWSFrameData, SWSFrameLinesize);
-        CopyAVFrameFields(SWSFrameData, SWSFrameLinesize, LocalFrame);
+        for (int i = 0; i < 4; i++) {
+            LocalFrame.Data[i] = SWSFrameData[i];
+            LocalFrame.Linesize[i] = SWSFrameLinesize[i];
+        }
     } else {
         // Special case to avoid ugly casts
         for (int i = 0; i < 4; i++) {
