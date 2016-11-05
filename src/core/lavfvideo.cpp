@@ -155,13 +155,9 @@ FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
 
     // Set rotation
     VP.Rotation = 0;
-    const AVDictionaryEntry *RotationEntry = av_dict_get(FormatContext->streams[VideoTrack]->metadata, "rotate", nullptr, 0);
-    if (RotationEntry) {
-        try {
-            VP.Rotation = std::stoi(RotationEntry->value);
-        } catch (std::logic_error &) {
-        }
-    }
+    const int32_t *RotationMatrix = reinterpret_cast<const int32_t *>(av_stream_get_side_data(FormatContext->streams[VideoTrack], AV_PKT_DATA_DISPLAYMATRIX, nullptr));
+    if (RotationMatrix)
+        VP.Rotation = lround(av_display_rotation_get(RotationMatrix));
 
     if (SeekMode >= 0 && Frames.size() > 1) {
         if (Seek(0) < 0) {

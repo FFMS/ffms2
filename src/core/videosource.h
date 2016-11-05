@@ -27,6 +27,7 @@ extern "C" {
 #include <libswscale/swscale.h>
 #include <libavutil/imgutils.h>
 #include <libavutil/stereo3d.h>
+#include <libavutil/display.h>
 }
 
 #include <vector>
