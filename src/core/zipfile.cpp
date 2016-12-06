@@ -42,8 +42,8 @@ ZipFile::ZipFile()
 }
 
 ZipFile::ZipFile(const uint8_t *in_buffer, const size_t size)
-    : is_file(false)
-    , index_buffer(in_buffer, in_buffer + size)
+    : index_buffer(in_buffer, in_buffer + size)
+    , is_file(false)
     , state(Initial) {
     z = {};
 }
