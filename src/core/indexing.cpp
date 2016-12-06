@@ -196,20 +196,23 @@ void FFMS_Index::ReadIndex(ZipFile &zf, const char *IndexFile) {
     }
 }
 
-FFMS_Index::FFMS_Index(const char *IndexFile) {
+FFMS_Index::FFMS_Index(const char *IndexFile)
+    : RefCount(1) {
     ZipFile zf(IndexFile, "rb");
 
     ReadIndex(zf, IndexFile);
 }
 
-FFMS_Index::FFMS_Index(const uint8_t *Buffer, size_t Size) {
+FFMS_Index::FFMS_Index(const uint8_t *Buffer, size_t Size)
+    : RefCount(1) {
     ZipFile zf(Buffer, Size);
 
     ReadIndex(zf, "User supplied buffer");
 }
 
 FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling)
-    : Decoder(Decoder)
+    : RefCount(1)
+    , Decoder(Decoder)
     , ErrorHandling(ErrorHandling)
     , Filesize(Filesize) {
     memcpy(this->Digest, Digest, sizeof(this->Digest));
