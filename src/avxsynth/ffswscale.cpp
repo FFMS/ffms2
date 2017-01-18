@@ -22,6 +22,7 @@
 #include "avsutils.h"
 #include "../core/utils.h"
 #include "../core/videoutils.h"
+#include "../core/videosource.h"
 
 SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env) : GenericVideoFilter(Child) {
 	Context = NULL;
@@ -74,10 +75,10 @@ SWScale::SWScale(PClip Child, int ResizeToWidth, int ResizeToHeight, const char 
 	if ((ConvertToFormat == FFMS_PIX_FMT(YUV420P) || ConvertToFormat == FFMS_PIX_FMT(YUYV422)) && vi.width & 1)
 		Env->ThrowError("SWScale: mod 2 output width required");
 
-	Context = GetSwsContext(
-		OrigWidth, OrigHeight, ConvertFromFormat, GetAssumedColorSpace(OrigWidth, OrigHeight), AVCOL_RANGE_UNSPECIFIED,
-		vi.width, vi.height, ConvertToFormat, GetAssumedColorSpace(OrigWidth, OrigHeight), AVCOL_RANGE_UNSPECIFIED,
-		Resizer);
+//	Context = GetSwsContext(
+//		OrigWidth, OrigHeight, ConvertFromFormat, InputColorSpace, AVCOL_RANGE_UNSPECIFIED,
+//		vi.width, vi.height, ConvertToFormat, OutputColorSpace, AVCOL_RANGE_UNSPECIFIED,
+//		Resizer);
 	if (Context == NULL)
 		Env->ThrowError("SWScale: Context creation failed");
 }

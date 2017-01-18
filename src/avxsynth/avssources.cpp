@@ -26,21 +26,21 @@
 
 extern AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default) {
 	if (!CSName)
-		return FFMS_PIX_FMT(NONE);
+		return AV_PIX_FMT_NONE;
 	std::string s = CSName;
 	std::transform(s.begin(), s.end(), s.begin(), toupper);
 	if (s == "")
 		return Default;
 	if (s == "YV12")
-		return FFMS_PIX_FMT(YUV420P);
+		return AV_PIX_FMT_YUV420P;
 	if (s == "YUY2")
-		return FFMS_PIX_FMT(YUYV422);
+		return AV_PIX_FMT_YUYV422;
 	if (s == "RGB24")
-		return FFMS_PIX_FMT(BGR24);
+		return AV_PIX_FMT_BGR24;
 	if (s == "RGB32")
-		return FFMS_PIX_FMT(RGB32);
+		return AV_PIX_FMT_RGB32;
 
-	return FFMS_PIX_FMT(NONE);
+	return AV_PIX_FMT_NONE;
 }
 
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
@@ -205,11 +205,11 @@ void AvisynthVideoSource::InitOutputFormat(
 	TargetFormats[3] = -1;
 
 	// PIX_FMT_NV21 is misused as a return value different to the defined ones in the function
-	AVPixelFormat TargetPixelFormat = CSNameToPIXFMT(ConvertToFormatName, FFMS_PIX_FMT(NV21));
-	if (TargetPixelFormat == FFMS_PIX_FMT(NONE))
+	AVPixelFormat TargetPixelFormat = CSNameToPIXFMT(ConvertToFormatName, AV_PIX_FMT_NV21);
+	if (TargetPixelFormat == AV_PIX_FMT_NONE)
 		Env->ThrowError("FFVideoSource: Invalid colorspace name specified");
 
-	if (TargetPixelFormat != FFMS_PIX_FMT(NV21)) {
+	if (TargetPixelFormat != AV_PIX_FMT_NV21) {
 		TargetFormats[0] = TargetPixelFormat;
 		TargetFormats[1] = -1;
 	}
@@ -253,7 +253,7 @@ void AvisynthVideoSource::InitOutputFormat(
 	if (RFFMode > 0 && ResizeToHeight != F->EncodedHeight)
 		Env->ThrowError("FFVideoSource: Vertical scaling not allowed in RFF mode");
 
-	if (RFFMode > 0 && TargetPixelFormat != FFMS_PIX_FMT(NV21))
+	if (RFFMode > 0 && TargetPixelFormat != AV_PIX_FMT_NV21)
 		Env->ThrowError("FFVideoSource: Only the default output colorspace can be used in RFF mode");
 
 	// set color information variables
