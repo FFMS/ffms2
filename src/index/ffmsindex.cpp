@@ -75,7 +75,7 @@ void PrintUsage() {
         << std::endl;
 }
 
-void ParseCMDLine(int argc, char *argv[]) {
+void ParseCMDLine(int argc, const char *argv[]) {
     for (int i = 1; i < argc; ++i) {
         const char *Option = argv[i];
 #define OPTION_ARG(dst, flag, parse) try { dst = parse(i + 1 < argc ? argv[i+1] : throw Error("Error: missing argument for -" flag)); i++; } catch (std::logic_error &) { throw Error("Error: invalid argument specified for -" flag); }
