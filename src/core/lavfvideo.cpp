@@ -24,13 +24,12 @@ namespace {
 class FFLAVFVideo : public FFMS_VideoSource {
     AVFormatContext *FormatContext = nullptr;
     int SeekMode;
-    FFSourceResources<FFMS_VideoSource> Res;
     bool SeekByPos = false;
     int PosOffset = 0;
 
     void DecodeNextFrame(int64_t &PTS, int64_t &Pos);
     bool SeekTo(int n, int SeekOffset);
-    void Free(bool CloseCodec) override;
+    void Free();
 
     int Seek(int n) {
         int ret = -1;
@@ -71,108 +70,114 @@ class FFLAVFVideo : public FFMS_VideoSource {
 
 public:
     FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode);
+    ~FFLAVFVideo();
     FFMS_Frame *GetFrame(int n) override;
 };
 
-void FFLAVFVideo::Free(bool CloseCodec) {
-    if (CloseCodec)
-        avcodec_free_context(&CodecContext);
+void FFLAVFVideo::Free() {
+    avcodec_free_context(&CodecContext);
     avformat_close_input(&FormatContext);
 }
 
 FFLAVFVideo::FFLAVFVideo(const char *SourceFile, int Track, FFMS_Index &Index,
     int Threads, int SeekMode)
     : FFMS_VideoSource(SourceFile, Index, Track, Threads)
-    , SeekMode(SeekMode)
-    , Res(this) {
-    LAVFOpenFile(SourceFile, FormatContext, VideoTrack);
+    , SeekMode(SeekMode) {
+    try {
+        LAVFOpenFile(SourceFile, FormatContext, VideoTrack);
 
-    AVCodec *Codec = avcodec_find_decoder(FormatContext->streams[VideoTrack]->codecpar->codec_id);
-    if (Codec == nullptr)
-        throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-            "Video codec not found");
-
-    CodecContext = avcodec_alloc_context3(Codec);
-    if (CodecContext == nullptr)
-        throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
-            "Could not allocate video codec context.");
-    if (avcodec_parameters_to_context(CodecContext, FormatContext->streams[VideoTrack]->codecpar) < 0)
-        throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-            "Could not copy video decoder parameters.");
-    CodecContext->thread_count = DecodingThreads;
-    CodecContext->has_b_frames = Frames.MaxBFrames;
-
-    if (avcodec_open2(CodecContext, Codec, nullptr) < 0)
-        throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-            "Could not open video codec");
-
-    Res.CloseCodec(true);
-
-    // Always try to decode a frame to make sure all required parameters are known
-    int64_t DummyPTS = 0, DummyPos = 0;
-    DecodeNextFrame(DummyPTS, DummyPos);
-
-    //VP.image_type = VideoInfo::IT_TFF;
-    VP.FPSDenominator = FormatContext->streams[VideoTrack]->time_base.num;
-    VP.FPSNumerator = FormatContext->streams[VideoTrack]->time_base.den;
-
-    // sanity check framerate
-    if (VP.FPSDenominator > VP.FPSNumerator || VP.FPSDenominator <= 0 || VP.FPSNumerator <= 0) {
-        VP.FPSDenominator = 1;
-        VP.FPSNumerator = 30;
-    }
-
-    // Calculate the average framerate
-    if (Frames.size() >= 2) {
-        double PTSDuration = (double)(Frames.back().PTS - Frames.front().PTS + Frames.back().PTS - Frames[Frames.size() - 2].PTS);
-        double TD = (double)(Frames.TB.Den);
-        double TN = (double)(Frames.TB.Num);
-        VP.FPSDenominator = (unsigned int)(PTSDuration * TN / TD * 1000.0 / (Frames.size()));
-        VP.FPSNumerator = 1000000;
-    }
-
-    // Set the video properties from the codec context
-    SetVideoProperties();
-
-    // Set the SAR from the container if the codec SAR is invalid
-    if (VP.SARNum <= 0 || VP.SARDen <= 0) {
-        VP.SARNum = FormatContext->streams[VideoTrack]->sample_aspect_ratio.num;
-        VP.SARDen = FormatContext->streams[VideoTrack]->sample_aspect_ratio.den;
-    }
-
-    // Set stereoscopic 3d type
-    VP.Stereo3DType = FFMS_S3D_TYPE_2D;
-    VP.Stereo3DFlags = 0;
-
-    for (int i = 0; i < FormatContext->streams[VideoTrack]->nb_side_data; i++) {
-        if (FormatContext->streams[VideoTrack]->side_data->type == AV_PKT_DATA_STEREO3D) {
-            const AVStereo3D *StereoSideData = (const AVStereo3D *)FormatContext->streams[VideoTrack]->side_data->data;
-            VP.Stereo3DType = StereoSideData->type;
-            VP.Stereo3DFlags = StereoSideData->flags;
-            break;
-        }
-    }
-
-    // Set rotation
-    VP.Rotation = 0;
-    const int32_t *RotationMatrix = reinterpret_cast<const int32_t *>(av_stream_get_side_data(FormatContext->streams[VideoTrack], AV_PKT_DATA_DISPLAYMATRIX, nullptr));
-    if (RotationMatrix)
-        VP.Rotation = lround(av_display_rotation_get(RotationMatrix));
-
-    if (SeekMode >= 0 && Frames.size() > 1) {
-        if (Seek(0) < 0) {
+        AVCodec *Codec = avcodec_find_decoder(FormatContext->streams[VideoTrack]->codecpar->codec_id);
+        if (Codec == nullptr)
             throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
-                "Video track is unseekable");
-        } else {
-            FlushBuffers(CodecContext);
-            // Since we seeked to frame 0 we need to specify that frame 0 is once again the next frame that wil be decoded
-            CurrentFrame = 0;
-        }
-    }
+                "Video codec not found");
 
-    // Cannot "output" without doing all other initialization
-    // This is the additional mess required for seekmode=-1 to work in a reasonable way
-    OutputFrame(DecodeFrame);
+        CodecContext = avcodec_alloc_context3(Codec);
+        if (CodecContext == nullptr)
+            throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
+                "Could not allocate video codec context.");
+        if (avcodec_parameters_to_context(CodecContext, FormatContext->streams[VideoTrack]->codecpar) < 0)
+            throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+                "Could not copy video decoder parameters.");
+        CodecContext->thread_count = DecodingThreads;
+        CodecContext->has_b_frames = Frames.MaxBFrames;
+
+        if (avcodec_open2(CodecContext, Codec, nullptr) < 0)
+            throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+                "Could not open video codec");
+
+        // Always try to decode a frame to make sure all required parameters are known
+        int64_t DummyPTS = 0, DummyPos = 0;
+        DecodeNextFrame(DummyPTS, DummyPos);
+
+        //VP.image_type = VideoInfo::IT_TFF;
+        VP.FPSDenominator = FormatContext->streams[VideoTrack]->time_base.num;
+        VP.FPSNumerator = FormatContext->streams[VideoTrack]->time_base.den;
+
+        // sanity check framerate
+        if (VP.FPSDenominator > VP.FPSNumerator || VP.FPSDenominator <= 0 || VP.FPSNumerator <= 0) {
+            VP.FPSDenominator = 1;
+            VP.FPSNumerator = 30;
+        }
+
+        // Calculate the average framerate
+        if (Frames.size() >= 2) {
+            double PTSDuration = (double)(Frames.back().PTS - Frames.front().PTS + Frames.back().PTS - Frames[Frames.size() - 2].PTS);
+            double TD = (double)(Frames.TB.Den);
+            double TN = (double)(Frames.TB.Num);
+            VP.FPSDenominator = (unsigned int)(PTSDuration * TN / TD * 1000.0 / (Frames.size()));
+            VP.FPSNumerator = 1000000;
+        }
+
+        // Set the video properties from the codec context
+        SetVideoProperties();
+
+        // Set the SAR from the container if the codec SAR is invalid
+        if (VP.SARNum <= 0 || VP.SARDen <= 0) {
+            VP.SARNum = FormatContext->streams[VideoTrack]->sample_aspect_ratio.num;
+            VP.SARDen = FormatContext->streams[VideoTrack]->sample_aspect_ratio.den;
+        }
+
+        // Set stereoscopic 3d type
+        VP.Stereo3DType = FFMS_S3D_TYPE_2D;
+        VP.Stereo3DFlags = 0;
+
+        for (int i = 0; i < FormatContext->streams[VideoTrack]->nb_side_data; i++) {
+            if (FormatContext->streams[VideoTrack]->side_data->type == AV_PKT_DATA_STEREO3D) {
+                const AVStereo3D *StereoSideData = (const AVStereo3D *)FormatContext->streams[VideoTrack]->side_data->data;
+                VP.Stereo3DType = StereoSideData->type;
+                VP.Stereo3DFlags = StereoSideData->flags;
+                break;
+            }
+        }
+
+        // Set rotation
+        VP.Rotation = 0;
+        const int32_t *RotationMatrix = reinterpret_cast<const int32_t *>(av_stream_get_side_data(FormatContext->streams[VideoTrack], AV_PKT_DATA_DISPLAYMATRIX, nullptr));
+        if (RotationMatrix)
+            VP.Rotation = lround(av_display_rotation_get(RotationMatrix));
+
+        if (SeekMode >= 0 && Frames.size() > 1) {
+            if (Seek(0) < 0) {
+                throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+                    "Video track is unseekable");
+            } else {
+                FlushBuffers(CodecContext);
+                // Since we seeked to frame 0 we need to specify that frame 0 is once again the next frame that wil be decoded
+                CurrentFrame = 0;
+            }
+        }
+
+        // Cannot "output" without doing all other initialization
+        // This is the additional mess required for seekmode=-1 to work in a reasonable way
+        OutputFrame(DecodeFrame);
+    } catch (FFMS_Exception &) {
+        Free();
+        throw;
+    }
+}
+
+FFLAVFVideo::~FFLAVFVideo() {
+    Free();
 }
 
 void FFLAVFVideo::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {

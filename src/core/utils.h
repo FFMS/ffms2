@@ -59,26 +59,6 @@ std::unique_ptr<T> make_unique(Args&&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-template<class T>
-class FFSourceResources {
-    T *PrivClass;
-    bool Enabled = true;
-    bool Arg = false;
-
-    FFSourceResources(FFSourceResources const&) = delete;
-    FFSourceResources& operator=(FFSourceResources const&) = delete;
-
-public:
-    FFSourceResources(T *Target) : PrivClass(Target) {}
-
-    ~FFSourceResources() {
-        if (Enabled)
-            PrivClass->Free(Arg);
-    }
-
-    void SetEnabled(bool value) { Enabled = value; }
-    void CloseCodec(bool value) { Arg = value; }
-};
 // auto_ptr-ish holder for AVCodecContexts with overridable deleter
 class FFCodecContext {
     AVCodecContext *CodecContext;

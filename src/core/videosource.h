@@ -36,7 +36,6 @@ extern "C" {
 #include "utils.h"
 
 struct FFMS_VideoSource {
-    friend class FFSourceResources<FFMS_VideoSource>;
 private:
     SwsContext *SWS;
 
@@ -81,7 +80,6 @@ protected:
     FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads);
     void ReAdjustOutputFormat();
     FFMS_Frame *OutputFrame(AVFrame *Frame);
-    virtual void Free(bool CloseCodec) = 0;
     void SetVideoProperties();
     bool DecodePacket(AVPacket *Packet);
     void FlushFinalFrames();
