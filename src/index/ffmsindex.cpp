@@ -54,6 +54,10 @@ struct Error {
 	}
 };
 
+void CleanUp() {
+	FFMS_DestroyIndex(Index);
+}
+
 void PrintUsage() {
 	std::cout <<
 		"FFmpegSource2 indexing app\n"
@@ -309,6 +313,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	try {
+		atexit(CleanUp);
 		DoIndexing();
 	}
 	catch (Error const& e) {
