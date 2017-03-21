@@ -81,7 +81,6 @@ FFMS_API(void) FFMS_Init(int, int) {
     std::call_once(FFmpegOnce, []() {
         av_register_all();
         avformat_network_init();
-        RegisterCustomParsers();
 #ifdef FFMS_WIN_DEBUG
         av_log_set_callback(av_log_windebug_callback);
         av_log_set_level(AV_LOG_INFO);
