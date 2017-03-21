@@ -254,7 +254,7 @@ void DoIndexing() {
 } // namespace {
 
 #ifdef _WIN32
-int wmain(int argc, wchar_t *_argv[]) {
+int wmain(int argc, const wchar_t *_argv[]) {
     std::vector<const char *> StringPtrs(argc);
     std::vector<std::string> StringStorage(argc);
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> Conversion;
@@ -266,7 +266,7 @@ int wmain(int argc, wchar_t *_argv[]) {
 
     const char **argv = StringPtrs.data();
 #else
-int main(int argc, char *argv[]) {
+int main(int argc, const char *argv[]) {
 #endif
     try {
         if (argc <= 1) {
