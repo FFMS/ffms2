@@ -21,6 +21,7 @@
 #include "indexing.h"
 
 #include "track.h"
+#include "videoutils.h"
 #include "wave64writer.h"
 #include "zipfile.h"
 
@@ -391,4 +392,7 @@ void FFMS_Indexer::ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &
     } else {
         *Invisible = !!(pkt.flags & AV_PKT_FLAG_DISCARD);
     }
+
+    if (VideoContext.CodecContext->codec_id == AV_CODEC_ID_VP8)
+        ParseVP8(pkt.data[0], Invisible, FrameType);
 }

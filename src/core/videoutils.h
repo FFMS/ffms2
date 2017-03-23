@@ -43,4 +43,5 @@ void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase);
 // our implementation of avcodec_find_best_pix_fmt()
 AVPixelFormat FindBestPixelFormat(const std::vector<AVPixelFormat> &Dsts, AVPixelFormat Src);
 
-void RegisterCustomParsers();
+// handling of alt-refs in VP8
+void ParseVP8(const uint8_t Buf, bool *Invisible, int *PictType);
