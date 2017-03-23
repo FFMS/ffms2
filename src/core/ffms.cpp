@@ -363,10 +363,10 @@ FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorIn
     return FFMS_CreateIndexerWithDemuxer(SourceFile, FFMS_SOURCE_DEFAULT, ErrorInfo);
 }
 
-FFMS_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int, FFMS_ErrorInfo *ErrorInfo) {
+FFMS_DEPRECATED_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int, FFMS_ErrorInfo *ErrorInfo) {
     ClearErrorInfo(ErrorInfo);
     try {
-        return CreateIndexer(SourceFile);
+        return new FFMS_Indexer(SourceFile);
     } catch (FFMS_Exception &e) {
         e.CopyOut(ErrorInfo);
         return nullptr;
@@ -384,7 +384,6 @@ FFMS_DEPRECATED_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int Ind
 
     Indexer->SetErrorHandling(ErrorHandling);
     Indexer->SetProgressCallback(IC, ICPrivate);
-    Indexer->SetAudioNameCallback(ANC, ANCPrivate);
 
     FFMS_Index *Index = nullptr;
     try {
@@ -412,15 +411,15 @@ FFMS_API(FFMS_Index *) FFMS_DoIndexing2(FFMS_Indexer *Indexer, int ErrorHandling
 }
 
 FFMS_API(void) FFMS_TrackIndexSettings(FFMS_Indexer *Indexer, int Track, int Index, int Dump) {
-    Indexer->SetIndexTrack(Track, !!Index, !!Dump);
+    Indexer->SetIndexTrack(Track, !!Index);
 }
 
 FFMS_API(void) FFMS_TrackTypeIndexSettings(FFMS_Indexer *Indexer, int TrackType, int Index, int Dump) {
-    Indexer->SetIndexTrackType(TrackType, !!Index, !!Dump);
+    Indexer->SetIndexTrackType(TrackType, !!Index);
 }
 
-FFMS_API(void) FFMS_SetAudioNameCallback(FFMS_Indexer *Indexer, TAudioNameCallback ANC, void *ANCPrivate) {
-    Indexer->SetAudioNameCallback(ANC, ANCPrivate);
+FFMS_DEPRECATED_API(void) FFMS_SetAudioNameCallback(FFMS_Indexer *Indexer, TAudioNameCallback ANC, void *ANCPrivate) {
+
 }
 
 FFMS_API(void) FFMS_SetProgressCallback(FFMS_Indexer *Indexer, TIndexCallback IC, void *ICPrivate) {
@@ -514,5 +513,5 @@ FFMS_API(const char *) FFMS_GetFormatNameI(FFMS_Indexer *Indexer) {
 }
 
 FFMS_API(int) FFMS_GetSourceTypeI(FFMS_Indexer *Indexer) {
-    return Indexer->GetSourceType();
+    return FFMS_SOURCE_LAVF;
 }

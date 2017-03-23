@@ -22,7 +22,6 @@
 
 #include "track.h"
 #include "videoutils.h"
-#include "wave64writer.h"
 #include "zipfile.h"
 
 #include <algorithm>
@@ -38,18 +37,10 @@ extern "C" {
 #define INDEXID 0x53920873
 #define INDEX_VERSION 2
 
-SharedVideoContext::~SharedVideoContext() {
-    if (CodecContext) {
-        avcodec_free_context(&CodecContext);
-    }
-    av_parser_close(Parser);
-}
-
-SharedAudioContext::~SharedAudioContext() {
-    delete W64Writer;
-    if (CodecContext) {
-        avcodec_close(CodecContext);
-    }
+SharedAVContext::~SharedAVContext() {
+    avcodec_free_context(&CodecContext);
+    if (Parser)
+        av_parser_close(Parser);
 }
 
 void ffms_free_sha(AVSHA **ctx) { av_freep(ctx); }
@@ -87,7 +78,7 @@ void FFMS_Index::Release() {
         delete this;
 }
 
-void FFMS_Index::Finalize(std::vector<SharedVideoContext> const& video_contexts) {
+void FFMS_Index::Finalize(std::vector<SharedAVContext> const& video_contexts) {
     for (size_t i = 0, end = size(); i != end; ++i) {
         FFMS_Track& track = (*this)[i];
         track.FinalizeTrack();
@@ -219,20 +210,20 @@ FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int Er
     memcpy(this->Digest, Digest, sizeof(this->Digest));
 }
 
-void FFMS_Indexer::SetIndexTrack(int Track, bool Index, bool Dump) {
+void FFMS_Indexer::SetIndexTrack(int Track, bool Index) {
     if (Track < 0 || Track >= GetNumberOfTracks())
         return;
     if (Index)
-        IndexMask[Track] = Dump;
+        IndexMask.insert(Track);
     else
         IndexMask.erase(Track);
 };
 
-void FFMS_Indexer::SetIndexTrackType(int TrackType, bool Index, bool Dump) {
+void FFMS_Indexer::SetIndexTrackType(int TrackType, bool Index) {
     for (int i = 0; i < GetNumberOfTracks(); i++) {
         if (GetTrackType(i) == TrackType) {
             if (Index)
-                IndexMask[i] = Dump;
+                IndexMask.insert(i);
             else
                 IndexMask.erase(i);
         }
@@ -252,61 +243,36 @@ void FFMS_Indexer::SetProgressCallback(TIndexCallback IC, void *ICPrivate) {
     this->ICPrivate = ICPrivate;
 }
 
-void FFMS_Indexer::SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate) {
-    this->ANC = ANC;
-    this->ANCPrivate = ANCPrivate;
-}
-
 FFMS_Indexer *CreateIndexer(const char *Filename) {
-    AVFormatContext *FormatContext = nullptr;
-
-    if (avformat_open_input(&FormatContext, Filename, nullptr, nullptr) != 0)
-        throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-            std::string("Can't open '") + Filename + "'");
-
-    return CreateLavfIndexer(Filename, FormatContext);
+    return new FFMS_Indexer(Filename);
 }
 
 FFMS_Indexer::FFMS_Indexer(const char *Filename)
     : SourceFile(Filename) {
-    FFMS_Index::CalculateFileSignature(Filename, &Filesize, Digest);
-}
+    try {
+        if (avformat_open_input(&FormatContext, Filename, nullptr, nullptr) != 0)
+            throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+                std::string("Can't open '") + Filename + "'");
 
-void FFMS_Indexer::WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track) {
-    // Delay writer creation until after an audio frame has been decoded. This ensures that all parameters are known when writing the headers.
-    if (!DecodeFrame->nb_samples) return;
+        FFMS_Index::CalculateFileSignature(Filename, &Filesize, Digest);
 
-    if (!AudioContext.W64Writer) {
-        FFMS_AudioProperties AP;
-        FillAP(AP, AudioContext.CodecContext, (*Index)[Track]);
-        int FNSize = (*ANC)(SourceFile.c_str(), Track, &AP, nullptr, 0, ANCPrivate);
-        if (FNSize <= 0) {
-            IndexMask[Track] = false;
-            return;
+        if (avformat_find_stream_info(FormatContext, nullptr) < 0) {
+            avformat_close_input(&FormatContext);
+            throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+                "Couldn't find stream information");
         }
 
-        int Format = av_get_packed_sample_fmt(AudioContext.CodecContext->sample_fmt);
-
-        std::vector<char> WName(FNSize + 1);
-        (*ANC)(SourceFile.c_str(), Track, &AP, WName.data(), FNSize, ANCPrivate);
-        WName.back() = 0;
-        try {
-            AudioContext.W64Writer =
-                new Wave64Writer(WName.data(),
-                    av_get_bytes_per_sample(AudioContext.CodecContext->sample_fmt),
-                    AudioContext.CodecContext->channels,
-                    AudioContext.CodecContext->sample_rate,
-                    (Format == AV_SAMPLE_FMT_FLT) || (Format == AV_SAMPLE_FMT_DBL));
-        } catch (...) {
-            throw FFMS_Exception(FFMS_ERROR_WAVE_WRITER, FFMS_ERROR_FILE_WRITE,
-                "Failed to write wave data");
-        }
+        for (unsigned int i = 0; i < FormatContext->nb_streams; i++)
+            if (FormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+                IndexMask.insert(i);
     }
-
-    AudioContext.W64Writer->WriteData(*DecodeFrame);
+    catch (...) {
+        Free();
+        throw;
+    }
 }
 
-uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices) {
+uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAVContext &Context, FFMS_Index &TrackIndices) {
     AVCodecContext *CodecContext = Context.CodecContext;
     int64_t StartSample = Context.CurrentSample;
     int Read = 0;
@@ -332,11 +298,7 @@ uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAudio
 
         if (GotFrame) {
             CheckAudioProperties(Track, CodecContext);
-
             Context.CurrentSample += DecodeFrame->nb_samples;
-
-            if (IndexMask.count(Track) && IndexMask[Track])
-                WriteAudio(Context, &TrackIndices, Track);
         }
     }
     Packet->size += Read;
@@ -376,7 +338,7 @@ void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
     }
 }
 
-void FFMS_Indexer::ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType, bool *Invisible) {
+void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType, bool *Invisible) {
     if (VideoContext.Parser) {
         uint8_t *OB;
         int OBSize;
@@ -395,4 +357,180 @@ void FFMS_Indexer::ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &
 
     if (VideoContext.CodecContext->codec_id == AV_CODEC_ID_VP8)
         ParseVP8(pkt.data[0], Invisible, FrameType);
+}
+
+void FFMS_Indexer::Free() {
+    avformat_close_input(&FormatContext);
+}
+
+FFMS_Indexer::~FFMS_Indexer() {
+    Free();
+}
+
+int FFMS_Indexer::GetNumberOfTracks() {
+    return FormatContext->nb_streams;
+}
+
+const char *FFMS_Indexer::GetFormatName() {
+    return this->FormatContext->iformat->name;
+}
+
+FFMS_TrackType FFMS_Indexer::GetTrackType(int Track) {
+    return static_cast<FFMS_TrackType>(FormatContext->streams[Track]->codecpar->codec_type);
+}
+
+const char *FFMS_Indexer::GetTrackCodec(int Track) {
+    AVCodec *codec = avcodec_find_decoder(FormatContext->streams[Track]->codecpar->codec_id);
+    return codec ? codec->name : nullptr;
+}
+
+FFMS_Index *FFMS_Indexer::DoIndexing() {
+    std::vector<SharedAVContext> AVContexts(FormatContext->nb_streams);
+
+    auto TrackIndices = make_unique<FFMS_Index>(Filesize, Digest, FFMS_SOURCE_LAVF, ErrorHandling);
+
+    for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {
+        TrackIndices->emplace_back((int64_t)FormatContext->streams[i]->time_base.num * 1000,
+            FormatContext->streams[i]->time_base.den,
+            static_cast<FFMS_TrackType>(FormatContext->streams[i]->codecpar->codec_type));
+
+        if (IndexMask.count(i) && FormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+            AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codecpar->codec_id);
+            if (!VideoCodec) {
+                FormatContext->streams[i]->discard = AVDISCARD_ALL;
+                IndexMask.erase(i);
+                continue;
+            }
+
+            AVCodecContext *VideoCodecContext = avcodec_alloc_context3(VideoCodec);
+            if (VideoCodecContext == nullptr)
+                throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_ALLOCATION_FAILED,
+                    "Could not allocate video codec context");
+
+            if (avcodec_parameters_to_context(VideoCodecContext, FormatContext->streams[i]->codecpar) < 0)
+                throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
+                    "Could not copy video codec parameters");
+
+            if (avcodec_open2(VideoCodecContext, VideoCodec, nullptr) < 0)
+                throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
+                    "Could not open video codec");
+
+            AVContexts[i].CodecContext = VideoCodecContext;
+            AVContexts[i].Parser = av_parser_init(FormatContext->streams[i]->codecpar->codec_id);
+            if (AVContexts[i].Parser)
+                AVContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
+
+            if (FormatContext->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC) {
+                FormatContext->streams[i]->discard = AVDISCARD_ALL;
+                IndexMask.erase(i);
+            }
+            else {
+                IndexMask.insert(i);
+            }
+        }
+        else if (IndexMask.count(i) && FormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+            AVCodec *AudioCodec = avcodec_find_decoder(FormatContext->streams[i]->codecpar->codec_id);
+            if (AudioCodec == nullptr)
+                throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
+                    "Audio codec not found");
+
+            AVCodecContext *AudioCodecContext = avcodec_alloc_context3(AudioCodec);
+            if (AudioCodecContext == nullptr)
+                throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_ALLOCATION_FAILED,
+                    "Could not allocate audio codec context");
+
+            if (avcodec_parameters_to_context(AudioCodecContext, FormatContext->streams[i]->codecpar) < 0)
+                throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
+                    "Could not copy audio codec parameters");
+
+            if (avcodec_open2(AudioCodecContext, AudioCodec, nullptr) < 0)
+                throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
+                    "Could not open audio codec");
+
+            AVContexts[i].CodecContext = AudioCodecContext;
+            (*TrackIndices)[i].HasTS = false;
+        }
+        else {
+            FormatContext->streams[i]->discard = AVDISCARD_ALL;
+            IndexMask.erase(i);
+        }
+    }
+
+    AVPacket Packet;
+    InitNullPacket(Packet);
+    std::vector<int64_t> LastValidTS(FormatContext->nb_streams, ffms_av_nopts_value);
+    std::vector<int> LastDuration(FormatContext->nb_streams, 0);
+
+    int64_t filesize = avio_size(FormatContext->pb);
+    while (av_read_frame(FormatContext, &Packet) >= 0) {
+        // Update progress
+        // FormatContext->pb can apparently be NULL when opening images.
+        if (IC && FormatContext->pb) {
+            if ((*IC)(FormatContext->pb->pos, filesize, ICPrivate))
+                throw FFMS_Exception(FFMS_ERROR_CANCELLED, FFMS_ERROR_USER,
+                    "Cancelled by user");
+        }
+        if (!IndexMask.count(Packet.stream_index)) {
+            av_packet_unref(&Packet);
+            continue;
+        }
+
+        int Track = Packet.stream_index;
+        FFMS_Track &TrackInfo = (*TrackIndices)[Track];
+        bool KeyFrame = !!(Packet.flags & AV_PKT_FLAG_KEY);
+        ReadTS(Packet, LastValidTS[Track], (*TrackIndices)[Track].UseDTS);
+
+        if (FormatContext->streams[Track]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+            int64_t PTS = TrackInfo.UseDTS ? Packet.dts : Packet.pts;
+            if (PTS == ffms_av_nopts_value) {
+                if (Packet.duration == 0)
+                    throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
+                        "Invalid initial pts, dts, and duration");
+
+                if (TrackInfo.empty())
+                    PTS = 0;
+                else
+                    PTS = TrackInfo.back().PTS + LastDuration[Track];
+
+                TrackInfo.HasTS = false;
+            }
+            LastDuration[Track] = Packet.duration;
+
+            int RepeatPict = -1;
+            int FrameType = 0;
+            bool Invisible = false;
+            ParseVideoPacket(AVContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible);
+
+            TrackInfo.AddVideoFrame(PTS, RepeatPict, KeyFrame,
+                FrameType, Packet.pos, Invisible);
+        }
+        else if (FormatContext->streams[Track]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+            // For video seeking timestamps are used only if all packets have
+            // timestamps, while for audio they're used if any have timestamps,
+            // as it's pretty common for only some packets to have timestamps
+            if (LastValidTS[Track] != ffms_av_nopts_value)
+                TrackInfo.HasTS = true;
+
+            int64_t StartSample = AVContexts[Track].CurrentSample;
+            uint32_t SampleCount = IndexAudioPacket(Track, &Packet, AVContexts[Track], *TrackIndices);
+            TrackInfo.SampleRate = AVContexts[Track].CodecContext->sample_rate;
+
+            TrackInfo.AddAudioFrame(LastValidTS[Track],
+                StartSample, SampleCount, KeyFrame, Packet.pos, Packet.flags & AV_PKT_FLAG_DISCARD);
+        }
+
+        av_packet_unref(&Packet);
+    }
+
+    TrackIndices->Finalize(AVContexts);
+    return TrackIndices.release();
+}
+
+void FFMS_Indexer::ReadTS(const AVPacket &Packet, int64_t &TS, bool &UseDTS) {
+    if (!UseDTS && Packet.pts != ffms_av_nopts_value)
+        TS = Packet.pts;
+    if (TS == ffms_av_nopts_value)
+        UseDTS = true;
+    if (UseDTS && Packet.dts != ffms_av_nopts_value)
+        TS = Packet.dts;
 }

@@ -23,26 +23,23 @@
 
 #include "utils.h"
 
+#include <set>
 #include <map>
 #include <memory>
 #include <atomic>
 
+extern "C" {
+#include <libavutil/avutil.h>
+}
+
 class Wave64Writer;
 class ZipFile;
 
-struct SharedVideoContext {
+struct SharedAVContext {
     AVCodecContext *CodecContext = nullptr;
     AVCodecParserContext *Parser = nullptr;
-
-    ~SharedVideoContext();
-};
-
-struct SharedAudioContext {
-    AVCodecContext *CodecContext = nullptr;
-    Wave64Writer *W64Writer = nullptr;
     int64_t CurrentSample = 0;
-
-    ~SharedAudioContext();
+    ~SharedAVContext();
 };
 
 struct FFMS_Index : public std::vector<FFMS_Track> {
@@ -62,7 +59,7 @@ public:
     int64_t Filesize;
     uint8_t Digest[20];
 
-    void Finalize(std::vector<SharedVideoContext> const& video_contexts);
+    void Finalize(std::vector<SharedAVContext> const& video_contexts);
     bool CompareFileSignature(const char *Filename);
     void WriteIndexFile(const char *IndexFile);
     uint8_t *WriteIndexBuffer(size_t *Size);
@@ -73,48 +70,41 @@ public:
 };
 
 struct FFMS_Indexer {
+private:
     std::map<int, FFMS_AudioProperties> LastAudioProperties;
     FFMS_Indexer(FFMS_Indexer const&) = delete;
     FFMS_Indexer& operator=(FFMS_Indexer const&) = delete;
-protected:
-    // Index a track if key exists, dump track if value is true
-    std::map<int, bool> IndexMask;
+    AVFormatContext *FormatContext = nullptr;
+    std::set<int> IndexMask;
     int ErrorHandling = FFMS_IEH_CLEAR_TRACK;
     TIndexCallback IC = nullptr;
     void *ICPrivate = nullptr;
-    TAudioNameCallback ANC = nullptr;
-    void *ANCPrivate = nullptr;
     std::string SourceFile;
     ScopedFrame DecodeFrame;
 
     int64_t Filesize;
     uint8_t Digest[20];
 
-    void WriteAudio(SharedAudioContext &AudioContext, FFMS_Index *Index, int Track);
+    void ReadTS(const AVPacket &Packet, int64_t &TS, bool &UseDTS);
     void CheckAudioProperties(int Track, AVCodecContext *Context);
-    uint32_t IndexAudioPacket(int Track, AVPacket *Packet, SharedAudioContext &Context, FFMS_Index &TrackIndices);
-    void ParseVideoPacket(SharedVideoContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType, bool *Invisible);
-
+    uint32_t IndexAudioPacket(int Track, AVPacket *Packet, SharedAVContext &Context, FFMS_Index &TrackIndices);
+    void ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType, bool *Invisible);
+    void Free();
 public:
     FFMS_Indexer(const char *Filename);
-    virtual ~FFMS_Indexer() {}
+    ~FFMS_Indexer();
 
-    void SetIndexTrack(int Track, bool Index, bool Dump);
-    void SetIndexTrackType(int TrackType, bool Index, bool Dump);
+    void SetIndexTrack(int Track, bool Index);
+    void SetIndexTrackType(int TrackType, bool Index);
     void SetErrorHandling(int ErrorHandling);
     void SetProgressCallback(TIndexCallback IC, void *ICPrivate);
-    void SetAudioNameCallback(TAudioNameCallback ANC, void *ANCPrivate);
 
-    virtual FFMS_Index *DoIndexing() = 0;
-    virtual int GetNumberOfTracks() = 0;
-    virtual FFMS_TrackType GetTrackType(int Track) = 0;
-    virtual const char *GetTrackCodec(int Track) = 0;
-    virtual FFMS_Sources GetSourceType() = 0;
-    virtual const char *GetFormatName() = 0;
+    FFMS_Index *DoIndexing();
+    int GetNumberOfTracks();
+    FFMS_TrackType GetTrackType(int Track);
+    const char *GetTrackCodec(int Track);
+    const char *GetFormatName();
 };
 
-FFMS_Indexer *CreateIndexer(const char *Filename);
-
-FFMS_Indexer *CreateLavfIndexer(const char *Filename, AVFormatContext *FormatContext);
 
 #endif
