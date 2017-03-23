@@ -60,6 +60,7 @@ std::unique_ptr<T> make_unique(Args&&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
+// fixme, just use unique_ptr with custom deleter?
 template<typename T, T *(*Alloc)(), void(*Del)(T **)>
 class unknown_size {
     T *ptr;
