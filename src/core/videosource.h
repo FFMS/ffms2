@@ -37,7 +37,7 @@ extern "C" {
 
 struct FFMS_VideoSource {
 private:
-    SwsContext *SWS;
+    SwsContext *SWS = nullptr;
 
     int LastFrameHeight;
     int LastFrameWidth;
@@ -57,16 +57,15 @@ private:
     AVColorRange InputColorRange;
     AVColorSpace InputColorSpace;
 
-    uint8_t *SWSFrameData[4];
-    int SWSFrameLinesize[4];
+    uint8_t *SWSFrameData[4] = {};
+    int SWSFrameLinesize[4] = {};
 
     void DetectInputFormat();
 
-protected:
     FFMS_VideoProperties VP;
     FFMS_Frame LocalFrame;
-    AVFrame *DecodeFrame;
-    AVFrame *LastDecodedFrame;
+    AVFrame *DecodeFrame = nullptr;
+    AVFrame *LastDecodedFrame = nullptr;
     int LastFrameNum;
     FFMS_Index &Index;
     FFMS_Track Frames;
@@ -75,20 +74,29 @@ protected:
     int DelayCounter;
     int InitialDecode;
     int DecodingThreads;
-    AVCodecContext *CodecContext;
+    AVCodecContext *CodecContext = nullptr;
+    AVFormatContext *FormatContext = nullptr;
+    int SeekMode;
+    bool SeekByPos = false;
+    int PosOffset = 0;
 
-    FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads);
     void ReAdjustOutputFormat();
     FFMS_Frame *OutputFrame(AVFrame *Frame);
     void SetVideoProperties();
     bool DecodePacket(AVPacket *Packet);
     void FlushFinalFrames();
     bool HasPendingDelayedFrames();
+    void DecodeNextFrame(int64_t &PTS, int64_t &Pos);
+    bool SeekTo(int n, int SeekOffset);
+    int Seek(int n);
+    int ReadFrame(AVPacket *pkt);
+    void Free();
 public:
-    virtual ~FFMS_VideoSource();
+    FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads, int SeekMode);
+    ~FFMS_VideoSource();
     const FFMS_VideoProperties& GetVideoProperties() { return VP; }
     FFMS_Track *GetTrack() { return &Frames; }
-    virtual FFMS_Frame *GetFrame(int n) = 0;
+    FFMS_Frame *GetFrame(int n);
     void GetFrameCheck(int n);
     FFMS_Frame *GetFrameByTime(double Time);
     void SetOutputFormat(const AVPixelFormat *TargetFormats, int Width, int Height, int Resizer);
@@ -96,7 +104,5 @@ public:
     void SetInputFormat(int ColorSpace, int ColorRange, AVPixelFormat Format);
     void ResetInputFormat();
 };
-
-FFMS_VideoSource *CreateLavfVideoSource(const char *SourceFile, int Track, FFMS_Index &Index, int Threads, int SeekMode);
 
 #endif

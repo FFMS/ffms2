@@ -107,7 +107,7 @@ FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int 
     try {
         switch (Index->Decoder) {
         case FFMS_SOURCE_LAVF:
-            return CreateLavfVideoSource(SourceFile, Track, *Index, Threads, SeekMode);
+            return new FFMS_VideoSource(SourceFile, *Index, Track, Threads, SeekMode);
         default:
             throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Unsupported format");
         }
