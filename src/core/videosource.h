@@ -39,40 +39,40 @@ struct FFMS_VideoSource {
 private:
     SwsContext *SWS = nullptr;
 
-    int LastFrameHeight;
-    int LastFrameWidth;
-    AVPixelFormat LastFramePixelFormat;
+    int LastFrameHeight = -1;
+    int LastFrameWidth = -1;
+    AVPixelFormat LastFramePixelFormat = AV_PIX_FMT_NONE;
 
-    int TargetHeight;
-    int TargetWidth;
+    int TargetHeight = -1;
+    int TargetWidth = -1;
     std::vector<AVPixelFormat> TargetPixelFormats;
-    int TargetResizer;
+    int TargetResizer = 0;
 
-    AVPixelFormat OutputFormat;
-    AVColorRange OutputColorRange;
-    AVColorSpace OutputColorSpace;
+    AVPixelFormat OutputFormat = AV_PIX_FMT_NONE;
+    AVColorRange OutputColorRange = AVCOL_RANGE_UNSPECIFIED;
+    AVColorSpace OutputColorSpace = AVCOL_SPC_UNSPECIFIED;
 
-    bool InputFormatOverridden;
-    AVPixelFormat InputFormat;
-    AVColorRange InputColorRange;
-    AVColorSpace InputColorSpace;
+    bool InputFormatOverridden = false;
+    AVPixelFormat InputFormat = AV_PIX_FMT_NONE;
+    AVColorRange InputColorRange = AVCOL_RANGE_UNSPECIFIED;
+    AVColorSpace InputColorSpace = AVCOL_SPC_UNSPECIFIED;
 
     uint8_t *SWSFrameData[4] = {};
     int SWSFrameLinesize[4] = {};
 
     void DetectInputFormat();
 
-    FFMS_VideoProperties VP;
-    FFMS_Frame LocalFrame;
+    FFMS_VideoProperties VP = {};
+    FFMS_Frame LocalFrame = {};
     AVFrame *DecodeFrame = nullptr;
     AVFrame *LastDecodedFrame = nullptr;
-    int LastFrameNum;
+    int LastFrameNum = 0;
     FFMS_Index &Index;
     FFMS_Track Frames;
     int VideoTrack;
-    int CurrentFrame;
-    int DelayCounter;
-    int InitialDecode;
+    int CurrentFrame = 1;
+    int DelayCounter = 0;
+    int InitialDecode = 1;
     int DecodingThreads;
     AVCodecContext *CodecContext = nullptr;
     AVFormatContext *FormatContext = nullptr;
@@ -91,6 +91,7 @@ private:
     int Seek(int n);
     int ReadFrame(AVPacket *pkt);
     void Free();
+    static void SanityCheckFrameForData(AVFrame *Frame);
 public:
     FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads, int SeekMode);
     ~FFMS_VideoSource();

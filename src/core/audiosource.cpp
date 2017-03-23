@@ -75,8 +75,7 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 
     try {
         OpenFile();
-    }
-    catch (...) {
+    } catch (...) {
         Free();
         throw;
     }

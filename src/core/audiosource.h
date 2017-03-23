@@ -43,6 +43,7 @@ struct FFMS_AudioSource {
 
         AudioBlock(int64_t Start)
             : Start(Start) {
+            // fixme, is this really threadsafe if two audio sources exist? does it matter?
             static int64_t Now = 0;
             Age = Now++;
         }

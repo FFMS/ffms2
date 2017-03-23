@@ -26,16 +26,14 @@
 #include <algorithm>
 #include <thread>
 
-namespace {
-    // this might look stupid, but we have actually had crashes caused by not checking like this.
-    void SanityCheckFrameForData(AVFrame *Frame) {
-        for (int i = 0; i < 4; i++) {
-            if (Frame->data[i] != nullptr && Frame->linesize[i] != 0)
-                return;
-        }
 
-        throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC, "Insanity detected: decoder returned an empty frame");
+void FFMS_VideoSource::SanityCheckFrameForData(AVFrame *Frame) {
+    for (int i = 0; i < 4; i++) {
+        if (Frame->data[i] != nullptr && Frame->linesize[i] != 0)
+            return;
     }
+
+    throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC, "Insanity detected: decoder returned an empty frame");
 }
 
 void FFMS_VideoSource::GetFrameCheck(int n) {
@@ -99,7 +97,6 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 
 FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads, int SeekMode)
     : Index(Index)
-    , CodecContext(nullptr)
     , SeekMode(SeekMode) {
     if (Track < 0 || Track >= static_cast<int>(Index.size()))
         throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
@@ -120,30 +117,6 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
     Frames = Index[Track];
     VideoTrack = Track;
 
-    VP = {};
-    LocalFrame = {};
-    SWS = nullptr;
-    LastFrameNum = 0;
-    CurrentFrame = 1;
-    DelayCounter = 0;
-    InitialDecode = 1;
-
-    LastFrameHeight = -1;
-    LastFrameWidth = -1;
-    LastFramePixelFormat = AV_PIX_FMT_NONE;
-
-    TargetHeight = -1;
-    TargetWidth = -1;
-    TargetResizer = 0;
-
-    OutputFormat = AV_PIX_FMT_NONE;
-    OutputColorSpace = AVCOL_SPC_UNSPECIFIED;
-    OutputColorRange = AVCOL_RANGE_UNSPECIFIED;
-
-    InputFormatOverridden = false;
-    InputFormat = AV_PIX_FMT_NONE;
-    InputColorSpace = AVCOL_SPC_UNSPECIFIED;
-    InputColorRange = AVCOL_RANGE_UNSPECIFIED;
     if (Threads < 1)
         // libav current has issues with greater than 16 threads
         DecodingThreads = (std::min)(std::thread::hardware_concurrency(), 16u);

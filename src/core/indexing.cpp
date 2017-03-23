@@ -265,8 +265,7 @@ FFMS_Indexer::FFMS_Indexer(const char *Filename)
         for (unsigned int i = 0; i < FormatContext->nb_streams; i++)
             if (FormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
                 IndexMask.insert(i);
-    }
-    catch (...) {
+    } catch (...) {
         Free();
         throw;
     }
@@ -284,12 +283,10 @@ uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAVCon
         if (Ret < 0) {
             if (ErrorHandling == FFMS_IEH_ABORT) {
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING, "Audio decoding error");
-            }
-            else if (ErrorHandling == FFMS_IEH_CLEAR_TRACK) {
+            } else if (ErrorHandling == FFMS_IEH_CLEAR_TRACK) {
                 TrackIndices[Track].clear();
                 IndexMask.erase(Track);
-            }
-            else if (ErrorHandling == FFMS_IEH_STOP_TRACK) {
+            } else if (ErrorHandling == FFMS_IEH_STOP_TRACK) {
                 IndexMask.erase(Track);
             }
             break;
@@ -326,8 +323,7 @@ void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
         AP.SampleRate = Context->sample_rate;
         AP.SampleFormat = Context->sample_fmt;
         AP.Channels = Context->channels;
-    }
-    else if (it->second.SampleRate != Context->sample_rate ||
+    } else if (it->second.SampleRate != Context->sample_rate ||
         it->second.SampleFormat != Context->sample_fmt ||
         it->second.Channels != Context->channels) {
         std::ostringstream buf;
@@ -354,8 +350,7 @@ void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt
         *RepeatPict = VideoContext.Parser->repeat_pict;
         *FrameType = VideoContext.Parser->pict_type;
         *Invisible = (VideoContext.Parser->repeat_pict < 0 || (pkt.flags & AV_PKT_FLAG_DISCARD));
-    }
-    else {
+    } else {
         *Invisible = !!(pkt.flags & AV_PKT_FLAG_DISCARD);
     }
 
@@ -426,12 +421,10 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
             if (FormatContext->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC) {
                 FormatContext->streams[i]->discard = AVDISCARD_ALL;
                 IndexMask.erase(i);
-            }
-            else {
+            } else {
                 IndexMask.insert(i);
             }
-        }
-        else if (IndexMask.count(i) && FormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+        } else if (IndexMask.count(i) && FormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             AVCodec *AudioCodec = avcodec_find_decoder(FormatContext->streams[i]->codecpar->codec_id);
             if (AudioCodec == nullptr)
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
@@ -451,8 +444,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
                     "Could not open audio codec");
 
             (*TrackIndices)[i].HasTS = false;
-        }
-        else {
+        } else {
             FormatContext->streams[i]->discard = AVDISCARD_ALL;
             IndexMask.erase(i);
         }
@@ -505,8 +497,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
 
             TrackInfo.AddVideoFrame(PTS, RepeatPict, KeyFrame,
                 FrameType, Packet.pos, Invisible);
-        }
-        else if (FormatContext->streams[Track]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+        } else if (FormatContext->streams[Track]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             // For video seeking timestamps are used only if all packets have
             // timestamps, while for audio they're used if any have timestamps,
             // as it's pretty common for only some packets to have timestamps
