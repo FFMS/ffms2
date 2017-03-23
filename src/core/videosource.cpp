@@ -215,7 +215,7 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
                 throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
                     "Video track is unseekable");
             } else {
-                FlushBuffers(CodecContext);
+                avcodec_flush_buffers(CodecContext);
                 // Since we seeked to frame 0 we need to specify that frame 0 is once again the next frame that wil be decoded
                 CurrentFrame = 0;
             }
@@ -552,14 +552,14 @@ bool FFMS_VideoSource::SeekTo(int n, int SeekOffset) {
         if (SeekMode == 0) {
             if (n < CurrentFrame) {
                 Seek(0);
-                FlushBuffers(CodecContext);
+                avcodec_flush_buffers(CodecContext);
                 CurrentFrame = 0;
             }
         } else {
             // 10 frames is used as a margin to prevent excessive seeking since the predicted best keyframe isn't always selected by avformat
             if (n < CurrentFrame || TargetFrame > CurrentFrame + 10 || (SeekMode == 3 && n > CurrentFrame + 10)) {
                 Seek(TargetFrame);
-                FlushBuffers(CodecContext);
+                avcodec_flush_buffers(CodecContext);
                 return true;
             }
         }

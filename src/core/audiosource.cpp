@@ -198,7 +198,7 @@ void FFMS_AudioSource::SetOutputFormat(FFMS_ResampleOptions const& opt) {
     Cache.clear();
     PacketNumber = 0;
     OpenFile();
-    FlushBuffers(CodecContext);
+    avcodec_flush_buffers(CodecContext);
 
     BytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(opt.SampleFormat)) * av_get_channel_layout_nb_channels(opt.ChannelLayout);
     NeedsResample =
@@ -399,7 +399,7 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
                     PacketNumber = NewPacketNumber;
                     CurrentSample = -1;
                     DecodeFrame.reset();
-                    FlushBuffers(CodecContext);
+                    avcodec_flush_buffers(CodecContext);
                     Seek();
                 }
             }

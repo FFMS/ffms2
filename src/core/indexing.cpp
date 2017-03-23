@@ -43,30 +43,28 @@ SharedAVContext::~SharedAVContext() {
         av_parser_close(Parser);
 }
 
-void ffms_free_sha(AVSHA **ctx) { av_freep(ctx); }
-
 void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]) {
     FileHandle file(Filename, "rb", FFMS_ERROR_INDEX, FFMS_ERROR_FILE_READ);
 
-    unknown_size<AVSHA, av_sha_alloc, ffms_free_sha> ctx;
-    av_sha_init(ctx, 160);
+    std::unique_ptr<AVSHA, decltype(&av_free)> ctx{ av_sha_alloc(), av_free };
+    av_sha_init(ctx.get(), 160);
 
     try {
         *Filesize = file.Size();
         std::vector<char> FileBuffer(static_cast<size_t>(std::min<int64_t>(1024 * 1024, *Filesize)));
         size_t BytesRead = file.Read(FileBuffer.data(), FileBuffer.size());
-        av_sha_update(ctx, reinterpret_cast<const uint8_t*>(FileBuffer.data()), BytesRead);
+        av_sha_update(ctx.get(), reinterpret_cast<const uint8_t*>(FileBuffer.data()), BytesRead);
 
         if (*Filesize > static_cast<int64_t>(FileBuffer.size())) {
             file.Seek(*Filesize - static_cast<int64_t>(FileBuffer.size()), SEEK_SET);
             BytesRead = file.Read(FileBuffer.data(), FileBuffer.size());
-            av_sha_update(ctx, reinterpret_cast<const uint8_t*>(FileBuffer.data()), BytesRead);
+            av_sha_update(ctx.get(), reinterpret_cast<const uint8_t*>(FileBuffer.data()), BytesRead);
         }
     } catch (...) {
-        av_sha_final(ctx, Digest);
+        av_sha_final(ctx.get(), Digest);
         throw;
     }
-    av_sha_final(ctx, Digest);
+    av_sha_final(ctx.get(), Digest);
 }
 
 void FFMS_Index::AddRef() {

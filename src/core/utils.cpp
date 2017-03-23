@@ -101,10 +101,6 @@ void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext, int T
             FormatContext->streams[i]->discard = AVDISCARD_ALL;
 }
 
-void FlushBuffers(AVCodecContext *CodecContext) {
-    avcodec_flush_buffers(CodecContext);
-}
-
 int ResizerNameToSWSResizer(const char *ResizerName) {
     if (!ResizerName)
         return 0;

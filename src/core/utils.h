@@ -54,29 +54,11 @@ public:
     int CopyOut(FFMS_ErrorInfo *ErrorInfo) const;
 };
 
+// fixme, go c++14?
 template<typename T, typename... Args>
 std::unique_ptr<T> make_unique(Args&&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
-
-// auto_ptr-ish holder for AVCodecContexts with overridable deleter
-class FFCodecContext {
-    AVCodecContext *CodecContext;
-    void(*Deleter)(AVCodecContext *);
-public:
-    FFCodecContext() : CodecContext(0), Deleter(0) {}
-    FFCodecContext(FFCodecContext &r) : CodecContext(r.CodecContext), Deleter(r.Deleter) { r.CodecContext = 0; }
-    FFCodecContext(AVCodecContext *c, void(*d)(AVCodecContext *)) : CodecContext(c), Deleter(d) {}
-    FFCodecContext& operator=(FFCodecContext r) { reset(r.CodecContext, r.Deleter); r.CodecContext = 0; return *this; }
-    ~FFCodecContext() { reset(); }
-    AVCodecContext* operator->() { return CodecContext; }
-    operator AVCodecContext*() { return CodecContext; }
-    void reset(AVCodecContext *c = 0, void(*d)(AVCodecContext *) = 0) {
-        if (CodecContext && Deleter) Deleter(CodecContext);
-        CodecContext = c;
-        Deleter = d;
-    }
-};
 
 template<typename T, T *(*Alloc)(), void(*Del)(T **)>
 class unknown_size {
@@ -109,8 +91,6 @@ void InitNullPacket(AVPacket &pkt);
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);
 
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext, int Track);
-
-void FlushBuffers(AVCodecContext *CodecContext);
 
 namespace optdetail {
     template<typename T>
