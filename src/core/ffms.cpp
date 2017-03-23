@@ -121,7 +121,7 @@ FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int 
     try {
         switch (Index->Decoder) {
         case FFMS_SOURCE_LAVF:
-            return CreateLavfAudioSource(SourceFile, Track, *Index, DelayMode);
+            return new FFMS_AudioSource(SourceFile, *Index, Track, DelayMode);
         default:
             throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Unsupported format");
         }

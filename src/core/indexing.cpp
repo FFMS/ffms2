@@ -284,10 +284,12 @@ uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAVCon
         if (Ret < 0) {
             if (ErrorHandling == FFMS_IEH_ABORT) {
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING, "Audio decoding error");
-            } else if (ErrorHandling == FFMS_IEH_CLEAR_TRACK) {
+            }
+            else if (ErrorHandling == FFMS_IEH_CLEAR_TRACK) {
                 TrackIndices[Track].clear();
                 IndexMask.erase(Track);
-            } else if (ErrorHandling == FFMS_IEH_STOP_TRACK) {
+            }
+            else if (ErrorHandling == FFMS_IEH_STOP_TRACK) {
                 IndexMask.erase(Track);
             }
             break;
@@ -324,7 +326,8 @@ void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
         AP.SampleRate = Context->sample_rate;
         AP.SampleFormat = Context->sample_fmt;
         AP.Channels = Context->channels;
-    } else if (it->second.SampleRate != Context->sample_rate ||
+    }
+    else if (it->second.SampleRate != Context->sample_rate ||
         it->second.SampleFormat != Context->sample_fmt ||
         it->second.Channels != Context->channels) {
         std::ostringstream buf;
@@ -351,7 +354,8 @@ void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt
         *RepeatPict = VideoContext.Parser->repeat_pict;
         *FrameType = VideoContext.Parser->pict_type;
         *Invisible = (VideoContext.Parser->repeat_pict < 0 || (pkt.flags & AV_PKT_FLAG_DISCARD));
-    } else {
+    }
+    else {
         *Invisible = !!(pkt.flags & AV_PKT_FLAG_DISCARD);
     }
 
@@ -402,20 +406,19 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
                 continue;
             }
 
-            AVCodecContext *VideoCodecContext = avcodec_alloc_context3(VideoCodec);
-            if (VideoCodecContext == nullptr)
+            AVContexts[i].CodecContext = avcodec_alloc_context3(VideoCodec);
+            if (AVContexts[i].CodecContext == nullptr)
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_ALLOCATION_FAILED,
                     "Could not allocate video codec context");
 
-            if (avcodec_parameters_to_context(VideoCodecContext, FormatContext->streams[i]->codecpar) < 0)
+            if (avcodec_parameters_to_context(AVContexts[i].CodecContext, FormatContext->streams[i]->codecpar) < 0)
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
                     "Could not copy video codec parameters");
 
-            if (avcodec_open2(VideoCodecContext, VideoCodec, nullptr) < 0)
+            if (avcodec_open2(AVContexts[i].CodecContext, VideoCodec, nullptr) < 0)
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
                     "Could not open video codec");
 
-            AVContexts[i].CodecContext = VideoCodecContext;
             AVContexts[i].Parser = av_parser_init(FormatContext->streams[i]->codecpar->codec_id);
             if (AVContexts[i].Parser)
                 AVContexts[i].Parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
@@ -434,20 +437,19 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
                     "Audio codec not found");
 
-            AVCodecContext *AudioCodecContext = avcodec_alloc_context3(AudioCodec);
-            if (AudioCodecContext == nullptr)
+            AVContexts[i].CodecContext = avcodec_alloc_context3(AudioCodec);
+            if (AVContexts[i].CodecContext == nullptr)
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_ALLOCATION_FAILED,
                     "Could not allocate audio codec context");
 
-            if (avcodec_parameters_to_context(AudioCodecContext, FormatContext->streams[i]->codecpar) < 0)
+            if (avcodec_parameters_to_context(AVContexts[i].CodecContext, FormatContext->streams[i]->codecpar) < 0)
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
                     "Could not copy audio codec parameters");
 
-            if (avcodec_open2(AudioCodecContext, AudioCodec, nullptr) < 0)
+            if (avcodec_open2(AVContexts[i].CodecContext, AudioCodec, nullptr) < 0)
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING,
                     "Could not open audio codec");
 
-            AVContexts[i].CodecContext = AudioCodecContext;
             (*TrackIndices)[i].HasTS = false;
         }
         else {

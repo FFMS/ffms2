@@ -31,30 +31,30 @@ extern "C" {
 
 namespace {
 #define MAPPER(m, n) OptionMapper<FFMS_ResampleOptions>(n, &FFMS_ResampleOptions::m)
-OptionMapper<FFMS_ResampleOptions> resample_options[] = {
-    MAPPER(ChannelLayout,          "out_channel_layout"),
-    MAPPER(SampleFormat,           "out_sample_fmt"),
-    MAPPER(SampleRate,             "out_sample_rate"),
-    MAPPER(MixingCoefficientType,  "mix_coeff_type"),
-    MAPPER(CenterMixLevel,         "center_mix_level"),
-    MAPPER(SurroundMixLevel,       "surround_mix_level"),
-    MAPPER(LFEMixLevel,            "lfe_mix_level"),
-    MAPPER(Normalize,              "normalize_mix_level"),
-    MAPPER(ForceResample,          "force_resampling"),
-    MAPPER(ResampleFilterSize,     "filter_size"),
-    MAPPER(ResamplePhaseShift,     "phase_shift"),
-    MAPPER(LinearInterpolation,    "linear_interp"),
-    MAPPER(CutoffFrequencyRatio,   "cutoff"),
-    MAPPER(MatrixedStereoEncoding, "matrix_encoding"),
-    MAPPER(FilterType,             "filter_type"),
-    MAPPER(KaiserBeta,             "kaiser_beta"),
-    MAPPER(DitherMethod,           "dither_method")
-};
+    OptionMapper<FFMS_ResampleOptions> resample_options[] = {
+        MAPPER(ChannelLayout,          "out_channel_layout"),
+        MAPPER(SampleFormat,           "out_sample_fmt"),
+        MAPPER(SampleRate,             "out_sample_rate"),
+        MAPPER(MixingCoefficientType,  "mix_coeff_type"),
+        MAPPER(CenterMixLevel,         "center_mix_level"),
+        MAPPER(SurroundMixLevel,       "surround_mix_level"),
+        MAPPER(LFEMixLevel,            "lfe_mix_level"),
+        MAPPER(Normalize,              "normalize_mix_level"),
+        MAPPER(ForceResample,          "force_resampling"),
+        MAPPER(ResampleFilterSize,     "filter_size"),
+        MAPPER(ResamplePhaseShift,     "phase_shift"),
+        MAPPER(LinearInterpolation,    "linear_interp"),
+        MAPPER(CutoffFrequencyRatio,   "cutoff"),
+        MAPPER(MatrixedStereoEncoding, "matrix_encoding"),
+        MAPPER(FilterType,             "filter_type"),
+        MAPPER(KaiserBeta,             "kaiser_beta"),
+        MAPPER(DitherMethod,           "dither_method")
+    };
 #undef MAPPER
 }
 
-FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track)
-    : TrackNumber(Track) {
+FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track, int DelayMode)
+    : TrackNumber(Track), SourceFile(SourceFile), LastValidTS(ffms_av_nopts_value) {
     if (Track < 0 || Track >= static_cast<int>(Index.size()))
         throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
             "Out of bounds track index selected");
@@ -72,7 +72,23 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
             "The index does not match the source file");
 
     Frames = Index[Track];
+
+    try {
+        OpenFile();
+    }
+    catch (...) {
+        Free();
+        throw;
+    }
+
+    if (Frames.back().PTS == Frames.front().PTS)
+        SeekOffset = -1;
+    else
+        SeekOffset = 10;
+
+    Init(Index, DelayMode);
 }
+
 
 #define EXCESSIVE_CACHE_SIZE 400
 
@@ -295,7 +311,7 @@ void FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
         }
     }
     Packet.data = Data;
-    FreePacket(&Packet);
+    av_packet_unref(&Packet);
 
     // Zero sample packets aren't included in the index
     if (!GotSamples)
@@ -403,7 +419,7 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
     }
 }
 
-size_t GetSeekablePacketNumber(FFMS_Track const& Frames, size_t PacketNumber) {
+size_t FFMS_AudioSource::GetSeekablePacketNumber(FFMS_Track const& Frames, size_t PacketNumber) {
     // Packets don't always have unique PTSes, so we may not be able to
     // uniquely identify the packet we want. This function attempts to find
     // a PTS we can seek to which will let us figure out which packet we're
@@ -438,3 +454,85 @@ size_t GetSeekablePacketNumber(FFMS_Track const& Frames, size_t PacketNumber) {
         --PacketNumber;
     return PacketNumber;
 }
+
+void FFMS_AudioSource::OpenFile() {
+    avcodec_free_context(&CodecContext);
+    avformat_close_input(&FormatContext);
+
+    LAVFOpenFile(SourceFile.c_str(), FormatContext, TrackNumber);
+
+    AVCodec *Codec = avcodec_find_decoder(FormatContext->streams[TrackNumber]->codecpar->codec_id);
+    if (Codec == nullptr)
+        throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+            "Audio codec not found");
+
+    CodecContext = avcodec_alloc_context3(Codec);
+    if (CodecContext == nullptr)
+        throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
+            "Could not allocate audio decoding context");
+
+    if (avcodec_parameters_to_context(CodecContext, FormatContext->streams[TrackNumber]->codecpar) < 0)
+        throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+            "Could not copy audio codec parameters");
+
+    if (avcodec_open2(CodecContext, Codec, nullptr) < 0)
+        throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
+            "Could not open audio codec");
+}
+
+
+
+
+void FFMS_AudioSource::Free() {
+    avcodec_free_context(&CodecContext);
+    avformat_close_input(&FormatContext);
+}
+
+FFMS_AudioSource::~FFMS_AudioSource() {
+    Free();
+}
+
+int64_t FFMS_AudioSource::FrameTS(size_t Packet) const {
+    return Frames.HasTS ? Frames[Packet].PTS : Frames[Packet].FilePos;
+}
+
+void FFMS_AudioSource::Seek() {
+    size_t TargetPacket = GetSeekablePacketNumber(Frames, PacketNumber);
+    LastValidTS = ffms_av_nopts_value;
+
+    int Flags = Frames.HasTS ? AVSEEK_FLAG_BACKWARD : AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_BYTE;
+
+    if (av_seek_frame(FormatContext, TrackNumber, FrameTS(TargetPacket), Flags) < 0)
+        av_seek_frame(FormatContext, TrackNumber, FrameTS(TargetPacket), Flags | AVSEEK_FLAG_ANY);
+
+    if (TargetPacket != PacketNumber) {
+        // Decode until the PTS changes so we know where we are
+        int64_t LastPTS = FrameTS(PacketNumber);
+        while (LastPTS == FrameTS(PacketNumber)) DecodeNextBlock();
+    }
+}
+
+bool FFMS_AudioSource::ReadPacket(AVPacket *Packet) {
+    InitNullPacket(*Packet);
+
+    while (av_read_frame(FormatContext, Packet) >= 0) {
+        if (Packet->stream_index == TrackNumber) {
+            // Required because not all audio packets, especially in ogg, have a pts. Use the previous valid packet's pts instead.
+            if (Packet->pts == ffms_av_nopts_value)
+                Packet->pts = LastValidTS;
+            else
+                LastValidTS = Packet->pts;
+
+            // This only happens if a really shitty demuxer seeks to a packet without pts *hrm* ogg *hrm* so read until a valid pts is reached
+            int64_t PacketTS = Frames.HasTS ? Packet->pts : Packet->pos;
+            if (PacketTS != ffms_av_nopts_value) {
+                while (PacketNumber > 0 && FrameTS(PacketNumber) > PacketTS) --PacketNumber;
+                while (FrameTS(PacketNumber) < PacketTS) ++PacketNumber;
+                return true;
+            }
+        }
+        av_packet_unref(Packet);
+    }
+    return false;
+}
+

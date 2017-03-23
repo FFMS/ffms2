@@ -60,6 +60,10 @@ struct FFMS_AudioSource {
     };
     typedef std::list<AudioBlock>::iterator CacheIterator;
 
+    AVFormatContext *FormatContext = nullptr;
+    int64_t LastValidTS;
+    std::string SourceFile;
+
     // delay in samples to apply to the audio
     int64_t Delay = 0;
     // cache of decoded audio blocks
@@ -84,17 +88,16 @@ struct FFMS_AudioSource {
     void CacheBeginning();
 
     // Called after seeking
-    virtual void Seek() {}
+    void Seek();
     // Read the next packet from the file
-    virtual bool ReadPacket(AVPacket *) = 0;
-    virtual void FreePacket(AVPacket *) {}
+    bool ReadPacket(AVPacket *);
 
     // Close and reopen the source file to seek back to the beginning. Only
     // needs to do anything for formats that can't seek to the beginning otherwise.
     //
     // If the file is not already open, it is merely just opened.
-    virtual void OpenFile() {}
-protected:
+    void OpenFile();
+
     // First sample which is stored in the decoding buffer
     int64_t CurrentSample = -1;
     // Next packet to be read
@@ -110,27 +113,27 @@ protected:
     // Buffer which audio is decoded into
     ScopedFrame DecodeFrame;
     FFMS_Track Frames;
-    FFCodecContext CodecContext;
+    AVCodecContext *CodecContext = nullptr;
     FFMS_AudioProperties AP;
 
     void DecodeNextBlock(CacheIterator *cachePos = 0);
     // Initialization which has to be done after the codec is opened
     void Init(const FFMS_Index &Index, int DelayMode);
 
-    FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track);
+    int64_t FrameTS(size_t Packet) const;
 
+    void Free();
 public:
-    virtual ~FFMS_AudioSource() {}
+    FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track, int DelayMode);
+    ~FFMS_AudioSource();
     FFMS_Track *GetTrack() { return &Frames; }
     const FFMS_AudioProperties& GetAudioProperties() const { return AP; }
     void GetAudio(void *Buf, int64_t Start, int64_t Count);
 
     std::unique_ptr<FFMS_ResampleOptions> CreateResampleOptions() const;
     void SetOutputFormat(FFMS_ResampleOptions const& opt);
+
+    static size_t FFMS_AudioSource::GetSeekablePacketNumber(FFMS_Track const& Frames, size_t PacketNumber);
 };
-
-size_t GetSeekablePacketNumber(FFMS_Track const& Frames, size_t PacketNumber);
-
-FFMS_AudioSource *CreateLavfAudioSource(const char *SourceFile, int Track, FFMS_Index &Index, int DelayMode);
 
 #endif
