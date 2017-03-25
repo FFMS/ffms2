@@ -426,12 +426,6 @@ bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
     return (Ret == 0);
 }
 
-void FFMS_VideoSource::FlushFinalFrames() {
-    AVPacket Packet;
-    InitNullPacket(Packet);
-    DecodePacket(&Packet);
-}
-
 int FFMS_VideoSource::Seek(int n) {
     int ret = -1;
 
@@ -507,8 +501,6 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
         if (FrameFinished)
             return;
     }
-
-    FlushFinalFrames();
 }
 
 bool FFMS_VideoSource::SeekTo(int n, int SeekOffset) {

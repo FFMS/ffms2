@@ -82,7 +82,6 @@ private:
     FFMS_Frame *OutputFrame(AVFrame *Frame);
     void SetVideoProperties();
     bool DecodePacket(AVPacket *Packet);
-    void FlushFinalFrames();
     void DecodeNextFrame(int64_t &PTS, int64_t &Pos);
     bool SeekTo(int n, int SeekOffset);
     int Seek(int n);
