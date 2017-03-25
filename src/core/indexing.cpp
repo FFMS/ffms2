@@ -272,13 +272,27 @@ FFMS_Indexer::FFMS_Indexer(const char *Filename)
 uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAVContext &Context, FFMS_Index &TrackIndices) {
     AVCodecContext *CodecContext = Context.CodecContext;
     int64_t StartSample = Context.CurrentSample;
-    int Read = 0;
-    while (Packet->size > 0) {
-        DecodeFrame.reset();
+    int Ret = avcodec_send_packet(CodecContext, Packet);
+    if (Ret != 0) {
+        if (ErrorHandling == FFMS_IEH_ABORT) {
+            throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING, "Audio decoding error");
+        } else if (ErrorHandling == FFMS_IEH_CLEAR_TRACK) {
+            TrackIndices[Track].clear();
+            IndexMask.erase(Track);
+        } else if (ErrorHandling == FFMS_IEH_STOP_TRACK) {
+            IndexMask.erase(Track);
+        }
+    }
 
-        int GotFrame = 0;
-        int Ret = avcodec_decode_audio4(CodecContext, DecodeFrame, &GotFrame, Packet);
-        if (Ret < 0) {
+    while (true) {
+        DecodeFrame.reset();
+        Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
+        if (Ret == 0) {
+            CheckAudioProperties(Track, CodecContext);
+            Context.CurrentSample += DecodeFrame->nb_samples;
+        } else if (Ret == AVERROR_EOF || AVERROR(EAGAIN)) {
+            break;
+        } else {
             if (ErrorHandling == FFMS_IEH_ABORT) {
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING, "Audio decoding error");
             } else if (ErrorHandling == FFMS_IEH_CLEAR_TRACK) {
@@ -287,19 +301,9 @@ uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAVCon
             } else if (ErrorHandling == FFMS_IEH_STOP_TRACK) {
                 IndexMask.erase(Track);
             }
-            break;
-        }
-        Packet->size -= Ret;
-        Packet->data += Ret;
-        Read += Ret;
-
-        if (GotFrame) {
-            CheckAudioProperties(Track, CodecContext);
-            Context.CurrentSample += DecodeFrame->nb_samples;
         }
     }
-    Packet->size += Read;
-    Packet->data -= Read;
+
     return static_cast<uint32_t>(Context.CurrentSample - StartSample);
 }
 
