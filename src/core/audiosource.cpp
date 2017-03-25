@@ -289,27 +289,25 @@ void FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
     CurrentSample = CurrentFrame->SampleStart;
 
     bool GotSamples = false;
-    uint8_t *Data = Packet.data;
     AudioBlock *CachedBlock = nullptr;
-    while (Packet.size > 0) {
+    
+    int Ret = avcodec_send_packet(CodecContext, &Packet);
+
+    while (true) {
         DecodeFrame.reset();
-        int GotFrame = 0;
-        int Ret = avcodec_decode_audio4(CodecContext, DecodeFrame, &GotFrame, &Packet);
-
-        // Should only ever happen if the user chose to ignore decoding errors
-        // during indexing, so continue to just ignore decoding errors
-        if (Ret < 0) break;
-        if (Ret == 0) continue;
-
-        Packet.size -= Ret;
-        Packet.data += Ret;
-        if (GotFrame && DecodeFrame->nb_samples > 0) {
-            GotSamples = true;
-            if (pos)
-                CachedBlock = CacheBlock(*pos);
+        Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
+        if (Ret == 0) {
+            //FIXME, is DecodeFrame->nb_samples > 0 always true for decoded frames? I can't be bothered to find out
+            if (DecodeFrame->nb_samples > 0) {
+                GotSamples = true;
+                if (pos)
+                    CachedBlock = CacheBlock(*pos);
+            }
+        } else {
+            break;
         }
     }
-    Packet.data = Data;
+
     av_packet_unref(&Packet);
 
     // Zero sample packets aren't included in the index
