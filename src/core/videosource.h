@@ -71,8 +71,6 @@ private:
     FFMS_Track Frames;
     int VideoTrack;
     int CurrentFrame = 1;
-    int DelayCounter = 0;
-    int InitialDecode = 1;
     int DecodingThreads;
     AVCodecContext *CodecContext = nullptr;
     AVFormatContext *FormatContext = nullptr;
@@ -85,7 +83,6 @@ private:
     void SetVideoProperties();
     bool DecodePacket(AVPacket *Packet);
     void FlushFinalFrames();
-    bool HasPendingDelayedFrames();
     void DecodeNextFrame(int64_t &PTS, int64_t &Pos);
     bool SeekTo(int n, int SeekOffset);
     int Seek(int n);

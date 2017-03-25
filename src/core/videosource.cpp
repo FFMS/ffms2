@@ -416,32 +416,14 @@ void FFMS_VideoSource::SetVideoProperties() {
 }
 
 bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
-    int FrameFinished = 0;
     std::swap(DecodeFrame, LastDecodedFrame);
-    avcodec_decode_video2(CodecContext, DecodeFrame, &FrameFinished, Packet);
-    if (!FrameFinished)
+    avcodec_send_packet(CodecContext, Packet);
+
+    int Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
+    if (Ret != 0)
         std::swap(DecodeFrame, LastDecodedFrame);
 
-    if (!FrameFinished)
-        DelayCounter++;
-
-    if (FrameFinished && InitialDecode == 1)
-        InitialDecode = -1;
-
-    // The second half of this is to handle the fact that FrameFinished is not
-    // an entirely accurate name. In some cases, a frame can be fully decoded,
-    // but still not have any picture data. Some examples of things which cause
-    // this are xvid NVOPs and (at the time of writing), ffmpeg's h264 b-frame
-    // reordering logic (but seemingly not libav's). The API doesn't distinguish
-    // between "no picture data because it needs more packets" and "no picture
-    // data because the frame was dropped", so we try to calculate the maximum
-    // number of packets we should need to feed into the decoder to get frames,
-    // and assume we're in the latter case if we go over that number.
-    //
-    // I suspect this logic actually returns the wrong end of the dropped
-    // sequence in some cases, but it probably doesn't matter with the sort of
-    // situations where it's actually used.
-    return FrameFinished || (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode);
+    return (Ret == 0);
 }
 
 void FFMS_VideoSource::FlushFinalFrames() {
@@ -450,22 +432,8 @@ void FFMS_VideoSource::FlushFinalFrames() {
     DecodePacket(&Packet);
 }
 
-bool FFMS_VideoSource::HasPendingDelayedFrames() {
-    if (InitialDecode == -1) {
-        if (DelayCounter > FFMS_CALCULATE_DELAY) {
-            --DelayCounter;
-            return true;
-        }
-        InitialDecode = 0;
-    }
-    return false;
-}
-
 int FFMS_VideoSource::Seek(int n) {
     int ret = -1;
-
-    DelayCounter = 0;
-    InitialDecode = 1;
 
     if (!SeekByPos || Frames[n].FilePos < 0) {
         ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].PTS, AVSEEK_FLAG_BACKWARD);
@@ -512,8 +480,12 @@ void FFMS_VideoSource::Free() {
 
 void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
     AStartTime = -1;
-    if (HasPendingDelayedFrames())
+
+    std::swap(DecodeFrame, LastDecodedFrame);
+    int Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
+    if (Ret == 0)
         return;
+    std::swap(DecodeFrame, LastDecodedFrame);
 
     AVPacket Packet;
     InitNullPacket(Packet);
