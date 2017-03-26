@@ -19,7 +19,6 @@
 //  THE SOFTWARE.
 
 #include "ffms.h"
-#include "ffmscompat.h"
 
 #ifdef _WIN32
 #include <codecvt>
