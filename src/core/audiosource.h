@@ -26,6 +26,7 @@
 
 #include <list>
 #include <vector>
+#include <atomic>
 
 struct FFMS_AudioSource {
     struct AudioBlock {
@@ -43,8 +44,7 @@ struct FFMS_AudioSource {
 
         AudioBlock(int64_t Start)
             : Start(Start) {
-            // fixme, is this really threadsafe if two audio sources exist? does it matter?
-            static int64_t Now = 0;
+            static std::atomic<int64_t> Now{ 0 };
             Age = Now++;
         }
 
