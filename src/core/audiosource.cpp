@@ -98,8 +98,8 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
     // Decode the first packet to ensure all properties are initialized
     // Don't cache it since it might be in the wrong format
-    while (DecodeFrame->nb_samples == 0)
-        DecodeNextBlock();
+    // FIXME, possible infinite loop if nothing can be decoded?
+    while (!DecodeNextBlock()) {}
 
     // Read properties of the audio which may not be available until the first
     // frame has been decoded
@@ -280,7 +280,7 @@ FFMS_AudioSource::AudioBlock *FFMS_AudioSource::CacheBlock(CacheIterator &pos) {
     return &*block;
 }
 
-void FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
+int FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
     CurrentFrame = &Frames[PacketNumber];
 
     AVPacket Packet;
@@ -292,36 +292,35 @@ void FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
     CurrentFrame = &Frames[PacketNumber];
     CurrentSample = CurrentFrame->SampleStart;
 
-    bool GotSamples = false;
+    int NumberOfSamples = 0;
     AudioBlock *CachedBlock = nullptr;
     
     int Ret = avcodec_send_packet(CodecContext, &Packet);
+    av_packet_unref(&Packet);
 
-    while (true) {
-        DecodeFrame.reset();
+    //while (true) {
+        av_frame_unref(DecodeFrame);
         Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
         if (Ret == 0) {
             //FIXME, is DecodeFrame->nb_samples > 0 always true for decoded frames? I can't be bothered to find out
+            NumberOfSamples += DecodeFrame->nb_samples;
             if (DecodeFrame->nb_samples > 0) {
-                GotSamples = true;
                 if (pos)
                     CachedBlock = CacheBlock(*pos);
             }
-        } else {
-            break;
-        }
-    }
-
-    av_packet_unref(&Packet);
+        } //else {
+         //   break;
+        //}
+    //}
 
     // Zero sample packets aren't included in the index
-    if (!GotSamples)
-        return;
+    if (!NumberOfSamples)
+        return NumberOfSamples;
     ++PacketNumber;
 
     // Add padding after the packet, if needed
     if (!CachedBlock || CachedBlock->Samples == CurrentFrame->SampleCount)
-        return;
+        return NumberOfSamples;
 
     const auto MissingSamples = static_cast<size_t>(CurrentFrame->SampleCount - CachedBlock->Samples);
     CachedBlock->Samples += MissingSamples;
@@ -332,6 +331,7 @@ void FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
         auto ptr = CachedBlock->Grow(MissingBytes);
         memcpy(ptr, ptr - MissingBytes, MissingBytes);
     }
+    return NumberOfSamples;
 }
 
 static bool SampleStartComp(const FrameInfo &a, const FrameInfo &b) {

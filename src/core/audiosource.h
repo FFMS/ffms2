@@ -125,7 +125,7 @@ struct FFMS_AudioSource {
     AVCodecContext *CodecContext = nullptr;
     FFMS_AudioProperties AP;
 
-    void DecodeNextBlock(CacheIterator *cachePos = 0);
+    int DecodeNextBlock(CacheIterator *cachePos = 0);
     // Initialization which has to be done after the codec is opened
     void Init(const FFMS_Index &Index, int DelayMode);
 
