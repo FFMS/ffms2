@@ -60,33 +60,6 @@ std::unique_ptr<T> make_unique(Args&&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-// fixme, just use unique_ptr with custom deleter?
-template<typename T, T *(*Alloc)(), void(*Del)(T **)>
-class unknown_size {
-    T *ptr;
-
-    unknown_size(unknown_size const&) = delete;
-    unknown_size& operator=(unknown_size const&) = delete;
-
-public:
-    operator T*() const { return ptr; }
-    operator void*() const { return ptr; }
-    T *operator->() const { return ptr; }
-    void swap(unknown_size<T, Alloc, Del>& other) { std::swap(ptr, other.ptr); }
-
-    unknown_size() : ptr(Alloc()) {}
-    ~unknown_size() { Del(&ptr); }
-};
-
-class ScopedFrame : public unknown_size<AVFrame, av_frame_alloc, av_frame_free> {
-public:
-    void reset() {
-        av_frame_unref(*this);
-    }
-};
-
-typedef unknown_size<SwrContext, swr_alloc, swr_free> FFResampleContext;
-
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
 void InitNullPacket(AVPacket &pkt);
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);

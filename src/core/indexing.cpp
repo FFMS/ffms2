@@ -263,6 +263,11 @@ FFMS_Indexer::FFMS_Indexer(const char *Filename)
         for (unsigned int i = 0; i < FormatContext->nb_streams; i++)
             if (FormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
                 IndexMask.insert(i);
+
+        DecodeFrame = av_frame_alloc();
+        if (!DecodeFrame)
+            throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
+                "Couldn't allocate frame");
     } catch (...) {
         Free();
         throw;
@@ -285,7 +290,7 @@ uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAVCon
     }
 
     while (true) {
-        DecodeFrame.reset();
+        av_frame_unref(DecodeFrame);
         Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
         if (Ret == 0) {
             CheckAudioProperties(Track, CodecContext);
@@ -361,6 +366,7 @@ void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt
 }
 
 void FFMS_Indexer::Free() {
+    av_frame_free(&DecodeFrame);
     avformat_close_input(&FormatContext);
 }
 

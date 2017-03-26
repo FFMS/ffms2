@@ -77,6 +77,14 @@ struct FFMS_AudioSource {
     size_t BytesPerSample = 0;
 
     bool NeedsResample = false;
+
+    struct SwrFreeWrapper {
+        void operator()(SwrContext *c) const {
+            swr_free(&c);
+        }
+    };
+
+    typedef std::unique_ptr<SwrContext, SwrFreeWrapper> FFResampleContext;
     FFResampleContext ResampleContext;
 
     // Insert the current audio frame into the cache
@@ -112,7 +120,7 @@ struct FFMS_AudioSource {
     int SeekOffset = 0;
 
     // Buffer which audio is decoded into
-    ScopedFrame DecodeFrame;
+    AVFrame *DecodeFrame = nullptr;
     FFMS_Track Frames;
     AVCodecContext *CodecContext = nullptr;
     FFMS_AudioProperties AP;

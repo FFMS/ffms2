@@ -51,6 +51,7 @@ struct FFMS_Index : public std::vector<FFMS_Track> {
 public:
     static void CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]);
 
+    // FIXME, NOTHING USES REF COUNTING!
     void AddRef();
     void Release();
 
@@ -80,7 +81,7 @@ private:
     TIndexCallback IC = nullptr;
     void *ICPrivate = nullptr;
     std::string SourceFile;
-    ScopedFrame DecodeFrame;
+    AVFrame *DecodeFrame = nullptr;
 
     int64_t Filesize;
     uint8_t Digest[20];

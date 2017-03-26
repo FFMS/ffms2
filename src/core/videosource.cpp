@@ -98,34 +98,33 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads, int SeekMode)
     : Index(Index)
     , SeekMode(SeekMode) {
-    if (Track < 0 || Track >= static_cast<int>(Index.size()))
-        throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
-            "Out of bounds track index selected");
-
-    if (Index[Track].TT != FFMS_TYPE_VIDEO)
-        throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
-            "Not a video track");
-
-    if (Index[Track].empty())
-        throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
-            "Video track contains no frames");
-
-    if (!Index.CompareFileSignature(SourceFile))
-        throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_MISMATCH,
-            "The index does not match the source file");
-
-    Frames = Index[Track];
-    VideoTrack = Track;
-
-    if (Threads < 1)
-        // libav current has issues with greater than 16 threads
-        DecodingThreads = (std::min)(std::thread::hardware_concurrency(), 16u);
-    else
-        DecodingThreads = Threads;
-
-    Index.AddRef();
 
     try {
+        if (Track < 0 || Track >= static_cast<int>(Index.size()))
+            throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+                "Out of bounds track index selected");
+
+        if (Index[Track].TT != FFMS_TYPE_VIDEO)
+            throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+                "Not a video track");
+
+        if (Index[Track].empty())
+            throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+                "Video track contains no frames");
+
+        if (!Index.CompareFileSignature(SourceFile))
+            throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_MISMATCH,
+                "The index does not match the source file");
+
+        Frames = Index[Track];
+        VideoTrack = Track;
+
+        if (Threads < 1)
+            // libav current has issues with greater than 16 threads
+            DecodingThreads = (std::min)(std::thread::hardware_concurrency(), 16u);
+        else
+            DecodingThreads = Threads;
+
         DecodeFrame = av_frame_alloc();
         LastDecodedFrame = av_frame_alloc();
 
@@ -468,8 +467,6 @@ void FFMS_VideoSource::Free() {
     av_freep(&SWSFrameData[0]);
     av_freep(&DecodeFrame);
     av_freep(&LastDecodedFrame);
-
-    Index.Release();
 }
 
 void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {

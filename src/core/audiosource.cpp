@@ -54,38 +54,42 @@ namespace {
 }
 
 FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track, int DelayMode)
-    : TrackNumber(Track), SourceFile(SourceFile), LastValidTS(ffms_av_nopts_value) {
-    if (Track < 0 || Track >= static_cast<int>(Index.size()))
-        throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
-            "Out of bounds track index selected");
-
-    if (Index[Track].TT != FFMS_TYPE_AUDIO)
-        throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
-            "Not an audio track");
-
-    if (Index[Track].empty())
-        throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
-            "Audio track contains no audio frames");
-
-    if (!Index.CompareFileSignature(SourceFile))
-        throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_MISMATCH,
-            "The index does not match the source file");
-
-    Frames = Index[Track];
-
+    : TrackNumber(Track), SourceFile(SourceFile), LastValidTS(ffms_av_nopts_value), ResampleContext{ swr_alloc() } {
     try {
+        if (Track < 0 || Track >= static_cast<int>(Index.size()))
+            throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+                "Out of bounds track index selected");
+
+        if (Index[Track].TT != FFMS_TYPE_AUDIO)
+            throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+                "Not an audio track");
+
+        if (Index[Track].empty())
+            throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+                "Audio track contains no audio frames");
+
+        if (!Index.CompareFileSignature(SourceFile))
+            throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_MISMATCH,
+                "The index does not match the source file");
+
+        Frames = Index[Track];
+
+        DecodeFrame = av_frame_alloc();
+        if (!DecodeFrame)
+            throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
+                "Couldn't allocate frame");
         OpenFile();
+
+        if (Frames.back().PTS == Frames.front().PTS)
+            SeekOffset = -1;
+        else
+            SeekOffset = 10;
+
+        Init(Index, DelayMode);
     } catch (...) {
         Free();
         throw;
     }
-
-    if (Frames.back().PTS == Frames.front().PTS)
-        SeekOffset = -1;
-    else
-        SeekOffset = 10;
-
-    Init(Index, DelayMode);
 }
 
 
@@ -209,24 +213,24 @@ void FFMS_AudioSource::SetOutputFormat(FFMS_ResampleOptions const& opt) {
 
     if (!NeedsResample) return;
 
-    FFResampleContext newContext;
-    SetOptions(opt, newContext, resample_options);
-    av_opt_set_int(newContext, "in_sample_rate", AP.SampleRate, 0);
-    av_opt_set_int(newContext, "in_sample_fmt", CodecContext->sample_fmt, 0);
-    av_opt_set_int(newContext, "in_channel_layout", AP.ChannelLayout, 0);
+    FFResampleContext newContext{ swr_alloc() };
+    SetOptions(opt, newContext.get(), resample_options);
+    av_opt_set_int(newContext.get(), "in_sample_rate", AP.SampleRate, 0);
+    av_opt_set_int(newContext.get(), "in_sample_fmt", CodecContext->sample_fmt, 0);
+    av_opt_set_int(newContext.get(), "in_channel_layout", AP.ChannelLayout, 0);
 
-    av_opt_set_int(newContext, "out_sample_rate", opt.SampleRate, 0);
-    av_opt_set_channel_layout(newContext, "out_channel_layout", opt.ChannelLayout, 0);
-    av_opt_set_sample_fmt(newContext, "out_sample_fmt", (AVSampleFormat)opt.SampleFormat, 0);
+    av_opt_set_int(newContext.get(), "out_sample_rate", opt.SampleRate, 0);
+    av_opt_set_channel_layout(newContext.get(), "out_channel_layout", opt.ChannelLayout, 0);
+    av_opt_set_sample_fmt(newContext.get(), "out_sample_fmt", (AVSampleFormat)opt.SampleFormat, 0);
 
-    if (swr_init(newContext))
+    if (swr_init(newContext.get()))
         throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,
             "Could not open avresample context");
     newContext.swap(ResampleContext);
 }
 
 std::unique_ptr<FFMS_ResampleOptions> FFMS_AudioSource::CreateResampleOptions() const {
-    auto ret = ReadOptions(ResampleContext, resample_options);
+    auto ret = ReadOptions(ResampleContext.get(), resample_options);
     ret->SampleRate = AP.SampleRate;
     ret->SampleFormat = static_cast<FFMS_SampleFormat>(AP.SampleFormat);
     ret->ChannelLayout = AP.ChannelLayout;
@@ -241,7 +245,7 @@ void FFMS_AudioSource::ResampleAndCache(CacheIterator pos) {
 
     uint8_t *OutPlanes[1] = { dst };
 
-    swr_convert(ResampleContext, OutPlanes, DecodeFrame->nb_samples, (const uint8_t **)DecodeFrame->extended_data, DecodeFrame->nb_samples);
+    swr_convert(ResampleContext.get(), OutPlanes, DecodeFrame->nb_samples, (const uint8_t **)DecodeFrame->extended_data, DecodeFrame->nb_samples);
 }
 
 FFMS_AudioSource::AudioBlock *FFMS_AudioSource::CacheBlock(CacheIterator &pos) {
@@ -396,7 +400,7 @@ void FFMS_AudioSource::GetAudio(void *Buf, int64_t Start, int64_t Count) {
                 if (Start < CurrentSample || static_cast<size_t>(NewPacketNumber) > PacketNumber) {
                     PacketNumber = NewPacketNumber;
                     CurrentSample = -1;
-                    DecodeFrame.reset();
+                    av_frame_unref(DecodeFrame);
                     avcodec_flush_buffers(CodecContext);
                     Seek();
                 }
@@ -477,10 +481,8 @@ void FFMS_AudioSource::OpenFile() {
             "Could not open audio codec");
 }
 
-
-
-
 void FFMS_AudioSource::Free() {
+    av_frame_free(&DecodeFrame);
     avcodec_free_context(&CodecContext);
     avformat_close_input(&FormatContext);
 }
