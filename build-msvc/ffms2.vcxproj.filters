@@ -10,9 +10,6 @@
     <Filter Include="Utils">
       <UniqueIdentifier>{e25264ca-e3fd-4fd6-a1d1-839ae9b2ade2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Avisynth">
-      <UniqueIdentifier>{95efeead-393a-4518-b1f2-9b8b6bb8c3d6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Indexing">
       <UniqueIdentifier>{731b163b-dd24-4aba-8bef-86c3b364157e}</UniqueIdentifier>
     </Filter>
@@ -21,6 +18,9 @@
     </Filter>
     <Filter Include="Vapoursynth">
       <UniqueIdentifier>{8cc15f2a-6612-4e85-96b3-d3abfe15ddab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AviSynth">
+      <UniqueIdentifier>{95efeead-393a-4518-b1f2-9b8b6bb8c3d6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -58,10 +58,10 @@
       <Filter>Audio</Filter>
     </ClCompile>
     <ClCompile Include="..\src\avisynth\avisynth.cpp">
-      <Filter>Avisynth</Filter>
+      <Filter>AviSynth</Filter>
     </ClCompile>
     <ClCompile Include="..\src\avisynth\avssources.cpp">
-      <Filter>Avisynth</Filter>
+      <Filter>AviSynth</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -105,7 +105,7 @@
       <Filter>Audio</Filter>
     </ClInclude>
     <ClInclude Include="..\src\avisynth\avssources.h">
-      <Filter>Avisynth</Filter>
+      <Filter>AviSynth</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -74,25 +74,29 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>../include;$(IncludePath)</IncludePath>
+    <IncludePath>../include;../../AviSynthPlus/avs_core/include;../../ffmpeg32/include;../../zlib32;$(IncludePath)</IncludePath>
+    <LibraryPath>../../ffmpeg32/lib;../../zlib32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>../include;$(IncludePath)</IncludePath>
+    <IncludePath>../include;../../AviSynthPlus/avs_core/include;../../ffmpeg64/include;../../zlib64;$(IncludePath)</IncludePath>
+    <LibraryPath>../../ffmpeg64/lib;../../zlib64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>../include;$(IncludePath)</IncludePath>
+    <IncludePath>../include;../../AviSynthPlus/avs_core/include;../../ffmpeg32/include;../../zlib32;$(IncludePath)</IncludePath>
+    <LibraryPath>../../ffmpeg32/lib;../../zlib32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>../include;$(IncludePath)</IncludePath>
+    <IncludePath>../include;../../AviSynthPlus/avs_core/include;../../ffmpeg64/include;../../zlib64;$(IncludePath)</IncludePath>
+    <LibraryPath>../../ffmpeg64/lib;../../zlib64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -100,7 +104,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FFMS2_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>FFMS_EXPORTS;_CRT_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS;FFMS_WIN_DEBUG;WIN32;_DEBUG;_WINDOWS;_USRDLL;FFMS2_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -113,7 +117,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;FFMS2_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>FFMS_EXPORTS;_CRT_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS;FFMS_WIN_DEBUG;_DEBUG;_WINDOWS;_USRDLL;FFMS2_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -128,7 +132,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FFMS2_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>FFMS_EXPORTS;_CRT_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS;WIN32;NDEBUG;_WINDOWS;_USRDLL;FFMS2_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -145,7 +149,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;FFMS2_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>FFMS_EXPORTS;_CRT_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS;NDEBUG;_WINDOWS;_USRDLL;FFMS2_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
