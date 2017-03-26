@@ -98,8 +98,10 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
 void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
     // Decode the first packet to ensure all properties are initialized
     // Don't cache it since it might be in the wrong format
-    // FIXME, possible infinite loop if nothing can be decoded?
-    while (!DecodeNextBlock()) {}
+    for (size_t i = 0; i < Frames.size(); i++) {
+        if (DecodeNextBlock())
+            break;
+    }
 
     // Read properties of the audio which may not be available until the first
     // frame has been decoded
