@@ -298,20 +298,16 @@ int FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
     int Ret = avcodec_send_packet(CodecContext, &Packet);
     av_packet_unref(&Packet);
 
-    //while (true) {
-        av_frame_unref(DecodeFrame);
-        Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
-        if (Ret == 0) {
-            //FIXME, is DecodeFrame->nb_samples > 0 always true for decoded frames? I can't be bothered to find out
-            NumberOfSamples += DecodeFrame->nb_samples;
-            if (DecodeFrame->nb_samples > 0) {
-                if (pos)
-                    CachedBlock = CacheBlock(*pos);
-            }
-        } //else {
-         //   break;
-        //}
-    //}
+    av_frame_unref(DecodeFrame);
+    Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
+    if (Ret == 0) {
+        //FIXME, is DecodeFrame->nb_samples > 0 always true for decoded frames? I can't be bothered to find out
+        NumberOfSamples += DecodeFrame->nb_samples;
+        if (DecodeFrame->nb_samples > 0) {
+            if (pos)
+                CachedBlock = CacheBlock(*pos);
+        }
+    }
 
     // Zero sample packets aren't included in the index
     if (!NumberOfSamples)
