@@ -29,9 +29,6 @@ src_core_libffms2_la_SOURCES = \
 	src/core/filehandle.h \
 	src/core/indexing.cpp \
 	src/core/indexing.h \
-	src/core/lavfaudio.cpp \
-	src/core/lavfindexer.cpp \
-	src/core/lavfvideo.cpp \
 	src/core/track.cpp \
 	src/core/track.h \
 	src/core/utils.cpp \
@@ -40,8 +37,6 @@ src_core_libffms2_la_SOURCES = \
 	src/core/videosource.h \
 	src/core/videoutils.cpp \
 	src/core/videoutils.h \
-	src/core/wave64writer.cpp \
-	src/core/wave64writer.h \
 	src/core/zipfile.cpp \
 	src/core/zipfile.h \
 	src/vapoursynth/VapourSynth.h \
