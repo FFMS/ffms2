@@ -39,6 +39,9 @@ struct FFMS_VideoSource {
 private:
     SwsContext *SWS = nullptr;
 
+    int DelayCounter = 0;
+    int InitialDecode = 1;
+
     int LastFrameHeight = -1;
     int LastFrameWidth = -1;
     AVPixelFormat LastFramePixelFormat = AV_PIX_FMT_NONE;
@@ -61,6 +64,7 @@ private:
     int SWSFrameLinesize[4] = {};
 
     void DetectInputFormat();
+    bool HasPendingDelayedFrames();
 
     FFMS_VideoProperties VP = {};
     FFMS_Frame LocalFrame = {};

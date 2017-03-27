@@ -414,19 +414,38 @@ void FFMS_VideoSource::SetVideoProperties() {
     OutputColorRange = InputColorRange;
 }
 
+bool FFMS_VideoSource::HasPendingDelayedFrames() {
+    if (InitialDecode == -1) {
+        if (DelayCounter > FFMS_CALCULATE_DELAY) {
+            --DelayCounter;
+            return true;
+        }
+        InitialDecode = 0;
+    }
+    return false;
+}
+
 bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
     std::swap(DecodeFrame, LastDecodedFrame);
     avcodec_send_packet(CodecContext, Packet);
 
     int Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
-    if (Ret != 0)
+    if (Ret != 0) {
         std::swap(DecodeFrame, LastDecodedFrame);
+        DelayCounter++;
+    }
 
-    return (Ret == 0);
+    if (Ret == 0 && InitialDecode == 1)
+        InitialDecode = -1;
+
+    return (Ret == 0) || (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode);;
 }
 
 int FFMS_VideoSource::Seek(int n) {
     int ret = -1;
+
+    DelayCounter = 0;
+	InitialDecode = 1;
 
     if (!SeekByPos || Frames[n].FilePos < 0) {
         ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].PTS, AVSEEK_FLAG_BACKWARD);
@@ -472,11 +491,8 @@ void FFMS_VideoSource::Free() {
 void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
     AStartTime = -1;
 
-    std::swap(DecodeFrame, LastDecodedFrame);
-    int Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
-    if (Ret == 0)
+    if (HasPendingDelayedFrames())
         return;
-    std::swap(DecodeFrame, LastDecodedFrame);
 
     AVPacket Packet;
     InitNullPacket(Packet);
@@ -498,6 +514,10 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
         if (FrameFinished)
             return;
     }
+
+    // Flush final frames
+    InitNullPacket(Packet);
+    DecodePacket(&Packet);
 }
 
 bool FFMS_VideoSource::SeekTo(int n, int SeekOffset) {
