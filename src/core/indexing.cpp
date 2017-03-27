@@ -35,7 +35,7 @@ extern "C" {
 }
 
 #define INDEXID 0x53920873
-#define INDEX_VERSION 2
+#define INDEX_VERSION 3
 
 SharedAVContext::~SharedAVContext() {
     avcodec_free_context(&CodecContext);
@@ -65,15 +65,6 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
         throw;
     }
     av_sha_final(ctx.get(), Digest);
-}
-
-void FFMS_Index::AddRef() {
-    ++RefCount;
-}
-
-void FFMS_Index::Release() {
-    if (--RefCount == 0)
-        delete this;
 }
 
 void FFMS_Index::Finalize(std::vector<SharedAVContext> const& video_contexts) {
@@ -113,7 +104,6 @@ void FFMS_Index::WriteIndex(ZipFile &zf) {
     zf.Write<uint32_t>(FFMS_VERSION);
     zf.Write<uint16_t>(INDEX_VERSION);
     zf.Write<uint32_t>(size());
-    zf.Write<uint32_t>(Decoder);
     zf.Write<uint32_t>(ErrorHandling);
     zf.Write<uint32_t>(avutil_version());
     zf.Write<uint32_t>(avformat_version());
@@ -157,12 +147,7 @@ void FFMS_Index::ReadIndex(ZipFile &zf, const char *IndexFile) {
             std::string("'") + IndexFile + "' is not the expected index version");
 
     uint32_t Tracks = zf.Read<uint32_t>();
-    Decoder = zf.Read<uint32_t>();
     ErrorHandling = zf.Read<uint32_t>();
-
-    if (!(Decoder & FFMS_GetEnabledSources()))
-        throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_NOT_AVAILABLE,
-            "The source which this index was created with is not available");
 
     if (zf.Read<uint32_t>() != avutil_version() ||
         zf.Read<uint32_t>() != avformat_version() ||
@@ -186,24 +171,20 @@ void FFMS_Index::ReadIndex(ZipFile &zf, const char *IndexFile) {
     }
 }
 
-FFMS_Index::FFMS_Index(const char *IndexFile)
-    : RefCount(1) {
+FFMS_Index::FFMS_Index(const char *IndexFile) {
     ZipFile zf(IndexFile, "rb");
 
     ReadIndex(zf, IndexFile);
 }
 
-FFMS_Index::FFMS_Index(const uint8_t *Buffer, size_t Size)
-    : RefCount(1) {
+FFMS_Index::FFMS_Index(const uint8_t *Buffer, size_t Size) {
     ZipFile zf(Buffer, Size);
 
     ReadIndex(zf, "User supplied buffer");
 }
 
-FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling)
-    : RefCount(1)
-    , Decoder(Decoder)
-    , ErrorHandling(ErrorHandling)
+FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20], int ErrorHandling)
+    : ErrorHandling(ErrorHandling)
     , Filesize(Filesize) {
     memcpy(this->Digest, Digest, sizeof(this->Digest));
 }
@@ -394,7 +375,7 @@ const char *FFMS_Indexer::GetTrackCodec(int Track) {
 FFMS_Index *FFMS_Indexer::DoIndexing() {
     std::vector<SharedAVContext> AVContexts(FormatContext->nb_streams);
 
-    auto TrackIndices = make_unique<FFMS_Index>(Filesize, Digest, FFMS_SOURCE_LAVF, ErrorHandling);
+    auto TrackIndices = make_unique<FFMS_Index>(Filesize, Digest, ErrorHandling);
 
     for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {
         TrackIndices->emplace_back((int64_t)FormatContext->streams[i]->time_base.num * 1000,

@@ -25,6 +25,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <memory>
 
 class ZipFile;
 
@@ -43,9 +44,13 @@ struct FrameInfo {
 struct FFMS_Track {
 private:
     typedef std::vector<FrameInfo> frame_vec;
-    frame_vec Frames;
-    std::vector<int> RealFrameNumbers;
-    std::vector<FFMS_FrameInfo> PublicFrameInfo;
+    struct TrackData {
+        frame_vec Frames;
+        std::vector<int> RealFrameNumbers;
+        std::vector<FFMS_FrameInfo> PublicFrameInfo;
+    };
+
+    std::shared_ptr<TrackData> Data;
 
     void MaybeReorderFrames();
     void MaybeHideFrames();
@@ -87,20 +92,18 @@ public:
     typedef frame_vec::const_reverse_iterator reverse_iterator;
 
     void clear() {
-        Frames.clear();
-        RealFrameNumbers.clear();
-        PublicFrameInfo.clear();
+        Data = std::make_shared<TrackData>();
     }
 
-    bool empty() const { return Frames.empty(); }
-    size_type size() const { return Frames.size(); }
-    reference operator[](size_type pos) const { return Frames[pos]; }
-    reference front() const { return Frames.front(); }
-    reference back() const { return Frames.back(); }
-    iterator begin() const { return Frames.begin(); }
-    iterator end() const { return Frames.end(); }
+    bool empty() const { return Data->Frames.empty(); }
+    size_type size() const { return Data->Frames.size(); }
+    reference operator[](size_type pos) const { return Data->Frames[pos]; }
+    reference front() const { return Data->Frames.front(); }
+    reference back() const { return Data->Frames.back(); }
+    iterator begin() const { return Data->Frames.begin(); }
+    iterator end() const { return Data->Frames.end(); }
 
-    FFMS_Track() = default;
+    FFMS_Track();
     FFMS_Track(ZipFile &Stream);
     FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false, bool HasTS = true);
 };

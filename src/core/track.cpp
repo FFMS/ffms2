@@ -22,6 +22,7 @@
 
 #include "utils.h"
 #include "zipfile.h"
+#include "indexing.h"
 
 #include <algorithm>
 
@@ -64,15 +65,23 @@ static void WriteFrame(ZipFile &stream, FrameInfo const& f, FrameInfo const& pre
 }
 }
 
-FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS, bool HasTS)
-    : TT(TT)
-    , UseDTS(UseDTS)
-    , HasTS(HasTS) {
-    this->TB.Num = Num;
-    this->TB.Den = Den;
+FFMS_Track::FFMS_Track()
+    : Data(std::make_shared<TrackData>())
+{
 }
 
-FFMS_Track::FFMS_Track(ZipFile &stream) {
+FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS, bool HasTS)
+    : Data(std::make_shared<TrackData>())
+    , TT(TT)
+    , UseDTS(UseDTS)
+    , HasTS(HasTS) {
+    TB.Num = Num;
+    TB.Den = Den;
+}
+
+FFMS_Track::FFMS_Track(ZipFile &stream)
+    : Data(std::make_shared<TrackData>()) {
+    frame_vec &Frames = Data->Frames;
     TT = static_cast<FFMS_TrackType>(stream.Read<uint8_t>());
     TB.Num = stream.Read<int64_t>();
     TB.Den = stream.Read<int64_t>();
@@ -93,6 +102,7 @@ FFMS_Track::FFMS_Track(ZipFile &stream) {
 }
 
 void FFMS_Track::Write(ZipFile &stream) const {
+    frame_vec &Frames = Data->Frames;
     stream.Write<uint8_t>(TT);
     stream.Write(TB.Num);
     stream.Write(TB.Den);
@@ -109,17 +119,18 @@ void FFMS_Track::Write(ZipFile &stream) const {
 }
 
 void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, bool Hidden) {
-    Frames.push_back({ PTS, FilePos, 0, 0, 0, FrameType, RepeatPict, KeyFrame, Hidden });
+    Data->Frames.push_back({ PTS, FilePos, 0, 0, 0, FrameType, RepeatPict, KeyFrame, Hidden });
 }
 
 void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos, bool Hidden) {
     if (SampleCount > 0) {
-        Frames.push_back({ PTS, FilePos, SampleStart, SampleCount,
+        Data->Frames.push_back({ PTS, FilePos, SampleStart, SampleCount,
             0, 0, 0, KeyFrame, Hidden });
     }
 }
 
 void FFMS_Track::WriteTimecodes(const char *TimecodeFile) const {
+    frame_vec &Frames = Data->Frames;
     FileHandle file(TimecodeFile, "w", FFMS_ERROR_TRACK, FFMS_ERROR_FILE_WRITE);
 
     file.Printf("# timecode format v2\n");
@@ -145,7 +156,7 @@ int FFMS_Track::FrameFromPTS(int64_t PTS) const {
 
 int FFMS_Track::FrameFromPos(int64_t Pos) const {
     for (size_t i = 0; i < size(); i++)
-        if (Frames[i].FilePos == Pos)
+        if (Data->Frames[i].FilePos == Pos)
             return static_cast<int>(i);
     return -1;
 }
@@ -164,6 +175,7 @@ int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) const {
 }
 
 int FFMS_Track::FindClosestVideoKeyFrame(int Frame) const {
+    frame_vec &Frames = Data->Frames;
     Frame = std::min(std::max(Frame, 0), static_cast<int>(size()) - 1);
     for (; Frame > 0 && !Frames[Frame].KeyFrame; Frame--);
     for (; Frame > 0 && !Frames[Frames[Frame].OriginalPos].KeyFrame; Frame--);
@@ -171,14 +183,15 @@ int FFMS_Track::FindClosestVideoKeyFrame(int Frame) const {
 }
 
 int FFMS_Track::RealFrameNumber(int Frame) const {
-    return RealFrameNumbers[Frame];
+    return Data->RealFrameNumbers[Frame];
 }
 
 int FFMS_Track::VisibleFrameCount() const {
-    return TT == FFMS_TYPE_AUDIO ? static_cast<int>(Frames.size()) : static_cast<int>(RealFrameNumbers.size());
+    return TT == FFMS_TYPE_AUDIO ? static_cast<int>(Data->Frames.size()) : static_cast<int>(Data->RealFrameNumbers.size());
 }
 
 void FFMS_Track::MaybeReorderFrames() {
+    frame_vec &Frames = Data->Frames;
     // First check if we need to do anything
     bool has_b_frames = false;
     for (size_t i = 1; i < size(); ++i) {
@@ -216,6 +229,7 @@ void FFMS_Track::MaybeReorderFrames() {
 }
 
 void FFMS_Track::MaybeHideFrames() {
+    frame_vec &Frames = Data->Frames;
     // Awful handling for interlaced H.264: each frame is output twice, so hide
     // frames with an invalid file position and PTS equal to the previous one
     for (size_t i = 1; i < size(); ++i) {
@@ -228,6 +242,7 @@ void FFMS_Track::MaybeHideFrames() {
 }
 
 void FFMS_Track::FillAudioGaps() {
+    frame_vec &Frames = Data->Frames;
     // There may not be audio data for the entire duration of the audio track,
     // as some formats support gaps between the end time of one packet and the
     // PTS of the next audio packet, and we should zero-fill those gaps.
@@ -279,6 +294,7 @@ void FFMS_Track::FillAudioGaps() {
 }
 
 void FFMS_Track::FinalizeTrack() {
+    frame_vec &Frames = Data->Frames;
     // With some formats (such as Vorbis) a bad final packet results in a
     // frame with PTS 0, which we don't want to sort to the beginning
     if (size() > 2 && front().PTS >= back().PTS)
@@ -313,6 +329,9 @@ void FFMS_Track::FinalizeTrack() {
 }
 
 void FFMS_Track::GeneratePublicInfo() {
+    frame_vec &Frames = Data->Frames;
+    std::vector<int> &RealFrameNumbers = Data->RealFrameNumbers;
+    std::vector<FFMS_FrameInfo> &PublicFrameInfo = Data->PublicFrameInfo;
     RealFrameNumbers.reserve(size());
     PublicFrameInfo.reserve(size());
     for (size_t i = 0; i < size(); ++i) {
@@ -326,6 +345,7 @@ void FFMS_Track::GeneratePublicInfo() {
 }
 
 const FFMS_FrameInfo *FFMS_Track::GetFrameInfo(size_t N) const {
+    std::vector<FFMS_FrameInfo> &PublicFrameInfo = Data->PublicFrameInfo;
     if (N >= PublicFrameInfo.size()) return nullptr;
     return &PublicFrameInfo[N];
 }

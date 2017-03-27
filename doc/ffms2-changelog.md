@@ -1,13 +1,16 @@
 # FFmpegSource2 Changelog
 
 - 2.2000
-  - fixed several bugs in output format selection (Myrsloik)
-  - ffmsindex will now properly error out with invalid arguments (Myrsloik)
+  - Sources now simply reference the index instead of copying large parts of it (Myrsloik)
+  - Use new FFmpeg decoding API (Myrsloik)
+  - Fixed several bugs in output format selection (Myrsloik)
+  - FFMSIndex will now properly error out with invalid arguments (Myrsloik)
   - Add rotation metadata export (Myrsloik)
   - Add stereoscopic metadata export (Myrsloik)
-  - Removed old mingw version support
-  - Removed support for old FFmpeg versions
-  - Removed libav support
+  - Created new Visual Studio 2017 projects (Myrsloik)
+  - Removed old mingw version support (Myrsloik)
+  - Removed support for old FFmpeg versions (Myrsloik)
+  - Removed libav support (Myrsloik)
 
 - 2.23
   - Updated FFmpeg APIs used (Daemon404)

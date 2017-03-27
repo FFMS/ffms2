@@ -43,7 +43,6 @@ struct SharedAVContext {
 };
 
 struct FFMS_Index : public std::vector<FFMS_Track> {
-    std::atomic<int> RefCount;
     FFMS_Index(FFMS_Index const&) = delete;
     FFMS_Index& operator=(FFMS_Index const&) = delete;
     void ReadIndex(ZipFile &zf, const char* IndexFile);
@@ -51,11 +50,6 @@ struct FFMS_Index : public std::vector<FFMS_Track> {
 public:
     static void CalculateFileSignature(const char *Filename, int64_t *Filesize, uint8_t Digest[20]);
 
-    // FIXME, NOTHING USES REF COUNTING!
-    void AddRef();
-    void Release();
-
-    int Decoder;
     int ErrorHandling;
     int64_t Filesize;
     uint8_t Digest[20];
@@ -67,7 +61,7 @@ public:
 
     FFMS_Index(const char *IndexFile);
     FFMS_Index(const uint8_t *Buffer, size_t Size);
-    FFMS_Index(int64_t Filesize, uint8_t Digest[20], int Decoder, int ErrorHandling);
+    FFMS_Index(int64_t Filesize, uint8_t Digest[20], int ErrorHandling);
 };
 
 struct FFMS_Indexer {

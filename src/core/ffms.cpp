@@ -105,12 +105,7 @@ FFMS_API(void) FFMS_SetLogLevel(int Level) {
 
 FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, int SeekMode, FFMS_ErrorInfo *ErrorInfo) {
     try {
-        switch (Index->Decoder) {
-        case FFMS_SOURCE_LAVF:
-            return new FFMS_VideoSource(SourceFile, *Index, Track, Threads, SeekMode);
-        default:
-            throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Unsupported format");
-        }
+        return new FFMS_VideoSource(SourceFile, *Index, Track, Threads, SeekMode);
     } catch (FFMS_Exception &e) {
         e.CopyOut(ErrorInfo);
         return nullptr;
@@ -119,12 +114,7 @@ FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int 
 
 FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, int DelayMode, FFMS_ErrorInfo *ErrorInfo) {
     try {
-        switch (Index->Decoder) {
-        case FFMS_SOURCE_LAVF:
             return new FFMS_AudioSource(SourceFile, *Index, Track, DelayMode);
-        default:
-            throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ, "Unsupported format");
-        }
     } catch (FFMS_Exception &e) {
         e.CopyOut(ErrorInfo);
         return nullptr;
@@ -224,12 +214,11 @@ FFMS_API(int) FFMS_SetOutputFormatA(FFMS_AudioSource *A, const FFMS_ResampleOpti
 }
 
 FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {
-    if (Index)
-        Index->Release();
+    delete Index;
 }
 
 FFMS_API(int) FFMS_GetSourceType(FFMS_Index *Index) {
-    return Index->Decoder;
+    return FFMS_SOURCE_LAVF;
 }
 
 FFMS_API(FFMS_IndexErrorHandling) FFMS_GetErrorHandling(FFMS_Index *Index) {
