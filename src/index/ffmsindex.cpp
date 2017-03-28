@@ -35,10 +35,8 @@
 namespace {
 
 long long IndexMask = 0;
-long long DumpMask = 0;
 int Verbose = 0;
 int IgnoreErrors = 0;
-int Demuxer = FFMS_SOURCE_DEFAULT;
 bool Overwrite = false;
 bool PrintProgress = true;
 bool WriteTC = false;
@@ -68,7 +66,6 @@ void PrintUsage() {
         "-c        Write timecodes for all video tracks to outputfile_track00.tc.txt (default: no)\n"
         "-k        Write keyframes for all video tracks to outputfile_track00.kf.txt (default: no)\n"
         "-t N      Set the audio indexing mask to N (-1 means index all tracks, 0 means index none, default: 0)\n"
-        "-d N      Set the audio decoding mask to N (mask syntax same as -t, default: 0)\n"
         "-a NAME   Set the audio output base filename to NAME (default: input filename)\n"
         "-s N      Set audio decoding error handling. See the documentation for details. (default: 0)\n"
         << std::endl;
@@ -91,8 +88,6 @@ void ParseCMDLine(int argc, const char *argv[]) {
             WriteKF = true;
         } else if (!strcmp(Option, "-t")) {
             OPTION_ARG(IndexMask, "t", std::stoll);
-        } else if (!strcmp(Option, "-d")) {
-            OPTION_ARG(DumpMask, "d", std::stoll);
         } else if (!strcmp(Option, "-a")) {
             OPTION_ARG(AudioFile, "a", );
         } else if (!strcmp(Option, "-s")) {
@@ -165,7 +160,7 @@ void DoIndexing() {
     }
 
     UpdateProgress(0, 100, nullptr);
-    FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(InputFile.c_str(), Demuxer, &E);
+    FFMS_Indexer *Indexer = FFMS_CreateIndexer(InputFile.c_str(), &E);
     if (Indexer == nullptr)
         throw Error("\nFailed to initialize indexing: ", E);
 
@@ -173,17 +168,13 @@ void DoIndexing() {
     FFMS_SetProgressCallback(Indexer, UpdateProgress, &Progress);
 
     // Treat -1 as meaning track numbers above sizeof(long long) * 8 too, dumping implies indexing
-    if (DumpMask == -1) {
-        FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 1);
-    } else if (IndexMask == -1) {
+    if (IndexMask == -1)
         FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 0);
-    }
 
     // Apply attributes to remaining tracks (will set the attributes again on some tracks)
     for (int i = 0; i < static_cast<int>(sizeof(IndexMask) * 8); i++) {
-        int Temp = (((IndexMask >> i) & 1) | ((DumpMask >> i) & 1));
-        if (Temp)
-            FFMS_TrackIndexSettings(Indexer, i, Temp, (DumpMask >> i) & 1);
+        if ((IndexMask >> i) & 1)
+            FFMS_TrackIndexSettings(Indexer, i, 1, 0);
     }
 
     Index = FFMS_DoIndexing2(Indexer, IgnoreErrors, &E);

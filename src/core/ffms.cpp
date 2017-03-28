@@ -368,7 +368,7 @@ FFMS_DEPRECATED_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int Ind
     IndexMask |= DumpMask;
     for (int i = 0; i < static_cast<int>(sizeof(IndexMask) * 8); i++) {
         if ((IndexMask >> i) & 1)
-            FFMS_TrackIndexSettings(Indexer, i, 1, ((DumpMask >> i) & 1));
+            FFMS_TrackIndexSettings(Indexer, i, 1, 0);
     }
 
     Indexer->SetErrorHandling(ErrorHandling);

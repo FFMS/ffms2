@@ -69,7 +69,6 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
     if (err)
         ErrorHandling = FFMS_IEH_IGNORE;
     bool OverWrite = !!vsapi->propGetInt(in, "overwrite", 0, &err);
-    const char *DemuxerStr = vsapi->propGetData(in, "demuxer", 0, &err);
 
     std::string DefaultCache(Source);
     if (!CacheFile || !strcmp(CacheFile, "")) {
@@ -80,17 +79,9 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
     if (!AudioFile || !strcmp(AudioFile, ""))
         return vsapi->setError(out, "Index: Specifying an empty audio filename is not allowed");
 
-    int Demuxer = FFMS_SOURCE_DEFAULT;
-    if (DemuxerStr) {
-        if (!strcmp(DemuxerStr, "lavf"))
-            Demuxer = FFMS_SOURCE_LAVF;
-        else
-            return vsapi->setError(out, "Index: Invalid demuxer requested");
-    }
-
     FFMS_Index *Index = FFMS_ReadIndex(CacheFile, &E);
     if (OverWrite || !Index || (Index && FFMS_IndexBelongsToFile(Index, Source, nullptr) != FFMS_ERROR_SUCCESS)) {
-        FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(Source, Demuxer, &E);
+        FFMS_Indexer *Indexer = FFMS_CreateIndexer(Source, &E);
         if (!Indexer) {
             FFMS_DestroyIndex(Index);
             return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
@@ -261,7 +252,7 @@ static void VS_CC GetVersion(const VSMap *, VSMap *out, void *, VSCore *, const 
 
 VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin *plugin) {
     configFunc("com.vapoursynth.ffms2", "ffms2", "FFmpegSource 2 for VapourSynth", VAPOURSYNTH_API_VERSION, 1, plugin);
-    registerFunc("Index", "source:data;cachefile:data:opt;indextracks:int[]:opt;dumptracks:int[]:opt;audiofile:data:opt;errorhandling:int:opt;overwrite:int:opt;demuxer:data:opt;", CreateIndex, nullptr, plugin);
+    registerFunc("Index", "source:data;cachefile:data:opt;indextracks:int[]:opt;audiofile:data:opt;errorhandling:int:opt;overwrite:int:opt;", CreateIndex, nullptr, plugin);
     registerFunc("Source", "source:data;track:int:opt;cache:int:opt;cachefile:data:opt;fpsnum:int:opt;fpsden:int:opt;threads:int:opt;timecodes:data:opt;seekmode:int:opt;width:int:opt;height:int:opt;resizer:data:opt;format:int:opt;alpha:int:opt;", CreateSource, nullptr, plugin);
     registerFunc("GetLogLevel", "", GetLogLevel, nullptr, plugin);
     registerFunc("SetLogLevel", "level:int;", SetLogLevel, nullptr, plugin);
