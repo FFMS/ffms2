@@ -282,7 +282,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 }
 
 static AVSValue __cdecl CreateFFmpegSource2(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-    const char *FFIArgNames[] = { "source", "cachefile", "indexmask", "overwrite", "utf8" };
+    const char *FFIArgNames[] = { "source", "cachefile", "indexmask", "overwrite" };
     const char *FFVArgNames[] = { "source", "track", "cache", "cachefile", "fpsnum", "fpsden", "threads", "timecodes", "seekmode", "rffmode", "width", "height", "resizer", "colorspace", "utf8", "varprefix" };
     const char *FFAArgNames[] = { "source", "track", "cache", "cachefile", "adjustdelay", "utf8", "varprefix" };
     const char *BCArgNames[] = { "audio_rate" };
@@ -344,7 +344,7 @@ const AVS_Linkage *AVS_linkage = nullptr;
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit3(IScriptEnvironment* Env, const AVS_Linkage* const vectors) {
     AVS_linkage = vectors;
 
-    Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b", CreateFFIndex, nullptr);
+    Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[audiofile]s[errorhandling]i[overwrite]b", CreateFFIndex, nullptr);
     Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", CreateFFVideoSource, nullptr);
     Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b[varprefix]s", CreateFFAudioSource, nullptr);
 
