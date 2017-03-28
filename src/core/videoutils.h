@@ -32,9 +32,16 @@ extern "C" {
 
 #include "ffms.h"
 
+enum BCSType {
+    cGRAY,
+    cYUV,
+    cRGB,
+    cUNUSABLE
+};
 
 // swscale and pp-related functions
 SwsContext *GetSwsContext(int SrcW, int SrcH, AVPixelFormat SrcFormat, int SrcColorSpace, int SrcColorRange, int DstW, int DstH, AVPixelFormat DstFormat, int DstColorSpace, int DstColorRange, int64_t Flags);
+BCSType GuessCSType(AVPixelFormat p);
 
 // timebase-related functions
 void CorrectRationalFramerate(int *Num, int *Den);

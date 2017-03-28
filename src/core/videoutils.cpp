@@ -106,14 +106,7 @@ void CorrectTimebase(FFMS_VideoProperties *VP, FFMS_TrackTimeBase *TTimebase) {
 **
 ***************************/
 
-enum BCSType {
-    cGRAY,
-    cYUV,
-    cRGB,
-    cUNUSABLE
-};
-
-static BCSType GuessCSType(AVPixelFormat p) {
+BCSType GuessCSType(AVPixelFormat p) {
     // guessing the colorspace type from the name is kinda hackish but libav doesn't export this kind of metadata
     // special case since pal8 is assumed to be rgb32
     if (p == AV_PIX_FMT_PAL8)

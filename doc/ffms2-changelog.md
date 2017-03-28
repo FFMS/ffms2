@@ -1,6 +1,7 @@
 # FFmpegSource2 Changelog
 
 - 2.2000
+  - Fixed incorrect colorimetry metadata reported when converting the output to another colorspace (Myrsloik)
   - Sources now simply reference the index instead of copying large parts of it (Myrsloik)
   - Use new FFmpeg decoding API (Myrsloik)
   - Fixed several bugs in output format selection (Myrsloik)

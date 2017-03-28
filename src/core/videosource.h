@@ -55,6 +55,10 @@ private:
     AVColorRange OutputColorRange = AVCOL_RANGE_UNSPECIFIED;
     AVColorSpace OutputColorSpace = AVCOL_SPC_UNSPECIFIED;
 
+    int OutputColorPrimaries = -1;
+    int OutputTransferCharateristics = -1;
+    int OutputChromaLocation = -1;
+
     bool InputFormatOverridden = false;
     AVPixelFormat InputFormat = AV_PIX_FMT_NONE;
     AVColorRange InputColorRange = AVCOL_RANGE_UNSPECIFIED;

@@ -81,12 +81,12 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
     LocalFrame.PictType = av_get_picture_type_char(Frame->pict_type);
     LocalFrame.RepeatPict = Frame->repeat_pict;
     LocalFrame.InterlacedFrame = Frame->interlaced_frame;
-    LocalFrame.TopFieldFirst = Frame->top_field_first;
+    LocalFrame.TopFieldFirst = Frame->top_field_first;   
     LocalFrame.ColorSpace = OutputColorSpace;
     LocalFrame.ColorRange = OutputColorRange;
-    LocalFrame.ColorPrimaries = CodecContext->color_primaries;
-    LocalFrame.TransferCharateristics = CodecContext->color_trc;
-    LocalFrame.ChromaLocation = CodecContext->chroma_sample_location;
+    LocalFrame.ColorPrimaries = (OutputColorPrimaries >= 0) ? OutputColorPrimaries : CodecContext->color_primaries;
+    LocalFrame.TransferCharateristics = (OutputTransferCharateristics >= 0) ? OutputTransferCharateristics : CodecContext->color_trc;
+    LocalFrame.ChromaLocation = (OutputChromaLocation >= 0) ? OutputChromaLocation : CodecContext->chroma_sample_location;
 
     LastFrameHeight = CodecContext->height;
     LastFrameWidth = CodecContext->width;
@@ -318,6 +318,35 @@ void FFMS_VideoSource::ReAdjustOutputFormat() {
     OutputColorSpace = CodecContext->colorspace;
     if (OutputColorSpace == AVCOL_SPC_UNSPECIFIED)
         OutputColorSpace = InputColorSpace;
+
+    BCSType InputType = GuessCSType(InputFormat);
+    BCSType OutputType = GuessCSType(OutputFormat);
+
+    if (InputType != OutputType) {
+        if (OutputType == cRGB) {
+            OutputColorSpace = AVCOL_SPC_RGB;
+            OutputColorRange = AVCOL_RANGE_UNSPECIFIED;
+            OutputColorPrimaries = AVCOL_PRI_UNSPECIFIED;
+            OutputTransferCharateristics = AVCOL_TRC_UNSPECIFIED;
+            OutputChromaLocation = AVCHROMA_LOC_UNSPECIFIED;
+        } else if (OutputType == cYUV) {
+            OutputColorSpace = AVCOL_SPC_BT470BG;
+            OutputColorRange = AVCOL_RANGE_MPEG;
+            OutputColorPrimaries = AVCOL_PRI_BT470BG;
+            OutputTransferCharateristics = AVCOL_TRC_SMPTE170M;
+            OutputChromaLocation = AVCHROMA_LOC_LEFT;
+        } else if (OutputType == cGRAY) {
+            OutputColorSpace = AVCOL_SPC_UNSPECIFIED; // fixme, set?
+            OutputColorRange = AVCOL_RANGE_UNSPECIFIED; // fixme, set?
+            OutputColorPrimaries = AVCOL_PRI_UNSPECIFIED; // fixme, set?
+            OutputTransferCharateristics = AVCOL_TRC_UNSPECIFIED; // fixme, set?
+            OutputChromaLocation = AVCHROMA_LOC_UNSPECIFIED;
+        }
+    } else {
+        OutputColorPrimaries = -1;
+        OutputTransferCharateristics = -1;
+        OutputChromaLocation = -1;
+    }
 
     if (InputFormat != OutputFormat ||
         TargetWidth != CodecContext->width ||
