@@ -27,15 +27,14 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
     if (!Args[0].Defined())
         Env->ThrowError("FFIndex: No source specified");
 
-    FFMS_Init(0, Args[7].AsBool(false));
+    FFMS_Init(0, 0);
 
     const char *Source = Args[0].AsString();
     const char *CacheFile = Args[1].AsString("");
     int IndexMask = Args[2].AsInt(-1);
-    const char *AudioFile = Args[4].AsString("%sourcefile%.%trackzn%.w64");
-    int ErrorHandling = Args[5].AsInt(FFMS_IEH_IGNORE);
-    bool OverWrite = Args[6].AsBool(false);
-    const char *DemuxerStr = Args[8].AsString("default");
+    const char *AudioFile = Args[3].AsString("%sourcefile%.%trackzn%.w64");
+    int ErrorHandling = Args[4].AsInt(FFMS_IEH_IGNORE);
+    bool OverWrite = Args[5].AsBool(false);
 
     std::string DefaultCache(Source);
     DefaultCache.append(".ffindex");
@@ -345,7 +344,7 @@ const AVS_Linkage *AVS_linkage = nullptr;
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit3(IScriptEnvironment* Env, const AVS_Linkage* const vectors) {
     AVS_linkage = vectors;
 
-    Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[dumpmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b[demuxer]s", CreateFFIndex, nullptr);
+    Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[audiofile]s[errorhandling]i[overwrite]b[utf8]b", CreateFFIndex, nullptr);
     Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", CreateFFVideoSource, nullptr);
     Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[utf8]b[varprefix]s", CreateFFAudioSource, nullptr);
 
