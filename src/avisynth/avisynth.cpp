@@ -19,7 +19,6 @@
 //  THE SOFTWARE.
 
 #include <string>
-#include <cassert>
 #include "ffms.h"
 #include "avssources.h"
 #include "../core/utils.h"
@@ -291,18 +290,18 @@ static AVSValue __cdecl CreateFFmpegSource2(AVSValue Args, void* UserData, IScri
     bool WithAudio = Args[2].AsInt(-2) > -2;
     if (Cache) {
         AVSValue FFIArgs[] = { Args[0], Args[4], WithAudio ? -1 : 0, Args[10] };
-        assert((sizeof(FFIArgs) / sizeof(FFIArgs[0])) == (sizeof(FFIArgNames) / sizeof(FFIArgNames[0])));
+        static_assert((sizeof(FFIArgs) / sizeof(FFIArgs[0])) == (sizeof(FFIArgNames) / sizeof(FFIArgNames[0])), "Arg error");
         Env->Invoke("FFIndex", AVSValue(FFIArgs, sizeof(FFIArgs) / sizeof(FFIArgs[0])), FFIArgNames);
     }
 
     AVSValue FFVArgs[] = { Args[0], Args[1], Args[3], Args[4], Args[5], Args[6], Args[7], Args[8], Args[9], Args[15], Args[11], Args[12], Args[13], Args[14], Args[17] };
-    assert((sizeof(FFVArgs) / sizeof(FFVArgs[0])) == (sizeof(FFVArgNames) / sizeof(FFVArgNames[0])));
+    static_assert((sizeof(FFVArgs) / sizeof(FFVArgs[0])) == (sizeof(FFVArgNames) / sizeof(FFVArgNames[0])), "Arg error");
     AVSValue Video = Env->Invoke("FFVideoSource", AVSValue(FFVArgs, sizeof(FFVArgs) / sizeof(FFVArgs[0])), FFVArgNames);
 
     AVSValue Audio;
     if (WithAudio) {
         AVSValue FFAArgs[] = { Args[0], Args[2], Args[3], Args[4], Args[16], Args[17] };
-        assert((sizeof(FFAArgs) / sizeof(FFAArgs[0])) == (sizeof(FFAArgNames) / sizeof(FFAArgNames[0])));
+        static_assert((sizeof(FFAArgs) / sizeof(FFAArgs[0])) == (sizeof(FFAArgNames) / sizeof(FFAArgNames[0])), "Arg error");
         Audio = Env->Invoke("FFAudioSource", AVSValue(FFAArgs, sizeof(FFAArgs) / sizeof(FFAArgs[0])), FFAArgNames);
         AVSValue ADArgs[] = { Video, Audio };
         return Env->Invoke("AudioDubEx", AVSValue(ADArgs, sizeof(ADArgs) / sizeof(ADArgs[0])));
@@ -312,13 +311,10 @@ static AVSValue __cdecl CreateFFmpegSource2(AVSValue Args, void* UserData, IScri
 }
 
 static AVSValue __cdecl CreateFFImageSource(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-    const char *ArgNames[] = { "source", "width", "height", "resizer", "colorspace", "utf8", "varprefix", "cache", "seekmode" };
-    AVSValue NewArgs[9];
-    for (int i = 0; i < 7; i++)
-        NewArgs[i] = Args[i];
-    NewArgs[7] = false;
-    NewArgs[8] = -1;
-    return Env->Invoke("FFVideoSource", AVSValue(NewArgs, sizeof(NewArgs) / sizeof(NewArgs[0])), ArgNames);
+    const char *FFISArgNames[] = { "source", "width", "height", "resizer", "colorspace", "varprefix", "cache", "seekmode" };
+    AVSValue FFISArgs[] = { Args[0], Args[1], Args[2], Args[3], Args[4], Args[5], false, -1 };
+    static_assert((sizeof(FFISArgs) / sizeof(FFISArgs[0])) == (sizeof(FFISArgNames) / sizeof(FFISArgNames[0])), "Arg error");
+    return Env->Invoke("FFVideoSource", AVSValue(FFISArgs, sizeof(FFISArgs) / sizeof(FFISArgs[0])), FFISArgNames);
 }
 
 static AVSValue __cdecl CreateFFCopyrightInfringement(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
@@ -354,7 +350,7 @@ extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit3(IScri
     Env->AddFunction("FFmpegSource2", "[source]s[vtrack]i[atrack]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[overwrite]b[width]i[height]i[resizer]s[colorspace]s[rffmode]i[adjustdelay]i[varprefix]s", CreateFFmpegSource2, nullptr);
     Env->AddFunction("FFMS2", "[source]s[vtrack]i[atrack]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[overwrite]b[width]i[height]i[resizer]s[colorspace]s[rffmode]i[adjustdelay]i[varprefix]s", CreateFFmpegSource2, nullptr);
 
-    Env->AddFunction("FFImageSource", "[source]s[width]i[height]i[resizer]s[colorspace]s[utf8]b[varprefix]s", CreateFFImageSource, nullptr);
+    Env->AddFunction("FFImageSource", "[source]s[width]i[height]i[resizer]s[colorspace]s[varprefix]s", CreateFFImageSource, nullptr);
     Env->AddFunction("FFCopyrightInfringement", "[source]s", CreateFFCopyrightInfringement, nullptr);
 
     Env->AddFunction("FFGetLogLevel", "", FFGetLogLevel, nullptr);
