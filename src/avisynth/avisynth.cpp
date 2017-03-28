@@ -32,7 +32,6 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
     const char *Source = Args[0].AsString();
     const char *CacheFile = Args[1].AsString("");
     int IndexMask = Args[2].AsInt(-1);
-    int DumpMask = Args[3].AsInt(0);
     const char *AudioFile = Args[4].AsString("%sourcefile%.%trackzn%.w64");
     int ErrorHandling = Args[5].AsInt(FFMS_IEH_IGNORE);
     bool OverWrite = Args[6].AsBool(false);
@@ -46,34 +45,22 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
     if (!strcmp(AudioFile, ""))
         Env->ThrowError("FFIndex: Specifying an empty audio filename is not allowed");
 
-    int Demuxer;
-    if (!strcmp(DemuxerStr, "default"))
-        Demuxer = FFMS_SOURCE_DEFAULT;
-    else if (!strcmp(DemuxerStr, "lavf"))
-        Demuxer = FFMS_SOURCE_LAVF;
-    else
-        Env->ThrowError("FFIndex: Invalid demuxer requested");
-
     ErrorInfo E;
     FFMS_Index *Index = FFMS_ReadIndex(CacheFile, &E);
     if (OverWrite || !Index || (Index && FFMS_IndexBelongsToFile(Index, Source, 0) != FFMS_ERROR_SUCCESS)) {
-        FFMS_Indexer *Indexer = FFMS_CreateIndexerWithDemuxer(Source, Demuxer, &E);
+        FFMS_Indexer *Indexer = FFMS_CreateIndexer(Source, &E);
         if (!Indexer)
             Env->ThrowError("FFIndex: %s", E.Buffer);
         FFMS_SetAudioNameCallback(Indexer, FFMS_DefaultAudioFilename, (void *)AudioFile);
 
         // Treat -1 as meaning track numbers above sizeof(int) too, dumping implies indexing
-        if (DumpMask == -1) {
-            FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 1);
-        } else if (IndexMask == -1) {
+        if (IndexMask == -1)
             FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 0);
-        }
 
         // Apply attributes to remaining tracks (will set the attributes again on some tracks)
         for (int i = 0; i < sizeof(IndexMask) * 8; i++) {
-            int Temp = (((IndexMask >> i) & 1) | ((DumpMask >> i) & 1));
-            if (Temp)
-                FFMS_TrackIndexSettings(Indexer, i, Temp, (DumpMask >> i) & 1);
+            if ((IndexMask >> i) & 1)
+                FFMS_TrackIndexSettings(Indexer, i, 1, 0);
         }
 
         if (!(Index = FFMS_DoIndexing2(Indexer, ErrorHandling, &E)))
@@ -304,11 +291,11 @@ static AVSValue __cdecl CreateFFmpegSource2(AVSValue Args, void* UserData, IScri
     bool Cache = Args[3].AsBool(true);
     bool WithAudio = Args[2].AsInt(-2) > -2;
     if (Cache) {
-        AVSValue FFIArgs[] = { Args[0], Args[4], WithAudio ? -1 : 0, Args[10], Args[17] };
+        AVSValue FFIArgs[] = { Args[0], Args[4], WithAudio ? -1 : 0, Args[10] };
         Env->Invoke("FFIndex", AVSValue(FFIArgs, sizeof(FFIArgs) / sizeof(FFIArgs[0])), FFIArgNames);
     }
 
-    AVSValue FFVArgs[] = { Args[0], Args[1], Args[3], Args[4], Args[5], Args[6], Args[7], Args[8], Args[9], Args[15], Args[11], Args[12], Args[13], Args[14], Args[17], Args[18] };
+    AVSValue FFVArgs[] = { Args[0], Args[1], Args[3], Args[4], Args[5], Args[6], Args[7], Args[8], Args[9], Args[15], Args[11], Args[12], Args[13], Args[14], Args[17] };
     AVSValue Video = Env->Invoke("FFVideoSource", AVSValue(FFVArgs, sizeof(FFVArgs) / sizeof(FFVArgs[0])), FFVArgNames);
 
     AVSValue Audio;
