@@ -276,7 +276,7 @@ uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAVCon
         if (Ret == 0) {
             CheckAudioProperties(Track, CodecContext);
             Context.CurrentSample += DecodeFrame->nb_samples;
-        } else if (Ret == AVERROR_EOF || AVERROR(EAGAIN)) {
+        } else if (Ret == AVERROR_EOF || Ret == AVERROR(EAGAIN)) {
             break;
         } else {
             if (ErrorHandling == FFMS_IEH_ABORT) {
