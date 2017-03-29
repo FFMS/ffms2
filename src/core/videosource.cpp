@@ -332,14 +332,14 @@ void FFMS_VideoSource::ReAdjustOutputFormat() {
         } else if (OutputType == cYUV) {
             OutputColorSpace = AVCOL_SPC_BT470BG;
             OutputColorRange = AVCOL_RANGE_MPEG;
-            OutputColorPrimaries = AVCOL_PRI_BT470BG;
-            OutputTransferCharateristics = AVCOL_TRC_SMPTE170M;
+            OutputColorPrimaries = AVCOL_PRI_UNSPECIFIED;
+            OutputTransferCharateristics = AVCOL_TRC_UNSPECIFIED;
             OutputChromaLocation = AVCHROMA_LOC_LEFT;
         } else if (OutputType == cGRAY) {
-            OutputColorSpace = AVCOL_SPC_UNSPECIFIED; // fixme, set?
-            OutputColorRange = AVCOL_RANGE_UNSPECIFIED; // fixme, set?
-            OutputColorPrimaries = AVCOL_PRI_UNSPECIFIED; // fixme, set?
-            OutputTransferCharateristics = AVCOL_TRC_UNSPECIFIED; // fixme, set?
+            OutputColorSpace = AVCOL_SPC_UNSPECIFIED;
+            OutputColorRange = AVCOL_RANGE_UNSPECIFIED;
+            OutputColorPrimaries = AVCOL_PRI_UNSPECIFIED;
+            OutputTransferCharateristics = AVCOL_TRC_UNSPECIFIED;
             OutputChromaLocation = AVCHROMA_LOC_UNSPECIFIED;
         }
     } else {
