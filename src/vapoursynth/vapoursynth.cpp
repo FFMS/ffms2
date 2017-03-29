@@ -155,7 +155,7 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
 
     bool OutputAlpha = !!vsapi->propGetInt(in, "alpha", 0, &err);
     if (err)
-        OutputAlpha = true;
+        OutputAlpha = false;
 
     if (FPSDen < 1)
         return vsapi->setError(out, "Source: FPS denominator needs to be 1 or higher");
