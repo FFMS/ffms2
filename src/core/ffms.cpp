@@ -349,10 +349,6 @@ FFMS_DEPRECATED_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int T
 }
 
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo) {
-    return FFMS_CreateIndexerWithDemuxer(SourceFile, FFMS_SOURCE_DEFAULT, ErrorInfo);
-}
-
-FFMS_DEPRECATED_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int, FFMS_ErrorInfo *ErrorInfo) {
     ClearErrorInfo(ErrorInfo);
     try {
         return new FFMS_Indexer(SourceFile);
@@ -360,6 +356,10 @@ FFMS_DEPRECATED_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *So
         e.CopyOut(ErrorInfo);
         return nullptr;
     }
+}
+
+FFMS_DEPRECATED_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int, FFMS_ErrorInfo *ErrorInfo) {
+    return FFMS_CreateIndexer(SourceFile, ErrorInfo);
 }
 
 FFMS_DEPRECATED_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
@@ -492,8 +492,6 @@ FFMS_DEPRECATED_API(int) FFMS_GetPresentSources() {
 }
 
 FFMS_DEPRECATED_API(int) FFMS_GetEnabledSources() {
-    if (!FFmpegInited)
-        return 0;
     return FFMS_SOURCE_LAVF;
 }
 
