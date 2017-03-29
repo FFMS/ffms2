@@ -1,7 +1,7 @@
 # FFmpegSource2 Changelog
 
 - 2.2000
-  - VapourSynth source now defaults to not outputting alpha
+  - VapourSynth source now defaults to not outputting alpha (Myrsloik)
   - Removed the now unused demuxer, dumpmask and utf8 arguments from the source filters (Myrsloik)
   - Removed ability to dump audio tracks (Myrsloik)
   - Fixed incorrect colorimetry metadata reported when converting the output to another colorspace (Myrsloik)

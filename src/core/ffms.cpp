@@ -217,7 +217,7 @@ FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {
     delete Index;
 }
 
-FFMS_API(int) FFMS_GetSourceType(FFMS_Index *Index) {
+FFMS_DEPRECATED_API(int) FFMS_GetSourceType(FFMS_Index *Index) {
     return FFMS_SOURCE_LAVF;
 }
 
@@ -331,7 +331,7 @@ static void ReplaceString(std::string &s, const char *from, std::string const& t
         s.replace(idx, strlen(from), to);
 }
 
-FFMS_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int, void *Private) {
+FFMS_DEPRECATED_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int, void *Private) {
     std::string s = static_cast<char *>(Private);
 
     ReplaceString(s, "%sourcefile%", SourceFile);
@@ -487,11 +487,11 @@ FFMS_API(int) FFMS_GetPixFmt(const char *Name) {
 }
 
 
-FFMS_API(int) FFMS_GetPresentSources() {
+FFMS_DEPRECATED_API(int) FFMS_GetPresentSources() {
     return FFMS_SOURCE_LAVF;
 }
 
-FFMS_API(int) FFMS_GetEnabledSources() {
+FFMS_DEPRECATED_API(int) FFMS_GetEnabledSources() {
     if (!FFmpegInited)
         return 0;
     return FFMS_SOURCE_LAVF;
@@ -501,6 +501,6 @@ FFMS_API(const char *) FFMS_GetFormatNameI(FFMS_Indexer *Indexer) {
     return Indexer->GetFormatName();
 }
 
-FFMS_API(int) FFMS_GetSourceTypeI(FFMS_Indexer *Indexer) {
+FFMS_DEPRECATED_API(int) FFMS_GetSourceTypeI(FFMS_Indexer *Indexer) {
     return FFMS_SOURCE_LAVF;
 }

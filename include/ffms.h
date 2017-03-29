@@ -416,8 +416,7 @@ typedef struct FFMS_AudioProperties {
 } FFMS_AudioProperties;
 
 typedef int (FFMS_CC *TIndexCallback)(int64_t Current, int64_t Total, void *ICPrivate);
-// FIXME OBSOLETE
-typedef int (FFMS_CC *TAudioNameCallback)(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int FNSize, void *Private);
+typedef int (FFMS_CC *TAudioNameCallback)(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int FNSize, void *Private); /* Deprecated */
 
 // Most functions return 0 on success
 // Functions without error message output can be assumed to never fail in a graceful way
