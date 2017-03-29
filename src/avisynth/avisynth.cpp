@@ -32,17 +32,13 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
     const char *Source = Args[0].AsString();
     const char *CacheFile = Args[1].AsString("");
     int IndexMask = Args[2].AsInt(-1);
-    const char *AudioFile = Args[3].AsString("%sourcefile%.%trackzn%.w64");
-    int ErrorHandling = Args[4].AsInt(FFMS_IEH_IGNORE);
-    bool OverWrite = Args[5].AsBool(false);
+    int ErrorHandling = Args[3].AsInt(FFMS_IEH_IGNORE);
+    bool OverWrite = Args[4].AsBool(false);
 
     std::string DefaultCache(Source);
     DefaultCache.append(".ffindex");
     if (!strcmp(CacheFile, ""))
         CacheFile = DefaultCache.c_str();
-
-    if (!strcmp(AudioFile, ""))
-        Env->ThrowError("FFIndex: Specifying an empty audio filename is not allowed");
 
     ErrorInfo E;
     FFMS_Index *Index = FFMS_ReadIndex(CacheFile, &E);
@@ -50,9 +46,8 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
         FFMS_Indexer *Indexer = FFMS_CreateIndexer(Source, &E);
         if (!Indexer)
             Env->ThrowError("FFIndex: %s", E.Buffer);
-        FFMS_SetAudioNameCallback(Indexer, FFMS_DefaultAudioFilename, (void *)AudioFile);
 
-        // Treat -1 as meaning track numbers above sizeof(int) too, dumping implies indexing
+        // Treat -1 as meaning track numbers above sizeof(int) too
         if (IndexMask == -1)
             FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 0);
 
@@ -343,7 +338,7 @@ const AVS_Linkage *AVS_linkage = nullptr;
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit3(IScriptEnvironment* Env, const AVS_Linkage* const vectors) {
     AVS_linkage = vectors;
 
-    Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[audiofile]s[errorhandling]i[overwrite]b", CreateFFIndex, nullptr);
+    Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[errorhandling]i[overwrite]b", CreateFFIndex, nullptr);
     Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[varprefix]s", CreateFFVideoSource, nullptr);
     Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[varprefix]s", CreateFFAudioSource, nullptr);
 

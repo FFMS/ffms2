@@ -43,7 +43,6 @@ bool WriteTC = false;
 bool WriteKF = false;
 std::string InputFile;
 std::string CacheFile;
-std::string AudioFile;
 
 struct Error {
     std::string msg;
@@ -66,7 +65,6 @@ void PrintUsage() {
         "-c        Write timecodes for all video tracks to outputfile_track00.tc.txt (default: no)\n"
         "-k        Write keyframes for all video tracks to outputfile_track00.kf.txt (default: no)\n"
         "-t N      Set the audio indexing mask to N (-1 means index all tracks, 0 means index none, default: 0)\n"
-        "-a NAME   Set the audio output base filename to NAME (default: input filename)\n"
         "-s N      Set audio decoding error handling. See the documentation for details. (default: 0)\n"
         << std::endl;
 }
@@ -88,8 +86,6 @@ void ParseCMDLine(int argc, const char *argv[]) {
             WriteKF = true;
         } else if (!strcmp(Option, "-t")) {
             OPTION_ARG(IndexMask, "t", std::stoll);
-        } else if (!strcmp(Option, "-a")) {
-            OPTION_ARG(AudioFile, "a", );
         } else if (!strcmp(Option, "-s")) {
             OPTION_ARG(IgnoreErrors, "s", std::stoi);
         } else if (InputFile.empty()) {
@@ -110,7 +106,6 @@ void ParseCMDLine(int argc, const char *argv[]) {
         CacheFile = InputFile;
         CacheFile.append(".ffindex");
     }
-    AudioFile.append("%s.%02d.w64");
 }
 
 int FFMS_CC UpdateProgress(int64_t Current, int64_t Total, void *Private) {
@@ -129,10 +124,6 @@ int FFMS_CC UpdateProgress(int64_t Current, int64_t Total, void *Private) {
     std::cout << "Indexing, please wait... " << Percentage << "% \r" << std::flush;
 
     return 0;
-}
-
-int FFMS_CC GenAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *, char *FileName, int FNSize, void *) {
-    return snprintf(FileName, FileName ? FNSize : 0, AudioFile.c_str(), SourceFile, Track) + 1;
 }
 
 std::string DumpFilename(FFMS_Track *Track, int TrackNum, const char *Suffix) {
@@ -164,7 +155,6 @@ void DoIndexing() {
     if (Indexer == nullptr)
         throw Error("\nFailed to initialize indexing: ", E);
 
-    FFMS_SetAudioNameCallback(Indexer, GenAudioFilename, nullptr);
     FFMS_SetProgressCallback(Indexer, UpdateProgress, &Progress);
 
     // Treat -1 as meaning track numbers above sizeof(long long) * 8 too, dumping implies indexing
@@ -270,7 +260,7 @@ int main(int argc, const char *argv[]) {
         return 1;
     }
 
-    FFMS_Init(0, 1);
+    FFMS_Init(0, 0);
 
     switch (Verbose) {
     case 0: FFMS_SetLogLevel(FFMS_LOG_QUIET); break;

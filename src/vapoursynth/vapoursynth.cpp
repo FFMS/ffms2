@@ -29,7 +29,7 @@
 #include <set>
 
 static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, const VSAPI *vsapi) {
-    FFMS_Init(0, 1);
+    FFMS_Init(0, 0);
 
     char ErrorMsg[1024];
     FFMS_ErrorInfo E;
@@ -38,7 +38,6 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
     int err;
 
     std::set<int> IndexTracks;
-    std::set<int> DumpTracks;
 
     const char *Source = vsapi->propGetData(in, "source", 0, nullptr);
     const char *CacheFile = vsapi->propGetData(in, "cachefile", 0, &err);
@@ -52,19 +51,6 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
         }
     }
 
-    int NumDumpTracks = vsapi->propNumElements(in, "dumptracks");
-    bool DumpAllTracks = (NumDumpTracks == 1) && (int64ToIntS(vsapi->propGetInt(in, "dumptracks", 0, nullptr)) == -1);
-    if (!DumpAllTracks) {
-        for (int i = 0; i < NumDumpTracks; i++) {
-            int Track = int64ToIntS(vsapi->propGetInt(in, "dumptracks", i, nullptr));
-            IndexTracks.insert(Track);
-            DumpTracks.insert(Track);
-        }
-    }
-
-    const char *AudioFile = vsapi->propGetData(in, "audiofile", 0, &err);
-    if (err)
-        AudioFile = "%sourcefile%.%trackzn%.w64";
     int ErrorHandling = int64ToIntS(vsapi->propGetInt(in, "errorhandling", 0, &err));
     if (err)
         ErrorHandling = FFMS_IEH_IGNORE;
@@ -76,9 +62,6 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
         CacheFile = DefaultCache.c_str();
     }
 
-    if (!AudioFile || !strcmp(AudioFile, ""))
-        return vsapi->setError(out, "Index: Specifying an empty audio filename is not allowed");
-
     FFMS_Index *Index = FFMS_ReadIndex(CacheFile, &E);
     if (OverWrite || !Index || (Index && FFMS_IndexBelongsToFile(Index, Source, nullptr) != FFMS_ERROR_SUCCESS)) {
         FFMS_Indexer *Indexer = FFMS_CreateIndexer(Source, &E);
@@ -87,17 +70,11 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
             return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
         }
 
-        FFMS_SetAudioNameCallback(Indexer, FFMS_DefaultAudioFilename, (void *)AudioFile);
-
-        if (DumpAllTracks) {
-            FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 1);
-        } else if (IndexAllTracks) {
+        if (IndexAllTracks) {
             FFMS_TrackTypeIndexSettings(Indexer, FFMS_TYPE_AUDIO, 1, 0);
-            for (int i : DumpTracks)
-                FFMS_TrackIndexSettings(Indexer, i, 1, 1);
         } else {
             for (int i : IndexTracks)
-                FFMS_TrackIndexSettings(Indexer, i, 1, static_cast<int>(DumpTracks.count(i)));
+                FFMS_TrackIndexSettings(Indexer, i, 1, 0);
         }
 
         if (!(Index = FFMS_DoIndexing2(Indexer, ErrorHandling, &E)))
@@ -118,7 +95,7 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
 }
 
 static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core, const VSAPI *vsapi) {
-    FFMS_Init(0, 1);
+    FFMS_Init(0, 0);
 
     char ErrorMsg[1024];
     FFMS_ErrorInfo E;
@@ -252,7 +229,7 @@ static void VS_CC GetVersion(const VSMap *, VSMap *out, void *, VSCore *, const 
 
 VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin *plugin) {
     configFunc("com.vapoursynth.ffms2", "ffms2", "FFmpegSource 2 for VapourSynth", VAPOURSYNTH_API_VERSION, 1, plugin);
-    registerFunc("Index", "source:data;cachefile:data:opt;indextracks:int[]:opt;audiofile:data:opt;errorhandling:int:opt;overwrite:int:opt;", CreateIndex, nullptr, plugin);
+    registerFunc("Index", "source:data;cachefile:data:opt;indextracks:int[]:opt;errorhandling:int:opt;overwrite:int:opt;", CreateIndex, nullptr, plugin);
     registerFunc("Source", "source:data;track:int:opt;cache:int:opt;cachefile:data:opt;fpsnum:int:opt;fpsden:int:opt;threads:int:opt;timecodes:data:opt;seekmode:int:opt;width:int:opt;height:int:opt;resizer:data:opt;format:int:opt;alpha:int:opt;", CreateSource, nullptr, plugin);
     registerFunc("GetLogLevel", "", GetLogLevel, nullptr, plugin);
     registerFunc("SetLogLevel", "level:int;", SetLogLevel, nullptr, plugin);
