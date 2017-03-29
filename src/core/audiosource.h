@@ -142,7 +142,7 @@ public:
     std::unique_ptr<FFMS_ResampleOptions> CreateResampleOptions() const;
     void SetOutputFormat(FFMS_ResampleOptions const& opt);
 
-    static size_t FFMS_AudioSource::GetSeekablePacketNumber(FFMS_Track const& Frames, size_t PacketNumber);
+    static size_t GetSeekablePacketNumber(FFMS_Track const& Frames, size_t PacketNumber);
 };
 
 #endif

@@ -54,7 +54,7 @@ namespace {
 }
 
 FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track, int DelayMode)
-    : TrackNumber(Track), SourceFile(SourceFile), LastValidTS(ffms_av_nopts_value), ResampleContext{ swr_alloc() } {
+    : LastValidTS(ffms_av_nopts_value), SourceFile(SourceFile), ResampleContext{ swr_alloc() }, TrackNumber(Track) {
     try {
         if (Track < 0 || Track >= static_cast<int>(Index.size()))
             throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
