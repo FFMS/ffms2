@@ -209,17 +209,17 @@ void FFMS_Indexer::SetIndexTrackType(int TrackType, bool Index) {
     }
 }
 
-void FFMS_Indexer::SetErrorHandling(int ErrorHandling) {
-    if (ErrorHandling != FFMS_IEH_ABORT && ErrorHandling != FFMS_IEH_CLEAR_TRACK &&
-        ErrorHandling != FFMS_IEH_STOP_TRACK && ErrorHandling != FFMS_IEH_IGNORE)
+void FFMS_Indexer::SetErrorHandling(int ErrorHandling_) {
+    if (ErrorHandling_ != FFMS_IEH_ABORT && ErrorHandling_ != FFMS_IEH_CLEAR_TRACK &&
+        ErrorHandling_ != FFMS_IEH_STOP_TRACK && ErrorHandling_ != FFMS_IEH_IGNORE)
         throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_INVALID_ARGUMENT,
             "Invalid error handling mode specified");
-    this->ErrorHandling = ErrorHandling;
+    ErrorHandling = ErrorHandling_;
 }
 
-void FFMS_Indexer::SetProgressCallback(TIndexCallback IC, void *ICPrivate) {
-    this->IC = IC;
-    this->ICPrivate = ICPrivate;
+void FFMS_Indexer::SetProgressCallback(TIndexCallback IC_, void *ICPrivate_) {
+    IC = IC_;
+    ICPrivate = ICPrivate_;
 }
 
 FFMS_Indexer *CreateIndexer(const char *Filename) {
@@ -360,7 +360,7 @@ int FFMS_Indexer::GetNumberOfTracks() {
 }
 
 const char *FFMS_Indexer::GetFormatName() {
-    return this->FormatContext->iformat->name;
+    return FormatContext->iformat->name;
 }
 
 FFMS_TrackType FFMS_Indexer::GetTrackType(int Track) {

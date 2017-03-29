@@ -57,7 +57,8 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
                 FFMS_TrackIndexSettings(Indexer, i, 1, 0);
         }
 
-        if (!(Index = FFMS_DoIndexing2(Indexer, ErrorHandling, &E)))
+        Index = FFMS_DoIndexing2(Indexer, ErrorHandling, &E);
+        if (!Index)
             Env->ThrowError("FFIndex: %s", E.Buffer);
         if (FFMS_WriteIndex(CacheFile, Index, &E)) {
             FFMS_DestroyIndex(Index);

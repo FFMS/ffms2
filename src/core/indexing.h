@@ -91,8 +91,8 @@ public:
 
     void SetIndexTrack(int Track, bool Index);
     void SetIndexTrackType(int TrackType, bool Index);
-    void SetErrorHandling(int ErrorHandling);
-    void SetProgressCallback(TIndexCallback IC, void *ICPrivate);
+    void SetErrorHandling(int ErrorHandling_);
+    void SetProgressCallback(TIndexCallback IC_, void *ICPrivate_);
 
     FFMS_Index *DoIndexing();
     int GetNumberOfTracks();

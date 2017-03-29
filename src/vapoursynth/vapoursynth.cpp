@@ -77,7 +77,8 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
                 FFMS_TrackIndexSettings(Indexer, i, 1, 0);
         }
 
-        if (!(Index = FFMS_DoIndexing2(Indexer, ErrorHandling, &E)))
+        Index = FFMS_DoIndexing2(Indexer, ErrorHandling, &E);
+        if (!Index)
             return vsapi->setError(out, (std::string("Index: ") + E.Buffer).c_str());
         if (FFMS_WriteIndex(CacheFile, Index, &E)) {
             FFMS_DestroyIndex(Index);
