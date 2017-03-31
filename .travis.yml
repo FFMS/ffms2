@@ -21,7 +21,7 @@ install:
   - sudo make install
   - cd ..
 script:
-  - ./configure --enable-static --disable-shared || cat config.log
+  - ./autogen.sh --enable-static --disable-shared || cat config.log
   - make V=1 CXXFLAGS='-Werror -Wno-error=deprecated-declarations' -j2 -k
 notifications:
   email:
