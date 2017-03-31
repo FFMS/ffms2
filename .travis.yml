@@ -6,7 +6,6 @@ compiler:
   - clang
 env:
   - FFMPEG=git://git.videolan.org/ffmpeg.git
-  - FFMPEG=git://git.libav.org/libav.git
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -qq
