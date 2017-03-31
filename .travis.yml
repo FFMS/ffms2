@@ -1,19 +1,33 @@
 language: cpp
 dist: trusty
 sudo: required
-compiler:
-  - gcc
-  - clang
-env:
-  - FFMPEG=git://git.videolan.org/ffmpeg.git
-before_install:
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq gcc-6 g++-6
-  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
+
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - g++-6
+            - yasm
+      before_install:
+        - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-4.0
+          packages:
+            - clang-4.0
+            - yasm
+      before_install:
+        - sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-4.0 60 --slave /usr/bin/clang++ clang++ /usr/bin/clang++-4.0
+
 install:
-  - sudo apt-get install yasm
-  - git clone $FFMPEG --depth=1 ffmpeg
+  - git clone git://git.videolan.org/ffmpeg.git --depth=1 ffmpeg
   - cd ffmpeg
   - ./configure --disable-avfilter --disable-devices --disable-doc --disable-encoders --disable-filters --disable-hwaccels --disable-muxers --disable-network
   - make -j2
