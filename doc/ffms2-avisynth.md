@@ -65,12 +65,11 @@ If you want a progress report on the indexing, you can use the supplied `ffmsind
 ### FFIndex
 ```
 FFIndex(string source, string cachefile = source + ".ffindex", int indexmask = -1,
-    int dumpmask = 0, string audiofile = "%sourcefile%.%trackzn%.w64", int errorhandling = 3,
-    bool overwrite = false, bool utf8 = false)
+    int errorhandling = 3, bool overwrite = false)
 ```
 Indexes a number of tracks in a given source file and writes the index file to disk, where it can be picked up and used by `FFVideoSource` or `FFAudioSource`.
 Normally you do not need to call this function manually; it's invoked automatically if necessary by `FFVideoSource`/`FFAudioSource`.
-It does, however, give you more control over how indexing is done and it can also dump audio tracks to WAVE64 files while indexing is in progress.
+It does, however, give you more control over how indexing is done.
 
 Note that this function returns an integer, not a clip (since it doesn't open video, nor audio).
 The return value isn't particularly interesting, but for the record it's 0 if the index file already exists (and is valid) and overwrite was not enabled, 1 if the index file was created and no previous index existed, and 2 if the index file was created by overwriting an existing, valid index file.
@@ -94,23 +93,6 @@ Since the mask works like it does, and FFMS2 is designed to run on a machine tha
 
 Note that FFMS2's idea about what track has what number may be completely different from what any other application might think, and that track numbering starts from 1.
 
-##### int dumpmask = 0
-The same as indexmask, but the tracks flagged by this mask are dumped to disk as decompressed Wave64 files.
-This mask overrides indexmask if set to nonzero (more specifically, they are bitwise OR'ed together), since dumping a track indexes it at the same time.
-
-##### string audiofile = "%sourcefile%.%trackzn%.w64"
-A string representing a filename template that determines where the audio tracks set to be dumped by the `dumpmask` will be written.
-You can use a number of variables here; make sure you include a track number variable if you're dumping multiple tracks, or you'll get really weird results when FFMS2 tries to write multiple tracks to the same file.
-Available variables:
-
- - **%sourcefile%**: same as the source argument, i.e. the file the audio is decoded from
- - **%trackn%**: the track number
- - **%trackzn%**: the track number, zero padded to two digits
- - **%samplerate%**: sample rate in Hertz
- - **%channels%**: number of channels
- - **%bps%**: bits per sample
- - **%delay%**: delay, or more exactly the first timestamp encountered in the audio stream
-
 ##### int errorhandling = 3
 Controls what happens if an audio decoding error is encountered during indexing.
 Possible values are:
@@ -124,23 +106,13 @@ Possible values are:
 If set to true, `FFIndex()` will reindex the source file and overwrite the index file even if the index file already exists and is valid.
 Mostly useful for trackmask changes and testing.
 
-##### bool utf8 = false
-If set to true, FFMS will assume that the .avs script is encoded as UTF-8 and therefore interpret all filenames as UTF-8 encoded strings.
-This makes it possible to open files with funny filenames that otherwise would not be openable.
-You only need to set this parameter on the first FFMS2 function you call in a script; subsequent uses will have no further effect.
-
-**NOTE:** You must make sure you save the file without a BOM (byte-order marker) or Avisynth will refuse to open it.
-Notepad will write a BOM, so use something else.
-
-You should also note that setting this parameter incorrectly will cause all file openings to fail unless your filenames are exclusively 7-bit ASCII compatible.
-
 ### FFVideoSource
 ```
 FFVideoSource(string source, int track = -1, bool cache = true,
     string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1,
     int threads = -1, string timecodes = "", int seekmode = 1, int rffmode = 0,
     int width = -1, int height = -1, string resizer = "BICUBIC",
-    string colorspace = "", bool utf8 = false, string varprefix = "")
+    string colorspace = "", string varprefix = "")
 ```
 Opens video. Will invoke indexing of all video tracks (but no audio tracks) if no valid index file is found.
 
@@ -227,9 +199,6 @@ They can also be referred to with the more systematic names of `YUVsssPx`, `YUVA
 Examples: `YUV420P8`, `RGBAP16`, `Y16`
 Setting this to an empty string (the default) means keeping the same colorspace as the input or in case it's not supported it'll be converted to the closest existing match.
 
-##### bool utf8 = false
-Does the same thing as in `FFIndex()`; see that function for details.
-
 ##### string varprefix = ""
 A string that is added as a prefix to all exported Avisynth variables.
 This makes it possible to differentiate between variables from different clips.
@@ -238,7 +207,7 @@ For convenience the last used FFMS function in a script sets the global variable
 ### FFAudioSource
 ```
 FFAudioSource(string source, int track = -1, bool cache = true,
-    string cachefile = source + ".ffindex", int adjustdelay = -1, bool utf8 = false,
+    string cachefile = source + ".ffindex", int adjustdelay = -1,
 string varprefix = "")
 ```
 Opens audio.
@@ -267,7 +236,7 @@ FFmpegSource2/FFMS2(string source, int vtrack = -1, int atrack = -2, bool cache 
     int threads = -1, string timecodes = "", int seekmode = 1,
     bool overwrite = false, int width = -1, int height = -1,
     string resizer = "BICUBIC", string colorspace = "", int rffmode = 0,
-    int adjustdelay = -1, bool utf8 = false, string varprefix = "")
+    int adjustdelay = -1, string varprefix = "")
 ```
 A convenience function that combines the functionality of `FFVideoSource` and `FFAudioSource`.
 The arguments do the same thing as in `FFVideoSource` and `FFAudioSource`; see those functions for details.
@@ -278,7 +247,7 @@ The arguments do the same thing as in `FFVideoSource` and `FFAudioSource`; see t
 ### FFImageSource
 ```
 FFImageSource(string source, int width = -1, int height = -1,
-    string resizer = "BICUBIC", string colorspace = "", bool utf8 = false)
+    string resizer = "BICUBIC", string colorspace = "")
 ```
 A convenience alias for `FFVideoSource`, with the options set optimally for using it as an image reader.
 Disables caching and seeking for maximum compatiblity.
