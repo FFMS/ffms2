@@ -1,6 +1,7 @@
 # FFmpegSource2 Changelog
 
 - 2.2000
+  - Added mastering display metadata output (Myrsloik)
   - VapourSynth source now defaults to not outputting alpha (Myrsloik)
   - Removed the now unused demuxer, dumpmask, audiofile and utf8 arguments from the source filters (Myrsloik)
   - Removed ability to dump audio tracks (Myrsloik)

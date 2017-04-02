@@ -19,10 +19,8 @@
 //  THE SOFTWARE.
 
 #include "videosource.h"
-
 #include "indexing.h"
 #include "videoutils.h"
-
 #include <algorithm>
 #include <thread>
 
@@ -87,6 +85,26 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
     LocalFrame.ColorPrimaries = (OutputColorPrimaries >= 0) ? OutputColorPrimaries : CodecContext->color_primaries;
     LocalFrame.TransferCharateristics = (OutputTransferCharateristics >= 0) ? OutputTransferCharateristics : CodecContext->color_trc;
     LocalFrame.ChromaLocation = (OutputChromaLocation >= 0) ? OutputChromaLocation : CodecContext->chroma_sample_location;
+    LocalFrame.HasMDMDisplayPrimaries = 0;
+    LocalFrame.HasMDMMinMaxLuminance = 0;
+    const AVFrameSideData *MDMSide = av_frame_get_side_data(Frame, AV_FRAME_DATA_MASTERING_DISPLAY_METADATA);
+    if (MDMSide) {
+        const AVMasteringDisplayMetadata *MDMData = reinterpret_cast<const AVMasteringDisplayMetadata *>(MDMSide->data);
+        if (MDMData->has_primaries) {
+            LocalFrame.HasMDMDisplayPrimaries = MDMData->has_primaries;
+            for (int i = 0; i < 3; i++) {
+                LocalFrame.MDMDisplayPrimariesX[i] = av_q2d(MDMData->display_primaries[i][0]);
+                LocalFrame.MDMDisplayPrimariesY[i] = av_q2d(MDMData->display_primaries[i][1]);
+            }
+            LocalFrame.MDMWhitePointX = av_q2d(MDMData->white_point[0]);
+            LocalFrame.MDMWhitePointY = av_q2d(MDMData->white_point[1]);
+        }
+        if (MDMData->has_luminance) {
+            LocalFrame.HasMDMMinMaxLuminance = MDMData->has_luminance;
+            LocalFrame.MDMMinLuminance = av_q2d(MDMData->min_luminance);
+            LocalFrame.MDMMaxLuminance = av_q2d(MDMData->max_luminance);
+        }
+    }
 
     LastFrameHeight = CodecContext->height;
     LastFrameWidth = CodecContext->width;
@@ -120,7 +138,6 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         VideoTrack = Track;
 
         if (Threads < 1)
-            // libav current has issues with greater than 16 threads
             DecodingThreads = (std::min)(std::thread::hardware_concurrency(), 16u);
         else
             DecodingThreads = Threads;
