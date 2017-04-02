@@ -176,6 +176,18 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
             FieldBased = (Frame->TopFieldFirst ? 2 : 1);
         vsapi->propSetInt(Props, "_FieldBased", FieldBased, paReplace);
 
+        if (Frame->HasMDMDisplayPrimaries) {
+            vsapi->propSetFloatArray(Props, "MDMDisplayPrimariesX", Frame->MDMDisplayPrimariesX, 3);
+            vsapi->propSetFloatArray(Props, "MDMDisplayPrimariesY", Frame->MDMDisplayPrimariesY, 3);
+            vsapi->propSetFloat(Props, "MDMWhitePointX", Frame->MDMWhitePointX, paReplace);
+            vsapi->propSetFloat(Props, "MDMWhitePointY", Frame->MDMWhitePointY, paReplace);
+        }
+
+        if (Frame->HasMDMMinMaxLuminance) {
+            vsapi->propSetFloat(Props, "MDMMinLuminance", Frame->MDMMinLuminance, paReplace);
+            vsapi->propSetFloat(Props, "MDMMaxLuminance", Frame->MDMMaxLuminance, paReplace);
+        }
+
         if (OutputIndex == 0)
             OutputFrame(Frame, Dst, vsapi);
         else
