@@ -1,22 +1,22 @@
-//  Copyright (c) 2012-2015 Fredrik Mellbin
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a copy
-//  of this software and associated documentation files (the "Software"), to deal
-//  in the Software without restriction, including without limitation the rights
-//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//  copies of the Software, and to permit persons to whom the Software is
-//  furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-//  THE SOFTWARE.
+/*
+* Copyright (c) 2012-2016 Fredrik Mellbin
+*
+* This file is part of VapourSynth.
+*
+* VapourSynth is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 2.1 of the License, or (at your option) any later version.
+*
+* VapourSynth is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with VapourSynth; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+*/
 
 #ifndef VAPOURSYNTH_H
 #define VAPOURSYNTH_H
@@ -24,7 +24,7 @@
 #include <stdint.h>
 
 #define VAPOURSYNTH_API_MAJOR 3
-#define VAPOURSYNTH_API_MINOR 3
+#define VAPOURSYNTH_API_MINOR 4
 #define VAPOURSYNTH_API_VERSION ((VAPOURSYNTH_API_MAJOR << 16) | (VAPOURSYNTH_API_MINOR))
 
 /* Convenience for C++ users. */
@@ -156,7 +156,7 @@ typedef struct VSFormat {
 typedef enum VSNodeFlags {
     nfNoCache    = 1,
     nfIsCache    = 2,
-    nfMakeLinear = 4
+    nfMakeLinear = 4 /* api 3.3 */
 } VSNodeFlags;
 
 typedef enum VSPropTypes {
@@ -196,7 +196,7 @@ typedef struct VSVideoInfo {
     int64_t fpsDen;
     int width;
     int height;
-    int numFrames;
+    int numFrames; /* api 3.2 - no longer allowed to be 0 */
     int flags;
 } VSVideoInfo;
 
@@ -276,7 +276,7 @@ struct VSAPI {
     VSFuncRef *(VS_CC *createFunc)(VSPublicFunction func, void *userData, VSFreeFuncData free, VSCore *core, const VSAPI *vsapi) VS_NOEXCEPT;
     void (VS_CC *callFunc)(VSFuncRef *func, const VSMap *in, VSMap *out, VSCore *core, const VSAPI *vsapi) VS_NOEXCEPT; /* core and vsapi arguments are completely ignored, they only remain to preserve ABI */
 
-                                                                                                                        /* property access functions */
+    /* property access functions */
     VSMap *(VS_CC *createMap)(void) VS_NOEXCEPT;
     void (VS_CC *freeMap)(VSMap *map) VS_NOEXCEPT;
     void (VS_CC *clearMap)(VSMap *map) VS_NOEXCEPT;
@@ -310,8 +310,7 @@ struct VSAPI {
     int (VS_CC *propSetFrame)(VSMap *map, const char *key, const VSFrameRef *f, int append) VS_NOEXCEPT;
     int (VS_CC *propSetFunc)(VSMap *map, const char *key, VSFuncRef *func, int append) VS_NOEXCEPT;
 
-    /* mixed functions added after API R3.0 */
-    int64_t(VS_CC *setMaxCacheSize)(int64_t bytes, VSCore *core) VS_NOEXCEPT;
+    int64_t (VS_CC *setMaxCacheSize)(int64_t bytes, VSCore *core) VS_NOEXCEPT;
     int (VS_CC *getOutputIndex)(VSFrameContext *frameCtx) VS_NOEXCEPT;
     VSFrameRef *(VS_CC *newVideoFrame2)(const VSFormat *format, int width, int height, const VSFrameRef **planeSrc, const int *planes, const VSFrameRef *propSrc, VSCore *core) VS_NOEXCEPT;
     void (VS_CC *setMessageHandler)(VSMessageHandler handler, void *userData) VS_NOEXCEPT;
@@ -319,11 +318,15 @@ struct VSAPI {
 
     const char *(VS_CC *getPluginPath)(const VSPlugin *plugin) VS_NOEXCEPT;
 
+    /* api 3.1 */
     const int64_t *(VS_CC *propGetIntArray)(const VSMap *map, const char *key, int *error) VS_NOEXCEPT;
     const double *(VS_CC *propGetFloatArray)(const VSMap *map, const char *key, int *error) VS_NOEXCEPT;
 
     int (VS_CC *propSetIntArray)(VSMap *map, const char *key, const int64_t *i, int size) VS_NOEXCEPT;
     int (VS_CC *propSetFloatArray)(VSMap *map, const char *key, const double *d, int size) VS_NOEXCEPT;
+
+    /* api 3.4 */
+    void (VS_CC *logMessage)(int msgType, const char *msg) VS_NOEXCEPT;
 };
 
 VS_API(const VSAPI *) getVapourSynthAPI(int version) VS_NOEXCEPT;
