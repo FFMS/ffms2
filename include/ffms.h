@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2015 Fredrik Mellbin
+//  Copyright (c) 2007-2017 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -131,6 +131,7 @@ typedef enum FFMS_Errors {
     FFMS_ERROR_USER					// problem exists between keyboard and chair
 } FFMS_Errors;
 
+/* deprecated */
 typedef enum FFMS_Sources {
     FFMS_SOURCE_DEFAULT = 0x00,
     FFMS_SOURCE_LAVF = 0x01,
@@ -139,6 +140,7 @@ typedef enum FFMS_Sources {
     FFMS_SOURCE_HAALIOGG = 0x08
 } FFMS_Sources;
 
+/* deprecated */
 typedef enum FFMS_CPUFeatures {
     FFMS_CPU_CAPS_MMX = 0x01,
     FFMS_CPU_CAPS_MMX2 = 0x02,
@@ -233,7 +235,11 @@ typedef enum FFMS_ColorPrimaries {
     FFMS_PRI_SMPTE170M = 6,
     FFMS_PRI_SMPTE240M = 7,
     FFMS_PRI_FILM = 8,
-    FFMS_PRI_BT2020 = 9
+    FFMS_PRI_BT2020 = 9,
+    FFMS_PRI_SMPTE428 = 10,
+    FFMS_PRI_SMPTE431 = 11,
+    FFMS_PRI_SMPTE432 = 12,
+    FFMS_PRI_JEDEC_P22 = 22
 } FFMS_ColorPrimaries;
 
 typedef enum FFMS_TransferCharacteristic {
@@ -252,7 +258,10 @@ typedef enum FFMS_TransferCharacteristic {
     FFMS_TRC_BT1361_ECG = 12,
     FFMS_TRC_IEC61966_2_1 = 13,
     FFMS_TRC_BT2020_10 = 14,
-    FFMS_TRC_BT2020_12 = 15
+    FFMS_TRC_BT2020_12 = 15,
+    FFMS_TRC_SMPTE2084 = 16,
+    FFMS_TRC_SMPTE428 = 17,
+    FFMS_TRC_ARIB_STD_B67 = 18
 } FFMS_TransferCharacteristic;
 
 typedef enum FFMS_ColorSpaces {
@@ -265,7 +274,8 @@ typedef enum FFMS_ColorSpaces {
     FFMS_CS_SMPTE240M = 7,
     FFMS_CS_YCOCG = 8,
     FFMS_CS_BT2020_NCL = 9,
-    FFMS_CS_BT2020_CL = 10
+    FFMS_CS_BT2020_CL = 10,
+    FFMS_CS_SMPTE2085 = 11
 } FFMS_ColorSpaces;
 
 typedef enum FFMS_ColorRanges {
@@ -298,12 +308,16 @@ typedef enum FFMS_MixingCoefficientType {
 typedef enum FFMS_MatrixEncoding {
     FFMS_MATRIX_ENCODING_NONE = 0,
     FFMS_MATRIX_ENCODING_DOBLY = 1,
-    FFMS_MATRIX_ENCODING_PRO_LOGIC_II = 2
+    FFMS_MATRIX_ENCODING_PRO_LOGIC_II = 2,
+    FFMS_MATRIX_ENCODING_PRO_LOGIC_IIX = 3,
+    FFMS_MATRIX_ENCODING_PRO_LOGIC_IIZ = 4,
+    FFMS_MATRIX_ENCODING_DOLBY_EX = 5,
+    FFMS_MATRIX_ENCODING_DOLBY_HEADPHONE = 6
 } FFMS_MatrixEncoding;
 
 typedef enum FFMS_ResampleFilterType {
     FFMS_RESAMPLE_FILTER_CUBIC = 0,
-    FFMS_RESAMPLE_FILTER_SINC = 1,
+    FFMS_RESAMPLE_FILTER_SINC = 1, /* misnamed as multiple windowsed sinc filters exist, actually called BLACKMAN_NUTTALL */
     FFMS_RESAMPLE_FILTER_KAISER = 2
 } FFMS_ResampleFilterType;
 
@@ -368,6 +382,15 @@ typedef struct FFMS_Frame {
     int ColorPrimaries;
     int TransferCharateristics;
     int ChromaLocation;
+    /* Introduced in FFMS_VERSION ((2 << 24) | (24 << 16) | (0 << 8) | 0) */
+    int HasMDMDisplayPrimaries;  /* Non-zero if the 4 fields below are valid */
+    double MDMDisplayPrimariesX[3];
+    double MDMDisplayPrimariesY[3];
+    double MDMWhitePointX;
+    double MDMWhitePointY;
+    int HasMDMMinMaxLuminance; /* Non-zero if the 2 fields below are valid */
+    double MDMMinLuminance;
+    double MDMMaxLuminance;
 } FFMS_Frame;
 
 typedef struct FFMS_TrackTimeBase {
