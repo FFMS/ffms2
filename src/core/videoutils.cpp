@@ -36,7 +36,11 @@ SwsContext *GetSwsContext(int SrcW, int SrcH, AVPixelFormat SrcFormat, int SrcCo
 
     // 0 = limited range, 1 = full range
     int SrcRange = SrcColorRange == AVCOL_RANGE_JPEG;
+    if (SrcColorRange == AVCOL_RANGE_UNSPECIFIED)
+        SrcRange = (GuessCSType(SrcFormat) != cYUV);
     int DstRange = DstColorRange == AVCOL_RANGE_JPEG;
+    if (DstColorRange == AVCOL_RANGE_UNSPECIFIED)
+        DstRange = (GuessCSType(DstFormat) != cYUV);
 
     av_opt_set_int(Context, "sws_flags", Flags, 0);
     av_opt_set_int(Context, "srcw", SrcW, 0);

@@ -304,8 +304,6 @@ void FFMS_VideoSource::DetectInputFormat() {
         InputColorRange = RangeFromFormat;
     if (InputColorRange == AVCOL_RANGE_UNSPECIFIED)
         InputColorRange = CodecContext->color_range;
-    if (InputColorRange == AVCOL_RANGE_UNSPECIFIED)
-        InputColorRange = AVCOL_RANGE_MPEG;
 
     if (InputColorSpace == AVCOL_SPC_UNSPECIFIED)
         InputColorSpace = CodecContext->colorspace;
