@@ -247,3 +247,17 @@ void ParseVP8(const uint8_t Buf, bool *Invisible, int *PictType) {
     *PictType = (Buf & 0x01) ? AV_PICTURE_TYPE_P : AV_PICTURE_TYPE_I;
     *Invisible = (*Invisible || !(Buf & 0x10));
 }
+
+void ParseVP9(const uint8_t Buf, bool *Invisible, int *PictType)
+{
+    int profile = ((Buf & 0x20) >> 5) | ((Buf & 0x10) >> 3);
+    int shift = (profile == 3);
+
+    if (Buf & (0x8 >> shift)) {
+        *Invisible = true;
+        *PictType = AV_PICTURE_TYPE_P;
+    } else {
+        *PictType = (Buf & (0x4 >> shift)) ? AV_PICTURE_TYPE_I : AV_PICTURE_TYPE_P;
+        *Invisible = !(Buf & (0x2 >> shift));
+    }
+}
