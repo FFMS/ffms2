@@ -470,7 +470,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
             if (PTS == ffms_av_nopts_value) {
                 if (Packet.duration == 0)
                     throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
-                        "Invalid initial pts, dts, and duration");
+                        "Invalid packet pts, dts, and duration");
 
                 if (TrackInfo.empty())
                     PTS = 0;
