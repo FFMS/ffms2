@@ -250,7 +250,7 @@ void FFMS_Track::FillAudioGaps() {
     // so we only want to trust them if they're all present, monotonically
     // increasing, and result in a total duration meaningfully longer than the
     // samples we have would cover.
-    if (size() < 2 || !HasTS || front().PTS == ffms_av_nopts_value || back().PTS == ffms_av_nopts_value)
+    if (size() < 2 || !HasTS || front().PTS == AV_NOPTS_VALUE || back().PTS == AV_NOPTS_VALUE)
         return;
 
     const auto DurationToSamples = [this](int64_t Dur) {
@@ -268,7 +268,7 @@ void FFMS_Track::FillAudioGaps() {
     // increase, as otherwise we can't trust them
     auto PrevPTS = front().PTS - 1;
     for (auto const& frame : *this) {
-        if (frame.PTS == ffms_av_nopts_value || frame.PTS <= PrevPTS)
+        if (frame.PTS == AV_NOPTS_VALUE || frame.PTS <= PrevPTS)
             return;
         PrevPTS = frame.PTS;
     }

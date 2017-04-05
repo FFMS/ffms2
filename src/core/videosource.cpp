@@ -617,13 +617,13 @@ FFMS_Frame *FFMS_VideoSource::GetFrame(int n) {
         else
             CodecContext->skip_frame = AVDISCARD_NONREF;
 
-        int64_t StartTime = ffms_av_nopts_value, FilePos = -1;
+        int64_t StartTime = AV_NOPTS_VALUE, FilePos = -1;
         DecodeNextFrame(StartTime, FilePos);
 
         if (!HasSeeked)
             continue;
 
-        if (StartTime == ffms_av_nopts_value && !Frames.HasTS) {
+        if (StartTime == AV_NOPTS_VALUE && !Frames.HasTS) {
             if (FilePos >= 0) {
                 CurrentFrame = Frames.FrameFromPos(FilePos);
                 if (CurrentFrame >= 0)

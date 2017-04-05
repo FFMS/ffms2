@@ -54,7 +54,7 @@ namespace {
 }
 
 FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track, int DelayMode)
-    : LastValidTS(ffms_av_nopts_value), SourceFile(SourceFile), ResampleContext{ swr_alloc() }, TrackNumber(Track) {
+    : LastValidTS(AV_NOPTS_VALUE), SourceFile(SourceFile), ResampleContext{ swr_alloc() }, TrackNumber(Track) {
     try {
         if (Track < 0 || Track >= static_cast<int>(Index.size()))
             throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
@@ -144,7 +144,7 @@ void FFMS_AudioSource::Init(const FFMS_Index &Index, int DelayMode) {
 
     if (Frames.HasTS) {
         int i = 0;
-        while (Frames[i].PTS == ffms_av_nopts_value) ++i;
+        while (Frames[i].PTS == AV_NOPTS_VALUE) ++i;
         Delay += Frames[i].PTS * Frames.TB.Num * AP.SampleRate / (Frames.TB.Den * 1000);
         for (; i > 0; --i)
             Delay -= Frames[i].SampleCount;
@@ -171,7 +171,7 @@ void FFMS_AudioSource::CacheBeginning() {
     // 10 for a bit of an extra buffer
     auto end = Cache.end();
     while (PacketNumber < Frames.size() &&
-        ((Frames[0].PTS != ffms_av_nopts_value && Frames[PacketNumber].PTS == Frames[0].PTS) ||
+        ((Frames[0].PTS != AV_NOPTS_VALUE && Frames[PacketNumber].PTS == Frames[0].PTS) ||
             Cache.size() < 10)) {
 
         // Vorbis in particular seems to like having 60+ packets at the start
@@ -495,7 +495,7 @@ int64_t FFMS_AudioSource::FrameTS(size_t Packet) const {
 
 void FFMS_AudioSource::Seek() {
     size_t TargetPacket = GetSeekablePacketNumber(Frames, PacketNumber);
-    LastValidTS = ffms_av_nopts_value;
+    LastValidTS = AV_NOPTS_VALUE;
 
     int Flags = Frames.HasTS ? AVSEEK_FLAG_BACKWARD : AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_BYTE;
 
@@ -515,14 +515,14 @@ bool FFMS_AudioSource::ReadPacket(AVPacket *Packet) {
     while (av_read_frame(FormatContext, Packet) >= 0) {
         if (Packet->stream_index == TrackNumber) {
             // Required because not all audio packets, especially in ogg, have a pts. Use the previous valid packet's pts instead.
-            if (Packet->pts == ffms_av_nopts_value)
+            if (Packet->pts == AV_NOPTS_VALUE)
                 Packet->pts = LastValidTS;
             else
                 LastValidTS = Packet->pts;
 
             // This only happens if a really shitty demuxer seeks to a packet without pts *hrm* ogg *hrm* so read until a valid pts is reached
             int64_t PacketTS = Frames.HasTS ? Packet->pts : Packet->pos;
-            if (PacketTS != ffms_av_nopts_value) {
+            if (PacketTS != AV_NOPTS_VALUE) {
                 while (PacketNumber > 0 && FrameTS(PacketNumber) > PacketTS) --PacketNumber;
                 while (FrameTS(PacketNumber) < PacketTS) ++PacketNumber;
                 return true;

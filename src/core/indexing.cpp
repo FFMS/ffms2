@@ -443,7 +443,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
 
     AVPacket Packet;
     InitNullPacket(Packet);
-    std::vector<int64_t> LastValidTS(FormatContext->nb_streams, ffms_av_nopts_value);
+    std::vector<int64_t> LastValidTS(FormatContext->nb_streams, AV_NOPTS_VALUE);
     std::vector<int> LastDuration(FormatContext->nb_streams, 0);
 
     int64_t filesize = avio_size(FormatContext->pb);
@@ -467,7 +467,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
 
         if (FormatContext->streams[Track]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             int64_t PTS = TrackInfo.UseDTS ? Packet.dts : Packet.pts;
-            if (PTS == ffms_av_nopts_value) {
+            if (PTS == AV_NOPTS_VALUE) {
                 if (Packet.duration == 0)
                     throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
                         "Invalid packet pts, dts, and duration");
@@ -492,7 +492,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
             // For video seeking timestamps are used only if all packets have
             // timestamps, while for audio they're used if any have timestamps,
             // as it's pretty common for only some packets to have timestamps
-            if (LastValidTS[Track] != ffms_av_nopts_value)
+            if (LastValidTS[Track] != AV_NOPTS_VALUE)
                 TrackInfo.HasTS = true;
 
             int64_t StartSample = AVContexts[Track].CurrentSample;
@@ -511,10 +511,10 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
 }
 
 void FFMS_Indexer::ReadTS(const AVPacket &Packet, int64_t &TS, bool &UseDTS) {
-    if (!UseDTS && Packet.pts != ffms_av_nopts_value)
+    if (!UseDTS && Packet.pts != AV_NOPTS_VALUE)
         TS = Packet.pts;
-    if (TS == ffms_av_nopts_value)
+    if (TS == AV_NOPTS_VALUE)
         UseDTS = true;
-    if (UseDTS && Packet.dts != ffms_av_nopts_value)
+    if (UseDTS && Packet.dts != AV_NOPTS_VALUE)
         TS = Packet.dts;
 }

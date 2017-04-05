@@ -40,8 +40,6 @@ extern "C" {
 #include <string>
 #include <vector>
 
-const int64_t ffms_av_nopts_value = AV_NOPTS_VALUE;
-
 class FFMS_Exception {
     std::string _Message;
     int _ErrorType;
