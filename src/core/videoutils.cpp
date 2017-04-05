@@ -254,7 +254,7 @@ void ParseVP9(const uint8_t Buf, bool *Invisible, int *PictType)
     int shift = (profile == 3);
 
     if (Buf & (0x8 >> shift)) {
-        *Invisible = true;
+        *Invisible = false;
         *PictType = AV_PICTURE_TYPE_P;
     } else {
         *PictType = (Buf & (0x4 >> shift)) ? AV_PICTURE_TYPE_P : AV_PICTURE_TYPE_I;
