@@ -468,7 +468,17 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
         if (FormatContext->streams[Track]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             int64_t PTS = TrackInfo.UseDTS ? Packet.dts : Packet.pts;
             if (PTS == AV_NOPTS_VALUE) {
-                if (Packet.duration == 0)
+                // VPx alt-refs are output as packets which lack timestmps or durations, since
+                // they are invisible. Currently, the timestamp mangling code in libavformat
+                // will sometimes add a bogus timestamp and duration, if the webm in question
+                // has the block duration set (which is a hack, and not really a frame duration
+                // at all). In the future, libav* will only output packets without timestamps
+                // or duration, so we need to handle it here, regardless. This does not handle
+                // NVOPs. We set the duration based on the last PTS, for these packets, because
+                // FFMS2 currently sorts packets by PTS, which will break decoding, otherwise.
+                bool HasAltRefs = (FormatContext->streams[Track]->codecpar->codec_id == AV_CODEC_ID_VP8 ||
+                                   FormatContext->streams[Track]->codecpar->codec_id == AV_CODEC_ID_VP9);
+                if (Packet.duration == 0 && !HasAltRefs)
                     throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
                         "Invalid packet pts, dts, and duration");
 
