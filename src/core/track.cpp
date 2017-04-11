@@ -36,6 +36,7 @@ namespace {
 FrameInfo ReadFrame(ZipFile &stream, FrameInfo const& prev, const FFMS_TrackType TT) {
     FrameInfo f{};
     f.PTS = stream.Read<int64_t>() + prev.PTS;
+    f.OriginalPTS = stream.Read<int64_t>() + prev.OriginalPTS;
     f.KeyFrame = !!stream.Read<int8_t>();
     f.FilePos = stream.Read<int64_t>() + prev.FilePos;
     f.Hidden = !!stream.Read<int8_t>();
@@ -52,6 +53,7 @@ FrameInfo ReadFrame(ZipFile &stream, FrameInfo const& prev, const FFMS_TrackType
 
 static void WriteFrame(ZipFile &stream, FrameInfo const& f, FrameInfo const& prev, const FFMS_TrackType TT) {
     stream.Write(f.PTS - prev.PTS);
+    stream.Write(f.OriginalPTS - prev.OriginalPTS);
     stream.Write<int8_t>(f.KeyFrame);
     stream.Write(f.FilePos - prev.FilePos);
     stream.Write<uint8_t>(f.Hidden);
@@ -70,11 +72,12 @@ FFMS_Track::FFMS_Track()
 {
 }
 
-FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS, bool HasTS)
+FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool HasTS, bool HasDiscontTS, bool UseDTS)
     : Data(std::make_shared<TrackData>())
     , TT(TT)
     , UseDTS(UseDTS)
-    , HasTS(HasTS) {
+    , HasTS(HasTS)
+    , HasDiscontTS(HasDiscontTS) {
     TB.Num = Num;
     TB.Den = Den;
 }
@@ -119,12 +122,12 @@ void FFMS_Track::Write(ZipFile &stream) const {
 }
 
 void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, bool Hidden) {
-    Data->Frames.push_back({ PTS, FilePos, 0, 0, 0, FrameType, RepeatPict, KeyFrame, Hidden });
+    Data->Frames.push_back({ PTS, 0, FilePos, 0, 0, 0, FrameType, RepeatPict, KeyFrame, Hidden });
 }
 
 void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos, bool Hidden) {
     if (SampleCount > 0) {
-        Data->Frames.push_back({ PTS, FilePos, SampleStart, SampleCount,
+        Data->Frames.push_back({ PTS, 0, FilePos, SampleStart, SampleCount,
             0, 0, 0, KeyFrame, Hidden });
     }
 }
@@ -309,12 +312,46 @@ void FFMS_Track::FinalizeTrack() {
     if (TT != FFMS_TYPE_VIDEO)
         return;
 
-    for (size_t i = 0; i < size(); i++)
+    for (size_t i = 0; i < size(); i++) {
         Frames[i].OriginalPos = i;
+        Frames[i].OriginalPTS = Frames[i].PTS;
+    }
 
     MaybeReorderFrames();
 
-    sort(Frames.begin(), Frames.end(), PTSComparison);
+    if (size() > 2 && HasDiscontTS) {
+        std::vector<size_t> secs = { 0 };
+
+        auto lastPTS = Frames[0].PTS;
+        const auto thresh = (Frames[1].PTS - Frames[0].PTS) * 16; // A bad approximation of 16 frames, the max reorder buffer size.
+        for (size_t i = 0; i < size(); i++) {
+            if (Frames[i].PTS < lastPTS && (lastPTS - Frames[i].PTS) > thresh && i + 1 < size()) {
+                secs.push_back(i);
+                i++; // Sections must be at least 2 frames long.
+            }
+            lastPTS = Frames[i].PTS;
+        }
+
+        // We need to sort each distinct sections by PTS to account for any reordering.
+        for (size_t i = 0; i < secs.size() - 1; i++)
+            sort(Frames.begin() + secs[i], Frames.begin() + secs[i + 1], PTSComparison);
+        sort(Frames.begin() + secs.back(), Frames.end(), PTSComparison);
+
+        // Try and make up some sane timestamps based on previous sections, while
+        // keeping the same frame durations.
+        for (size_t i = 1; i < secs.size(); i++) {
+            const auto shift = -(Frames[secs[i]].PTS) + (Frames[secs[i] + 1].PTS - Frames[secs[i]].PTS) + Frames[secs[i] - 1].PTS;
+            size_t end;
+            if (i == secs.size() - 1)
+                end = Frames.size();
+            else
+                end = secs[i + 1];
+            for (size_t j = secs[i]; j < end; j++)
+                Frames[j].PTS += shift;
+        }
+    } else {
+        sort(Frames.begin(), Frames.end(), PTSComparison);
+    }
 
     std::vector<size_t> ReorderTemp;
     ReorderTemp.reserve(size());
@@ -339,7 +376,7 @@ void FFMS_Track::GeneratePublicInfo() {
             continue;
         RealFrameNumbers.push_back(static_cast<int>(i));
 
-        FFMS_FrameInfo info = { Frames[i].PTS, Frames[i].RepeatPict, Frames[Frames[i].OriginalPos].KeyFrame };
+        FFMS_FrameInfo info = { Frames[i].PTS, Frames[i].RepeatPict, Frames[Frames[i].OriginalPos].KeyFrame, Frames[i].OriginalPTS };
         PublicFrameInfo.push_back(info);
     }
 }

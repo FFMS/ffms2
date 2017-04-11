@@ -402,6 +402,7 @@ typedef struct FFMS_FrameInfo {
     int64_t PTS;
     int RepeatPict;
     int KeyFrame;
+    int64_t OriginalPTS;
 } FFMS_FrameInfo;
 
 typedef struct FFMS_VideoProperties {

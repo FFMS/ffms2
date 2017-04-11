@@ -35,7 +35,7 @@ extern "C" {
 }
 
 #define INDEXID 0x53920873
-#define INDEX_VERSION 3
+#define INDEX_VERSION 4
 
 SharedAVContext::~SharedAVContext() {
     avcodec_free_context(&CodecContext);
@@ -387,6 +387,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
         TrackIndices->emplace_back((int64_t)FormatContext->streams[i]->time_base.num * 1000,
             FormatContext->streams[i]->time_base.den,
             static_cast<FFMS_TrackType>(FormatContext->streams[i]->codecpar->codec_type),
+            !!(FormatContext->iformat->flags & AVFMT_TS_DISCONT),
             UseDTS);
 
         if (IndexMask.count(i) && FormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
