@@ -223,8 +223,12 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         // Set rotation
         VP.Rotation = 0;
         const int32_t *RotationMatrix = reinterpret_cast<const int32_t *>(av_stream_get_side_data(FormatContext->streams[VideoTrack], AV_PKT_DATA_DISPLAYMATRIX, nullptr));
-        if (RotationMatrix)
-            VP.Rotation = lround(av_display_rotation_get(RotationMatrix));
+        if (RotationMatrix) {
+            int rot = lround(av_display_rotation_get(RotationMatrix));
+            if (rot < 0)
+                rot += 360;
+            VP.Rotation = rot;
+        }
 
         if (SeekMode >= 0 && Frames.size() > 1) {
             if (Seek(0) < 0) {
