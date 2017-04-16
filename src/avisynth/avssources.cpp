@@ -81,6 +81,10 @@ static AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default, b
             return AV_PIX_FMT_YUV444P10;
         if (s == "YUVA444P10")
             return AV_PIX_FMT_YUVA444P10;
+        if (s == "RGBP8")
+            return AV_PIX_FMT_GBRP;
+        if (s == "RGBAP8")
+            return AV_PIX_FMT_GBRAP;
         if (s == "RGBP16")
             return AV_PIX_FMT_GBRP16;
         if (s == "RGBAP16")
@@ -242,14 +246,14 @@ AvisynthVideoSource::~AvisynthVideoSource() {
 }
 
 static int GetSubSamplingH(const VideoInfo &vi) {
-    if (vi.IsYUV() && vi.IsPlanar())
+    if (vi.IsYUV() && !vi.IsY() && vi.IsPlanar())
         return vi.GetPlaneHeightSubsampling(PLANAR_U);
     else
         return 0;
 }
 
 static int GetSubSamplingW(const VideoInfo &vi) {
-    if (vi.IsYUV() && vi.IsPlanar())
+    if (vi.IsYUV() && !vi.IsY() && vi.IsPlanar())
         return vi.GetPlaneWidthSubsampling(PLANAR_U);
     else
         return 0;
@@ -389,6 +393,10 @@ void AvisynthVideoSource::InitOutputFormat(
         VI.pixel_type = VideoInfo::CS_RGBP16;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrap16"))
         VI.pixel_type = VideoInfo::CS_RGBAP16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrp"))
+        VI.pixel_type = VideoInfo::CS_RGBP;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrap"))
+        VI.pixel_type = VideoInfo::CS_RGBAP;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gray16"))
         VI.pixel_type = VideoInfo::CS_Y16;
     else
