@@ -246,14 +246,14 @@ AvisynthVideoSource::~AvisynthVideoSource() {
 }
 
 static int GetSubSamplingH(const VideoInfo &vi) {
-    if (vi.IsYUV() && !vi.IsY() && vi.IsPlanar())
+    if ((vi.IsYUV() || vi.IsYUVA()) && !vi.IsY() && vi.IsPlanar())
         return vi.GetPlaneHeightSubsampling(PLANAR_U);
     else
         return 0;
 }
 
 static int GetSubSamplingW(const VideoInfo &vi) {
-    if (vi.IsYUV() && !vi.IsY() && vi.IsPlanar())
+    if ((vi.IsYUV() || vi.IsYUVA()) && !vi.IsY() && vi.IsPlanar())
         return vi.GetPlaneWidthSubsampling(PLANAR_U);
     else
         return 0;
