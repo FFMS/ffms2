@@ -378,11 +378,13 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
     std::vector<SharedAVContext> AVContexts(FormatContext->nb_streams);
 
     auto TrackIndices = make_unique<FFMS_Index>(Filesize, Digest, ErrorHandling);
+    bool UseDTS = !strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts") || !strcmp(FormatContext->iformat->name, "mpegtsraw") || !strcmp(FormatContext->iformat->name, "nuv");
 
     for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {
         TrackIndices->emplace_back((int64_t)FormatContext->streams[i]->time_base.num * 1000,
             FormatContext->streams[i]->time_base.den,
-            static_cast<FFMS_TrackType>(FormatContext->streams[i]->codecpar->codec_type));
+            static_cast<FFMS_TrackType>(FormatContext->streams[i]->codecpar->codec_type),
+            UseDTS);
 
         if (IndexMask.count(i) && FormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codecpar->codec_id);

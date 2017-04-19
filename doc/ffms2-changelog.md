@@ -1,7 +1,8 @@
 # FFmpegSource2 Changelog
 
 - 2.2000
-    Added rgb(a)p8 output to Avisynth+ (Myrsloik)
+  - Improved seeking in mpeg and mpegts streams (Myrsloik)
+  - Added rgb(a)p8 output to Avisynth+ (Myrsloik)
   - Added VP9 support (Daemon404)
   - Fixed incorrectly reporting the output as limited range when it's in fact unknown and likely to be full range (Myrsloik)
   - Added mastering display metadata output (Myrsloik)
