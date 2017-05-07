@@ -29,7 +29,7 @@
 #include <set>
 
 #include <mpls_parse.h>
-#include <bluray.h>
+#include <libbluray/bluray.h>
 
 static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, const VSAPI *vsapi) {
     FFMS_Init(0, 0);
@@ -221,7 +221,7 @@ static void VS_CC PreSource(const VSMap *in, VSMap *out, void *, VSCore *core, c
     const char *Timecodes = vsapi->propGetData(in, "timecodes", 0, &err);
 
     const std::string Source(vsapi->propGetData(in, "source", 0, nullptr));
-    const bool IsMpls = (Source.rfind(".mpls") == Source.size() - 5);
+    const bool IsMpls = (Source.size() > 5) && (Source.rfind(".mpls") == Source.size() - 5);
 
     MPLS_PL *pl = nullptr;
     VSNodeRef **Clip = nullptr;

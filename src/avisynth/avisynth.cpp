@@ -24,7 +24,7 @@
 #include "../core/utils.h"
 
 #include <mpls_parse.h>
-#include <bluray.h>
+#include <libbluray/bluray.h>
 
 static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
     if (!Args[0].Defined())
@@ -289,7 +289,7 @@ static AVSValue __cdecl CreateFFmpegSource2(AVSValue Args, void* UserData, IScri
         Env->ThrowError("FFMS2: No source specified");
 
     const std::string Source(Args[0].AsString());
-    const bool IsMpls = (Source.rfind(".mpls") == Source.size() - 5);
+    const bool IsMpls = (Source.size() > 5) && (Source.rfind(".mpls") == Source.size() - 5);
 
     MPLS_PL *pl = nullptr;
     AVSValue *Clip = nullptr;
