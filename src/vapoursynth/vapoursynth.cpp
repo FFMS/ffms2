@@ -248,6 +248,10 @@ static void VS_CC PreSource(const VSMap *in, VSMap *out, void *, VSCore *core, c
             File = Source.substr(0, Source.find_last_of("/\\") - 8) + "STREAM/" + pl->play_item[i].clip[0].clip_id + ".m2ts";
 
         CreateSource(in, &out, File.c_str(), core, vsapi);
+
+        if (vsapi->getError(out))
+            return;
+
         Clip[i] = vsapi->propGetNode(out, "clip", 0, nullptr);
         vsapi->clearMap(out);
     }
