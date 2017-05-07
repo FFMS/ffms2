@@ -23,6 +23,9 @@
 #include "avssources.h"
 #include "../core/utils.h"
 
+#include <mpls_parse.h>
+#include <bluray.h>
+
 static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
     if (!Args[0].Defined())
         Env->ThrowError("FFIndex: No source specified");
@@ -282,28 +285,62 @@ static AVSValue __cdecl CreateFFmpegSource2(AVSValue Args, void* UserData, IScri
     const char *FFVArgNames[] = { "source", "track", "cache", "cachefile", "fpsnum", "fpsden", "threads", "timecodes", "seekmode", "rffmode", "width", "height", "resizer", "colorspace", "varprefix" };
     const char *FFAArgNames[] = { "source", "track", "cache", "cachefile", "adjustdelay", "varprefix" };
 
+    if (!Args[0].Defined())
+        Env->ThrowError("FFMS2: No source specified");
+
+    const std::string Source(Args[0].AsString());
+    const bool IsMpls = (Source.rfind(".mpls") == Source.size() - 5);
+
+    MPLS_PL *pl = nullptr;
+    AVSValue *Clip = nullptr;
+    unsigned ClipCount = 1;
+    if (IsMpls) {
+        pl = bd_read_mpls(Source.c_str());
+        if (!pl)
+            Env->ThrowError("FFMS2: Failed to open mpls file");
+
+        Clip = new AVSValue[pl->list_count];
+        ClipCount = pl->list_count;
+    } else {
+        Clip = new AVSValue[1];
+    }
+
     bool Cache = Args[3].AsBool(true);
     bool WithAudio = Args[2].AsInt(-2) > -2;
-    if (Cache) {
-        AVSValue FFIArgs[] = { Args[0], Args[4], WithAudio ? -1 : 0, Args[10] };
-        static_assert((sizeof(FFIArgs) / sizeof(FFIArgs[0])) == (sizeof(FFIArgNames) / sizeof(FFIArgNames[0])), "Arg error");
-        Env->Invoke("FFIndex", AVSValue(FFIArgs, sizeof(FFIArgs) / sizeof(FFIArgs[0])), FFIArgNames);
+
+    for (unsigned i = 0; i < ClipCount; i++) {
+        std::string File = Source;
+        if (IsMpls)
+            File = Source.substr(0, Source.find_last_of("/\\") - 8) + "STREAM/" + pl->play_item[i].clip[0].clip_id + ".m2ts";
+
+        if (Cache) {
+            AVSValue FFIArgs[] = { File.c_str(), IsMpls ? "" : Args[4], WithAudio ? -1 : 0, Args[10] };
+            static_assert((sizeof(FFIArgs) / sizeof(FFIArgs[0])) == (sizeof(FFIArgNames) / sizeof(FFIArgNames[0])), "Arg error");
+            Env->Invoke("FFIndex", AVSValue(FFIArgs, sizeof(FFIArgs) / sizeof(FFIArgs[0])), FFIArgNames);
+        }
+
+        AVSValue FFVArgs[] = { File.c_str(), Args[1], Args[3], IsMpls ? "" : Args[4], Args[5], Args[6], Args[7], IsMpls ? "" : Args[8], Args[9], Args[15], Args[11], Args[12], Args[13], Args[14], Args[17] };
+        static_assert((sizeof(FFVArgs) / sizeof(FFVArgs[0])) == (sizeof(FFVArgNames) / sizeof(FFVArgNames[0])), "Arg error");
+        Clip[i] = Env->Invoke("FFVideoSource", AVSValue(FFVArgs, sizeof(FFVArgs) / sizeof(FFVArgs[0])), FFVArgNames);
+
+        if (WithAudio) {
+            AVSValue FFAArgs[] = { File.c_str(), Args[2], Args[3], IsMpls ? "" : Args[4], Args[16], Args[17] };
+            static_assert((sizeof(FFAArgs) / sizeof(FFAArgs[0])) == (sizeof(FFAArgNames) / sizeof(FFAArgNames[0])), "Arg error");
+            AVSValue Audio = Env->Invoke("FFAudioSource", AVSValue(FFAArgs, sizeof(FFAArgs) / sizeof(FFAArgs[0])), FFAArgNames);
+            AVSValue ADArgs[] = { Clip[i], Audio };
+            Clip[i] = Env->Invoke("AudioDubEx", AVSValue(ADArgs, sizeof(ADArgs) / sizeof(ADArgs[0])));
+        }
     }
 
-    AVSValue FFVArgs[] = { Args[0], Args[1], Args[3], Args[4], Args[5], Args[6], Args[7], Args[8], Args[9], Args[15], Args[11], Args[12], Args[13], Args[14], Args[17] };
-    static_assert((sizeof(FFVArgs) / sizeof(FFVArgs[0])) == (sizeof(FFVArgNames) / sizeof(FFVArgNames[0])), "Arg error");
-    AVSValue Video = Env->Invoke("FFVideoSource", AVSValue(FFVArgs, sizeof(FFVArgs) / sizeof(FFVArgs[0])), FFVArgNames);
+    AVSValue Ret;
+    if (ClipCount > 1)
+        Ret = Env->Invoke("AlignedSplice", AVSValue(Clip, ClipCount));
+    else
+        Ret = Clip[0];
 
-    AVSValue Audio;
-    if (WithAudio) {
-        AVSValue FFAArgs[] = { Args[0], Args[2], Args[3], Args[4], Args[16], Args[17] };
-        static_assert((sizeof(FFAArgs) / sizeof(FFAArgs[0])) == (sizeof(FFAArgNames) / sizeof(FFAArgNames[0])), "Arg error");
-        Audio = Env->Invoke("FFAudioSource", AVSValue(FFAArgs, sizeof(FFAArgs) / sizeof(FFAArgs[0])), FFAArgNames);
-        AVSValue ADArgs[] = { Video, Audio };
-        return Env->Invoke("AudioDubEx", AVSValue(ADArgs, sizeof(ADArgs) / sizeof(ADArgs[0])));
-    } else {
-        return Video;
-    }
+    bd_free_mpls(pl);
+    delete[] Clip;
+    return Ret;
 }
 
 static AVSValue __cdecl CreateFFImageSource(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
