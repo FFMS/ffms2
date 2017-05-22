@@ -231,12 +231,13 @@ void FFMS_Track::MaybeReorderFrames() {
 void FFMS_Track::MaybeHideFrames() {
     frame_vec &Frames = Data->Frames;
     // Awful handling for interlaced H.264: each frame is output twice, so hide
-    // frames with an invalid file position and PTS equal to the previous one
+    // frames with an invalid file position. The PTS will not match sometimes,
+    // since libavformat makes up timestamps... but only sometimes.
     for (size_t i = 1; i < size(); ++i) {
         FrameInfo const& prev = Frames[i - 1];
         FrameInfo& cur = Frames[i];
 
-        if (prev.FilePos >= 0 && (cur.FilePos == -1 || cur.FilePos == prev.FilePos) && cur.PTS == prev.PTS)
+        if (prev.FilePos >= 0 && (cur.FilePos == -1 || cur.FilePos == prev.FilePos))
             cur.Hidden = true;
     }
 }
