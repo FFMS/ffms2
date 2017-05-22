@@ -313,7 +313,6 @@ void FFMS_Track::FinalizeTrack() {
         Frames[i].OriginalPos = i;
 
     MaybeReorderFrames();
-    MaybeHideFrames();
 
     sort(Frames.begin(), Frames.end(), PTSComparison);
 

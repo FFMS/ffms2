@@ -53,7 +53,6 @@ private:
     std::shared_ptr<TrackData> Data;
 
     void MaybeReorderFrames();
-    void MaybeHideFrames();
     void FillAudioGaps();
     void GeneratePublicInfo();
 
@@ -68,6 +67,7 @@ public:
     void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, bool Invisible = false);
     void AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0, bool Invisible = false);
 
+    void MaybeHideFrames();
     void FinalizeTrack();
 
     int FindClosestVideoKeyFrame(int Frame) const;

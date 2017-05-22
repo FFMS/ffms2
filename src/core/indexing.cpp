@@ -70,6 +70,9 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 void FFMS_Index::Finalize(std::vector<SharedAVContext> const& video_contexts) {
     for (size_t i = 0, end = size(); i != end; ++i) {
         FFMS_Track& track = (*this)[i];
+        // H.264 PAFF needs to have some frames hidden
+        if (video_contexts[i].CodecContext && video_contexts[i].CodecContext->codec_id == AV_CODEC_ID_H264)
+            track.MaybeHideFrames();
         track.FinalizeTrack();
 
         if (track.TT != FFMS_TYPE_VIDEO) continue;
