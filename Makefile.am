@@ -13,14 +13,14 @@ AM_CPPFLAGS = \
 	-D_FILE_OFFSET_BITS=64 \
 	-DFFMS_EXPORTS \
 	-D__STDC_CONSTANT_MACROS \
-	@LIBAV_CFLAGS@ \
+	@FFMPEG_CFLAGS@ \
 	@ZLIB_CPPFLAGS@ \
 	-include config.h
 AM_CXXFLAGS = -std=c++11 -fvisibility=hidden
 
 lib_LTLIBRARIES = src/core/libffms2.la
 src_core_libffms2_la_LDFLAGS = @src_core_libffms2_la_LDFLAGS@
-src_core_libffms2_la_LIBADD = @LIBAV_LIBS@ @SWRESAMPLE_LIBS@ @ZLIB_LDFLAGS@ -lz @LTUNDEF@
+src_core_libffms2_la_LIBADD = @FFMPEG_LIBS@ @SWRESAMPLE_LIBS@ @ZLIB_LDFLAGS@ -lz @LTUNDEF@
 src_core_libffms2_la_SOURCES = \
 	src/core/audiosource.cpp \
 	src/core/audiosource.h \
