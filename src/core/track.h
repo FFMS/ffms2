@@ -105,7 +105,7 @@ public:
 
     FFMS_Track();
     FFMS_Track(ZipFile &Stream);
-    FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS = false, bool HasTS = true);
+    FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS, bool HasTS = true);
 };
 
 #endif
