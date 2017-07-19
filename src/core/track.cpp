@@ -261,7 +261,7 @@ void FFMS_Track::FillAudioGaps() {
     };
 
     const auto ActualSamples = back().SampleStart + back().SampleCount;
-    const auto ExpectedSamples = DurationToSamples(back().PTS - front().PTS);
+    const auto ExpectedSamples = DurationToSamples(back().PTS - front().PTS) + back().SampleCount;
     if (ActualSamples + 5 > ExpectedSamples) // arbitrary threshold to cover rounding/not worth adjusting
         return;
 
