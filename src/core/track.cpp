@@ -263,6 +263,23 @@ void FFMS_Track::FillAudioGaps() {
         return av_rescale(Dur, Num, Den);
     };
 
+    const auto SamplesToDuration = [this](int64_t Samples) {
+        auto Num = TB.Den * 1000;
+        auto Den = TB.Num * SampleRate;
+        return av_rescale(Samples, Num, Den);
+    };
+
+    if (HasDiscontTS) {
+        int64_t shift = 0;
+        Frames[0].OriginalPTS = Frames[0].PTS;
+        for (size_t i = 1; i < size(); i++) {
+            Frames[i].OriginalPTS = Frames[i].PTS;
+            if (Frames[i].PTS != AV_NOPTS_VALUE && Frames[i].OriginalPTS <= Frames[i-1].OriginalPTS)
+                shift = -(Frames[i].PTS) + Frames[i-1].PTS + SamplesToDuration(Frames[i-1].SampleCount);
+            Frames[i].PTS += shift;
+        }
+    }
+
     const auto ActualSamples = back().SampleStart + back().SampleCount;
     const auto ExpectedSamples = DurationToSamples(back().PTS - front().PTS) + back().SampleCount;
     if (ActualSamples + 5 > ExpectedSamples) // arbitrary threshold to cover rounding/not worth adjusting
