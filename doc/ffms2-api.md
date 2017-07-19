@@ -17,8 +17,7 @@ FFMS2's video frame and audio sample retrieval functions are not threadsafe; you
 ## Compilation
 FFMS2 has the following dependencies:
 
- - **[Libav][libav]** or **[FFmpeg][ffmpeg]** (mpv has [a decent overview of the differences](https://github.com/mpv-player/mpv/wiki/FFmpeg-versus-Libav) if you have no idea which one to pick).
-    - At least 0.8 for libav and 0.9 for FFmpeg.
+ - **[FFmpeg][ffmpeg]**
     - Further recommended configuration options: `--disable-debug --disable-muxers --disable-encoders --disable-filters --disable-hwaccels --disable-network --disable-devices --enable-runtime-cpudetect` (runtime cpudetect in particular is a good idea if you are planning on distributing the library; not disabling debug results in a gigantic dll).
  - **[zlib][zlib]**
 
