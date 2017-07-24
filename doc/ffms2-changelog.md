@@ -20,6 +20,7 @@
   - Removed old mingw version support (Myrsloik)
   - Removed support for old FFmpeg versions (Myrsloik)
   - Removed libav support (Myrsloik)
+  - Discontinuous Timestamp Support (Daemon404)
 
 - 2.23
   - Updated FFmpeg APIs used (Daemon404)

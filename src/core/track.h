@@ -31,6 +31,7 @@ class ZipFile;
 
 struct FrameInfo {
     int64_t PTS;
+    int64_t OriginalPTS;
     int64_t FilePos;
     int64_t SampleStart;
     uint32_t SampleCount;
@@ -62,6 +63,7 @@ public:
     int MaxBFrames = 0;
     bool UseDTS = false;
     bool HasTS = false;
+    bool HasDiscontTS = false;
     int SampleRate = 0; // not persisted
 
     void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, bool Invisible = false);
@@ -105,7 +107,7 @@ public:
 
     FFMS_Track();
     FFMS_Track(ZipFile &Stream);
-    FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool UseDTS, bool HasTS = true);
+    FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool HasDiscontTS, bool UseDTS, bool HasTS = true);
 };
 
 #endif
