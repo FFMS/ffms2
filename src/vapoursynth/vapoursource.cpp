@@ -200,6 +200,7 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 }
 
 void VS_CC VSVideoSource::Free(void *instanceData, VSCore *, const VSAPI *) {
+    FFMS_Deinit();
     delete static_cast<VSVideoSource *>(instanceData);
 }
 
