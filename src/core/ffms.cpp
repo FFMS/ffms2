@@ -39,7 +39,6 @@ extern "C" {
 #endif
 
 static std::once_flag FFmpegOnce;
-static bool FFmpegInited = false;
 
 #ifdef FFMS_WIN_DEBUG
 
@@ -87,7 +86,6 @@ FFMS_API(void) FFMS_Init(int, int) {
 #else
         av_log_set_level(AV_LOG_QUIET);
 #endif
-        FFmpegInited = true;
     });
 }
 
