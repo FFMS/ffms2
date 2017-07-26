@@ -532,10 +532,8 @@ void FFMS_VideoSource::Free() {
     if (SWS)
         sws_freeContext(SWS);
     av_freep(&SWSFrameData[0]);
-    av_frame_unref(DecodeFrame);
-    av_freep(&DecodeFrame);
-    av_frame_unref(LastDecodedFrame);
-    av_freep(&LastDecodedFrame);
+    av_frame_free(&DecodeFrame);
+    av_frame_free(&LastDecodedFrame);
 }
 
 void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
