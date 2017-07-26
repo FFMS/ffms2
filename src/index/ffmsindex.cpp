@@ -275,8 +275,10 @@ int main(int argc, const char *argv[]) {
         DoIndexing();
     } catch (Error const& e) {
         std::cout << e.msg << std::endl;
+        FFMS_Deinit();
         return 1;
     }
 
+    FFMS_Deinit();
     return 0;
 }

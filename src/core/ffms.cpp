@@ -39,6 +39,8 @@ extern "C" {
 #endif
 
 static std::once_flag FFmpegOnce;
+static std::mutex FFmpegNetwork;
+static bool FFmpegNetworkInited = false;
 
 #ifdef FFMS_WIN_DEBUG
 
@@ -79,7 +81,6 @@ void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl)
 FFMS_API(void) FFMS_Init(int, int) {
     std::call_once(FFmpegOnce, []() {
         av_register_all();
-        avformat_network_init();
 #ifdef FFMS_WIN_DEBUG
         av_log_set_callback(av_log_windebug_callback);
         av_log_set_level(AV_LOG_INFO);
@@ -87,6 +88,21 @@ FFMS_API(void) FFMS_Init(int, int) {
         av_log_set_level(AV_LOG_QUIET);
 #endif
     });
+    FFmpegNetwork.lock();
+    if (!FFmpegNetworkInited) {
+        avformat_network_init();
+        FFmpegNetworkInited = true;
+    }
+    FFmpegNetwork.unlock();
+}
+
+FFMS_API(void) FFMS_Deinit() {
+    FFmpegNetwork.lock();
+    if (FFmpegNetworkInited) {
+        avformat_network_deinit();
+        FFmpegNetworkInited = false;
+    }
+    FFmpegNetwork.unlock();
 }
 
 FFMS_API(int) FFMS_GetVersion() {

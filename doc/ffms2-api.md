@@ -133,6 +133,9 @@ int main (...) {
   /* now it's time to clean up */
   FFMS_DestroyVideoSource(videosource);
 
+  /* uninitialize the library. */
+  FFMS_Deinit();
+
   return 0;
 }
 ```
@@ -200,6 +203,16 @@ This argument is no longer used and is left only for API/ABI compatibility. Pass
 ##### `int Unused2`
 
 This argument is also no longer used and is left only for API/ABI compatibility. Pass 0.
+
+### FFMS_Deinit - deinitializes the library
+
+[Deinit]: ##ffms_deinit---deinitializes-the-library
+```c++
+void FFMS_Deinit()
+```
+Deinitializes the FFMS2 library.
+This function must be called once at the end of your program, and no more FFMS2 function calls must be made.
+This function is threadsafe and will only be run once.
 
 ### FFMS_GetLogLevel - gets FFmpeg message level
 
