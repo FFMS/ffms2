@@ -534,6 +534,7 @@ void FFMS_VideoSource::Free() {
     av_freep(&SWSFrameData[0]);
     av_frame_unref(DecodeFrame);
     av_freep(&DecodeFrame);
+    av_frame_unref(LastDecodedFrame);
     av_freep(&LastDecodedFrame);
 }
 
