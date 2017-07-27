@@ -72,7 +72,7 @@ FFMS_Track::FFMS_Track()
 {
 }
 
-FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool HasTS, bool HasDiscontTS, bool UseDTS)
+FFMS_Track::FFMS_Track(int64_t Num, int64_t Den, FFMS_TrackType TT, bool HasDiscontTS, bool UseDTS, bool HasTS)
     : Data(std::make_shared<TrackData>())
     , TT(TT)
     , UseDTS(UseDTS)
