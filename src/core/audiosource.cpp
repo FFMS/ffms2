@@ -320,9 +320,12 @@ int FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
     if (!CachedBlock || CachedBlock->Samples == CurrentFrame->SampleCount)
         return NumberOfSamples;
 
-    const auto MissingSamples = static_cast<size_t>(CurrentFrame->SampleCount - CachedBlock->Samples);
+    const int64_t MissingSamples = static_cast<int64_t>(CurrentFrame->SampleCount - CachedBlock->Samples);
+    // This can apparently happen in some rare circumstances, caused by inaccurate seeking?
+    if (MissingSamples <= 0)
+        return NumberOfSamples;
     CachedBlock->Samples += MissingSamples;
-    const auto MissingBytes = MissingSamples * BytesPerSample;
+    const int64_t MissingBytes = MissingSamples * BytesPerSample;
     if (MissingSamples > 200 || MissingSamples > CachedBlock->Samples - MissingSamples)
         memset(CachedBlock->Grow(MissingBytes), 0, MissingBytes);
     else {
