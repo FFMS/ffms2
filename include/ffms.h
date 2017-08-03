@@ -278,6 +278,16 @@ typedef enum FFMS_ColorSpaces {
     FFMS_CS_SMPTE2085 = 11
 } FFMS_ColorSpaces;
 
+typedef enum FFMS_ChromaLocations {
+    FFMS_LOC_UNSPECIFIED = 0,
+    FFMS_LOC_LEFT = 1,
+    FFMS_LOC_CENTER = 2,
+    FFMS_LOC_TOPLEFT = 3,
+    FFMS_LOC_TOP = 4,
+    FFMS_LOC_BOTTOMLEFT = 5,
+    FFMS_LOC_BOTTOM = 6
+} FFMS_ChromaLocations;
+
 typedef enum FFMS_ColorRanges {
     FFMS_CR_UNSPECIFIED = 0,
     FFMS_CR_MPEG = 1, // 219*2^(n-8), i.e. 16-235 with 8-bit samples
