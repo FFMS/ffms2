@@ -1159,8 +1159,7 @@ The fields are:
  - `int EncodedWidth; int EncodedHeight` - The original resolution of the frame (in pixels), as encoded in the compressed file, before any scaling was applied.
    Note that must not necessarily be the same for all frames in a stream.
  - `int EncodedPixelFormat` - The original pixel format of the frame, as encoded in the compressed file.
- - `int ScaledWidth; int ScaledHeight;` - The output resolution of the frame (in pixels), i.e. the resolution of what is actually stored in the `Data` field.
-   Same as `FFMS_VideoProperties->Width/Height`, but unlike that struct, this one gets updated automatically when you call [FFMS_GetFrame][GetFrame], so you don't have to call [FFMS_GetVideoProperties][GetVideoProperties] all the time to see if someone changed the output format while you weren't looking.
+ - `int ScaledWidth; int ScaledHeight;` - The output resolution of the frame (in pixels), i.e. the resolution of what is actually stored in the `Data` field. Set to -1 if no scaling is done.
  - `int ConvertedPixelFormat` - The output pixel format of the frame, i.e. the pixel format of what is actually stored in the `Data` field.
  - `int KeyFrame` - Nonzero if the frame is a keyframe, 0 otherwise.
  - `int RepeatPict` - An integer repesenting the RFF flag for this frame; i.e. the frame shall be displayed for `1+RepeatPict` time units, where the time units are expressed in the special RFF timebase available in `FFMS_VideoProperties->RFFDenominator` and `FFMS_VideoProperties->RFFNumerator`.
