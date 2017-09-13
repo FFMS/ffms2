@@ -52,6 +52,8 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
             }
 
             ReAdjustOutputFormat(Frame);
+        } else {
+            OutputFormat = (AVPixelFormat) Frame->format;
         }
     }
 
