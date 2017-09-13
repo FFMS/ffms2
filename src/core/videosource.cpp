@@ -80,8 +80,8 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
     LocalFrame.RepeatPict = Frame->repeat_pict;
     LocalFrame.InterlacedFrame = Frame->interlaced_frame;
     LocalFrame.TopFieldFirst = Frame->top_field_first;   
-    LocalFrame.ColorSpace = OutputColorSpace;
-    LocalFrame.ColorRange = OutputColorRange;
+    LocalFrame.ColorSpace = OutputColorSpaceSet ? OutputColorSpace : Frame->colorspace;
+    LocalFrame.ColorRange = OutputColorRangeSet ? OutputColorRange : Frame->color_range;
     LocalFrame.ColorPrimaries = (OutputColorPrimaries >= 0) ? OutputColorPrimaries : Frame->color_primaries;
     LocalFrame.TransferCharateristics = (OutputTransferCharateristics >= 0) ? OutputTransferCharateristics : Frame->color_trc;
     LocalFrame.ChromaLocation = (OutputChromaLocation >= 0) ? OutputChromaLocation : Frame->chroma_location;
@@ -276,6 +276,8 @@ void FFMS_VideoSource::SetOutputFormat(const AVPixelFormat *TargetFormats, int W
     TargetPixelFormats.clear();
     while (*TargetFormats != AV_PIX_FMT_NONE)
         TargetPixelFormats.push_back(*TargetFormats++);
+    OutputColorSpaceSet = true;
+    OutputColorRangeSet = true;
     OutputFormat = AV_PIX_FMT_NONE;
 
     ReAdjustOutputFormat(DecodeFrame);
@@ -403,6 +405,8 @@ void FFMS_VideoSource::ResetOutputFormat() {
     OutputFormat = AV_PIX_FMT_NONE;
     OutputColorSpace = AVCOL_SPC_UNSPECIFIED;
     OutputColorRange = AVCOL_RANGE_UNSPECIFIED;
+    OutputColorSpaceSet = false;
+    OutputColorRangeSet = false;
 
     OutputFrame(DecodeFrame);
 }
