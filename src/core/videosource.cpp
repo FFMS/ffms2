@@ -43,7 +43,7 @@ void FFMS_VideoSource::GetFrameCheck(int n) {
 FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
     SanityCheckFrameForData(Frame);
 
-    if (LastFrameWidth != CodecContext->width || LastFrameHeight != CodecContext->height || LastFramePixelFormat != CodecContext->pix_fmt) {
+    if (LastFrameWidth != Frame->width || LastFrameHeight != Frame->height || LastFramePixelFormat != Frame->format) {
         if (TargetHeight > 0 && TargetWidth > 0 && !TargetPixelFormats.empty()) {
             if (!InputFormatOverridden) {
                 InputFormat = AV_PIX_FMT_NONE;
@@ -51,12 +51,12 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
                 InputColorRange = AVCOL_RANGE_UNSPECIFIED;
             }
 
-            ReAdjustOutputFormat();
+            ReAdjustOutputFormat(Frame);
         }
     }
 
     if (SWS) {
-        sws_scale(SWS, Frame->data, Frame->linesize, 0, CodecContext->height, SWSFrameData, SWSFrameLinesize);
+        sws_scale(SWS, Frame->data, Frame->linesize, 0, Frame->height, SWSFrameData, SWSFrameLinesize);
         for (int i = 0; i < 4; i++) {
             LocalFrame.Data[i] = SWSFrameData[i];
             LocalFrame.Linesize[i] = SWSFrameLinesize[i];
@@ -69,9 +69,9 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
         }
     }
 
-    LocalFrame.EncodedWidth = CodecContext->width;
-    LocalFrame.EncodedHeight = CodecContext->height;
-    LocalFrame.EncodedPixelFormat = CodecContext->pix_fmt;
+    LocalFrame.EncodedWidth = Frame->width;
+    LocalFrame.EncodedHeight = Frame->height;
+    LocalFrame.EncodedPixelFormat = Frame->format;
     LocalFrame.ScaledWidth = TargetWidth;
     LocalFrame.ScaledHeight = TargetHeight;
     LocalFrame.ConvertedPixelFormat = OutputFormat;
@@ -82,9 +82,9 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
     LocalFrame.TopFieldFirst = Frame->top_field_first;   
     LocalFrame.ColorSpace = OutputColorSpace;
     LocalFrame.ColorRange = OutputColorRange;
-    LocalFrame.ColorPrimaries = (OutputColorPrimaries >= 0) ? OutputColorPrimaries : CodecContext->color_primaries;
-    LocalFrame.TransferCharateristics = (OutputTransferCharateristics >= 0) ? OutputTransferCharateristics : CodecContext->color_trc;
-    LocalFrame.ChromaLocation = (OutputChromaLocation >= 0) ? OutputChromaLocation : CodecContext->chroma_sample_location;
+    LocalFrame.ColorPrimaries = (OutputColorPrimaries >= 0) ? OutputColorPrimaries : Frame->color_primaries;
+    LocalFrame.TransferCharateristics = (OutputTransferCharateristics >= 0) ? OutputTransferCharateristics : Frame->color_trc;
+    LocalFrame.ChromaLocation = (OutputChromaLocation >= 0) ? OutputChromaLocation : Frame->chroma_location;
     LocalFrame.HasMDMDisplayPrimaries = 0;
     LocalFrame.HasMDMMinMaxLuminance = 0;
     const AVFrameSideData *MDMSide = av_frame_get_side_data(Frame, AV_FRAME_DATA_MASTERING_DISPLAY_METADATA);
@@ -106,9 +106,9 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
         }
     }
 
-    LastFrameHeight = CodecContext->height;
-    LastFrameWidth = CodecContext->width;
-    LastFramePixelFormat = CodecContext->pix_fmt;
+    LastFrameHeight = Frame->height;
+    LastFrameWidth = Frame->width;
+    LastFramePixelFormat = (AVPixelFormat) Frame->format;
 
     return &LocalFrame;
 }
@@ -278,7 +278,7 @@ void FFMS_VideoSource::SetOutputFormat(const AVPixelFormat *TargetFormats, int W
         TargetPixelFormats.push_back(*TargetFormats++);
     OutputFormat = AV_PIX_FMT_NONE;
 
-    ReAdjustOutputFormat();
+    ReAdjustOutputFormat(DecodeFrame);
     OutputFrame(DecodeFrame);
 }
 
@@ -293,7 +293,7 @@ void FFMS_VideoSource::SetInputFormat(int ColorSpace, int ColorRange, AVPixelFor
         InputColorSpace = (AVColorSpace)ColorSpace;
 
     if (TargetPixelFormats.size()) {
-        ReAdjustOutputFormat();
+        ReAdjustOutputFormat(DecodeFrame);
         OutputFrame(DecodeFrame);
     }
 }
@@ -313,7 +313,7 @@ void FFMS_VideoSource::DetectInputFormat() {
         InputColorSpace = CodecContext->colorspace;
 }
 
-void FFMS_VideoSource::ReAdjustOutputFormat() {
+void FFMS_VideoSource::ReAdjustOutputFormat(AVFrame *Frame) {
     if (SWS) {
         sws_freeContext(SWS);
         SWS = nullptr;
@@ -373,7 +373,7 @@ void FFMS_VideoSource::ReAdjustOutputFormat() {
         InputColorSpace != OutputColorSpace ||
         InputColorRange != OutputColorRange) {
         SWS = GetSwsContext(
-            CodecContext->width, CodecContext->height, InputFormat, InputColorSpace, InputColorRange,
+            Frame->width, Frame->height, InputFormat, InputColorSpace, InputColorRange,
             TargetWidth, TargetHeight, OutputFormat, OutputColorSpace, OutputColorRange,
             TargetResizer);
 
@@ -413,7 +413,7 @@ void FFMS_VideoSource::ResetInputFormat() {
     InputColorSpace = AVCOL_SPC_UNSPECIFIED;
     InputColorRange = AVCOL_RANGE_UNSPECIFIED;
 
-    ReAdjustOutputFormat();
+    ReAdjustOutputFormat(DecodeFrame);
     OutputFrame(DecodeFrame);
 }
 

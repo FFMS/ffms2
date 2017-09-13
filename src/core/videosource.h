@@ -87,7 +87,7 @@ private:
     bool SeekByPos = false;
     int PosOffset = 0;
 
-    void ReAdjustOutputFormat();
+    void ReAdjustOutputFormat(AVFrame *Frame);
     FFMS_Frame *OutputFrame(AVFrame *Frame);
     void SetVideoProperties();
     bool DecodePacket(AVPacket *Packet);
