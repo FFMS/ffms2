@@ -188,6 +188,11 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
             vsapi->propSetFloat(Props, "MasteringDisplayMaxLuminance", Frame->MasteringDisplayMaxLuminance, paReplace);
         }
 
+        if (Frame->HasContentLightLevel) {
+            vsapi->propSetFloat(Props, "ContentLightLevelMax", Frame->ContentLightLevelMax, paReplace);
+            vsapi->propSetFloat(Props, "ContentLightLevelAverage", Frame->ContentLightLevelAverage, paReplace);
+        }
+
         if (OutputIndex == 0)
             OutputFrame(Frame, Dst, vsapi);
         else

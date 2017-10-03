@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (26 << 16) | (0 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (27 << 16) | (0 << 8) | 0)
 
 #include <stdint.h>
 #include <stddef.h>
@@ -392,7 +392,7 @@ typedef struct FFMS_Frame {
     int ColorPrimaries;
     int TransferCharateristics;
     int ChromaLocation;
-    /* Introduced in FFMS_VERSION ((2 << 24) | (24 << 16) | (0 << 8) | 0) */
+    /* Introduced in FFMS_VERSION ((2 << 24) | (27 << 16) | (0 << 8) | 0) */
     int HasMasteringDisplayPrimaries;  /* Non-zero if the 4 fields below are valid */
     double MasteringDisplayPrimariesX[3];
     double MasteringDisplayPrimariesY[3];
@@ -401,6 +401,9 @@ typedef struct FFMS_Frame {
     int HasMasteringDisplayLuminance; /* Non-zero if the 2 fields below are valid */
     double MasteringDisplayMinLuminance;
     double MasteringDisplayMaxLuminance;
+    int HasContentLightLevel;
+    unsigned int ContentLightLevelMax;
+    unsigned int ContentLightLevelAverage;
 } FFMS_Frame;
 
 typedef struct FFMS_TrackTimeBase {

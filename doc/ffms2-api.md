@@ -1151,6 +1151,9 @@ typedef struct {
   int HasMasteringDisplayLuminance;
   double MasteringDisplayMinLuminance;
   double MasteringDisplayMaxLuminance;
+  int HasContentLightLevel;
+  unsigned int ContentLightLevelMax;
+  unsigned int ContentLightLevelAverage;
 } FFMS_Frame;
 ```
 A struct representing a video frame.
@@ -1192,7 +1195,9 @@ The fields are:
  - `int HasMasteringDisplayLuminance;` - If this is non-zero, the following two properties are set.
  - `double MasteringDisplayMinLuminance;` - Minimum luminance of the mastering display (cd/m^2).
  - `double MasteringDisplayMaxLuminance;` - Maximum luminance of the mastering display (cd/m^2).
-
+ - `int HasContentLightLevel;` - If this is non-zero, the following two properties are set.
+ - `unsigned int ContentLightLevelMax;` - Maximum content luminance (cd/m^2).
+ - `unsigned int ContentLightLevelAverage;` - Average content luminance (cd/m^2).
 
 ### FFMS_TrackTimeBase
 

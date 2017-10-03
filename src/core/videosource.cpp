@@ -109,6 +109,15 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
         }
     }
 
+    LocalFrame.HasContentLightLevel = 0;
+    const AVFrameSideData *ContentLightSideData = av_frame_get_side_data(Frame, AV_FRAME_DATA_CONTENT_LIGHT_LEVEL);
+    if (ContentLightSideData) {
+        const AVContentLightMetadata *ContentLightLevel = reinterpret_cast<const AVContentLightMetadata *>(ContentLightSideData->data);
+        LocalFrame.HasContentLightLevel = 1;
+        LocalFrame.ContentLightLevelMax = ContentLightLevel->MaxCLL;
+        LocalFrame.ContentLightLevelAverage = ContentLightLevel->MaxFALL;
+    }
+
     LastFrameHeight = Frame->height;
     LastFrameWidth = Frame->width;
     LastFramePixelFormat = (AVPixelFormat) Frame->format;
