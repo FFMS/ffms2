@@ -22,6 +22,7 @@
   - Removed libav support (Myrsloik)
   - Discontinuous Timestamp Support (Daemon404)
   - Add FFMS_Deinit (Daemon404)
+  - Fix mid-stream parameter changes (Daemon404)
 
 - 2.23
   - Updated FFmpeg APIs used (Daemon404)
