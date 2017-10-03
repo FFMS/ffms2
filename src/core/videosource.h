@@ -55,6 +55,8 @@ private:
     AVPixelFormat OutputFormat = AV_PIX_FMT_NONE;
     AVColorRange OutputColorRange = AVCOL_RANGE_UNSPECIFIED;
     AVColorSpace OutputColorSpace = AVCOL_SPC_UNSPECIFIED;
+    bool OutputColorRangeSet = false;
+    bool OutputColorSpaceSet = false;
 
     int OutputColorPrimaries = -1;
     int OutputTransferCharateristics = -1;
@@ -87,7 +89,7 @@ private:
     bool SeekByPos = false;
     int PosOffset = 0;
 
-    void ReAdjustOutputFormat();
+    void ReAdjustOutputFormat(AVFrame *Frame);
     FFMS_Frame *OutputFrame(AVFrame *Frame);
     void SetVideoProperties();
     bool DecodePacket(AVPacket *Packet);
