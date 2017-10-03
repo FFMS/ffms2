@@ -87,24 +87,25 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
     LocalFrame.ColorPrimaries = (OutputColorPrimaries >= 0) ? OutputColorPrimaries : Frame->color_primaries;
     LocalFrame.TransferCharateristics = (OutputTransferCharateristics >= 0) ? OutputTransferCharateristics : Frame->color_trc;
     LocalFrame.ChromaLocation = (OutputChromaLocation >= 0) ? OutputChromaLocation : Frame->chroma_location;
-    LocalFrame.HasMDMDisplayPrimaries = 0;
-    LocalFrame.HasMDMMinMaxLuminance = 0;
-    const AVFrameSideData *MDMSide = av_frame_get_side_data(Frame, AV_FRAME_DATA_MASTERING_DISPLAY_METADATA);
-    if (MDMSide) {
-        const AVMasteringDisplayMetadata *MDMData = reinterpret_cast<const AVMasteringDisplayMetadata *>(MDMSide->data);
-        if (MDMData->has_primaries) {
-            LocalFrame.HasMDMDisplayPrimaries = MDMData->has_primaries;
+
+    LocalFrame.HasMasteringDisplayPrimaries = 0;
+    LocalFrame.HasMasteringDisplayLuminance = 0;
+    const AVFrameSideData *MasteringDisplaySideData = av_frame_get_side_data(Frame, AV_FRAME_DATA_MASTERING_DISPLAY_METADATA);
+    if (MasteringDisplaySideData) {
+        const AVMasteringDisplayMetadata *MasteringDisplay = reinterpret_cast<const AVMasteringDisplayMetadata *>(MasteringDisplaySideData->data);
+        if (MasteringDisplay->has_primaries) {
+            LocalFrame.HasMasteringDisplayPrimaries = MasteringDisplay->has_primaries;
             for (int i = 0; i < 3; i++) {
-                LocalFrame.MDMDisplayPrimariesX[i] = av_q2d(MDMData->display_primaries[i][0]);
-                LocalFrame.MDMDisplayPrimariesY[i] = av_q2d(MDMData->display_primaries[i][1]);
+                LocalFrame.MasteringDisplayPrimariesX[i] = av_q2d(MasteringDisplay->display_primaries[i][0]);
+                LocalFrame.MasteringDisplayPrimariesY[i] = av_q2d(MasteringDisplay->display_primaries[i][1]);
             }
-            LocalFrame.MDMWhitePointX = av_q2d(MDMData->white_point[0]);
-            LocalFrame.MDMWhitePointY = av_q2d(MDMData->white_point[1]);
+            LocalFrame.MasteringDisplayWhitePointX = av_q2d(MasteringDisplay->white_point[0]);
+            LocalFrame.MasteringDisplayWhitePointY = av_q2d(MasteringDisplay->white_point[1]);
         }
-        if (MDMData->has_luminance) {
-            LocalFrame.HasMDMMinMaxLuminance = MDMData->has_luminance;
-            LocalFrame.MDMMinLuminance = av_q2d(MDMData->min_luminance);
-            LocalFrame.MDMMaxLuminance = av_q2d(MDMData->max_luminance);
+        if (MasteringDisplay->has_luminance) {
+            LocalFrame.HasMasteringDisplayLuminance = MasteringDisplay->has_luminance;
+            LocalFrame.MasteringDisplayMinLuminance = av_q2d(MasteringDisplay->min_luminance);
+            LocalFrame.MasteringDisplayMaxLuminance = av_q2d(MasteringDisplay->max_luminance);
         }
     }
 

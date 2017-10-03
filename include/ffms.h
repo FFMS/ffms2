@@ -393,14 +393,14 @@ typedef struct FFMS_Frame {
     int TransferCharateristics;
     int ChromaLocation;
     /* Introduced in FFMS_VERSION ((2 << 24) | (24 << 16) | (0 << 8) | 0) */
-    int HasMDMDisplayPrimaries;  /* Non-zero if the 4 fields below are valid */
-    double MDMDisplayPrimariesX[3];
-    double MDMDisplayPrimariesY[3];
-    double MDMWhitePointX;
-    double MDMWhitePointY;
-    int HasMDMMinMaxLuminance; /* Non-zero if the 2 fields below are valid */
-    double MDMMinLuminance;
-    double MDMMaxLuminance;
+    int HasMasteringDisplayPrimaries;  /* Non-zero if the 4 fields below are valid */
+    double MasteringDisplayPrimariesX[3];
+    double MasteringDisplayPrimariesY[3];
+    double MasteringDisplayWhitePointX;
+    double MasteringDisplayWhitePointY;
+    int HasMasteringDisplayLuminance; /* Non-zero if the 2 fields below are valid */
+    double MasteringDisplayMinLuminance;
+    double MasteringDisplayMaxLuminance;
 } FFMS_Frame;
 
 typedef struct FFMS_TrackTimeBase {
