@@ -1143,14 +1143,17 @@ typedef struct {
   int ColorPrimaries;
   int TransferCharateristics;
   int ChromaLocation;
-  int HasMDMDisplayPrimaries;
-  double MDMDisplayPrimariesX[3];
-  double MDMDisplayPrimariesY[3];
-  double MDMWhitePointX;
-  double MDMWhitePointY;
-  int HasMDMMinMaxLuminance;
-  double MDMMinLuminance;
-  double MDMMaxLuminance;
+  int HasMasteringDisplayPrimaries;
+  double MasteringDisplayPrimariesX[3];
+  double MasteringDisplayPrimariesY[3];
+  double MasteringDisplayWhitePointX;
+  double MasteringDisplayWhitePointY;
+  int HasMasteringDisplayLuminance;
+  double MasteringDisplayMinLuminance;
+  double MasteringDisplayMaxLuminance;
+  int HasContentLightLevel;
+  unsigned int ContentLightLevelMax;
+  unsigned int ContentLightLevelAverage;
 } FFMS_Frame;
 ```
 A struct representing a video frame.
@@ -1184,15 +1187,17 @@ The fields are:
  - `int ColorPrimaries;` - Identifies the color primaries of the frame. Corresponds to [FFMS_ColorPrimaries][ColorPrimaries].
  - `int TransferCharateristics;` - Identifies the transfer characteristics of the frame. Corresponds to [FFMS_TransferCharacteristic][TransferCharacteristic].
  - `int ChromaLocation;` - Identifies the chroma location for the frame. Corresponds to [FFMS_ChromaLocations][ChromaLocations].
- - `int HasMDMDisplayPrimaries;` - If this is non-zero, the following four properties are set.
- - `double MDMDisplayPrimariesX[3];` - RGB chromaticy coordinates of the mastering display (x coord).
- - `double MDMDisplayPrimariesY[3];` - RGB chromaticy coordinates of the mastering display (y coord).
- - `double MDMWhitePointX;` - White point coordinate of the mastering display (x coord).
- - `double MDMWhitePointY;` - White point coordinate of the mastering display (y coord).
- - `int HasMDMMinMaxLuminance;` - If this is non-zero, the following two properties are set.
- - `double MDMMinLuminance;` - Minimum luminance of the mastering display (cd/m^2).
- - `double MDMMaxLuminance;` - Maximum luminance of the mastering display (cd/m^2).
-
+ - `int HasMasteringDisplayPrimaries;` - If this is non-zero, the following four properties are set.
+ - `double MasteringDisplayPrimariesX[3];` - RGB chromaticy coordinates of the mastering display (x coord).
+ - `double MasteringDisplayPrimariesY[3];` - RGB chromaticy coordinates of the mastering display (y coord).
+ - `double MasteringDisplayWhitePointX;` - White point coordinate of the mastering display (x coord).
+ - `double MasteringDisplayWhitePointY;` - White point coordinate of the mastering display (y coord).
+ - `int HasMasteringDisplayLuminance;` - If this is non-zero, the following two properties are set.
+ - `double MasteringDisplayMinLuminance;` - Minimum luminance of the mastering display (cd/m^2).
+ - `double MasteringDisplayMaxLuminance;` - Maximum luminance of the mastering display (cd/m^2).
+ - `int HasContentLightLevel;` - If this is non-zero, the following two properties are set.
+ - `unsigned int ContentLightLevelMax;` - Maximum content luminance (cd/m^2).
+ - `unsigned int ContentLightLevelAverage;` - Average content luminance (cd/m^2).
 
 ### FFMS_TrackTimeBase
 
