@@ -76,45 +76,19 @@ PKG_PROG_PKG_CONFIG([0.22])
 pkgconfigdir="\$(libdir)/pkgconfig"
 AC_SUBST(pkgconfigdir)
 
-PKG_CHECK_MODULES(LIBAV, [libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 ])
+PKG_CHECK_MODULES(FFMPEG, [libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 ])
 
 dnl As of 0eec06ed8747923faa6a98e474f224d922dc487d ffmpeg only adds -lrt to lavc's
 dnl LIBS, but lavu needs it, so move it to the end if it's present
-LIBAV_LIBS=$(echo $LIBAV_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
+FFMPEG_LIBS=$(echo $FFMPEG_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
 
-AC_SUBST([LIBAV_CFLAGS])
-AC_SUBST([LIBAV_LIBS])
+AC_SUBST([FFMPEG_CFLAGS])
+AC_SUBST([FFMPEG_LIBS])
 
 CPPFLAGS="$CPPFLAGS -D__STDC_CONSTANT_MACROS"
-AC_DEFUN([TEST_IS_FFMPEG],
-         [AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-            #include <libavcodec/avcodec.h>
-            #include <libswscale/swscale.h>
-            ]],[[
-                #if LIBAVCODEC_VERSION_MICRO >= 100
-                /* is ffmpeg */
-                #elif LIBAVCODEC_VERSION_INT < AV_VERSION_INT(53, 47, 100)
-                /* hopefully libav doesn''t add G2M before 53.47.... */
-                (void)CODEC_ID_G2M;
-                #else
-                #error is libav or old enough that the distinction doesn't matter
-                #endif
-            ]])], [eval $1=yes], [eval $1=no])
-        ])
+CFLAGS="$_CFLAGS $FFMPEG_CFLAGS"
 
-AC_MSG_CHECKING([whether linking with FFmpeg or Libav])
-CFLAGS="$_CFLAGS $LIBAV_CFLAGS"
-TEST_IS_FFMPEG([FFMS_USE_FFMPEG_COMPAT])
-
-if test "$FFMS_USE_FFMPEG_COMPAT" = yes; then
-   AC_DEFINE([FFMS_USE_FFMPEG_COMPAT], [1], [Building with FFmpeg?])
-   _lav_name=FFmpeg
-else
-   _lav_name=Libav
-fi
-AC_MSG_RESULT([$_lav_name])
-
-AC_DEFUN([TEST_LIBAV],
+AC_DEFUN([TEST_FFMPEG],
          [AC_LINK_IFELSE([AC_LANG_PROGRAM([[
             #include <libavcodec/avcodec.h>
             #include <libswscale/swscale.h>
@@ -124,40 +98,34 @@ AC_DEFUN([TEST_LIBAV],
             ]])], [eval $1=yes], [eval $1=no])
         ])
 
-AC_MSG_CHECKING([whether $_lav_name works])
-LIBS="$_LIBS $LIBAV_LIBS"
-TEST_LIBAV([LIBAV_WORKS])
-AC_MSG_RESULT([$LIBAV_WORKS])
-if test "$LIBAV_WORKS" = no; then
-AC_MSG_FAILURE([cannot link with $_lav_name])
+AC_MSG_CHECKING([whether FFmpeg works])
+LIBS="$_LIBS $FFMPEG_LIBS"
+TEST_FFMPEG([FFMPEG_WORKS])
+AC_MSG_RESULT([$FFMPEG_WORKS])
+if test "$FFMPEG_WORKS" = no; then
+AC_MSG_FAILURE([cannot link with FFmpeg])
 fi
 
-libavresample='libavresample'
-PKG_CHECK_MODULES(AVRESAMPLE, [libavresample >= 1.0.0], [], [
-  PKG_CHECK_MODULES(AVRESAMPLE, [libswresample >= 1.0.0], [
-    AC_DEFINE([WITH_SWRESAMPLE], [1], [Use libswresample rather than libavresample])
-    libavresample='libswresample'
-  ], [
-    AC_MSG_ERROR([Either avresample or swresample is required.])
-  ])
+PKG_CHECK_MODULES(SWRESAMPLE, [libswresample >= 1.0.0], [], [
+  AC_MSG_ERROR([swresample is required.])
 ])
 
-dnl See similar thing for LIBAV_LIBS
-AVRESAMPLE_LIBS=$(echo $AVRESAMPLE_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
+dnl See similar thing for FFMPEG_LIBS
+SWRESAMPLE_LIBS=$(echo $SWRESAMPLE_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
 
-AC_SUBST([AVRESAMPLE_CFLAGS])
-AC_SUBST([AVRESAMPLE_LIBS])
-AC_SUBST([libavresample])
+AC_SUBST([SWRESAMPLE_CFLAGS])
+AC_SUBST([SWRESAMPLE_LIBS])
+AC_SUBST([libswresample])
 
 src_core_libffms2_la_LDFLAGS=""
 AC_MSG_CHECKING([whether -Wl,-Bsymbolic is needed])
 if test "$enable_shared" = yes; then
     _LDFLAGS="$LDFLAGS"
     LDFLAGS="$LDFLAGS -shared $lt_prog_compiler_pic"
-    TEST_LIBAV([no_bsymbolic])
+    TEST_FFMPEG([no_bsymbolic])
     if test "$no_bsymbolic" = "no"; then
         LDFLAGS="$LDFLAGS -Wl,-Bsymbolic"
-        TEST_LIBAV([bsymbolic])
+        TEST_FFMPEG([bsymbolic])
         if test "$bsymbolic" = "yes"; then
             src_core_libffms2_la_LDFLAGS="$src_core_libffms2_la_LDFLAGS -Wl-Bsymbolic"
         else

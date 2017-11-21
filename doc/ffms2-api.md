@@ -17,8 +17,7 @@ FFMS2's video frame and audio sample retrieval functions are not threadsafe; you
 ## Compilation
 FFMS2 has the following dependencies:
 
- - **[Libav][libav]** or **[FFmpeg][ffmpeg]** (mpv has [a decent overview of the differences](https://github.com/mpv-player/mpv/wiki/FFmpeg-versus-Libav) if you have no idea which one to pick).
-    - At least 0.8 for libav and 0.9 for FFmpeg.
+ - **[FFmpeg][ffmpeg]**
     - Further recommended configuration options: `--disable-debug --disable-muxers --disable-encoders --disable-filters --disable-hwaccels --disable-network --disable-devices --enable-runtime-cpudetect` (runtime cpudetect in particular is a good idea if you are planning on distributing the library; not disabling debug results in a gigantic dll).
  - **[zlib][zlib]**
 
@@ -36,7 +35,6 @@ You'll have to manually add the location which you installed the headers and lib
 To build everything with VC++, run `build-win-deps.sh` from a msys shell to build all of the dependencies, then open the solution and hit build.
 If you're using a pre-2013 version of Visual Studio, you'll need [c99-to-c89][c99-to-c89] on your msys path to be able to compile FFmpeg.
 
-[libav]: http://www.libav.org
 [ffmpeg]: http://www.ffmpeg.org
 [zlib]: http://www.zlib.net
 [c99-to-c89]: http://download.videolan.org/pub/contrib/c99-to-c89/
@@ -134,6 +132,9 @@ int main (...) {
   /* now it's time to clean up */
   FFMS_DestroyVideoSource(videosource);
 
+  /* uninitialize the library. */
+  FFMS_Deinit();
+
   return 0;
 }
 ```
@@ -201,6 +202,16 @@ This argument is no longer used and is left only for API/ABI compatibility. Pass
 ##### `int Unused2`
 
 This argument is also no longer used and is left only for API/ABI compatibility. Pass 0.
+
+### FFMS_Deinit - deinitializes the library
+
+[Deinit]: ##ffms_deinit---deinitializes-the-library
+```c++
+void FFMS_Deinit()
+```
+Deinitializes the FFMS2 library.
+This function must be called once at the end of your program, and no more FFMS2 function calls must be made.
+This function is threadsafe and will only be run once.
 
 ### FFMS_GetLogLevel - gets FFmpeg message level
 
@@ -493,7 +504,7 @@ void FFMS_DestroyFFMS_Index(FFMS_Index *Index);
 ```
 Deallocates the given `FFMS_Index` object and frees the memory that was allocated when it was created.
 
-### FFMS_GetSourceType - gets which source module was used to open the given index
+### FFMS_GetSourceType - gets which source module was used to open the given index [DEPRECATED]
 
 [GetSourceType]: #ffms_getsourcetype---gets-which-source-module-was-used-to-open-the-given-index
 ```c++
@@ -501,7 +512,7 @@ int FFMS_GetSourceType(FFMS_Index *Index);
 ```
 Returns `FFMS_SOURCE_LAVF`.
 
-### FFMS_GetSourceTypeI - gets which source module was used to open the given indexer
+### FFMS_GetSourceTypeI - gets which source module was used to open the given indexer [DEPRECATED]
 
 [GetSourceTypeI]: #ffms_getsourcetypei---gets-which-source-module-was-used-to-open-the-given-indexer
 ```c++
@@ -713,7 +724,7 @@ See [Error handling][errorhandling].
 Returns 0 on success.
 Returns non-0 and sets `ErrorMsg` on failure.
 
-### FFMS_DefaultAudioFilename - default callback for audio filename generation
+### FFMS_DefaultAudioFilename - default callback for audio filename generation [DEPRECATED]
 
 [DefaultAudioFilename]: #ffms_defaultaudiofilename---default-callback-for-audio-filename-generation
 This function generates a default audio filename for use when dumping audio tracks to disk as Wave64 files during indexing.
@@ -734,7 +745,7 @@ Is basically a shorthand for `FFMS_CreateIndexerWithDemuxer(SourceFile, FFMS_SOU
 Returns a pointer to the `FFMS_Indexer` on success.
 Returns `NULL` and sets `ErrorMsg` on failure.
 
-### FFMS_CreateIndexerWithDemuxer - creates an indexer object for the given file, using the given source module
+### FFMS_CreateIndexerWithDemuxer - creates an indexer object for the given file, using the given source module [DEPRECATED]
 
 [CreateIndexerWithDemuxer]: #ffms_createindexerwithdemuxer---creates-an-indexer-object-for-the-given-file-using-the-given-source-module
 ```c++
@@ -803,9 +814,7 @@ Enable indexing the given track if non-zero, and disable if zero.
 By default, all video tracks are indexed and all audio tracks are not.
 
 ##### `int Dump`
-If non-zero, the audio decoded during indexing the given track will be dumped to a file.
-Use [FFMS_SetAudioNameCallback][SetAudioNameCallback] to choose what file it will be written to.
-Does not have any effect if the track is not an audio track or if the track is not being indexed.
+Currently ignored.
 
 By default, no tracks are dumped.
 
@@ -818,7 +827,7 @@ void FFMS_TrackTypeIndexSettings(FFMS_Indexer *Indexer, int TrackType, int Index
 
 Like [FFMS_TrackIndexSettings][TrackIndexSettings], but configures all tracks of the given [FFMS_TrackType][TrackType] at once.
 
-### FFMS_SetAudioNameCallback - choose the filename for audio track dumping
+### FFMS_SetAudioNameCallback - choose the filename for audio track dumping [DEPRECATED]
 
 [SetAudioNameCallback]: #ffms_setaudionamecallback---choose-the-filename-for-audio-track-dumping
 ```c++
@@ -970,7 +979,7 @@ The name of the desired colorspace/pixel format, as a nul-terminated ASCII strin
 Returns the integer constant representing the given colorspace/pixel format on success.
 Returns the integer constant representing `PIX_FMT_NONE` (that is, -1) on failure (i.e. if no matching colorspace was found), but note that you can call `FFMS_GetPixFmt("none")` and get the same return value without it being a failed call, strictly speaking.
 
-### FFMS_GetPresentSources - checks what source modules the library was compiled with
+### FFMS_GetPresentSources - checks what source modules the library was compiled with [DEPRECATED]
 
 [GetPresentSources]: #ffms_getpresentsources---checks-what-source-modules-the-library-was-compiled-with
 ```c++
@@ -978,7 +987,7 @@ int FFMS_GetPresentSources();
 ```
 Checks which source modules the library was compiled with and returns an integer by binary OR'ing the relevant constants from [FFMS_Sources][Sources] together.
 
-### FFMS_GetEnabledSources - checks what source modules are actually available for use
+### FFMS_GetEnabledSources - checks what source modules are actually available for use [DEPRECATED]
 
 [GetEnabledSources]: #ffms_getenabledsources---checks-what-source-modules-are-actually-available-for-use
 ```c++
@@ -1116,7 +1125,7 @@ The following public data structures may be of interest.
 [Frame]: #ffms_frame
 ```c++
 typedef struct {
-  uint8_t *Data[4];
+  const uint8_t *Data[4];
   int Linesize[4];
   int EncodedWidth;
   int EncodedHeight;
@@ -1131,6 +1140,20 @@ typedef struct {
   char PictType;
   int ColorSpace;
   int ColorRange;
+  int ColorPrimaries;
+  int TransferCharateristics;
+  int ChromaLocation;
+  int HasMasteringDisplayPrimaries;
+  double MasteringDisplayPrimariesX[3];
+  double MasteringDisplayPrimariesY[3];
+  double MasteringDisplayWhitePointX;
+  double MasteringDisplayWhitePointY;
+  int HasMasteringDisplayLuminance;
+  double MasteringDisplayMinLuminance;
+  double MasteringDisplayMaxLuminance;
+  int HasContentLightLevel;
+  unsigned int ContentLightLevelMax;
+  unsigned int ContentLightLevelAverage;
 } FFMS_Frame;
 ```
 A struct representing a video frame.
@@ -1147,8 +1170,7 @@ The fields are:
  - `int EncodedWidth; int EncodedHeight` - The original resolution of the frame (in pixels), as encoded in the compressed file, before any scaling was applied.
    Note that must not necessarily be the same for all frames in a stream.
  - `int EncodedPixelFormat` - The original pixel format of the frame, as encoded in the compressed file.
- - `int ScaledWidth; int ScaledHeight;` - The output resolution of the frame (in pixels), i.e. the resolution of what is actually stored in the `Data` field.
-   Same as `FFMS_VideoProperties->Width/Height`, but unlike that struct, this one gets updated automatically when you call [FFMS_GetFrame][GetFrame], so you don't have to call [FFMS_GetVideoProperties][GetVideoProperties] all the time to see if someone changed the output format while you weren't looking.
+ - `int ScaledWidth; int ScaledHeight;` - The output resolution of the frame (in pixels), i.e. the resolution of what is actually stored in the `Data` field. Set to -1 if no scaling is done.
  - `int ConvertedPixelFormat` - The output pixel format of the frame, i.e. the pixel format of what is actually stored in the `Data` field.
  - `int KeyFrame` - Nonzero if the frame is a keyframe, 0 otherwise.
  - `int RepeatPict` - An integer repesenting the RFF flag for this frame; i.e. the frame shall be displayed for `1+RepeatPict` time units, where the time units are expressed in the special RFF timebase available in `FFMS_VideoProperties->RFFDenominator` and `FFMS_VideoProperties->RFFNumerator`.
@@ -1162,6 +1184,20 @@ The fields are:
    Same as in the MPEG-2 specs; see the [FFMS_ColorSpaces][ColorSpaces] enum.
  - `int ColorRange` - Identifies the luma range of the frame.
    See the [FFMS_ColorRanges][ColorRanges] enum.
+ - `int ColorPrimaries;` - Identifies the color primaries of the frame. Corresponds to [FFMS_ColorPrimaries][ColorPrimaries].
+ - `int TransferCharateristics;` - Identifies the transfer characteristics of the frame. Corresponds to [FFMS_TransferCharacteristic][TransferCharacteristic].
+ - `int ChromaLocation;` - Identifies the chroma location for the frame. Corresponds to [FFMS_ChromaLocations][ChromaLocations].
+ - `int HasMasteringDisplayPrimaries;` - If this is non-zero, the following four properties are set.
+ - `double MasteringDisplayPrimariesX[3];` - RGB chromaticy coordinates of the mastering display (x coord).
+ - `double MasteringDisplayPrimariesY[3];` - RGB chromaticy coordinates of the mastering display (y coord).
+ - `double MasteringDisplayWhitePointX;` - White point coordinate of the mastering display (x coord).
+ - `double MasteringDisplayWhitePointY;` - White point coordinate of the mastering display (y coord).
+ - `int HasMasteringDisplayLuminance;` - If this is non-zero, the following two properties are set.
+ - `double MasteringDisplayMinLuminance;` - Minimum luminance of the mastering display (cd/m^2).
+ - `double MasteringDisplayMaxLuminance;` - Maximum luminance of the mastering display (cd/m^2).
+ - `int HasContentLightLevel;` - If this is non-zero, the following two properties are set.
+ - `unsigned int ContentLightLevelMax;` - Maximum content luminance (cd/m^2).
+ - `unsigned int ContentLightLevelAverage;` - Average content luminance (cd/m^2).
 
 ### FFMS_TrackTimeBase
 
@@ -1213,6 +1249,9 @@ typedef struct {
   int ColorRange; // [DEPRECATED]
   double FirstTime;
   double LastTime;
+  int Rotation;
+  int Stereo3DType;
+  int Stereo3DFlags;
 } FFMS_VideoProperties;
 ```
 A struct containing metadata about a video track.
@@ -1239,6 +1278,9 @@ The fields are:
    The ColorRange property in FFMS_Frame should be instead of this, as this can vary between frames unless you've asked for everything to be converted to a single value with `FFMS_SetOutputFormatV2`.
  - `double FirstTime; double LastTime;` - The first and last timestamp of the stream respectively, in seconds.
    Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.
+ - `int Rotation;` - The rotation of the video, in degrees.
+ - `int Stereo3DType;` - The type of stereo 3D the video is. Corresponts to entries in [FFMS_Stereo3DType][Stereo3DType].
+ - `int Stereo3DFlags;` - Stereo 3D flags. Corresponds to entries in [FFMS_Stereo3DFlags][Stereo3DFlags].
 
 ### FFMS_AudioProperties
 
@@ -1311,7 +1353,7 @@ enum FFMS_Errors {
 ```
 Used to identify errors. Should be self-explanatory.
 
-### FFMS_Sources
+### FFMS_Sources [DEPRECATED]
 
 [Sources]: #ffms_sources
 ```c++
@@ -1327,7 +1369,7 @@ No longer used for anything interesting.
 Pass `FFMS_SOURCE_DEFAULT` to functions which want a `FFMS_Sources` parameter.
 This enumeration will go away at some point in the future.
 
-### FFMS_CPUFeatures
+### FFMS_CPUFeatures [DEPRECATED]
 
 [CPUFeatures]: #ffms_cpufeatures
 ```c++
@@ -1489,6 +1531,57 @@ enum FFMS_AudioDelayModes {
 Describes the different audio delay handling modes.
 See [FFMS_CreateAudioSource][CreateAudioSource] for a detailed explanation.
 
+### FFMS_ColorPrimaries
+
+[ColorPrimaries]: #ffms_colorprimaries
+```c++
+typedef enum FFMS_ColorPrimaries {
+    FFMS_PRI_RESERVED0 = 0,
+    FFMS_PRI_BT709 = 1,
+    FFMS_PRI_UNSPECIFIED = 2,
+    FFMS_PRI_RESERVED = 3,
+    FFMS_PRI_BT470M = 4,
+    FFMS_PRI_BT470BG = 5,
+    FFMS_PRI_SMPTE170M = 6,
+    FFMS_PRI_SMPTE240M = 7,
+    FFMS_PRI_FILM = 8,
+    FFMS_PRI_BT2020 = 9,
+    FFMS_PRI_SMPTE428 = 10,
+    FFMS_PRI_SMPTE431 = 11,
+    FFMS_PRI_SMPTE432 = 12,
+    FFMS_PRI_JEDEC_P22 = 22
+} FFMS_ColorPrimaries;
+```
+Identifies the color primaries of a frame.
+
+### FFMS_TransferCharacteristic
+
+[TransferCharacteristic]: #ffms_transfercharacteristic
+```c++
+typedef enum FFMS_TransferCharacteristic {
+    FFMS_TRC_RESERVED0 = 0,
+    FFMS_TRC_BT709 = 1,
+    FFMS_TRC_UNSPECIFIED = 2,
+    FFMS_TRC_RESERVED = 3,
+    FFMS_TRC_GAMMA22 = 4,
+    FFMS_TRC_GAMMA28 = 5,
+    FFMS_TRC_SMPTE170M = 6,
+    FFMS_TRC_SMPTE240M = 7,
+    FFMS_TRC_LINEAR = 8,
+    FFMS_TRC_LOG = 9,
+    FFMS_TRC_LOG_SQRT = 10,
+    FFMS_TRC_IEC61966_2_4 = 11,
+    FFMS_TRC_BT1361_ECG = 12,
+    FFMS_TRC_IEC61966_2_1 = 13,
+    FFMS_TRC_BT2020_10 = 14,
+    FFMS_TRC_BT2020_12 = 15,
+    FFMS_TRC_SMPTE2084 = 16,
+    FFMS_TRC_SMPTE428 = 17,
+    FFMS_TRC_ARIB_STD_B67 = 18
+} FFMS_TransferCharacteristic;
+```
+Identifies the transfer characteristics of a frame.
+
 ### FFMS_ColorSpaces
 
 [ColorSpaces]: #ffms_colorspaces
@@ -1503,7 +1596,8 @@ enum FFMS_ColorSpaces {
   FFMS_CS_SMPTE240M   = 7,
   FFMS_CS_YCOCG       = 8,
   FFMS_CS_BT2020_NCL  = 9,
-  FFMS_CS_BT2020_NC   = 10
+  FFMS_CS_BT2020_CL   = 10,
+  FFMS_CS_SMPTE2085   = 11
 };
 ```
 Identifies the color coefficients used for a YUV stream.
@@ -1516,6 +1610,22 @@ Some of these are specified or aliased in a number of places. Most importantly:
 "BT470BG" (ITU-R BT. 470, also known as ITU-T Rec. 601) is equivalent to ITU-R BT601-6 625, ITU-R BT1358 625, ITU-R BT1700 625 PAL & SECAM and IEC 61966-2-4 xvYCC601;
 
 "SMPTE170M" (SMPTE standard 170 M) is functionally the same as BT470BG, and is furthermore equivalent to ITU-R BT601-6 525, ITU-R BT1358 525, and ITU-R BT1700 NTSC.
+
+### FFMS_ChromaLocations
+
+[ChromaLocations]: #ffms_chromalocations
+```c++
+typedef enum FFMS_ChromaLocations {
+    FFMS_LOC_UNSPECIFIED = 0,
+    FFMS_LOC_LEFT = 1,
+    FFMS_LOC_CENTER = 2,
+    FFMS_LOC_TOPLEFT = 3,
+    FFMS_LOC_TOP = 4,
+    FFMS_LOC_BOTTOMLEFT = 5,
+    FFMS_LOC_BOTTOM = 6
+} FFMS_ChromaLocations;
+```
+Identifies the location of chroma samples in a frame.
 
 ### FFMS_ColorRanges
 
@@ -1531,6 +1641,31 @@ Identifies the valid range of luma values in a YUV stream.
 `FFMS_CR_MPEG` is the standard "TV range" with head- and footroom.
 That is, valid luma values range from 16 to 235 with 8-bit color.
 `FFMS_CR_JPEG` is "full range"; all representable luma values are valid.
+
+### FFMS_Stereo3DType
+[Stereo3DType]: #ffms_stereo3dtype
+```c++
+typedef enum FFMS_Stereo3DType {
+    FFMS_S3D_TYPE_2D = 0,
+    FFMS_S3D_TYPE_SIDEBYSIDE,
+    FFMS_S3D_TYPE_TOPBOTTOM,
+    FFMS_S3D_TYPE_FRAMESEQUENCE,
+    FFMS_S3D_TYPE_CHECKERBOARD,
+    FFMS_S3D_TYPE_SIDEBYSIDE_QUINCUNX,
+    FFMS_S3D_TYPE_LINES,
+    FFMS_S3D_TYPE_COLUMNS
+} FFMS_Stereo3DType;
+```
+Identifies the type of stereo 3D the video is.
+
+### FFMS_Stereo3DFlags
+[Stereo3DFlags]: #ffms_stereo3dflags
+```c++
+typedef enum FFMS_Stereo3DFlags {
+    FFMS_S3D_FLAGS_INVERT = 1
+} FFMS_Stereo3DFlags;
+```
+Various flags for stereo 3D videos.
 
 ### FFMS_CC
 ```c++

@@ -26,25 +26,25 @@
 struct AVIOContext;
 
 class FileHandle {
-	AVIOContext *avio;
-	std::string filename;
-	int error_source;
-	int error_cause;
+    AVIOContext *avio;
+    std::string filename;
+    int error_source;
+    int error_cause;
 
 public:
-	FileHandle(const char *filename, const char *mode, int error_source, int error_cause);
-	FileHandle() : avio(nullptr) {}
-	~FileHandle();
+    FileHandle(const char *filename, const char *mode, int error_source, int error_cause);
+    FileHandle() : avio(nullptr) {}
+    ~FileHandle();
 
-	void Seek(int64_t offset, int origin);
-	int64_t Tell();
-	int64_t Size();
+    void Seek(int64_t offset, int origin);
+    int64_t Tell();
+    int64_t Size();
 
-	size_t Read(char *buffer, size_t size);
-	size_t Write(const char *buffer, size_t size);
-	int Printf(const char *fmt, ...)
+    size_t Read(char *buffer, size_t size);
+    size_t Write(const char *buffer, size_t size);
+    int Printf(const char *fmt, ...)
 #ifdef __GNUC__
-	__attribute__((format(printf, 2, 3)))
+    __attribute__((format(printf, 2, 3)))
 #endif
-	;
+        ;
 };

@@ -13,14 +13,14 @@ AM_CPPFLAGS = \
 	-D_FILE_OFFSET_BITS=64 \
 	-DFFMS_EXPORTS \
 	-D__STDC_CONSTANT_MACROS \
-	@LIBAV_CFLAGS@ \
+	@FFMPEG_CFLAGS@ \
 	@ZLIB_CPPFLAGS@ \
 	-include config.h
 AM_CXXFLAGS = -std=c++11 -fvisibility=hidden
 
 lib_LTLIBRARIES = src/core/libffms2.la
 src_core_libffms2_la_LDFLAGS = @src_core_libffms2_la_LDFLAGS@
-src_core_libffms2_la_LIBADD = @LIBAV_LIBS@ @AVRESAMPLE_LIBS@ @ZLIB_LDFLAGS@ -lz @LTUNDEF@
+src_core_libffms2_la_LIBADD = @FFMPEG_LIBS@ @SWRESAMPLE_LIBS@ @ZLIB_LDFLAGS@ -lz @LTUNDEF@
 src_core_libffms2_la_SOURCES = \
 	src/core/audiosource.cpp \
 	src/core/audiosource.h \
@@ -29,9 +29,6 @@ src_core_libffms2_la_SOURCES = \
 	src/core/filehandle.h \
 	src/core/indexing.cpp \
 	src/core/indexing.h \
-	src/core/lavfaudio.cpp \
-	src/core/lavfindexer.cpp \
-	src/core/lavfvideo.cpp \
 	src/core/track.cpp \
 	src/core/track.h \
 	src/core/utils.cpp \
@@ -40,8 +37,6 @@ src_core_libffms2_la_SOURCES = \
 	src/core/videosource.h \
 	src/core/videoutils.cpp \
 	src/core/videoutils.h \
-	src/core/wave64writer.cpp \
-	src/core/wave64writer.h \
 	src/core/zipfile.cpp \
 	src/core/zipfile.h \
 	src/vapoursynth/VapourSynth.h \
