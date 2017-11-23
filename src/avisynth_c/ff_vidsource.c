@@ -158,65 +158,65 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
         return avs_new_value_error( ffms_avs_sprintf( "FFVideoSource: %s", ei.Buffer ) );
 
     int pix_fmts[45];
-    pix_fmts[ 0 ] = FFMS_PIX_FMT(YUV420P);
-    pix_fmts[ 1 ] = FFMS_PIX_FMT(YUYV422);
-    pix_fmts[ 2 ] = FFMS_PIX_FMT(BGRA);
-    pix_fmts[ 3 ] = FFMS_PIX_FMT(BGR24);
-    pix_fmts[ 4 ] = FFMS_PIX_FMT(YUV422P);
-    pix_fmts[ 5 ] = FFMS_PIX_FMT(YUV444P);
-    pix_fmts[ 6 ] = FFMS_PIX_FMT(YUV411P);
-    pix_fmts[ 7 ] = FFMS_PIX_FMT(GRAY8);
-    pix_fmts[ 8 ] = FFMS_PIX_FMT(GRAY10);
-    pix_fmts[ 9 ] = FFMS_PIX_FMT(GRAY12);
-//    pix_fmts[ 9 ] = FFMS_PIX_FMT(GRAY14);
-    pix_fmts[ 10 ] = FFMS_PIX_FMT(GRAY16);
-    pix_fmts[ 11 ] = FFMS_PIX_FMT(BGRA64);
-    pix_fmts[ 12 ] = FFMS_PIX_FMT(BGR48);
-    pix_fmts[ 13 ] = FFMS_PIX_FMT(YUV420P10);
-    pix_fmts[ 14 ] = FFMS_PIX_FMT(YUV422P10);
-    pix_fmts[ 15 ] = FFMS_PIX_FMT(YUV444P10);
-    pix_fmts[ 16 ] = FFMS_PIX_FMT(YUV420P12);
-    pix_fmts[ 17 ] = FFMS_PIX_FMT(YUV422P12);
-    pix_fmts[ 18 ] = FFMS_PIX_FMT(YUV444P12);
-    pix_fmts[ 19 ] = FFMS_PIX_FMT(YUV420P14);
-    pix_fmts[ 20 ] = FFMS_PIX_FMT(YUV422P14);
-    pix_fmts[ 21 ] = FFMS_PIX_FMT(YUV444P14);
-    pix_fmts[ 22 ] = FFMS_PIX_FMT(YUV420P16);
-    pix_fmts[ 23 ] = FFMS_PIX_FMT(YUV422P16);
-    pix_fmts[ 24 ] = FFMS_PIX_FMT(YUV444P16);
-    pix_fmts[ 25 ] = FFMS_PIX_FMT(YUVA420P);
-    pix_fmts[ 26 ] = FFMS_PIX_FMT(YUVA422P);
-    pix_fmts[ 27 ] = FFMS_PIX_FMT(YUVA444P);
-    pix_fmts[ 28 ] = FFMS_PIX_FMT(YUVA420P10);
-    pix_fmts[ 29 ] = FFMS_PIX_FMT(YUVA422P10);
-    pix_fmts[ 30 ] = FFMS_PIX_FMT(YUVA444P10);
-//    pix_fmts[ 31 ] = FFMS_PIX_FMT(YUVA420P12);
-//    pix_fmts[ 32 ] = FFMS_PIX_FMT(YUVA422P12);
-//    pix_fmts[ 33 ] = FFMS_PIX_FMT(YUVA444P12);
-//    pix_fmts[ 34 ] = FFMS_PIX_FMT(YUVA420P14);
-//    pix_fmts[ 35 ] = FFMS_PIX_FMT(YUVA422P14);
-//    pix_fmts[ 36 ] = FFMS_PIX_FMT(YUVA444P14);
-    pix_fmts[ 31 ] = FFMS_PIX_FMT(YUVA420P16);
-    pix_fmts[ 32 ] = FFMS_PIX_FMT(YUVA422P16);
-    pix_fmts[ 33 ] = FFMS_PIX_FMT(YUVA444P16);
-    pix_fmts[ 34 ] = FFMS_PIX_FMT(GBRP);
-    pix_fmts[ 35 ] = FFMS_PIX_FMT(GBRP10);
-    pix_fmts[ 36 ] = FFMS_PIX_FMT(GBRP12);
-    pix_fmts[ 37 ] = FFMS_PIX_FMT(GBRP14);
-    pix_fmts[ 38 ] = FFMS_PIX_FMT(GBRP16);
-    pix_fmts[ 39 ] = FFMS_PIX_FMT(GBRAP);
-    pix_fmts[ 40 ] = FFMS_PIX_FMT(GBRAP10);
-    pix_fmts[ 41 ] = FFMS_PIX_FMT(GBRAP12);
-//    pix_fmts[ 42 ] = FFMS_PIX_FMT(GBRAP14);
-    pix_fmts[ 43 ] = FFMS_PIX_FMT(GBRAP16);
+    pix_fmts[ 0 ] = AV_PIX_FMT_YUV420P;
+    pix_fmts[ 1 ] = AV_PIX_FMT_YUYV422;
+    pix_fmts[ 2 ] = AV_PIX_FMT_BGRA;
+    pix_fmts[ 3 ] = AV_PIX_FMT_BGR24;
+    pix_fmts[ 4 ] = AV_PIX_FMT_YUV422P;
+    pix_fmts[ 5 ] = AV_PIX_FMT_YUV444P;
+    pix_fmts[ 6 ] = AV_PIX_FMT_YUV411P;
+    pix_fmts[ 7 ] = AV_PIX_FMT_GRAY8;
+    pix_fmts[ 8 ] = AV_PIX_FMT_GRAY10;
+    pix_fmts[ 9 ] = AV_PIX_FMT_GRAY12;
+//    pix_fmts[ 9 ] = AV_PIX_FMT_GRAY14;
+    pix_fmts[ 10 ] = AV_PIX_FMT_GRAY16;
+    pix_fmts[ 11 ] = AV_PIX_FMT_BGRA64;
+    pix_fmts[ 12 ] = AV_PIX_FMT_BGR48;
+    pix_fmts[ 13 ] = AV_PIX_FMT_YUV420P10;
+    pix_fmts[ 14 ] = AV_PIX_FMT_YUV422P10;
+    pix_fmts[ 15 ] = AV_PIX_FMT_YUV444P10;
+    pix_fmts[ 16 ] = AV_PIX_FMT_YUV420P12;
+    pix_fmts[ 17 ] = AV_PIX_FMT_YUV422P12;
+    pix_fmts[ 18 ] = AV_PIX_FMT_YUV444P12;
+    pix_fmts[ 19 ] = AV_PIX_FMT_YUV420P14;
+    pix_fmts[ 20 ] = AV_PIX_FMT_YUV422P14;
+    pix_fmts[ 21 ] = AV_PIX_FMT_YUV444P14;
+    pix_fmts[ 22 ] = AV_PIX_FMT_YUV420P16;
+    pix_fmts[ 23 ] = AV_PIX_FMT_YUV422P16;
+    pix_fmts[ 24 ] = AV_PIX_FMT_YUV444P16;
+    pix_fmts[ 25 ] = AV_PIX_FMT_YUVA420P;
+    pix_fmts[ 26 ] = AV_PIX_FMT_YUVA422P;
+    pix_fmts[ 27 ] = AV_PIX_FMT_YUVA444P;
+    pix_fmts[ 28 ] = AV_PIX_FMT_YUVA420P10;
+    pix_fmts[ 29 ] = AV_PIX_FMT_YUVA422P10;
+    pix_fmts[ 30 ] = AV_PIX_FMT_YUVA444P10;
+//    pix_fmts[ 31 ] = AV_PIX_FMT_YUVA420P12;
+//    pix_fmts[ 32 ] = AV_PIX_FMT_YUVA422P12;
+//    pix_fmts[ 33 ] = AV_PIX_FMT_YUVA444P12;
+//    pix_fmts[ 34 ] = AV_PIX_FMT_YUVA420P14;
+//    pix_fmts[ 35 ] = AV_PIX_FMT_YUVA422P14;
+//    pix_fmts[ 36 ] = AV_PIX_FMT_YUVA444P14;
+    pix_fmts[ 31 ] = AV_PIX_FMT_YUVA420P16;
+    pix_fmts[ 32 ] = AV_PIX_FMT_YUVA422P16;
+    pix_fmts[ 33 ] = AV_PIX_FMT_YUVA444P16;
+    pix_fmts[ 34 ] = AV_PIX_FMT_GBRP;
+    pix_fmts[ 35 ] = AV_PIX_FMT_GBRP10;
+    pix_fmts[ 36 ] = AV_PIX_FMT_GBRP12;
+    pix_fmts[ 37 ] = AV_PIX_FMT_GBRP14;
+    pix_fmts[ 38 ] = AV_PIX_FMT_GBRP16;
+    pix_fmts[ 39 ] = AV_PIX_FMT_GBRAP;
+    pix_fmts[ 40 ] = AV_PIX_FMT_GBRAP10;
+    pix_fmts[ 41 ] = AV_PIX_FMT_GBRAP12;
+//    pix_fmts[ 42 ] = AV_PIX_FMT_GBRAP14;
+    pix_fmts[ 43 ] = AV_PIX_FMT_GBRAP16;
     pix_fmts[ 44 ] = -1;
 
-    // FFMS_PIX_FMT(NV21) is misused as a return value different to the defined ones in the function
-    enum AVPixelFormat dst_pix_fmt = ffms_avs_lib.csp_name_to_pix_fmt( csp_name, FFMS_PIX_FMT(NV21) );
-    if( dst_pix_fmt == FFMS_PIX_FMT(NONE) )
+    // AV_PIX_FMT_NV21 is misused as a return value different to the defined ones in the function
+    enum AVPixelFormat dst_pix_fmt = ffms_avs_lib.csp_name_to_pix_fmt( csp_name, AV_PIX_FMT_NV21 );
+    if( dst_pix_fmt == AV_PIX_FMT_NONE )
         return avs_new_value_error( "FFVideoSource: Invalid colorspace name specified" );
 
-    if( dst_pix_fmt != FFMS_PIX_FMT(NV21) )
+    if( dst_pix_fmt != AV_PIX_FMT_NV21 )
     {
         pix_fmts[ 0 ] = dst_pix_fmt;
         pix_fmts[ 1 ] = -1;
@@ -248,107 +248,107 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
 
     enum AVPixelFormat pix_fmt = frame->ConvertedPixelFormat;
 
-    if( pix_fmt == FFMS_PIX_FMT(YUVJ420P) || pix_fmt == FFMS_PIX_FMT(YUV420P) )
+    if( pix_fmt == AV_PIX_FMT_YUVJ420P || pix_fmt == AV_PIX_FMT_YUV420P )
         filter->fi->vi.pixel_type = AVS_CS_I420;
-    else if( pix_fmt == FFMS_PIX_FMT(YUYV422) )
+    else if( pix_fmt == AV_PIX_FMT_YUYV422 )
         filter->fi->vi.pixel_type = AVS_CS_YUY2;
-    else if( pix_fmt == FFMS_PIX_FMT(BGRA) )
+    else if( pix_fmt == AV_PIX_FMT_BGRA )
         filter->fi->vi.pixel_type = AVS_CS_BGR32;
-    else if( pix_fmt == FFMS_PIX_FMT(BGR24) )
+    else if( pix_fmt == AV_PIX_FMT_BGR24 )
         filter->fi->vi.pixel_type = AVS_CS_BGR24;
-    else if( pix_fmt == FFMS_PIX_FMT(YUVJ422P) || pix_fmt == FFMS_PIX_FMT(YUV422P) )
+    else if( pix_fmt == AV_PIX_FMT_YUVJ422P || pix_fmt == AV_PIX_FMT_YUV422P )
         filter->fi->vi.pixel_type = AVS_CS_YV16;
-    else if( pix_fmt == FFMS_PIX_FMT(YUVJ444P) || pix_fmt == FFMS_PIX_FMT(YUV444P) )
+    else if( pix_fmt == AV_PIX_FMT_YUVJ444P || pix_fmt == AV_PIX_FMT_YUV444P )
         filter->fi->vi.pixel_type = AVS_CS_YV24;
-    else if( pix_fmt == FFMS_PIX_FMT(GRAY8) )
+    else if( pix_fmt == AV_PIX_FMT_GRAY8 )
         filter->fi->vi.pixel_type = AVS_CS_Y8;
-    else if( pix_fmt == FFMS_PIX_FMT(GRAY10) )
+    else if( pix_fmt == AV_PIX_FMT_GRAY10 )
         filter->fi->vi.pixel_type = AVS_CS_Y10;
-    else if( pix_fmt == FFMS_PIX_FMT(GRAY12) )
+    else if( pix_fmt == AV_PIX_FMT_GRAY12 )
         filter->fi->vi.pixel_type = AVS_CS_Y12;
-//    else if( pix_fmt == FFMS_PIX_FMT(GRAY14) )
+//    else if( pix_fmt == AV_PIX_FMT_GRAY14 )
 //        filter->fi->vi.pixel_type = AVS_CS_Y14;
-    else if( pix_fmt == FFMS_PIX_FMT(GRAY16) )
+    else if( pix_fmt == AV_PIX_FMT_GRAY16 )
         filter->fi->vi.pixel_type = AVS_CS_Y16;
-    else if( pix_fmt == FFMS_PIX_FMT(YUV411P) )
+    else if( pix_fmt == AV_PIX_FMT_YUV411P )
         filter->fi->vi.pixel_type = AVS_CS_YV411;
-    else if( pix_fmt == FFMS_PIX_FMT(BGRA64) )
+    else if( pix_fmt == AV_PIX_FMT_BGRA64 )
         filter->fi->vi.pixel_type = AVS_CS_BGR64;
-    else if( pix_fmt == FFMS_PIX_FMT(BGR48) )
+    else if( pix_fmt == AV_PIX_FMT_BGR48 )
         filter->fi->vi.pixel_type = AVS_CS_BGR48;
-    else if( pix_fmt == FFMS_PIX_FMT(YUV420P10) )
+    else if( pix_fmt == AV_PIX_FMT_YUV420P10 )
         filter->fi->vi.pixel_type = AVS_CS_YUV420P10;
-    else if( pix_fmt == FFMS_PIX_FMT(YUV422P10) )
+    else if( pix_fmt == AV_PIX_FMT_YUV422P10 )
         filter->fi->vi.pixel_type = AVS_CS_YUV422P10;
-    else if( pix_fmt == FFMS_PIX_FMT(YUV444P10) )
+    else if( pix_fmt == AV_PIX_FMT_YUV444P10 )
         filter->fi->vi.pixel_type = AVS_CS_YUV444P10;
-    else if( pix_fmt == FFMS_PIX_FMT(YUV420P12) )
+    else if( pix_fmt == AV_PIX_FMT_YUV420P12 )
         filter->fi->vi.pixel_type = AVS_CS_YUV420P12;
-    else if( pix_fmt == FFMS_PIX_FMT(YUV422P12) )
+    else if( pix_fmt == AV_PIX_FMT_YUV422P12 )
         filter->fi->vi.pixel_type = AVS_CS_YUV422P12;
-    else if( pix_fmt == FFMS_PIX_FMT(YUV444P12) )
+    else if( pix_fmt == AV_PIX_FMT_YUV444P12 )
         filter->fi->vi.pixel_type = AVS_CS_YUV444P12;
-    else if( pix_fmt == FFMS_PIX_FMT(YUV420P14) )
+    else if( pix_fmt == AV_PIX_FMT_YUV420P14 )
         filter->fi->vi.pixel_type = AVS_CS_YUV420P14;
-    else if( pix_fmt == FFMS_PIX_FMT(YUV422P14) )
+    else if( pix_fmt == AV_PIX_FMT_YUV422P14 )
         filter->fi->vi.pixel_type = AVS_CS_YUV422P14;
-    else if( pix_fmt == FFMS_PIX_FMT(YUV444P14) )
+    else if( pix_fmt == AV_PIX_FMT_YUV444P14 )
         filter->fi->vi.pixel_type = AVS_CS_YUV444P14;
-    else if( pix_fmt == FFMS_PIX_FMT(YUV420P16) )
+    else if( pix_fmt == AV_PIX_FMT_YUV420P16 )
         filter->fi->vi.pixel_type = AVS_CS_YUV420P16;
-    else if( pix_fmt == FFMS_PIX_FMT(YUV422P16) )
+    else if( pix_fmt == AV_PIX_FMT_YUV422P16 )
         filter->fi->vi.pixel_type = AVS_CS_YUV422P16;
-    else if( pix_fmt == FFMS_PIX_FMT(YUV444P16) )
+    else if( pix_fmt == AV_PIX_FMT_YUV444P16 )
         filter->fi->vi.pixel_type = AVS_CS_YUV444P16;
-    else if( pix_fmt == FFMS_PIX_FMT(YUVA420P) )
+    else if( pix_fmt == AV_PIX_FMT_YUVA420P )
         filter->fi->vi.pixel_type = AVS_CS_YUVA420;
-    else if( pix_fmt == FFMS_PIX_FMT(YUVA422P) )
+    else if( pix_fmt == AV_PIX_FMT_YUVA422P )
         filter->fi->vi.pixel_type = AVS_CS_YUVA422;
-    else if( pix_fmt == FFMS_PIX_FMT(YUVA444P) )
+    else if( pix_fmt == AV_PIX_FMT_YUVA444P )
         filter->fi->vi.pixel_type = AVS_CS_YUVA444;
-    else if( pix_fmt == FFMS_PIX_FMT(YUVA420P10) )
+    else if( pix_fmt == AV_PIX_FMT_YUVA420P10 )
         filter->fi->vi.pixel_type = AVS_CS_YUVA420P10;
-    else if( pix_fmt == FFMS_PIX_FMT(YUVA422P10) )
+    else if( pix_fmt == AV_PIX_FMT_YUVA422P10 )
         filter->fi->vi.pixel_type = AVS_CS_YUVA422P10;
-    else if( pix_fmt == FFMS_PIX_FMT(YUVA444P10) )
+    else if( pix_fmt == AV_PIX_FMT_YUVA444P10 )
         filter->fi->vi.pixel_type = AVS_CS_YUVA444P10;
-//    else if( pix_fmt == FFMS_PIX_FMT(YUVA420P12) )
+//    else if( pix_fmt == AV_PIX_FMT_YUVA420P12 )
 //        filter->fi->vi.pixel_type = AVS_CS_YUVA420P12;
-//    else if( pix_fmt == FFMS_PIX_FMT(YUVA422P12) )
+//    else if( pix_fmt == AV_PIX_FMT_YUVA422P12 )
 //        filter->fi->vi.pixel_type = AVS_CS_YUVA422P12;
-//    else if( pix_fmt == FFMS_PIX_FMT(YUVA444P12) )
+//    else if( pix_fmt == AV_PIX_FMT_YUVA444P12 )
 //        filter->fi->vi.pixel_type = AVS_CS_YUVA444P12;
-//    else if( pix_fmt == FFMS_PIX_FMT(YUVA420P14) )
+//    else if( pix_fmt == AV_PIX_FMT_YUVA420P14 )
 //        filter->fi->vi.pixel_type = AVS_CS_YUVA420P14;
-//    else if( pix_fmt == FFMS_PIX_FMT(YUVA422P14) )
+//    else if( pix_fmt == AV_PIX_FMT_YUVA422P14 )
 //        filter->fi->vi.pixel_type = AVS_CS_YUVA422P14;
-//    else if( pix_fmt == FFMS_PIX_FMT(YUVA444P14) )
+//    else if( pix_fmt == AV_PIX_FMT_YUVA444P14 )
 //        filter->fi->vi.pixel_type = AVS_CS_YUVA444P14;
-    else if( pix_fmt == FFMS_PIX_FMT(YUVA420P16) )
+    else if( pix_fmt == AV_PIX_FMT_YUVA420P16 )
         filter->fi->vi.pixel_type = AVS_CS_YUVA420P16;
-    else if( pix_fmt == FFMS_PIX_FMT(YUVA422P16) )
+    else if( pix_fmt == AV_PIX_FMT_YUVA422P16 )
         filter->fi->vi.pixel_type = AVS_CS_YUVA422P16;
-    else if( pix_fmt == FFMS_PIX_FMT(YUVA444P16) )
+    else if( pix_fmt == AV_PIX_FMT_YUVA444P16 )
         filter->fi->vi.pixel_type = AVS_CS_YUVA444P16;
-    else if( pix_fmt == FFMS_PIX_FMT(GBRP) )
+    else if( pix_fmt == AV_PIX_FMT_GBRP )
         filter->fi->vi.pixel_type = AVS_CS_RGBP;
-    else if( pix_fmt == FFMS_PIX_FMT(GBRP10) )
+    else if( pix_fmt == AV_PIX_FMT_GBRP10 )
         filter->fi->vi.pixel_type = AVS_CS_RGBP10;
-    else if( pix_fmt == FFMS_PIX_FMT(GBRP12) )
+    else if( pix_fmt == AV_PIX_FMT_GBRP12 )
         filter->fi->vi.pixel_type = AVS_CS_RGBP12;
-    else if( pix_fmt == FFMS_PIX_FMT(GBRP14) )
+    else if( pix_fmt == AV_PIX_FMT_GBRP14 )
         filter->fi->vi.pixel_type = AVS_CS_RGBP14;
-    else if( pix_fmt == FFMS_PIX_FMT(GBRP16) )
+    else if( pix_fmt == AV_PIX_FMT_GBRP16 )
         filter->fi->vi.pixel_type = AVS_CS_RGBP16;
-    else if( pix_fmt == FFMS_PIX_FMT(GBRAP) )
+    else if( pix_fmt == AV_PIX_FMT_GBRAP )
         filter->fi->vi.pixel_type = AVS_CS_RGBAP;
-    else if( pix_fmt == FFMS_PIX_FMT(GBRAP10) )
+    else if( pix_fmt == AV_PIX_FMT_GBRAP10 )
         filter->fi->vi.pixel_type = AVS_CS_RGBAP10;
-    else if( pix_fmt == FFMS_PIX_FMT(GBRAP12) )
+    else if( pix_fmt == AV_PIX_FMT_GBRAP12 )
         filter->fi->vi.pixel_type = AVS_CS_RGBAP12;
-//    else if( pix_fmt == FFMS_PIX_FMT(GBRAP14) )
+//    else if( pix_fmt == AV_PIX_FMT_GBRAP14 )
 //        filter->fi->vi.pixel_type = AVS_CS_RGBAP14;
-    else if( pix_fmt == FFMS_PIX_FMT(GBRAP16) )
+    else if( pix_fmt == AV_PIX_FMT_GBRAP16 )
         filter->fi->vi.pixel_type = AVS_CS_RGBAP16;
     else
         return avs_new_value_error( "FFVideoSource: No suitable output format found" );
@@ -356,7 +356,7 @@ static AVS_Value init_output_format( ffvideosource_filter_t *filter, int dst_wid
     if( filter->rff_mode > 0 && dst_height != frame->EncodedHeight )
         return avs_new_value_error( "FFVideoSource: Vertical scaling not allowed in RFF mode" );
 
-    if( filter->rff_mode > 0 && dst_pix_fmt != FFMS_PIX_FMT(NV21) )
+    if( filter->rff_mode > 0 && dst_pix_fmt != AV_PIX_FMT_NV21 )
         return avs_new_value_error( "FFVideoSource: Only the default output colorspace can be used in RFF mode" );
 
     // Set color information
