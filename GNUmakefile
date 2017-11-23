@@ -15,14 +15,10 @@ CORE_CXX = src/core/audiosource.cpp     \
            src/core/ffms.cpp            \
            src/core/filehandle.cpp      \
            src/core/indexing.cpp        \
-           src/core/lavfaudio.cpp       \
-           src/core/lavfindexer.cpp     \
-           src/core/lavfvideo.cpp       \
            src/core/track.cpp           \
            src/core/utils.cpp           \
            src/core/videosource.cpp     \
            src/core/videoutils.cpp      \
-           src/core/wave64writer.cpp    \
            src/core/zipfile.cpp
 
 IDX_CXX = src/index/ffmsindex.cpp
