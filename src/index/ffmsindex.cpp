@@ -21,7 +21,7 @@
 #include "ffms.h"
 
 #ifdef _WIN32
-#include <codecvt>
+#include "vsutf16.h"
 #endif
 
 #include <cstdlib>
@@ -238,10 +238,9 @@ void DoIndexing() {
 int wmain(int argc, const wchar_t *_argv[]) {
     std::vector<const char *> StringPtrs(argc);
     std::vector<std::string> StringStorage(argc);
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> Conversion;
 
     for (int i = 0; i < argc; i++) {
-        StringStorage[i] = Conversion.to_bytes(_argv[i]);
+        StringStorage[i] = utf16_to_utf8(_argv[i]);
         StringPtrs[i] = StringStorage[i].c_str();
     }
 

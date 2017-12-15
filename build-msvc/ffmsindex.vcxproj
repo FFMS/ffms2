@@ -159,6 +159,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\ffms.h" />
+    <ClInclude Include="..\src\index\vsutf16.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="ffms2.vcxproj">
