@@ -275,7 +275,10 @@ typedef enum FFMS_ColorSpaces {
     FFMS_CS_YCOCG = 8,
     FFMS_CS_BT2020_NCL = 9,
     FFMS_CS_BT2020_CL = 10,
-    FFMS_CS_SMPTE2085 = 11
+    FFMS_CS_SMPTE2085 = 11,
+    FFMS_CS_CHROMATICITY_DERIVED_NCL = 12,
+    FFMS_CS_CHROMATICITY_DERIVED_CL = 13,
+    FFMS_CS_ICTCP = 14
 } FFMS_ColorSpaces;
 
 typedef enum FFMS_ChromaLocations {
