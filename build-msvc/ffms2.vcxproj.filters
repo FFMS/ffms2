@@ -1,58 +1,61 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Audio">
-      <UniqueIdentifier>{ed366ac0-ef41-4c15-b40e-4db3c76b17db}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Indexing">
-      <UniqueIdentifier>{a5f150b5-ae8e-448c-a724-bbdca106ea10}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Video">
-      <UniqueIdentifier>{14a03221-39fc-4803-b677-e90f2290666b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="API">
-      <UniqueIdentifier>{132a91ed-71ff-4574-aba8-09d496869832}</UniqueIdentifier>
+      <UniqueIdentifier>{5e4ea0a8-9b1a-49ee-8b02-e498d4d5cc80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Audio">
+      <UniqueIdentifier>{94e424bf-1254-46b5-9282-7c6b99280638}</UniqueIdentifier>
     </Filter>
     <Filter Include="Utils">
-      <UniqueIdentifier>{7e197647-eb8c-44bc-b6d8-6368b242478c}</UniqueIdentifier>
+      <UniqueIdentifier>{e25264ca-e3fd-4fd6-a1d1-839ae9b2ade2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Indexing">
+      <UniqueIdentifier>{731b163b-dd24-4aba-8bef-86c3b364157e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Video">
+      <UniqueIdentifier>{a2513788-a12f-43c1-99aa-b9f20cd6a099}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Vapoursynth">
+      <UniqueIdentifier>{8cc15f2a-6612-4e85-96b3-d3abfe15ddab}</UniqueIdentifier>
     </Filter>
     <Filter Include="Avisynth">
-      <UniqueIdentifier>{fab6c2c7-eeae-4009-a932-fc079402db63}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Config">
-      <UniqueIdentifier>{ac81097c-9043-43fa-a184-ea4c22091059}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="VapourSynth">
-      <UniqueIdentifier>{8a87437e-fe04-4b74-a917-f8c108247e3f}</UniqueIdentifier>
+      <UniqueIdentifier>{95efeead-393a-4518-b1f2-9b8b6bb8c3d6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\core\audiosource.cpp">
-      <Filter>Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\lavfaudio.cpp">
-      <Filter>Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\indexing.cpp">
-      <Filter>Indexing</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\lavfindexer.cpp">
-      <Filter>Indexing</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\lavfvideo.cpp">
-      <Filter>Video</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\videosource.cpp">
-      <Filter>Video</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\core\ffms.cpp">
       <Filter>API</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\filehandle.cpp">
+      <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="..\src\core\utils.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\core\wave64writer.cpp">
+    <ClCompile Include="..\src\core\zipfile.cpp">
       <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\videosource.cpp">
+      <Filter>Video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\videoutils.cpp">
+      <Filter>Video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vapoursynth\vapoursource.cpp">
+      <Filter>Vapoursynth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vapoursynth\vapoursynth.cpp">
+      <Filter>Vapoursynth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\indexing.cpp">
+      <Filter>Indexing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\track.cpp">
+      <Filter>Indexing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\audiosource.cpp">
+      <Filter>Audio</Filter>
     </ClCompile>
     <ClCompile Include="..\src\avisynth\avisynth.cpp">
       <Filter>Avisynth</Filter>
@@ -60,73 +63,49 @@
     <ClCompile Include="..\src\avisynth\avssources.cpp">
       <Filter>Avisynth</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\config\libs.cpp">
-      <Filter>Config</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\videoutils.cpp">
-      <Filter>Video</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\vapoursynth\vapoursource.cpp">
-      <Filter>VapourSynth</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\vapoursynth\vapoursynth.cpp">
-      <Filter>VapourSynth</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\track.cpp">
-      <Filter>Indexing</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\zipfile.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\filehandle.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\core\audiosource.h">
-      <Filter>Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\indexing.h">
-      <Filter>Indexing</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\videosource.h">
-      <Filter>Video</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\ffms.h">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\ffmscompat.h">
+    <ClInclude Include="..\src\core\filehandle.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\utils.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\core\wave64writer.h">
+    <ClInclude Include="..\src\core\zipfile.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\avisynth\avssources.h">
-      <Filter>Avisynth</Filter>
+    <ClInclude Include="..\include\ffmscompat.h">
+      <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\config\msvc-config.h">
-      <Filter>Config</Filter>
+    <ClInclude Include="..\src\core\videosource.h">
+      <Filter>Video</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\videoutils.h">
       <Filter>Video</Filter>
     </ClInclude>
     <ClInclude Include="..\src\vapoursynth\vapoursource.h">
-      <Filter>VapourSynth</Filter>
+      <Filter>Vapoursynth</Filter>
     </ClInclude>
     <ClInclude Include="..\src\vapoursynth\VapourSynth.h">
-      <Filter>VapourSynth</Filter>
+      <Filter>Vapoursynth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vapoursynth\VSHelper.h">
+      <Filter>Vapoursynth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\indexing.h">
+      <Filter>Indexing</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\track.h">
       <Filter>Indexing</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\core\zipfile.h">
-      <Filter>Utils</Filter>
+    <ClInclude Include="..\src\core\audiosource.h">
+      <Filter>Audio</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\core\filehandle.h">
-      <Filter>Utils</Filter>
+    <ClInclude Include="..\src\avisynth\avssources.h">
+      <Filter>Avisynth</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

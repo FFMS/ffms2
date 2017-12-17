@@ -44,12 +44,11 @@ If you want a progress report on the indexing, you can use the supplied `ffmsind
 ### Index
 ```
 ffms2.Index(string source[, string cachefile = source + ".ffindex", int[] indextracks = [],
-    int[] dumptracks = [], string audiofile = "%sourcefile%.%trackzn%.w64", int errorhandling = 3,
-    bint overwrite = False, string demuxer])
+    int errorhandling = 3, bint overwrite = False])
 ```
 Indexes a number of tracks in a given source file and writes the index file to disk, where it can be picked up and used by `Source`.
 Normally you do not need to call this function manually; it's invoked automatically if necessary by `Source`.
-It does, however, give you more control over how indexing is done and it can also dump audio tracks to WAVE64 files while indexing is in progress.
+It does, however, give you more control over how indexing is done.
 
 Note that this function returns an integer, not a clip (since it doesn't open video, nor audio).
 The return value isn't particularly interesting, but for the record it's 0 if the index file already exists (and is valid) and overwrite was not enabled, 1 if the index file was created and no previous index existed, and 2 if the index file was created by overwriting an existing, valid index file.
@@ -69,23 +68,6 @@ It's possible to use -1 to simply tell it to index all tracks.´without having t
 
 Note that FFMS2's idea about what track has what number may be completely different from what any other application might think.
 
-##### int[] dumptracks = []
-The same as indextracks, but the tracks flagged by this mask are dumped to disk as decompressed Wave64 files.
-Note that if a track is specified in dumptracks it will also become indexed.
-
-##### string audiofile = "%sourcefile%.%trackzn%.w64"
-A string representing a filename template that determines where the audio tracks set to be dumped by the `dumpmask` will be written.
-You can use a number of variables here; make sure you include a track number variable if you're dumping multiple tracks, or you'll get really weird results when FFMS2 tries to write multiple tracks to the same file.
-Available variables:
-
- - **%sourcefile%**: same as the source argument, i.e. the file the audio is decoded from
- - **%trackn%**: the track number
- - **%trackzn%**: the track number, zero padded to two digits
- - **%samplerate%**: sample rate in Hertz
- - **%channels%**: number of channels
- - **%bps%**: bits per sample
- - **%delay%**: delay, or more exactly the first timestamp encountered in the audio stream
-
 ##### int errorhandling = 3
 Controls what happens if an audio decoding error is encountered during indexing.
 Possible values are:
@@ -99,16 +81,13 @@ Possible values are:
 If set to true, `FFIndex()` will reindex the source file and overwrite the index file even if the index file already exists and is valid.
 Mostly useful for trackmask changes and testing.
 
-##### string demuxer
-Select which demuxer to use. Note that currently there only is one demuxer available (lavf) so this argument has no practical use.
-
 ### Source
 ```
 ffms2.Source(string source[, int track = -1, bint cache = True,
     string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1,
     int threads = -1, string timecodes = "", int seekmode = 1,
     int width = -1, int height = -1, string resizer = "BICUBIC",
-    int format, bint alpha = True])
+    int format, bint alpha = False])
 ```
 Opens video. Will invoke indexing of all video tracks (but no audio tracks) if no valid index file is found.
 
@@ -175,8 +154,8 @@ The available choices are `FAST_BILINEAR`, `BILINEAR`, `BICUBIC` (default), `X`,
 ##### int format
 Convert the output from whatever it was to the given format. If not specified the best matching output format is used.
 
-##### bint alpha = True
-Output the alpha channel as a second clip if it is present in the file. It may be desirable to set this to False to simplify scripting if the alpha information will never be used.
+##### bint alpha = False
+Output the alpha channel as a second clip if it is present in the file. When set to True an array of two clips will be returned with alpha in the second one. If there is alpha information present.
 
 #### Exported VapourSynth frame properties
 There are several useful frame properties that are set. See the VapourSynth manual for a detailed explanation of them.

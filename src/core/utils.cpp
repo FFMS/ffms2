@@ -18,10 +18,9 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-// avcodec.h includes audioconvert.h, but we need to include audioconvert.h
-// ourselves later
-#define FF_API_OLD_AUDIOCONVERT 0
-#define AVUTIL_AUDIOCONVERT_H
+extern "C" {
+#include <libavutil/channel_layout.h>
+}
 
 #include "utils.h"
 
@@ -36,181 +35,107 @@
 #include <algorithm>
 #include <sstream>
 
-extern bool GlobalUseUTF8Paths;
-
-FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const char *Message) : _Message(Message), _ErrorType(ErrorType), _SubType(SubType) { }
-FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const std::string &Message) : _Message(Message), _ErrorType(ErrorType), _SubType(SubType) { }
+FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const char *Message) : _Message(Message), _ErrorType(ErrorType), _SubType(SubType) {}
+FFMS_Exception::FFMS_Exception(int ErrorType, int SubType, const std::string &Message) : _Message(Message), _ErrorType(ErrorType), _SubType(SubType) {}
 
 int FFMS_Exception::CopyOut(FFMS_ErrorInfo *ErrorInfo) const {
-	if (ErrorInfo) {
-		ErrorInfo->ErrorType = _ErrorType;
-		ErrorInfo->SubType = _SubType;
+    if (ErrorInfo) {
+        ErrorInfo->ErrorType = _ErrorType;
+        ErrorInfo->SubType = _SubType;
 
-		if (ErrorInfo->BufferSize > 0) {
-			memset(ErrorInfo->Buffer, 0, ErrorInfo->BufferSize);
-			_Message.copy(ErrorInfo->Buffer, ErrorInfo->BufferSize - 1);
-		}
-	}
+        if (ErrorInfo->BufferSize > 0) {
+            memset(ErrorInfo->Buffer, 0, ErrorInfo->BufferSize);
+            _Message.copy(ErrorInfo->Buffer, ErrorInfo->BufferSize - 1);
+        }
+    }
 
-	return (_ErrorType << 16) | _SubType;
+    return (_ErrorType << 16) | _SubType;
 }
 
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo) {
-	if (ErrorInfo) {
-		ErrorInfo->ErrorType = FFMS_ERROR_SUCCESS;
-		ErrorInfo->SubType = FFMS_ERROR_SUCCESS;
+    if (ErrorInfo) {
+        ErrorInfo->ErrorType = FFMS_ERROR_SUCCESS;
+        ErrorInfo->SubType = FFMS_ERROR_SUCCESS;
 
-		if (ErrorInfo->BufferSize > 0)
-			ErrorInfo->Buffer[0] = 0;
-	}
+        if (ErrorInfo->BufferSize > 0)
+            ErrorInfo->Buffer[0] = 0;
+    }
 }
 
 void InitNullPacket(AVPacket &pkt) {
-	av_init_packet(&pkt);
-	pkt.data = nullptr;
-	pkt.size = 0;
-}
-
-extern "C" {
-#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 52, 2, 0, 52, 6, 100)
-#include <libavutil/channel_layout.h>
-#else
-#undef AVUTIL_AUDIOCONVERT_H
-
-// Whether or not av_get_default_channel_layout exists in a given version
-// depends on which branch that version is from, since FFmpeg doesn't
-// understand the concept of version numbers. Work around this by always using
-// our copy, since that's less effort than detecting whether or not it's
-// available.
-#define av_get_default_channel_layout av_get_default_channel_layout_hurr
-#include "libavutil/audioconvert.h"
-#undef av_get_default_channel_layout
-
-static int64_t av_get_default_channel_layout(int nb_channels) {
-	switch(nb_channels) {
-		case 1: return AV_CH_LAYOUT_MONO;
-		case 2: return AV_CH_LAYOUT_STEREO;
-		case 3: return AV_CH_LAYOUT_SURROUND;
-		case 4: return AV_CH_LAYOUT_QUAD;
-		case 5: return AV_CH_LAYOUT_5POINT0;
-		case 6: return AV_CH_LAYOUT_5POINT1;
-		case 7: return AV_CH_LAYOUT_6POINT1;
-		case 8: return AV_CH_LAYOUT_7POINT1;
-		default: return 0;
-	}
-}
-#endif
+    av_init_packet(&pkt);
+    pkt.data = nullptr;
+    pkt.size = 0;
 }
 
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
-	AP.SampleFormat = static_cast<FFMS_SampleFormat>(av_get_packed_sample_fmt(CTX->sample_fmt));
-	AP.BitsPerSample = av_get_bytes_per_sample(CTX->sample_fmt) * 8;
-	AP.Channels = CTX->channels;
-	AP.ChannelLayout = CTX->channel_layout;
-	AP.SampleRate = CTX->sample_rate;
-	if (!Frames.empty()) {
-		AP.NumSamples = (Frames.back()).SampleStart + (Frames.back()).SampleCount;
-		AP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
-		AP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
-	}
+    AP.SampleFormat = static_cast<FFMS_SampleFormat>(av_get_packed_sample_fmt(CTX->sample_fmt));
+    AP.BitsPerSample = av_get_bytes_per_sample(CTX->sample_fmt) * 8;
+    AP.Channels = CTX->channels;
+    AP.ChannelLayout = CTX->channel_layout;
+    AP.SampleRate = CTX->sample_rate;
+    if (!Frames.empty()) {
+        AP.NumSamples = (Frames.back()).SampleStart + (Frames.back()).SampleCount;
+        AP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+        AP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+    }
 
-	if (AP.ChannelLayout == 0)
-		AP.ChannelLayout = av_get_default_channel_layout(AP.Channels);
+    if (AP.ChannelLayout == 0)
+        AP.ChannelLayout = av_get_default_channel_layout(AP.Channels);
 }
 
-// All this filename chikanery that follows is supposed to make sure both local
-// codepage (used by avisynth etc) and UTF8 (potentially used by API users) strings
-// work correctly on Win32.
-// It's a really ugly hack, and I blame Microsoft for it.
-#ifdef _WIN32
-static std::wstring char_to_wstring(const char *s, unsigned int cp) {
-	std::wstring ret;
-	int len;
-	if (!(len = MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1, nullptr, 0)))
-		return ret;
+void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext, int Track) {
+    if (avformat_open_input(&FormatContext, SourceFile, nullptr, nullptr) != 0)
+        throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+            std::string("Couldn't open '") + SourceFile + "'");
 
-	ret.resize(len);
-	if (MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, s, -1 , &ret[0], len) <= 0)
-		return ret;
+    if (avformat_find_stream_info(FormatContext, nullptr) < 0) {
+        avformat_close_input(&FormatContext);
+        FormatContext = nullptr;
+        throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
+            "Couldn't find stream information");
+    }
 
-	return ret;
-}
-
-std::wstring widen_path(const char *s) {
-	return char_to_wstring(s, GlobalUseUTF8Paths ? CP_UTF8 : CP_ACP);
-}
-#endif
-
-// End of filename hackery.
-
-void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext) {
-	if (avformat_open_input(&FormatContext, SourceFile, nullptr, nullptr) != 0)
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			std::string("Couldn't open '") + SourceFile + "'");
-
-	if (avformat_find_stream_info(FormatContext,nullptr) < 0) {
-		avformat_close_input(&FormatContext);
-		FormatContext = nullptr;
-		throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
-			"Couldn't find stream information");
-	}
-}
-
-void FlushBuffers(AVCodecContext *CodecContext) {
-	if (CodecContext->codec->flush)
-		avcodec_flush_buffers(CodecContext);
-	else {
-		// If the codec doesn't have flush(), it might not need it... or it
-		// might need it and just not implement it as in the case of VC-1, so
-		// close and reopen the codec
-		const AVCodec *codec = CodecContext->codec;
-
-		// Raw video codec forgets the palette if "flushed" this way
-		if (codec->id != FFMS_ID(RAWVIDEO)) {
-			avcodec_close(CodecContext);
-			// Whether or not codec is const varies between versions
-			if (avcodec_open2(CodecContext, const_cast<AVCodec *>(codec), nullptr) < 0)
-				throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_CODEC,
-				"Couldn't re-open codec.");
-		}
-	}
+    for (int i = 0; i < (int)FormatContext->nb_streams; i++)
+        if (i != Track)
+            FormatContext->streams[i]->discard = AVDISCARD_ALL;
 }
 
 int ResizerNameToSWSResizer(const char *ResizerName) {
-	if (!ResizerName)
-		return 0;
-	std::string s = ResizerName;
-	std::transform(s.begin(), s.end(), s.begin(), toupper);
-	if (s == "FAST_BILINEAR")
-		return SWS_FAST_BILINEAR;
-	if (s == "BILINEAR")
-		return SWS_BILINEAR;
-	if (s == "BICUBIC")
-		return SWS_BICUBIC;
-	if (s == "X")
-		return SWS_X;
-	if (s == "POINT")
-		return SWS_POINT;
-	if (s == "AREA")
-		return SWS_AREA;
-	if (s == "BICUBLIN")
-		return SWS_BICUBLIN;
-	if (s == "GAUSS")
-		return SWS_GAUSS;
-	if (s == "SINC")
-		return SWS_SINC;
-	if (s == "LANCZOS")
-		return SWS_LANCZOS;
-	if (s == "SPLINE")
-		return SWS_SPLINE;
-	return 0;
+    if (!ResizerName)
+        return 0;
+    std::string s = ResizerName;
+    std::transform(s.begin(), s.end(), s.begin(), toupper);
+    if (s == "FAST_BILINEAR")
+        return SWS_FAST_BILINEAR;
+    if (s == "BILINEAR")
+        return SWS_BILINEAR;
+    if (s == "BICUBIC")
+        return SWS_BICUBIC;
+    if (s == "X")
+        return SWS_X;
+    if (s == "POINT")
+        return SWS_POINT;
+    if (s == "AREA")
+        return SWS_AREA;
+    if (s == "BICUBLIN")
+        return SWS_BICUBLIN;
+    if (s == "GAUSS")
+        return SWS_GAUSS;
+    if (s == "SINC")
+        return SWS_SINC;
+    if (s == "LANCZOS")
+        return SWS_LANCZOS;
+    if (s == "SPLINE")
+        return SWS_SPLINE;
+    return 0;
 }
 
 bool IsSamePath(const char *p1, const char *p2) {
-// assume windows is the only OS with a case insensitive filesystem and ignore all path complications
+    // assume windows is the only OS with a case insensitive filesystem and ignore all path complications
 #ifndef _WIN32
-	return !strcmp(p1, p2);
+    return !strcmp(p1, p2);
 #else
-	return !_stricmp(p1, p2);
+    return !_stricmp(p1, p2);
 #endif
 }

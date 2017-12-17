@@ -1,5 +1,40 @@
 # FFmpegSource2 Changelog
 
+- 2.2000
+  - Improved seeking in mpeg and mpegts streams (Myrsloik)
+  - Added rgb(a)p8 output to Avisynth+ (Myrsloik)
+  - Added VP9 support (Daemon404)
+  - Fixed incorrectly reporting the output as limited range when it's in fact unknown and likely to be full range (Myrsloik)
+  - Added mastering display metadata output (Myrsloik)
+  - VapourSynth source now defaults to not outputting alpha (Myrsloik)
+  - Removed the now unused demuxer, dumpmask, audiofile and utf8 arguments from the source filters (Myrsloik)
+  - Removed ability to dump audio tracks (Myrsloik)
+  - Fixed incorrect colorimetry metadata reported when converting the output to another colorspace (Myrsloik)
+  - Sources now simply reference the index instead of copying large parts of it (Myrsloik)
+  - Use new FFmpeg decoding API (Myrsloik)
+  - Fixed several bugs in output format selection (Myrsloik)
+  - FFMSIndex will now properly error out with invalid arguments (Myrsloik)
+  - Add rotation metadata export (Myrsloik)
+  - Add stereoscopic metadata export (Myrsloik)
+  - Created new Visual Studio 2017 projects (Myrsloik)
+  - Removed old mingw version support (Myrsloik)
+  - Removed support for old FFmpeg versions (Myrsloik)
+  - Removed libav support (Myrsloik)
+  - Discontinuous Timestamp Support (Daemon404)
+  - Add FFMS_Deinit (Daemon404)
+  - Fix mid-stream parameter changes (Daemon404)
+
+- 2.23
+  - Updated FFmpeg APIs used (Daemon404)
+  - Added new API that can read/write indexes to a memory buffer (Daemon404)
+  - Added support for high bitdepth output in Avisynth+ (Myrsloik)
+  - vapoursource: Add nfMakeLinear flag to better performance in most cases (Myrsloik)
+  - Remove bad colorspace matrix guessing for YUV (Myrsloik)
+  - Tell libavformat to discard packets we don't want (Daemon404)
+  - Restore original FFCopyrightInfringement behavior (Myrsloik)
+  - Make FFMS_Init threadsafe (Daemon404)
+  - Support latest libav* APIs (Daemon404)
+
 - 2.22
   - Fix possible off by 1 frame until first seek issue introduced in 2.21 (Myrsloik)
   - avisynth: Make FFMS2 a shorter alias for FFmpegSource2 to save some typing (Myrsloik)
