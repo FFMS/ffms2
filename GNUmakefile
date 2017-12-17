@@ -54,6 +54,7 @@ SO_O = $(SO_C:%.c=%.o) $(SO_CXX:%.cpp=%.o)
 
 ifeq ($(SYS), MINGW)
 IDX_O += ffmsindexexe.o
+IDX_LDFLAGS += -municode
 ifneq ($(SONAME),)
 SO_O += ffmsdll.o
 endif
@@ -82,7 +83,7 @@ $(SONAME): .depend $(CORE_O) $(SO_O) $(SO_CXX)
 	$(CXX) -shared -o $@ $(CORE_O) $(SO_O) $(SOFLAGS) $(SOFLAGS_USER) $(LDFLAGS)
 
 ffmsindex$(EXE): $(IDX_O) libffms2.a $(SONAME)
-	$(CXX) -o $@ $(IDX_O) $(INDEX_LINK) $(LDFLAGS)
+	$(CXX) -o $@ $(IDX_O) $(INDEX_LINK) $(LDFLAGS) $(IDX_LDFLAGS)
 
 define \n
 
