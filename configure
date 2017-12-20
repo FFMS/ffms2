@@ -81,8 +81,8 @@ cc_check() {
     fi
     rm -f conftest.c
     [ -n "$1" ] && echo "#include <$1>" > conftest.c
-    echo "int main () { $3 return 0; }" >> conftest.c
-    if $CC conftest.c $CPPFLAGS $CFLAGS $2 $LDFLAGS -o conftest >conftest.log 2>&1; then
+    echo "int wmain () { $3 return 0; }" >> conftest.c
+    if $CC conftest.c $CPPFLAGS $CFLAGS $2 $LDFLAGS -municode -o conftest >conftest.log 2>&1; then
         res=$?
         log_ok
     else
@@ -113,8 +113,8 @@ cxx_check() {
     fi
     rm -f conftest.c
     [ -n "$1" ] && echo "#include <$1>" > conftest.c
-    echo "int main () { $3 return 0; }" >> conftest.c
-    if $CXX conftest.c $CPPFLAGS $CXXFLAGS $2 $LDFLAGS -o conftest >conftest.log 2>&1; then
+    echo "int wmain () { $3 return 0; }" >> conftest.c
+    if $CXX conftest.c $CPPFLAGS $CXXFLAGS $2 $LDFLAGS -municode -o conftest >conftest.log 2>&1; then
         res=$?
         log_ok
     else
@@ -410,6 +410,14 @@ LDFLAGS="$FFMPEG_LIBS $LDFLAGS"
 #    CXXFLAGS="-Wshadow $CXXFLAGS"
 #fi
 
+if [ "$shared" = "no" ] ; then
+    CFLAGS="$CFLAGS -DFFMS_STATIC"
+    CXXFLAGS="$CXXFLAGS -DFFMS_STATIC"
+    STATICDEF="-DFFMS_STATIC"
+else
+    STATICDEF=""
+fi
+
 if [ "$avs" = "yes" -o "$avx" = "yes" -o "$vapoursynth" = "yes" ] ; then
     if [ "$shared" = "no" ] ; then
         msg="plugin support is invalid when not building a shared library"
@@ -577,7 +585,7 @@ Requires.private: libavformat libavcodec libswscale libavutil lib$RESAMPLE_LIB
 Version: $version
 Libs.private:  -lz
 Libs: -L$libdirpc -lffms2
-Cflags: -I$includedirpc
+Cflags: -I$includedirpc $STATICDEF
 EOF
 
 cat > conftest.log <<EOF

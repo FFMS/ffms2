@@ -1,24 +1,12 @@
-/*
+/*****************************************************************************
 * Copyright (c) 2012-2015 Fredrik Mellbin
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in
-* all copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-* THE SOFTWARE.
-*/
+* --- Legal stuff ---
+* This program is free software. It comes without any warranty, to
+* the extent permitted by applicable law. You can redistribute it
+* and/or modify it under the terms of the Do What The Fuck You Want
+* To Public License, Version 2, as published by Sam Hocevar. See
+* http://sam.zoy.org/wtfpl/COPYING for more details.
+*****************************************************************************/
 
 #ifndef VSHELPER_H
 #define VSHELPER_H
@@ -27,6 +15,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+#include <math.h>
 #ifdef _WIN32
 #include <malloc.h>
 #endif
@@ -57,9 +47,13 @@
 #define VSMAX(a,b) ((a) > (b) ? (a) : (b))
 #define VSMIN(a,b) ((a) > (b) ? (b) : (a))
 
-#ifdef __cplusplus
+#ifdef __cplusplus 
 /* A nicer templated malloc for all the C++ users out there */
-template<class T>
+#if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
+template<typename T=void>
+#else
+template<typename T>
+#endif
 static inline T* vs_aligned_malloc(size_t size, size_t alignment) {
 #ifdef _WIN32
     return (T*)_aligned_malloc(size, alignment);
@@ -88,6 +82,13 @@ static inline int isSameFormat(const VSVideoInfo *v1, const VSVideoInfo *v2) {
 
 /* multiplies and divides a rational number, such as a frame duration, in place and reduces the result */
 static inline void muldivRational(int64_t *num, int64_t *den, int64_t mul, int64_t div) {
+    /* do nothing if the rational number is invalid */
+    if (!*den)
+        return;
+
+    /* nobody wants to accidentally divide by zero */
+    assert(div);
+
     int64_t a, b;
     *num *= mul;
     *den *= div;
@@ -104,6 +105,35 @@ static inline void muldivRational(int64_t *num, int64_t *den, int64_t mul, int64
     *den /= a;
 }
 
+/* reduces a rational number */
+static inline void vs_normalizeRational(int64_t *num, int64_t *den) {
+	muldivRational(num, den, 1, 1);
+}
+
+/* add two rational numbers and reduces the result */
+static inline void vs_addRational(int64_t *num, int64_t *den, int64_t addnum, int64_t addden) {
+    /* do nothing if the rational number is invalid */
+    if (!*den)
+        return;
+
+    /* nobody wants to accidentally add an invalid rational number */
+    assert(addden);
+
+	if (*den == addden) {
+		*num += addnum;
+	} else {
+		int64_t temp = addden;
+		addnum *= *den;
+		addden *= *den;
+		*num *= temp;
+		*den *= temp;
+
+		*num += addnum;
+
+		vs_normalizeRational(num, den);
+	}
+}
+
 /* converts an int64 to int with saturation, useful to silence warnings when reading int properties among other things */
 static inline int int64ToIntS(int64_t i) {
     if (i > INT_MAX)
@@ -113,14 +143,14 @@ static inline int int64ToIntS(int64_t i) {
     else return (int)i;
 }
 
-static inline void vs_bitblt(void *dstp, int dst_stride, const void *srcp, int src_stride, int row_size, int height) {
-    if (height > 0) {
-        if (src_stride == dst_stride && src_stride == row_size) {
+static inline void vs_bitblt(void *dstp, int dst_stride, const void *srcp, int src_stride, size_t row_size, size_t height) {
+    if (height) {
+        if (src_stride == dst_stride && src_stride == (int)row_size) {
             memcpy(dstp, srcp, row_size * height);
         } else {
-            int i;
-            uint8_t *srcp8 = (uint8_t *)srcp;
+            const uint8_t *srcp8 = (const uint8_t *)srcp;
             uint8_t *dstp8 = (uint8_t *)dstp;
+            size_t i;
             for (i = 0; i < height; i++) {
                 memcpy(dstp8, srcp8, row_size);
                 srcp8 += src_stride;
@@ -135,5 +165,10 @@ static inline void vs_bitblt(void *dstp, int dst_stride, const void *srcp, int s
 static inline int areValidDimensions(const VSFormat *fi, int width, int height) {
     return !(width % (1 << fi->subSamplingW) || height % (1 << fi->subSamplingH));
 }
+
+/* Visual Studio doesn't recognize inline in c mode */
+#if defined(_MSC_VER) && !defined(__cplusplus)
+#undef inline
+#endif
 
 #endif

@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2011 Fredrik Mellbin
+//  Copyright (c) 2007-2017 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -27,56 +27,57 @@
 #include "ffms.h"
 
 struct ErrorInfo : FFMS_ErrorInfo {
-	char ErrorBuffer[1024];
-	ErrorInfo() {
-		Buffer = ErrorBuffer;
-		BufferSize = sizeof(ErrorBuffer);
-	}
+    char ErrorBuffer[1024];
+    ErrorInfo() {
+        Buffer = ErrorBuffer;
+        BufferSize = sizeof(ErrorBuffer);
+    }
 };
 
 class AvisynthVideoSource : public IClip {
-	struct FrameFields {
-		int Top;
-		int Bottom;
-	};
+    struct FrameFields {
+        int Top;
+        int Bottom;
+    };
 
-	VideoInfo VI;
-	FFMS_VideoSource *V;
-	int FPSNum;
-	int FPSDen;
-	int RFFMode;
-	std::vector<FrameFields> FieldList;
-	const char *VarPrefix;
+    VideoInfo VI;
+    bool HighBitDepth;
+    FFMS_VideoSource *V;
+    int FPSNum;
+    int FPSDen;
+    int RFFMode;
+    std::vector<FrameFields> FieldList;
+    const char *VarPrefix;
 
-	void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
-		const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env);
-	void OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env);
-	void OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst, int Field, IScriptEnvironment *Env);
+    void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
+        const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env);
+    void OutputFrame(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env);
+    void OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst, int Field, IScriptEnvironment *Env);
 public:
-	AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
-		int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
-		int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
-		const char *ConvertToFormatName, const char *VarPrefix, IScriptEnvironment* Env);
-	~AvisynthVideoSource();
-	bool __stdcall GetParity(int n);
-	int __stdcall SetCacheHints(int cachehints, int frame_range) { return 0; }
-	const VideoInfo& __stdcall GetVideoInfo() { return VI; }
-	void __stdcall GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env) { }
-	PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment *Env);
+    AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
+        int FPSNum, int FPSDen, int Threads, int SeekMode, int RFFMode,
+        int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
+        const char *ConvertToFormatName, const char *VarPrefix, IScriptEnvironment* Env);
+    ~AvisynthVideoSource();
+    bool __stdcall GetParity(int n);
+    int __stdcall SetCacheHints(int cachehints, int frame_range) { return 0; }
+    const VideoInfo& __stdcall GetVideoInfo() { return VI; }
+    void __stdcall GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env) {}
+    PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment *Env);
 };
 
 class AvisynthAudioSource : public IClip {
-	VideoInfo VI;
-	FFMS_AudioSource *A;
+    VideoInfo VI;
+    FFMS_AudioSource *A;
 public:
-	AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
-		int AdjustDelay, const char *VarPrefix, IScriptEnvironment* Env);
-	~AvisynthAudioSource();
-	bool __stdcall GetParity(int n) { return false; }
-	int __stdcall SetCacheHints(int cachehints, int frame_range) { return 0; }
-	const VideoInfo& __stdcall GetVideoInfo() { return VI; }
-	void __stdcall GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env);
-	PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment *Env) { return nullptr; };
+    AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
+        int AdjustDelay, const char *VarPrefix, IScriptEnvironment* Env);
+    ~AvisynthAudioSource();
+    bool __stdcall GetParity(int n) { return false; }
+    int __stdcall SetCacheHints(int cachehints, int frame_range) { return 0; }
+    const VideoInfo& __stdcall GetVideoInfo() { return VI; }
+    void __stdcall GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env);
+    PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment *Env) { return nullptr; };
 };
 
 #endif
