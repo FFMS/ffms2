@@ -183,10 +183,9 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         CodecContext->thread_count = DecodingThreads;
         CodecContext->has_b_frames = Frames.MaxBFrames;
 
-        // can this also happen for hevc and vc1?
         // full explanation by more clever person availale here: https://github.com/Nevcairiel/LAVFilters/issues/113
-        if (CodecContext->codec_id == AV_CODEC_ID_H264)
-            CodecContext->has_b_frames = 15; // the maximum value for h264
+        if (CodecContext->codec_id == AV_CODEC_ID_H264 && CodecContext->has_b_frames)
+            CodecContext->has_b_frames = 15; // the maximum possible value for h264
 
         if (avcodec_open2(CodecContext, Codec, nullptr) < 0)
             throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
