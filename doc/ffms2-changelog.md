@@ -1,6 +1,7 @@
 # FFmpegSource2 Changelog
 
 - 2.2000
+  - Fixed issue with dropped frames in h264 when the reorder buffer size is too small (Myrsloik)
   - Improved seeking in mpeg and mpegts streams (Myrsloik)
   - Added rgb(a)p8 output to Avisynth+ (Myrsloik)
   - Added VP9 support (Daemon404)
