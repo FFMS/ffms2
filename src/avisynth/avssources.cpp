@@ -389,8 +389,12 @@ void AvisynthVideoSource::InitOutputFormat(
         VI.pixel_type = VideoInfo::CS_YUV444P10;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuva444p10"))
         VI.pixel_type = VideoInfo::CS_YUVA444P10;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrpf32"))
+        VI.pixel_type = VideoInfo::CS_RGBPS;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrp16"))
         VI.pixel_type = VideoInfo::CS_RGBP16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrapf32"))
+        VI.pixel_type = VideoInfo::CS_RGBAPS;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrap16"))
         VI.pixel_type = VideoInfo::CS_RGBAP16;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrp"))

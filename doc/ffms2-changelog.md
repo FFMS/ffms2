@@ -1,6 +1,7 @@
 # FFmpegSource2 Changelog
 
 - 2.2000
+  - Added support for floating point format output in VapourSynth and Avisynth+ (Myrsloik)
   - Fixed issue with dropped/repeated frames in vc1 with multiple b-frames after seeking (Myrsloik)
   - Fixed issue with dropped/repeated frames in h264 when the reorder buffer size is too small (Myrsloik)
   - Improved seeking in mpeg and mpegts streams (Myrsloik)

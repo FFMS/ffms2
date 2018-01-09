@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2017 Fredrik Mellbin
+//  Copyright (c) 2012-2018 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -37,17 +37,23 @@ static int GetNumPixFmts() {
 }
 
 static bool IsRealNativeEndianPlanar(const AVPixFmtDescriptor &desc) {
+    // reject all special flags
+    if (desc.flags & (AV_PIX_FMT_FLAG_PAL | AV_PIX_FMT_FLAG_BAYER | AV_PIX_FMT_FLAG_HWACCEL | AV_PIX_FMT_FLAG_BITSTREAM))
+        return false;
     int used_planes = 0;
     for (int i = 0; i < desc.nb_components; i++)
         used_planes = std::max(used_planes, (int)desc.comp[i].plane + 1);
-    bool temp = (used_planes == desc.nb_components) && (desc.comp[0].depth >= 8) &&
-        (!(desc.flags & AV_PIX_FMT_FLAG_PAL));
+    bool temp = (used_planes == desc.nb_components) && (desc.comp[0].depth >= 8);
     if (!temp)
-        return false;
+        return false; 
     else if (desc.comp[0].depth == 8)
         return temp;
     else
         return (AV_PIX_FMT_YUV420P10 == AV_PIX_FMT_YUV420P10BE ? !!(desc.flags & AV_PIX_FMT_FLAG_BE) : !(desc.flags & AV_PIX_FMT_FLAG_BE));
+}
+
+static int GetSampleType(const AVPixFmtDescriptor &desc) {
+    return (desc.flags & AV_PIX_FMT_FLAG_FLOAT) ? stFloat : stInteger;
 }
 
 static bool HasAlpha(const AVPixFmtDescriptor &desc) {
@@ -63,18 +69,19 @@ static int GetColorFamily(const AVPixFmtDescriptor &desc) {
         return cmYUV;
 }
 
-static int FormatConversionToPixelFormat(int id, bool Alpha, VSCore *core, const VSAPI *vsapi) {
+static int FormatConversionToPixelFormat(int id, bool alpha, VSCore *core, const VSAPI *vsapi) {
     const VSFormat *f = vsapi->getFormatPreset(id, core);
     int npixfmt = GetNumPixFmts();
     // Look for a suitable format without alpha first to not waste memory
-    if (!Alpha) {
+    if (!alpha) {
         for (int i = 0; i < npixfmt; i++) {
             const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat)i);
             if (IsRealNativeEndianPlanar(desc) && !HasAlpha(desc)
                 && GetColorFamily(desc) == f->colorFamily
                 && desc.comp[0].depth == f->bitsPerSample
                 && desc.log2_chroma_w == f->subSamplingW
-                && desc.log2_chroma_h == f->subSamplingH)
+                && desc.log2_chroma_h == f->subSamplingH
+                && GetSampleType(desc) == f->sampleType)
                 return i;
         }
     }
@@ -85,17 +92,21 @@ static int FormatConversionToPixelFormat(int id, bool Alpha, VSCore *core, const
             && GetColorFamily(desc) == f->colorFamily
             && desc.comp[0].depth == f->bitsPerSample
             && desc.log2_chroma_w == f->subSamplingW
-            && desc.log2_chroma_h == f->subSamplingH)
+            && desc.log2_chroma_h == f->subSamplingH
+            && GetSampleType(desc) == f->sampleType)
             return i;
     }
     return AV_PIX_FMT_NONE;
 }
 
 static const VSFormat *FormatConversionToVS(int id, VSCore *core, const VSAPI *vsapi) {
-    return vsapi->registerFormat(GetColorFamily(*av_pix_fmt_desc_get((AVPixelFormat)id)), stInteger,
-        av_pix_fmt_desc_get((AVPixelFormat)id)->comp[0].depth,
-        av_pix_fmt_desc_get((AVPixelFormat)id)->log2_chroma_w,
-        av_pix_fmt_desc_get((AVPixelFormat)id)->log2_chroma_h, core);
+    const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat)id);
+    return vsapi->registerFormat(
+        GetColorFamily(desc),
+        GetSampleType(desc),
+        desc.comp[0].depth,
+        desc.log2_chroma_w,
+        desc.log2_chroma_h, core);
 }
 
 void VS_CC VSVideoSource::Init(VSMap *, VSMap *, void **instanceData, VSNode *node, VSCore *, const VSAPI *vsapi) {
