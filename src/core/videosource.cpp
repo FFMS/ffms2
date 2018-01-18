@@ -88,8 +88,6 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
     LocalFrame.TransferCharateristics = (OutputTransferCharateristics >= 0) ? OutputTransferCharateristics : Frame->color_trc;
     LocalFrame.ChromaLocation = (OutputChromaLocation >= 0) ? OutputChromaLocation : Frame->chroma_location;
 
-    LocalFrame.HasMasteringDisplayPrimaries = 0;
-    LocalFrame.HasMasteringDisplayLuminance = 0;
     const AVFrameSideData *MasteringDisplaySideData = av_frame_get_side_data(Frame, AV_FRAME_DATA_MASTERING_DISPLAY_METADATA);
     if (MasteringDisplaySideData) {
         const AVMasteringDisplayMetadata *MasteringDisplay = reinterpret_cast<const AVMasteringDisplayMetadata *>(MasteringDisplaySideData->data);
@@ -108,15 +106,21 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
             LocalFrame.MasteringDisplayMaxLuminance = av_q2d(MasteringDisplay->max_luminance);
         }
     }
+    LocalFrame.HasMasteringDisplayPrimaries = !!LocalFrame.MasteringDisplayPrimariesX[0] && !!LocalFrame.MasteringDisplayPrimariesY[0] &&
+                                              !!LocalFrame.MasteringDisplayPrimariesX[1] && !!LocalFrame.MasteringDisplayPrimariesY[1] &&
+                                              !!LocalFrame.MasteringDisplayPrimariesX[2] && !!LocalFrame.MasteringDisplayPrimariesY[2] &&
+                                              !!LocalFrame.MasteringDisplayWhitePointX   && !!LocalFrame.MasteringDisplayWhitePointY;
+    /* MasteringDisplayMinLuminance can be 0 */
+    LocalFrame.HasMasteringDisplayLuminance = !!LocalFrame.MasteringDisplayMaxLuminance;
 
-    LocalFrame.HasContentLightLevel = 0;
     const AVFrameSideData *ContentLightSideData = av_frame_get_side_data(Frame, AV_FRAME_DATA_CONTENT_LIGHT_LEVEL);
     if (ContentLightSideData) {
         const AVContentLightMetadata *ContentLightLevel = reinterpret_cast<const AVContentLightMetadata *>(ContentLightSideData->data);
-        LocalFrame.HasContentLightLevel = 1;
         LocalFrame.ContentLightLevelMax = ContentLightLevel->MaxCLL;
         LocalFrame.ContentLightLevelAverage = ContentLightLevel->MaxFALL;
     }
+    /* Only check for either of them */
+    LocalFrame.HasContentLightLevel = !!LocalFrame.ContentLightLevelMax || !!LocalFrame.ContentLightLevelAverage;
 
     LastFrameHeight = Frame->height;
     LastFrameWidth = Frame->width;
