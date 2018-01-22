@@ -211,7 +211,7 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         VP.FPSNumerator = FormatContext->streams[VideoTrack]->time_base.den;
 
         // sanity check framerate
-        if (VP.FPSDenominator > VP.FPSNumerator || VP.FPSDenominator <= 0 || VP.FPSNumerator <= 0) {
+        if (VP.FPSDenominator <= 0 || VP.FPSNumerator <= 0) {
             VP.FPSDenominator = 1;
             VP.FPSNumerator = 30;
         }
