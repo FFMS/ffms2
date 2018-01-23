@@ -1052,6 +1052,7 @@ typedef struct {
   int Rotation;
   int Stereo3DType;
   int Stereo3DFlags;
+  double LastEndTime;
 } FFMS_VideoProperties;
 ```
 A struct containing metadata about a video track.
@@ -1081,7 +1082,8 @@ The fields are:
  - `int Rotation;` - The rotation of the video, in degrees.
  - `int Stereo3DType;` - The type of stereo 3D the video is. Corresponts to entries in [FFMS_Stereo3DType][Stereo3DType].
  - `int Stereo3DFlags;` - Stereo 3D flags. Corresponds to entries in [FFMS_Stereo3DFlags][Stereo3DFlags].
-
+ - `double LastEndTime;` - The end time of the last packet of the stream, in milliseconds.
+ 
 ### FFMS_AudioProperties
 
 [AudioProperties]: #ffms_audioproperties
@@ -1095,6 +1097,7 @@ typedef struct {
   int64_t NumSamples;
   double FirstTime;
   double LastTime;
+  double LastEndTime;
 } FFMS_AudioProperties;
 ```
 A struct containing metadata about an audio track.
@@ -1112,6 +1115,7 @@ The fields are:
  - `int64_t NumSamples` - The number of samples in the audio track.
  - `double FirstTime; double LastTime;` - The first and last timestamp of the stream respectively, in milliseconds.
    Useful if you want to know if the stream has a delay, or for quickly determining its length in seconds.
+ - `double LastEndTime;` - The end time of the last packet of the stream, in milliseconds.
 
 ## Constants and Preprocessor Definitions
 The following constants and preprocessor definititions defined in ffms.h are suitable for public usage.

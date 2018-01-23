@@ -130,8 +130,7 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 }
 
 FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads, int SeekMode)
-    : Index(Index)
-    , SeekMode(SeekMode) {
+    : Index(Index), SeekMode(SeekMode) {
 
     try {
         if (Track < 0 || Track >= static_cast<int>(Index.size()))
@@ -471,6 +470,7 @@ void FFMS_VideoSource::SetVideoProperties() {
 
     VP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
     VP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+    VP.LastEndTime = (((Frames.back().PTS + Frames.LastDuration) * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 
     if (CodecContext->width <= 0 || CodecContext->height <= 0)
         throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,

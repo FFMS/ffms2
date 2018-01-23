@@ -123,7 +123,7 @@ struct FFMS_AudioSource {
     AVFrame *DecodeFrame = nullptr;
     FFMS_Track Frames;
     AVCodecContext *CodecContext = nullptr;
-    FFMS_AudioProperties AP;
+    FFMS_AudioProperties AP = {};
 
     int DecodeNextBlock(CacheIterator *cachePos = 0);
     // Initialization which has to be done after the codec is opened

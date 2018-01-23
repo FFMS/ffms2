@@ -450,7 +450,6 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
     AVPacket Packet;
     InitNullPacket(Packet);
     std::vector<int64_t> LastValidTS(FormatContext->nb_streams, AV_NOPTS_VALUE);
-    std::vector<int> LastDuration(FormatContext->nb_streams, 0);
 
     int64_t filesize = avio_size(FormatContext->pb);
     while (av_read_frame(FormatContext, &Packet) >= 0) {
@@ -491,11 +490,10 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
                 if (TrackInfo.empty())
                     PTS = 0;
                 else
-                    PTS = TrackInfo.back().PTS + LastDuration[Track];
+                    PTS = TrackInfo.back().PTS + TrackInfo.LastDuration;
 
                 TrackInfo.HasTS = false;
             }
-            LastDuration[Track] = Packet.duration;
 
             int RepeatPict = -1;
             int FrameType = 0;
@@ -518,6 +516,8 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
             TrackInfo.AddAudioFrame(LastValidTS[Track],
                 StartSample, SampleCount, KeyFrame, Packet.pos, Packet.flags & AV_PKT_FLAG_DISCARD);
         }
+
+        TrackInfo.LastDuration = Packet.duration;
 
         av_packet_unref(&Packet);
     }

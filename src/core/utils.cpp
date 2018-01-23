@@ -78,6 +78,7 @@ void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
         AP.NumSamples = (Frames.back()).SampleStart + (Frames.back()).SampleCount;
         AP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
         AP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+        AP.LastEndTime = (((Frames.back().PTS + Frames.LastDuration) * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
     }
 
     if (AP.ChannelLayout == 0)

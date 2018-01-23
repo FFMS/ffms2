@@ -1,7 +1,8 @@
 # FFmpegSource2 Changelog
 
 - 2.2000
-  - Removed several deprecated functions and enums from the api (Myrsloik)
+  - Added LastEndTime track property to make it possible to take the last frame's duration into account (Myrsloik)
+  - Removed several deprecated functions and enums from the API (Myrsloik)
   - No longer assumes sub 1 fps framerates are invalid (Myrsloik)
   - Added support for floating point format output in VapourSynth and Avisynth+ (Myrsloik)
   - Fixed issue with dropped/repeated frames in vc1 with multiple b-frames after seeking (Myrsloik)

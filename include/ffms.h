@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2017 Fredrik Mellbin
+//  Copyright (c) 2007-2018 Fredrik Mellbin
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((2 << 24) | (27 << 16) | (0 << 8) | 0)
+#define FFMS_VERSION ((2 << 24) | (29 << 16) | (0 << 8) | 0)
 
 #include <stdint.h>
 #include <stddef.h>
@@ -423,6 +423,8 @@ typedef struct FFMS_VideoProperties {
     int Rotation;
     int Stereo3DType;
     int Stereo3DFlags;
+    /* Introduced in FFMS_VERSION ((2 << 24) | (29 << 16) | (0 << 8) | 0) */
+    double LastEndTime;
 } FFMS_VideoProperties;
 
 typedef struct FFMS_AudioProperties {
@@ -434,6 +436,8 @@ typedef struct FFMS_AudioProperties {
     int64_t NumSamples;
     double FirstTime;
     double LastTime;
+    /* Introduced in FFMS_VERSION ((2 << 24) | (29 << 16) | (0 << 8) | 0) */
+    double LastEndTime;
 } FFMS_AudioProperties;
 
 typedef int (FFMS_CC *TIndexCallback)(int64_t Current, int64_t Total, void *ICPrivate);
