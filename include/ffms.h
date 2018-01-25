@@ -385,7 +385,7 @@ typedef struct FFMS_Frame {
     int HasMasteringDisplayLuminance; /* Non-zero if the 2 fields below are valid */
     double MasteringDisplayMinLuminance;
     double MasteringDisplayMaxLuminance;
-    int HasContentLightLevel;
+    int HasContentLightLevel; /* Non-zero if the 2 fields below are valid */
     unsigned int ContentLightLevelMax;
     unsigned int ContentLightLevelAverage;
 } FFMS_Frame;
@@ -425,6 +425,17 @@ typedef struct FFMS_VideoProperties {
     int Stereo3DFlags;
     /* Introduced in FFMS_VERSION ((2 << 24) | (29 << 16) | (0 << 8) | 0) */
     double LastEndTime;
+    int HasMasteringDisplayPrimaries;  /* Non-zero if the 4 fields below are valid */
+    double MasteringDisplayPrimariesX[3];
+    double MasteringDisplayPrimariesY[3];
+    double MasteringDisplayWhitePointX;
+    double MasteringDisplayWhitePointY;
+    int HasMasteringDisplayLuminance; /* Non-zero if the 2 fields below are valid */
+    double MasteringDisplayMinLuminance;
+    double MasteringDisplayMaxLuminance;
+    int HasContentLightLevel; /* Non-zero if the 2 fields below are valid */
+    unsigned int ContentLightLevelMax;
+    unsigned int ContentLightLevelAverage;
 } FFMS_VideoProperties;
 
 typedef struct FFMS_AudioProperties {

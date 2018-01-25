@@ -270,6 +270,22 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         // Cannot "output" without doing all other initialization
         // This is the additional mess required for seekmode=-1 to work in a reasonable way
         OutputFrame(DecodeFrame);
+
+        VP.HasMasteringDisplayPrimaries = LocalFrame.HasMasteringDisplayPrimaries;
+        for (int i = 0; i < 3; i++) {
+            VP.MasteringDisplayPrimariesX[i] = LocalFrame.MasteringDisplayPrimariesX[i];
+            VP.MasteringDisplayPrimariesY[i] = LocalFrame.MasteringDisplayPrimariesY[i];
+        }
+
+        // Simply copy this from the first frame to make it easier to access
+        VP.MasteringDisplayWhitePointX = LocalFrame.MasteringDisplayWhitePointX;
+        VP.MasteringDisplayWhitePointY = LocalFrame.MasteringDisplayWhitePointY;
+        VP.HasMasteringDisplayLuminance = LocalFrame.HasMasteringDisplayLuminance;
+        VP.MasteringDisplayMinLuminance = LocalFrame.MasteringDisplayMinLuminance;
+        VP.MasteringDisplayMaxLuminance = LocalFrame.MasteringDisplayMaxLuminance;
+        VP.HasContentLightLevel = LocalFrame.HasContentLightLevel;
+        VP.ContentLightLevelMax = LocalFrame.ContentLightLevelMax;
+        VP.ContentLightLevelAverage = LocalFrame.ContentLightLevelAverage;
     } catch (FFMS_Exception &) {
         Free();
         throw;

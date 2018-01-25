@@ -1053,6 +1053,17 @@ typedef struct {
   int Stereo3DType;
   int Stereo3DFlags;
   double LastEndTime;
+  int HasMasteringDisplayPrimaries;
+  double MasteringDisplayPrimariesX[3];
+  double MasteringDisplayPrimariesY[3];
+  double MasteringDisplayWhitePointX;
+  double MasteringDisplayWhitePointY;
+  int HasMasteringDisplayLuminance;
+  double MasteringDisplayMinLuminance;
+  double MasteringDisplayMaxLuminance;
+  int HasContentLightLevel;
+  unsigned int ContentLightLevelMax;
+  unsigned int ContentLightLevelAverage;
 } FFMS_VideoProperties;
 ```
 A struct containing metadata about a video track.
@@ -1083,7 +1094,18 @@ The fields are:
  - `int Stereo3DType;` - The type of stereo 3D the video is. Corresponts to entries in [FFMS_Stereo3DType][Stereo3DType].
  - `int Stereo3DFlags;` - Stereo 3D flags. Corresponds to entries in [FFMS_Stereo3DFlags][Stereo3DFlags].
  - `double LastEndTime;` - The end time of the last packet of the stream, in milliseconds.
- 
+ - `int HasMasteringDisplayPrimaries;` - If this is non-zero, the following four properties are set.
+ - `double MasteringDisplayPrimariesX[3];` - RGB chromaticy coordinates of the mastering display (x coord).
+ - `double MasteringDisplayPrimariesY[3];` - RGB chromaticy coordinates of the mastering display (y coord).
+ - `double MasteringDisplayWhitePointX;` - White point coordinate of the mastering display (x coord).
+ - `double MasteringDisplayWhitePointY;` - White point coordinate of the mastering display (y coord).
+ - `int HasMasteringDisplayLuminance;` - If this is non-zero, the following two properties are set.
+ - `double MasteringDisplayMinLuminance;` - Minimum luminance of the mastering display (cd/m^2).
+ - `double MasteringDisplayMaxLuminance;` - Maximum luminance of the mastering display (cd/m^2).
+ - `int HasContentLightLevel;` - If this is non-zero, the following two properties are set.
+ - `unsigned int ContentLightLevelMax;` - Maximum content luminance (cd/m^2).
+ - `unsigned int ContentLightLevelAverage;` - Average content luminance (cd/m^2).
+
 ### FFMS_AudioProperties
 
 [AudioProperties]: #ffms_audioproperties
