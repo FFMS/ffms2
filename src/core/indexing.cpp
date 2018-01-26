@@ -35,7 +35,7 @@ extern "C" {
 }
 
 #define INDEXID 0x53920873
-#define INDEX_VERSION 4
+#define INDEX_VERSION 5
 
 SharedAVContext::~SharedAVContext() {
     avcodec_free_context(&CodecContext);
