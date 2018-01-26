@@ -110,7 +110,7 @@ void FFMS_Track::Write(ZipFile &stream) const {
     stream.Write<uint8_t>(TT);
     stream.Write(TB.Num);
     stream.Write(TB.Den);
-    stream.Write<uint64_t>(LastDuration);
+    stream.Write<int64_t>(LastDuration);
     stream.Write<int32_t>(MaxBFrames);
     stream.Write<uint8_t>(UseDTS);
     stream.Write<uint8_t>(HasTS);
