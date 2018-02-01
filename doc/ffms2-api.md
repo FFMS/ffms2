@@ -159,6 +159,9 @@ Note that index files can only be read by the exact same version of FFMS2 as the
 Attempting to open an index written with a different version will give you an index mismatch error.
 If you want to verify that a given index file actually is an index of the source file you think it is, use [FFMS_IndexBelongsToFile][IndexBelongsToFile].
 
+## Constants for primaries, transfer and matrix
+The constants for these are the same as defined in ISO/IEC 23001-8_2013 § 7.1-7.3. To avoid unnecessary duplication they are no longer declared in ffms.h. If you still need them either transcribe them yourself or include libavutil/pixfmt.h from FFmpeg.
+
 ## Function Reference
 
 Most functions that can fail in one way or another (as well as some that should be able to but currently don't) support error reporting using the `ErrorInfo` parameter.
@@ -984,8 +987,8 @@ The fields are:
    Same as in the MPEG-2 specs; see the [FFMS_ColorSpaces][ColorSpaces] enum.
  - `int ColorRange` - Identifies the luma range of the frame.
    See the [FFMS_ColorRanges][ColorRanges] enum.
- - `int ColorPrimaries;` - Identifies the color primaries of the frame. Corresponds to [FFMS_ColorPrimaries][ColorPrimaries].
- - `int TransferCharateristics;` - Identifies the transfer characteristics of the frame. Corresponds to [FFMS_TransferCharacteristic][TransferCharacteristic].
+ - `int ColorPrimaries;` - Identifies the color primaries of the frame.
+ - `int TransferCharateristics;` - Identifies the transfer characteristics of the frame.
  - `int ChromaLocation;` - Identifies the chroma location for the frame. Corresponds to [FFMS_ChromaLocations][ChromaLocations].
  - `int HasMasteringDisplayPrimaries;` - If this is non-zero, the following four properties are set.
  - `double MasteringDisplayPrimariesX[3];` - RGB chromaticy coordinates of the mastering display (x coord).
@@ -1324,89 +1327,6 @@ enum FFMS_AudioDelayModes {
 ```
 Describes the different audio delay handling modes.
 See [FFMS_CreateAudioSource][CreateAudioSource] for a detailed explanation.
-
-### FFMS_ColorPrimaries
-
-[ColorPrimaries]: #ffms_colorprimaries
-```c++
-typedef enum FFMS_ColorPrimaries {
-    FFMS_PRI_RESERVED0 = 0,
-    FFMS_PRI_BT709 = 1,
-    FFMS_PRI_UNSPECIFIED = 2,
-    FFMS_PRI_RESERVED = 3,
-    FFMS_PRI_BT470M = 4,
-    FFMS_PRI_BT470BG = 5,
-    FFMS_PRI_SMPTE170M = 6,
-    FFMS_PRI_SMPTE240M = 7,
-    FFMS_PRI_FILM = 8,
-    FFMS_PRI_BT2020 = 9,
-    FFMS_PRI_SMPTE428 = 10,
-    FFMS_PRI_SMPTE431 = 11,
-    FFMS_PRI_SMPTE432 = 12,
-    FFMS_PRI_JEDEC_P22 = 22
-} FFMS_ColorPrimaries;
-```
-Identifies the color primaries of a frame.
-
-### FFMS_TransferCharacteristic
-
-[TransferCharacteristic]: #ffms_transfercharacteristic
-```c++
-typedef enum FFMS_TransferCharacteristic {
-    FFMS_TRC_RESERVED0 = 0,
-    FFMS_TRC_BT709 = 1,
-    FFMS_TRC_UNSPECIFIED = 2,
-    FFMS_TRC_RESERVED = 3,
-    FFMS_TRC_GAMMA22 = 4,
-    FFMS_TRC_GAMMA28 = 5,
-    FFMS_TRC_SMPTE170M = 6,
-    FFMS_TRC_SMPTE240M = 7,
-    FFMS_TRC_LINEAR = 8,
-    FFMS_TRC_LOG = 9,
-    FFMS_TRC_LOG_SQRT = 10,
-    FFMS_TRC_IEC61966_2_4 = 11,
-    FFMS_TRC_BT1361_ECG = 12,
-    FFMS_TRC_IEC61966_2_1 = 13,
-    FFMS_TRC_BT2020_10 = 14,
-    FFMS_TRC_BT2020_12 = 15,
-    FFMS_TRC_SMPTE2084 = 16,
-    FFMS_TRC_SMPTE428 = 17,
-    FFMS_TRC_ARIB_STD_B67 = 18
-} FFMS_TransferCharacteristic;
-```
-Identifies the transfer characteristics of a frame.
-
-### FFMS_ColorSpaces
-
-[ColorSpaces]: #ffms_colorspaces
-```c++
-enum FFMS_ColorSpaces {
-  FFMS_CS_RGB         = 0,
-  FFMS_CS_BT709       = 1,
-  FFMS_CS_UNSPECIFIED = 2,
-  FFMS_CS_FCC         = 4,
-  FFMS_CS_BT470BG     = 5,
-  FFMS_CS_SMPTE170M   = 6,
-  FFMS_CS_SMPTE240M   = 7,
-  FFMS_CS_YCOCG       = 8,
-  FFMS_CS_BT2020_NCL  = 9,
-  FFMS_CS_BT2020_CL   = 10,
-  FFMS_CS_SMPTE2085   = 11,
-  FFMS_CS_CHROMATICITY_DERIVED_NCL = 12,
-  FFMS_CS_CHROMATICITY_DERIVED_CL = 13,
-  FFMS_CS_ICTCP       = 14
-};
-```
-Identifies the color coefficients used for a YUV stream.
-The numerical constants are the same as in the MPEG-2 specification.
-
-Some of these are specified or aliased in a number of places. Most importantly:
-
-"BT709" (ITU-T Rec. 709) is equivalent to ITU-R BT1361, IEC 61966-2-4 xvYCC709 and SMPTE RP177 Annex B;
-
-"BT470BG" (ITU-R BT. 470, also known as ITU-T Rec. 601) is equivalent to ITU-R BT601-6 625, ITU-R BT1358 625, ITU-R BT1700 625 PAL & SECAM and IEC 61966-2-4 xvYCC601;
-
-"SMPTE170M" (SMPTE standard 170 M) is functionally the same as BT470BG, and is furthermore equivalent to ITU-R BT601-6 525, ITU-R BT1358 525, and ITU-R BT1700 NTSC.
 
 ### FFMS_ChromaLocations
 
