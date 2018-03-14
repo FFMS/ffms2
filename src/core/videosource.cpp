@@ -218,11 +218,16 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         }
 
         // Calculate the average framerate
-        if (Frames.size() >= 2) {
+        size_t TotalFrames = 0;
+        for (size_t i = 0; i < Frames.size(); i++)
+            if (!Frames[i].Hidden)
+                TotalFrames++;
+
+        if (TotalFrames >= 2) {
             double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
             double TD = (double)(Frames.TB.Den);
             double TN = (double)(Frames.TB.Num);
-            VP.FPSDenominator = (unsigned int)(PTSDiff * TN / TD * 1000.0 / (Frames.size() - 1));
+            VP.FPSDenominator = (unsigned int)(PTSDiff * TN / TD * 1000.0 / (TotalFrames - 1));
             VP.FPSNumerator = 1000000;
         }
 
