@@ -40,8 +40,10 @@ struct FFMS_VideoSource {
 private:
     SwsContext *SWS = nullptr;
 
+    int Delay = 0;
     int DelayCounter = 0;
     int InitialDecode = 1;
+    bool PAFFAdjusted = false;
 
     int LastFrameHeight = -1;
     int LastFrameWidth = -1;

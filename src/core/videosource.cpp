@@ -197,9 +197,11 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         // Similar yet different to h264 workaround above
         // vc1 simply sets has_b_frames to 1 no matter how many there are so instead we set it to the max value
         // in order to not confuse our own delay guesses later
-        // Has to be set after codec open to not be overwritten, doesn't affect actual vc1 reordering unlike h264
+        // Doesn't affect actual vc1 reordering unlike h264
         if (CodecContext->codec_id == AV_CODEC_ID_VC1 && CodecContext->has_b_frames)
-            CodecContext->has_b_frames = 7; // the maximum possible value for vc1
+            Delay = 7 + (CodecContext->thread_count - 1); // the maximum possible value for vc1
+        else
+            Delay = CodecContext->has_b_frames + (CodecContext->thread_count - 1); // Normal decoder delay
 
         // Always try to decode a frame to make sure all required parameters are known
         int64_t DummyPTS = 0, DummyPos = 0;
@@ -511,7 +513,7 @@ void FFMS_VideoSource::SetVideoProperties() {
 
 bool FFMS_VideoSource::HasPendingDelayedFrames() {
     if (InitialDecode == -1) {
-        if (DelayCounter > FFMS_CALCULATE_DELAY) {
+        if (DelayCounter > Delay) {
             --DelayCounter;
             return true;
         }
@@ -533,7 +535,17 @@ bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
     if (Ret == 0 && InitialDecode == 1)
         InitialDecode = -1;
 
-    return (Ret == 0) || (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode);;
+    // H.264 (PAFF) and HEVC can have one field per packet, and decoding delay needs
+    // to be adjusted accordingly.
+    if (CodecContext->codec_id == AV_CODEC_ID_H264 || CodecContext->codec_id == AV_CODEC_ID_HEVC) {
+        if (!PAFFAdjusted && DelayCounter > Delay && LastDecodedFrame->repeat_pict == 0 && Ret != 0) {
+            int OldBFrameDelay = Delay - (CodecContext->thread_count - 1);
+            Delay = 1 + OldBFrameDelay * 2 + (CodecContext->thread_count - 1);
+            PAFFAdjusted = true;
+        }
+    }
+
+    return (Ret == 0) || (DelayCounter > Delay && !InitialDecode);;
 }
 
 int FFMS_VideoSource::Seek(int n) {
@@ -663,7 +675,7 @@ FFMS_Frame *FFMS_VideoSource::GetFrame(int n) {
             Seek = false;
         }
 
-        if (CurrentFrame + FFMS_CALCULATE_DELAY * CodecContext->ticks_per_frame >= n || HasSeeked)
+        if (CurrentFrame + Delay >= n || HasSeeked)
             CodecContext->skip_frame = AVDISCARD_DEFAULT;
         else
             CodecContext->skip_frame = AVDISCARD_NONREF;
