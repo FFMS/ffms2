@@ -328,19 +328,38 @@ void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
     }
 }
 
-void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType, bool *Invisible) {
+void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt, int *RepeatPict,
+                                    int *FrameType, bool *Invisible, enum AVPictureStructure *LastPicStruct) {
     if (VideoContext.Parser) {
         uint8_t *OB;
         int OBSize;
+        bool IncompleteFrame = false;
+
         av_parser_parse2(VideoContext.Parser,
             VideoContext.CodecContext,
             &OB, &OBSize,
             pkt.data, pkt.size,
             pkt.pts, pkt.dts, pkt.pos);
 
+        // H.264 (PAFF) and HEVC may have one field per packet, so we need to track
+        // when we have a full or half frame available, and mark one of them as
+        // hidden, so we do not get duplicate frames.
+        if (VideoContext.CodecContext->codec_id == AV_CODEC_ID_H264 ||
+            VideoContext.CodecContext->codec_id == AV_CODEC_ID_HEVC) {
+            if ((VideoContext.Parser->picture_structure == AV_PICTURE_STRUCTURE_TOP_FIELD &&
+                 *LastPicStruct == AV_PICTURE_STRUCTURE_BOTTOM_FIELD) ||
+                (VideoContext.Parser->picture_structure == AV_PICTURE_STRUCTURE_BOTTOM_FIELD &&
+                 *LastPicStruct == AV_PICTURE_STRUCTURE_TOP_FIELD)) {
+                IncompleteFrame = true;
+                *LastPicStruct = AV_PICTURE_STRUCTURE_UNKNOWN;
+            } else {
+                *LastPicStruct = VideoContext.Parser->picture_structure;
+            }
+        }
+
         *RepeatPict = VideoContext.Parser->repeat_pict;
         *FrameType = VideoContext.Parser->pict_type;
-        *Invisible = (VideoContext.Parser->repeat_pict < 0 || (pkt.flags & AV_PKT_FLAG_DISCARD));
+        *Invisible = (IncompleteFrame || VideoContext.Parser->repeat_pict < 0 || (pkt.flags & AV_PKT_FLAG_DISCARD));
     } else {
         *Invisible = !!(pkt.flags & AV_PKT_FLAG_DISCARD);
     }
@@ -452,6 +471,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
     std::vector<int64_t> LastValidTS(FormatContext->nb_streams, AV_NOPTS_VALUE);
 
     int64_t filesize = avio_size(FormatContext->pb);
+    enum AVPictureStructure LastPicStruct = AV_PICTURE_STRUCTURE_UNKNOWN;
     while (av_read_frame(FormatContext, &Packet) >= 0) {
         // Update progress
         // FormatContext->pb can apparently be NULL when opening images.
@@ -498,7 +518,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
             int RepeatPict = -1;
             int FrameType = 0;
             bool Invisible = false;
-            ParseVideoPacket(AVContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible);
+            ParseVideoPacket(AVContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible, &LastPicStruct);
 
             TrackInfo.AddVideoFrame(PTS, RepeatPict, KeyFrame,
                 FrameType, Packet.pos, Invisible);
