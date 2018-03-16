@@ -29,6 +29,9 @@
   - Discontinuous Timestamp Support (Daemon404)
   - Add FFMS_Deinit (Daemon404)
   - Fix mid-stream parameter changes (Daemon404)
+  - Fix decoding H.264 PAFF files with one field per packet (Daemon404)
+  - Fix delay calculations for H.264 PAFF files (Daemon404)
+  - Fix frame rate calculation for fields with one field per packet (Daemon404)
 
 - 2.23
   - Updated FFmpeg APIs used (Daemon404)
