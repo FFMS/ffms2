@@ -296,17 +296,6 @@ uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAVCon
     return static_cast<uint32_t>(Context.CurrentSample - StartSample);
 }
 
-static const char *GetLAVCSampleFormatName(AVSampleFormat s) {
-    switch (s) {
-    case AV_SAMPLE_FMT_U8:  return "8-bit unsigned integer";
-    case AV_SAMPLE_FMT_S16: return "16-bit signed integer";
-    case AV_SAMPLE_FMT_S32: return "32-bit signed integer";
-    case AV_SAMPLE_FMT_FLT: return "Single-precision floating point";
-    case AV_SAMPLE_FMT_DBL: return "Double-precision floating point";
-    default:                return "Unknown";
-    }
-}
-
 void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
     auto it = LastAudioProperties.find(Track);
     if (it == LastAudioProperties.end()) {
@@ -322,8 +311,8 @@ void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
             "Audio format change detected. This is currently unsupported."
             << " Channels: " << it->second.Channels << " -> " << Context->channels << ";"
             << " Sample rate: " << it->second.SampleRate << " -> " << Context->sample_rate << ";"
-            << " Sample format: " << GetLAVCSampleFormatName((AVSampleFormat)it->second.SampleFormat) << " -> "
-            << GetLAVCSampleFormatName(Context->sample_fmt);
+            << " Sample format: " << av_get_sample_fmt_name((AVSampleFormat)it->second.SampleFormat) << " -> "
+            << av_get_sample_fmt_name(Context->sample_fmt);
         throw FFMS_Exception(FFMS_ERROR_UNSUPPORTED, FFMS_ERROR_DECODING, buf.str());
     }
 }
