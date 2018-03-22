@@ -680,11 +680,6 @@ FFMS_Frame *FFMS_VideoSource::GetFrame(int n) {
             Seek = false;
         }
 
-        if (CurrentFrame + Delay >= n || HasSeeked)
-            CodecContext->skip_frame = AVDISCARD_DEFAULT;
-        else
-            CodecContext->skip_frame = AVDISCARD_NONREF;
-
         int64_t StartTime = AV_NOPTS_VALUE, FilePos = -1;
         DecodeNextFrame(StartTime, FilePos);
 
