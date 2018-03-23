@@ -534,7 +534,8 @@ bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
     int Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
     if (Ret != 0) {
         std::swap(DecodeFrame, LastDecodedFrame);
-        DelayCounter++;
+        if (!(Packet->flags & AV_PKT_FLAG_DISCARD))
+            DelayCounter++;
     }
 
     if (Ret == 0 && InitialDecode == 1)
