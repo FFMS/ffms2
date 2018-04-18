@@ -88,6 +88,7 @@ FFMS_Track::FFMS_Track(ZipFile &stream)
     TT = static_cast<FFMS_TrackType>(stream.Read<uint8_t>());
     TB.Num = stream.Read<int64_t>();
     TB.Den = stream.Read<int64_t>();
+    LastDuration = stream.Read<int64_t>();
     MaxBFrames = stream.Read<int32_t>();
     UseDTS = !!stream.Read<uint8_t>();
     HasTS = !!stream.Read<uint8_t>();
@@ -109,6 +110,7 @@ void FFMS_Track::Write(ZipFile &stream) const {
     stream.Write<uint8_t>(TT);
     stream.Write(TB.Num);
     stream.Write(TB.Den);
+    stream.Write<int64_t>(LastDuration);
     stream.Write<int32_t>(MaxBFrames);
     stream.Write<uint8_t>(UseDTS);
     stream.Write<uint8_t>(HasTS);

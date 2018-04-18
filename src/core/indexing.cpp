@@ -35,7 +35,7 @@ extern "C" {
 }
 
 #define INDEXID 0x53920873
-#define INDEX_VERSION 4
+#define INDEX_VERSION 5
 
 SharedAVContext::~SharedAVContext() {
     avcodec_free_context(&CodecContext);
@@ -296,17 +296,6 @@ uint32_t FFMS_Indexer::IndexAudioPacket(int Track, AVPacket *Packet, SharedAVCon
     return static_cast<uint32_t>(Context.CurrentSample - StartSample);
 }
 
-static const char *GetLAVCSampleFormatName(AVSampleFormat s) {
-    switch (s) {
-    case AV_SAMPLE_FMT_U8:  return "8-bit unsigned integer";
-    case AV_SAMPLE_FMT_S16: return "16-bit signed integer";
-    case AV_SAMPLE_FMT_S32: return "32-bit signed integer";
-    case AV_SAMPLE_FMT_FLT: return "Single-precision floating point";
-    case AV_SAMPLE_FMT_DBL: return "Double-precision floating point";
-    default:                return "Unknown";
-    }
-}
-
 void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
     auto it = LastAudioProperties.find(Track);
     if (it == LastAudioProperties.end()) {
@@ -322,25 +311,44 @@ void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
             "Audio format change detected. This is currently unsupported."
             << " Channels: " << it->second.Channels << " -> " << Context->channels << ";"
             << " Sample rate: " << it->second.SampleRate << " -> " << Context->sample_rate << ";"
-            << " Sample format: " << GetLAVCSampleFormatName((AVSampleFormat)it->second.SampleFormat) << " -> "
-            << GetLAVCSampleFormatName(Context->sample_fmt);
+            << " Sample format: " << av_get_sample_fmt_name((AVSampleFormat)it->second.SampleFormat) << " -> "
+            << av_get_sample_fmt_name(Context->sample_fmt);
         throw FFMS_Exception(FFMS_ERROR_UNSUPPORTED, FFMS_ERROR_DECODING, buf.str());
     }
 }
 
-void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType, bool *Invisible) {
+void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt, int *RepeatPict,
+                                    int *FrameType, bool *Invisible, enum AVPictureStructure *LastPicStruct) {
     if (VideoContext.Parser) {
         uint8_t *OB;
         int OBSize;
+        bool IncompleteFrame = false;
+
         av_parser_parse2(VideoContext.Parser,
             VideoContext.CodecContext,
             &OB, &OBSize,
             pkt.data, pkt.size,
             pkt.pts, pkt.dts, pkt.pos);
 
+        // H.264 (PAFF) and HEVC may have one field per packet, so we need to track
+        // when we have a full or half frame available, and mark one of them as
+        // hidden, so we do not get duplicate frames.
+        if (VideoContext.CodecContext->codec_id == AV_CODEC_ID_H264 ||
+            VideoContext.CodecContext->codec_id == AV_CODEC_ID_HEVC) {
+            if ((VideoContext.Parser->picture_structure == AV_PICTURE_STRUCTURE_TOP_FIELD &&
+                 *LastPicStruct == AV_PICTURE_STRUCTURE_BOTTOM_FIELD) ||
+                (VideoContext.Parser->picture_structure == AV_PICTURE_STRUCTURE_BOTTOM_FIELD &&
+                 *LastPicStruct == AV_PICTURE_STRUCTURE_TOP_FIELD)) {
+                IncompleteFrame = true;
+                *LastPicStruct = AV_PICTURE_STRUCTURE_UNKNOWN;
+            } else {
+                *LastPicStruct = VideoContext.Parser->picture_structure;
+            }
+        }
+
         *RepeatPict = VideoContext.Parser->repeat_pict;
         *FrameType = VideoContext.Parser->pict_type;
-        *Invisible = (VideoContext.Parser->repeat_pict < 0 || (pkt.flags & AV_PKT_FLAG_DISCARD));
+        *Invisible = (IncompleteFrame || VideoContext.Parser->repeat_pict < 0 || (pkt.flags & AV_PKT_FLAG_DISCARD));
     } else {
         *Invisible = !!(pkt.flags & AV_PKT_FLAG_DISCARD);
     }
@@ -450,9 +458,9 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
     AVPacket Packet;
     InitNullPacket(Packet);
     std::vector<int64_t> LastValidTS(FormatContext->nb_streams, AV_NOPTS_VALUE);
-    std::vector<int> LastDuration(FormatContext->nb_streams, 0);
 
     int64_t filesize = avio_size(FormatContext->pb);
+    enum AVPictureStructure LastPicStruct = AV_PICTURE_STRUCTURE_UNKNOWN;
     while (av_read_frame(FormatContext, &Packet) >= 0) {
         // Update progress
         // FormatContext->pb can apparently be NULL when opening images.
@@ -491,16 +499,15 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
                 if (TrackInfo.empty())
                     PTS = 0;
                 else
-                    PTS = TrackInfo.back().PTS + LastDuration[Track];
+                    PTS = TrackInfo.back().PTS + TrackInfo.LastDuration;
 
                 TrackInfo.HasTS = false;
             }
-            LastDuration[Track] = Packet.duration;
 
             int RepeatPict = -1;
             int FrameType = 0;
             bool Invisible = false;
-            ParseVideoPacket(AVContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible);
+            ParseVideoPacket(AVContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible, &LastPicStruct);
 
             TrackInfo.AddVideoFrame(PTS, RepeatPict, KeyFrame,
                 FrameType, Packet.pos, Invisible);
@@ -518,6 +525,8 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
             TrackInfo.AddAudioFrame(LastValidTS[Track],
                 StartSample, SampleCount, KeyFrame, Packet.pos, Packet.flags & AV_PKT_FLAG_DISCARD);
         }
+
+        TrackInfo.LastDuration = Packet.duration;
 
         av_packet_unref(&Packet);
     }

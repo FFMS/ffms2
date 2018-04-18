@@ -83,12 +83,28 @@ static AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default, b
             return AV_PIX_FMT_YUVA444P10;
         if (s == "RGBP8")
             return AV_PIX_FMT_GBRP;
-        if (s == "RGBAP8")
-            return AV_PIX_FMT_GBRAP;
+        if (s == "RGBP10")
+            return AV_PIX_FMT_GBRP10;
+        if (s == "RGBP12")
+            return AV_PIX_FMT_GBRP12;
         if (s == "RGBP16")
             return AV_PIX_FMT_GBRP16;
+        if (s == "RGBPS")
+            return AV_PIX_FMT_GBRPF32;
+        if (s == "RGBAP8")
+            return AV_PIX_FMT_GBRAP;
+        if (s == "RGBAP10")
+            return AV_PIX_FMT_GBRAP10;
+        if (s == "RGBAP12")
+            return AV_PIX_FMT_GBRAP12;
         if (s == "RGBAP16")
             return AV_PIX_FMT_GBRAP16;
+        if (s == "RGBAPS")
+            return AV_PIX_FMT_GBRAPF32;
+        if (s == "Y10" || s == "GRAY10")
+            return AV_PIX_FMT_GRAY10;
+        if (s == "Y12" || s == "GRAY12")
+            return AV_PIX_FMT_GRAY12;
         if (s == "Y16" || s == "GRAY16")
             return AV_PIX_FMT_GRAY16;
     }
@@ -283,9 +299,17 @@ void AvisynthVideoSource::InitOutputFormat(
         TargetFormats.push_back(FFMS_GetPixFmt("yuva422p10"));
         TargetFormats.push_back(FFMS_GetPixFmt("yuv444p10"));
         TargetFormats.push_back(FFMS_GetPixFmt("yuva444p10"));
+        TargetFormats.push_back(FFMS_GetPixFmt("gbrpf32"));
+        TargetFormats.push_back(FFMS_GetPixFmt("gbrapf32"));
         TargetFormats.push_back(FFMS_GetPixFmt("gbrp16"));
         TargetFormats.push_back(FFMS_GetPixFmt("gbrap16"));
+        TargetFormats.push_back(FFMS_GetPixFmt("gbrp12"));
+        TargetFormats.push_back(FFMS_GetPixFmt("gbrap12"));
+        TargetFormats.push_back(FFMS_GetPixFmt("gbrp10"));
+        TargetFormats.push_back(FFMS_GetPixFmt("gbrap10"));
         TargetFormats.push_back(FFMS_GetPixFmt("gray16"));
+        TargetFormats.push_back(FFMS_GetPixFmt("gray12"));
+        TargetFormats.push_back(FFMS_GetPixFmt("gray10"));
         TargetFormats.push_back(FFMS_GetPixFmt("yuva420p"));
         TargetFormats.push_back(FFMS_GetPixFmt("yuva422p"));
         TargetFormats.push_back(FFMS_GetPixFmt("yuva444p"));
@@ -389,16 +413,32 @@ void AvisynthVideoSource::InitOutputFormat(
         VI.pixel_type = VideoInfo::CS_YUV444P10;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("yuva444p10"))
         VI.pixel_type = VideoInfo::CS_YUVA444P10;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrpf32"))
+        VI.pixel_type = VideoInfo::CS_RGBPS;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrp16"))
         VI.pixel_type = VideoInfo::CS_RGBP16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrp12"))
+        VI.pixel_type = VideoInfo::CS_RGBP12;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrp10"))
+        VI.pixel_type = VideoInfo::CS_RGBP10;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrapf32"))
+        VI.pixel_type = VideoInfo::CS_RGBAPS;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrap16"))
         VI.pixel_type = VideoInfo::CS_RGBAP16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrap12"))
+        VI.pixel_type = VideoInfo::CS_RGBAP12;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrap10"))
+        VI.pixel_type = VideoInfo::CS_RGBAP10;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrp"))
         VI.pixel_type = VideoInfo::CS_RGBP;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gbrap"))
         VI.pixel_type = VideoInfo::CS_RGBAP;
     else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gray16"))
         VI.pixel_type = VideoInfo::CS_Y16;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gray12"))
+        VI.pixel_type = VideoInfo::CS_Y12;
+    else if (F->ConvertedPixelFormat == FFMS_GetPixFmt("gray10"))
+        VI.pixel_type = VideoInfo::CS_Y10;
     else
         Env->ThrowError("FFVideoSource: No suitable output format found");
 

@@ -88,8 +88,6 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
     LocalFrame.TransferCharateristics = (OutputTransferCharateristics >= 0) ? OutputTransferCharateristics : Frame->color_trc;
     LocalFrame.ChromaLocation = (OutputChromaLocation >= 0) ? OutputChromaLocation : Frame->chroma_location;
 
-    LocalFrame.HasMasteringDisplayPrimaries = 0;
-    LocalFrame.HasMasteringDisplayLuminance = 0;
     const AVFrameSideData *MasteringDisplaySideData = av_frame_get_side_data(Frame, AV_FRAME_DATA_MASTERING_DISPLAY_METADATA);
     if (MasteringDisplaySideData) {
         const AVMasteringDisplayMetadata *MasteringDisplay = reinterpret_cast<const AVMasteringDisplayMetadata *>(MasteringDisplaySideData->data);
@@ -108,15 +106,21 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
             LocalFrame.MasteringDisplayMaxLuminance = av_q2d(MasteringDisplay->max_luminance);
         }
     }
+    LocalFrame.HasMasteringDisplayPrimaries = !!LocalFrame.MasteringDisplayPrimariesX[0] && !!LocalFrame.MasteringDisplayPrimariesY[0] &&
+                                              !!LocalFrame.MasteringDisplayPrimariesX[1] && !!LocalFrame.MasteringDisplayPrimariesY[1] &&
+                                              !!LocalFrame.MasteringDisplayPrimariesX[2] && !!LocalFrame.MasteringDisplayPrimariesY[2] &&
+                                              !!LocalFrame.MasteringDisplayWhitePointX   && !!LocalFrame.MasteringDisplayWhitePointY;
+    /* MasteringDisplayMinLuminance can be 0 */
+    LocalFrame.HasMasteringDisplayLuminance = !!LocalFrame.MasteringDisplayMaxLuminance;
 
-    LocalFrame.HasContentLightLevel = 0;
     const AVFrameSideData *ContentLightSideData = av_frame_get_side_data(Frame, AV_FRAME_DATA_CONTENT_LIGHT_LEVEL);
     if (ContentLightSideData) {
         const AVContentLightMetadata *ContentLightLevel = reinterpret_cast<const AVContentLightMetadata *>(ContentLightSideData->data);
-        LocalFrame.HasContentLightLevel = 1;
         LocalFrame.ContentLightLevelMax = ContentLightLevel->MaxCLL;
         LocalFrame.ContentLightLevelAverage = ContentLightLevel->MaxFALL;
     }
+    /* Only check for either of them */
+    LocalFrame.HasContentLightLevel = !!LocalFrame.ContentLightLevelMax || !!LocalFrame.ContentLightLevelAverage;
 
     LastFrameHeight = Frame->height;
     LastFrameWidth = Frame->width;
@@ -126,8 +130,7 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 }
 
 FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, int Track, int Threads, int SeekMode)
-    : Index(Index)
-    , SeekMode(SeekMode) {
+    : Index(Index), SeekMode(SeekMode) {
 
     try {
         if (Track < 0 || Track >= static_cast<int>(Index.size()))
@@ -183,9 +186,22 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         CodecContext->thread_count = DecodingThreads;
         CodecContext->has_b_frames = Frames.MaxBFrames;
 
+        // Full explanation by more clever person availale here: https://github.com/Nevcairiel/LAVFilters/issues/113
+        if (CodecContext->codec_id == AV_CODEC_ID_H264 && CodecContext->has_b_frames)
+            CodecContext->has_b_frames = 15; // the maximum possible value for h264
+
         if (avcodec_open2(CodecContext, Codec, nullptr) < 0)
             throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
                 "Could not open video codec");
+
+        // Similar yet different to h264 workaround above
+        // vc1 simply sets has_b_frames to 1 no matter how many there are so instead we set it to the max value
+        // in order to not confuse our own delay guesses later
+        // Doesn't affect actual vc1 reordering unlike h264
+        if (CodecContext->codec_id == AV_CODEC_ID_VC1 && CodecContext->has_b_frames)
+            Delay = 7 + (CodecContext->thread_count - 1); // the maximum possible value for vc1
+        else
+            Delay = CodecContext->has_b_frames + (CodecContext->thread_count - 1); // Normal decoder delay
 
         // Always try to decode a frame to make sure all required parameters are known
         int64_t DummyPTS = 0, DummyPos = 0;
@@ -196,17 +212,22 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         VP.FPSNumerator = FormatContext->streams[VideoTrack]->time_base.den;
 
         // sanity check framerate
-        if (VP.FPSDenominator > VP.FPSNumerator || VP.FPSDenominator <= 0 || VP.FPSNumerator <= 0) {
+        if (VP.FPSDenominator <= 0 || VP.FPSNumerator <= 0) {
             VP.FPSDenominator = 1;
             VP.FPSNumerator = 30;
         }
 
         // Calculate the average framerate
-        if (Frames.size() >= 2) {
+        size_t TotalFrames = 0;
+        for (size_t i = 0; i < Frames.size(); i++)
+            if (!Frames[i].Hidden)
+                TotalFrames++;
+
+        if (TotalFrames >= 2) {
             double PTSDiff = (double)(Frames.back().PTS - Frames.front().PTS);
             double TD = (double)(Frames.TB.Den);
             double TN = (double)(Frames.TB.Num);
-            VP.FPSDenominator = (unsigned int)(PTSDiff * TN / TD * 1000.0 / (Frames.size() - 1));
+            VP.FPSDenominator = (unsigned int)(PTSDiff * TN / TD * 1000.0 / (TotalFrames - 1));
             VP.FPSNumerator = 1000000;
         }
 
@@ -256,6 +277,22 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         // Cannot "output" without doing all other initialization
         // This is the additional mess required for seekmode=-1 to work in a reasonable way
         OutputFrame(DecodeFrame);
+
+        VP.HasMasteringDisplayPrimaries = LocalFrame.HasMasteringDisplayPrimaries;
+        for (int i = 0; i < 3; i++) {
+            VP.MasteringDisplayPrimariesX[i] = LocalFrame.MasteringDisplayPrimariesX[i];
+            VP.MasteringDisplayPrimariesY[i] = LocalFrame.MasteringDisplayPrimariesY[i];
+        }
+
+        // Simply copy this from the first frame to make it easier to access
+        VP.MasteringDisplayWhitePointX = LocalFrame.MasteringDisplayWhitePointX;
+        VP.MasteringDisplayWhitePointY = LocalFrame.MasteringDisplayWhitePointY;
+        VP.HasMasteringDisplayLuminance = LocalFrame.HasMasteringDisplayLuminance;
+        VP.MasteringDisplayMinLuminance = LocalFrame.MasteringDisplayMinLuminance;
+        VP.MasteringDisplayMaxLuminance = LocalFrame.MasteringDisplayMaxLuminance;
+        VP.HasContentLightLevel = LocalFrame.HasContentLightLevel;
+        VP.ContentLightLevelMax = LocalFrame.ContentLightLevelMax;
+        VP.ContentLightLevelAverage = LocalFrame.ContentLightLevelAverage;
     } catch (FFMS_Exception &) {
         Free();
         throw;
@@ -456,6 +493,7 @@ void FFMS_VideoSource::SetVideoProperties() {
 
     VP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
     VP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+    VP.LastEndTime = (((Frames.back().PTS + Frames.LastDuration) * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 
     if (CodecContext->width <= 0 || CodecContext->height <= 0)
         throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
@@ -480,7 +518,7 @@ void FFMS_VideoSource::SetVideoProperties() {
 
 bool FFMS_VideoSource::HasPendingDelayedFrames() {
     if (InitialDecode == -1) {
-        if (DelayCounter > FFMS_CALCULATE_DELAY) {
+        if (DelayCounter > Delay) {
             --DelayCounter;
             return true;
         }
@@ -496,20 +534,31 @@ bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
     int Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
     if (Ret != 0) {
         std::swap(DecodeFrame, LastDecodedFrame);
-        DelayCounter++;
+        if (!(Packet->flags & AV_PKT_FLAG_DISCARD))
+            DelayCounter++;
     }
 
     if (Ret == 0 && InitialDecode == 1)
         InitialDecode = -1;
 
-    return (Ret == 0) || (DelayCounter > FFMS_CALCULATE_DELAY && !InitialDecode);;
+    // H.264 (PAFF) and HEVC can have one field per packet, and decoding delay needs
+    // to be adjusted accordingly.
+    if (CodecContext->codec_id == AV_CODEC_ID_H264 || CodecContext->codec_id == AV_CODEC_ID_HEVC) {
+        if (!PAFFAdjusted && DelayCounter > Delay && LastDecodedFrame->repeat_pict == 0 && Ret != 0) {
+            int OldBFrameDelay = Delay - (CodecContext->thread_count - 1);
+            Delay = 1 + OldBFrameDelay * 2 + (CodecContext->thread_count - 1);
+            PAFFAdjusted = true;
+        }
+    }
+
+    return (Ret == 0) || (DelayCounter > Delay && !InitialDecode);;
 }
 
 int FFMS_VideoSource::Seek(int n) {
     int ret = -1;
 
     DelayCounter = 0;
-	InitialDecode = 1;
+    InitialDecode = 1;
 
     if (!SeekByPos || Frames[n].FilePos < 0) {
         ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].PTS, AVSEEK_FLAG_BACKWARD);
@@ -631,11 +680,6 @@ FFMS_Frame *FFMS_VideoSource::GetFrame(int n) {
             HasSeeked = SeekTo(n, SeekOffset);
             Seek = false;
         }
-
-        if (CurrentFrame + FFMS_CALCULATE_DELAY * CodecContext->ticks_per_frame >= n || HasSeeked)
-            CodecContext->skip_frame = AVDISCARD_DEFAULT;
-        else
-            CodecContext->skip_frame = AVDISCARD_NONREF;
 
         int64_t StartTime = AV_NOPTS_VALUE, FilePos = -1;
         DecodeNextFrame(StartTime, FilePos);

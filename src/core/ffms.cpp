@@ -44,7 +44,7 @@ static bool FFmpegNetworkInited = false;
 
 #ifdef FFMS_WIN_DEBUG
 
-void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl) {
+static void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_list vl) {
     if (level > av_log_get_level())
         return;
 
@@ -231,10 +231,6 @@ FFMS_API(void) FFMS_DestroyIndex(FFMS_Index *Index) {
     delete Index;
 }
 
-FFMS_DEPRECATED_API(int) FFMS_GetSourceType(FFMS_Index *Index) {
-    return FFMS_SOURCE_LAVF;
-}
-
 FFMS_API(FFMS_IndexErrorHandling) FFMS_GetErrorHandling(FFMS_Index *Index) {
     return static_cast<FFMS_IndexErrorHandling>(Index->ErrorHandling);
 }
@@ -322,46 +318,6 @@ FFMS_API(int) FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, FFMS_
     return FFMS_ERROR_SUCCESS;
 }
 
-FFMS_DEPRECATED_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
-    FFMS_Indexer *Indexer = FFMS_CreateIndexer(SourceFile, ErrorInfo);
-    if (!Indexer)
-        return nullptr;
-    return FFMS_DoIndexing(Indexer, IndexMask, DumpMask, ANC, ANCPrivate, ErrorHandling, IC, ICPrivate, ErrorInfo);
-}
-
-/* Used by FFMS_DefaultAudioFilename */
-
-static std::string IntToStr(int i, int zp = 0) {
-    std::stringstream s;
-    s.fill('0');
-    s.width(zp);
-    s << i;
-    return s.str();
-}
-
-static void ReplaceString(std::string &s, const char *from, std::string const& to) {
-    std::string::size_type idx;
-    while ((idx = s.find(from)) != std::string::npos)
-        s.replace(idx, strlen(from), to);
-}
-
-FFMS_DEPRECATED_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int, void *Private) {
-    std::string s = static_cast<char *>(Private);
-
-    ReplaceString(s, "%sourcefile%", SourceFile);
-    ReplaceString(s, "%trackn%", std::to_string(Track));
-    ReplaceString(s, "%trackzn%", IntToStr(Track, 2));
-    ReplaceString(s, "%samplerate%", std::to_string(AP->SampleRate));
-    ReplaceString(s, "%channels%", std::to_string(AP->Channels));
-    ReplaceString(s, "%bps%", std::to_string(AP->BitsPerSample));
-    ReplaceString(s, "%delay%", std::to_string(static_cast<int>(AP->FirstTime)));
-
-    if (FileName)
-        strcpy(FileName, s.c_str());
-
-    return static_cast<int>(s.length() + 1);
-}
-
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo) {
     ClearErrorInfo(ErrorInfo);
     try {
@@ -370,32 +326,6 @@ FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorIn
         e.CopyOut(ErrorInfo);
         return nullptr;
     }
-}
-
-FFMS_DEPRECATED_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int, FFMS_ErrorInfo *ErrorInfo) {
-    return FFMS_CreateIndexer(SourceFile, ErrorInfo);
-}
-
-FFMS_DEPRECATED_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
-    ClearErrorInfo(ErrorInfo);
-
-    IndexMask |= DumpMask;
-    for (int i = 0; i < static_cast<int>(sizeof(IndexMask) * 8); i++) {
-        if ((IndexMask >> i) & 1)
-            FFMS_TrackIndexSettings(Indexer, i, 1, 0);
-    }
-
-    Indexer->SetErrorHandling(ErrorHandling);
-    Indexer->SetProgressCallback(IC, ICPrivate);
-
-    FFMS_Index *Index = nullptr;
-    try {
-        Index = Indexer->DoIndexing();
-    } catch (FFMS_Exception &e) {
-        e.CopyOut(ErrorInfo);
-    }
-    delete Indexer;
-    return Index;
 }
 
 FFMS_API(FFMS_Index *) FFMS_DoIndexing2(FFMS_Indexer *Indexer, int ErrorHandling, FFMS_ErrorInfo *ErrorInfo) {
@@ -413,16 +343,12 @@ FFMS_API(FFMS_Index *) FFMS_DoIndexing2(FFMS_Indexer *Indexer, int ErrorHandling
     return Index;
 }
 
-FFMS_API(void) FFMS_TrackIndexSettings(FFMS_Indexer *Indexer, int Track, int Index, int Dump) {
+FFMS_API(void) FFMS_TrackIndexSettings(FFMS_Indexer *Indexer, int Track, int Index, int) {
     Indexer->SetIndexTrack(Track, !!Index);
 }
 
-FFMS_API(void) FFMS_TrackTypeIndexSettings(FFMS_Indexer *Indexer, int TrackType, int Index, int Dump) {
+FFMS_API(void) FFMS_TrackTypeIndexSettings(FFMS_Indexer *Indexer, int TrackType, int Index, int) {
     Indexer->SetIndexTrackType(TrackType, !!Index);
-}
-
-FFMS_DEPRECATED_API(void) FFMS_SetAudioNameCallback(FFMS_Indexer *Indexer, TAudioNameCallback ANC, void *ANCPrivate) {
-
 }
 
 FFMS_API(void) FFMS_SetProgressCallback(FFMS_Indexer *Indexer, TIndexCallback IC, void *ICPrivate) {
@@ -500,19 +426,6 @@ FFMS_API(int) FFMS_GetPixFmt(const char *Name) {
     return av_get_pix_fmt(Name);
 }
 
-
-FFMS_DEPRECATED_API(int) FFMS_GetPresentSources() {
-    return FFMS_SOURCE_LAVF;
-}
-
-FFMS_DEPRECATED_API(int) FFMS_GetEnabledSources() {
-    return FFMS_SOURCE_LAVF;
-}
-
 FFMS_API(const char *) FFMS_GetFormatNameI(FFMS_Indexer *Indexer) {
     return Indexer->GetFormatName();
-}
-
-FFMS_DEPRECATED_API(int) FFMS_GetSourceTypeI(FFMS_Indexer *Indexer) {
-    return FFMS_SOURCE_LAVF;
 }
