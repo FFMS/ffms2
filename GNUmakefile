@@ -110,6 +110,7 @@ install: ffmsindex$(EXE) $(SONAME)
 	install -d $(DESTDIR)$(libdir)
 	install -d $(DESTDIR)$(libdir)/pkgconfig
 	install -m 644 include/ffms.h $(DESTDIR)$(includedir)
+	install -m 644 include/ffmscompat.h $(DESTDIR)$(includedir)
 	install -m 644 libffms2.a $(DESTDIR)$(libdir)
 	install -m 644 ffms2.pc $(DESTDIR)$(libdir)/pkgconfig
 	install ffmsindex$(EXE) $(DESTDIR)$(bindir)
