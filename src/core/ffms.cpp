@@ -318,6 +318,40 @@ FFMS_API(int) FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, FFMS_
     return FFMS_ERROR_SUCCESS;
 }
 
+/* Used by FFMS_DefaultAudioFilename */
+
+static std::string IntToStr(int i, int zp = 0) {
+    std::stringstream s;
+    s.fill('0');
+    s.width(zp);
+    s << i;
+    return s.str();
+}
+
+static void ReplaceString(std::string &s, const char *from, std::string const& to) {
+    std::string::size_type idx;
+    while ((idx = s.find(from)) != std::string::npos)
+        s.replace(idx, strlen(from), to);
+}
+
+FFMS_DEPRECATED_API(int) FFMS_DefaultAudioFilename(const char *SourceFile, int Track, const FFMS_AudioProperties *AP, char *FileName, int, void *Private) {
+    std::string s = static_cast<char *>(Private);
+
+    ReplaceString(s, "%sourcefile%", SourceFile);
+    ReplaceString(s, "%trackn%", std::to_string(Track));
+    ReplaceString(s, "%trackzn%", IntToStr(Track, 2));
+    ReplaceString(s, "%samplerate%", std::to_string(AP->SampleRate));
+    ReplaceString(s, "%channels%", std::to_string(AP->Channels));
+    ReplaceString(s, "%bps%", std::to_string(AP->BitsPerSample));
+    ReplaceString(s, "%delay%", std::to_string(static_cast<int>(AP->FirstTime)));
+
+    if (FileName)
+        strcpy(FileName, s.c_str());
+
+    return static_cast<int>(s.length() + 1);
+}
+
+
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo) {
     ClearErrorInfo(ErrorInfo);
     try {
@@ -326,6 +360,10 @@ FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorIn
         e.CopyOut(ErrorInfo);
         return nullptr;
     }
+}
+
+FFMS_DEPRECATED_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int, FFMS_ErrorInfo *ErrorInfo) {
+    return FFMS_CreateIndexer(SourceFile, ErrorInfo);
 }
 
 FFMS_API(FFMS_Index *) FFMS_DoIndexing2(FFMS_Indexer *Indexer, int ErrorHandling, FFMS_ErrorInfo *ErrorInfo) {
@@ -349,6 +387,10 @@ FFMS_API(void) FFMS_TrackIndexSettings(FFMS_Indexer *Indexer, int Track, int Ind
 
 FFMS_API(void) FFMS_TrackTypeIndexSettings(FFMS_Indexer *Indexer, int TrackType, int Index, int) {
     Indexer->SetIndexTrackType(TrackType, !!Index);
+}
+
+FFMS_DEPRECATED_API(void) FFMS_SetAudioNameCallback(FFMS_Indexer *Indexer, TAudioNameCallback ANC, void *ANCPrivate) {
+
 }
 
 FFMS_API(void) FFMS_SetProgressCallback(FFMS_Indexer *Indexer, TIndexCallback IC, void *ICPrivate) {
