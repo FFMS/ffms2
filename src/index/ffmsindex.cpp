@@ -22,7 +22,6 @@
 
 #ifdef _WIN32
 #include "vsutf16.h"
-#define UNICODE
 #endif
 
 #include <cstdlib>

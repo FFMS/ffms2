@@ -81,8 +81,8 @@ cc_check() {
     fi
     rm -f conftest.c
     [ -n "$1" ] && echo "#include <$1>" > conftest.c
-    echo "int wmain () { $3 return 0; }" >> conftest.c
-    if $CC conftest.c $CPPFLAGS $CFLAGS $2 $LDFLAGS -municode -o conftest >conftest.log 2>&1; then
+    echo "int main () { $3 return 0; }" >> conftest.c
+    if $CC conftest.c $CPPFLAGS $CFLAGS $2 $LDFLAGS -o conftest >conftest.log 2>&1; then
         res=$?
         log_ok
     else
@@ -113,8 +113,8 @@ cxx_check() {
     fi
     rm -f conftest.c
     [ -n "$1" ] && echo "#include <$1>" > conftest.c
-    echo "int wmain () { $3 return 0; }" >> conftest.c
-    if $CXX conftest.c $CPPFLAGS $CXXFLAGS $2 $LDFLAGS -municode -o conftest >conftest.log 2>&1; then
+    echo "int main () { $3 return 0; }" >> conftest.c
+    if $CXX conftest.c $CPPFLAGS $CXXFLAGS $2 $LDFLAGS -o conftest >conftest.log 2>&1; then
         res=$?
         log_ok
     else
