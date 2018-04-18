@@ -29,7 +29,5 @@
 
 #define VERSION_CHECK(LIB, cmp, major, minor, micro) ((LIB) cmp (AV_VERSION_INT(major, minor, micro)))
 
-#define AVPixelFormat PixelFormat
-
 
 #endif // FFMSCOMPAT_H
