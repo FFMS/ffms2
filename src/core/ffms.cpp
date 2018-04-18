@@ -318,6 +318,13 @@ FFMS_API(int) FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, FFMS_
     return FFMS_ERROR_SUCCESS;
 }
 
+FFMS_DEPRECATED_API(FFMS_Index *) FFMS_MakeIndex(const char *SourceFile, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
+    FFMS_Indexer *Indexer = FFMS_CreateIndexer(SourceFile, ErrorInfo);
+    if (!Indexer)
+        return nullptr;
+    return FFMS_DoIndexing(Indexer, IndexMask, DumpMask, ANC, ANCPrivate, ErrorHandling, IC, ICPrivate, ErrorInfo);
+}
+
 /* Used by FFMS_DefaultAudioFilename */
 
 static std::string IntToStr(int i, int zp = 0) {
@@ -364,6 +371,29 @@ FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorIn
 
 FFMS_DEPRECATED_API(FFMS_Indexer *) FFMS_CreateIndexerWithDemuxer(const char *SourceFile, int, FFMS_ErrorInfo *ErrorInfo) {
     return FFMS_CreateIndexer(SourceFile, ErrorInfo);
+}
+
+
+FFMS_DEPRECATED_API(FFMS_Index *) FFMS_DoIndexing(FFMS_Indexer *Indexer, int IndexMask, int DumpMask, TAudioNameCallback ANC, void *ANCPrivate, int ErrorHandling, TIndexCallback IC, void *ICPrivate, FFMS_ErrorInfo *ErrorInfo) {
+    ClearErrorInfo(ErrorInfo);
+
+    IndexMask |= DumpMask;
+    for (int i = 0; i < static_cast<int>(sizeof(IndexMask) * 8); i++) {
+        if ((IndexMask >> i) & 1)
+            FFMS_TrackIndexSettings(Indexer, i, 1, 0);
+    }
+
+    Indexer->SetErrorHandling(ErrorHandling);
+    Indexer->SetProgressCallback(IC, ICPrivate);
+
+    FFMS_Index *Index = nullptr;
+    try {
+        Index = Indexer->DoIndexing();
+    } catch (FFMS_Exception &e) {
+        e.CopyOut(ErrorInfo);
+    }
+    delete Indexer;
+    return Index;
 }
 
 FFMS_API(FFMS_Index *) FFMS_DoIndexing2(FFMS_Indexer *Indexer, int ErrorHandling, FFMS_ErrorInfo *ErrorInfo) {
