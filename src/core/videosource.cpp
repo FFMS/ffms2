@@ -536,6 +536,21 @@ bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
         std::swap(DecodeFrame, LastDecodedFrame);
         if (!(Packet->flags & AV_PKT_FLAG_DISCARD))
             DelayCounter++;
+    } else if (CodecContext->codec_id == AV_CODEC_ID_VP9 && Ret != AVERROR(EAGAIN) && Ret != AVERROR_EOF) {
+        // The internal VP9 BSF does not follow the push/pull documentation properly.
+        // It should keep a queue of data interanlly so further calls can return EAGAIN,
+        // but with VP9, it frees and discards that data when the next packet is sent.
+        // We need to call it a maximum of one extra time, to account for super frames
+        // that have both a visible and invisible frame in one packet. If we don't,
+        // the API happily and silently creates corrupt data output. There are not even
+        // any warnings output by the decoder. Happy days.
+        AVFrame *tmp = av_frame_alloc();
+        int VP9Ret = 0;
+        if (!tmp)
+            throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED, "Could not alloacate temp frame.");
+        while (VP9Ret == 0)
+            VP9Ret = avcodec_receive_frame(CodecContext, tmp);
+        av_frame_free(&tmp);
     }
 
     if (Ret == 0 && InitialDecode == 1)
