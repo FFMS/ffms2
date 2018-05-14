@@ -25,6 +25,7 @@
 #include "indexing.h"
 
 #include <algorithm>
+#include <cmath>
 
 extern "C" {
 #include <libavutil/avutil.h>
@@ -342,7 +343,7 @@ void FFMS_Track::FinalizeTrack() {
         std::vector<size_t> secs = { 0 };
 
         auto lastPTS = Frames[0].PTS;
-        const auto thresh = (Frames[1].PTS - Frames[0].PTS) * 16; // A bad approximation of 16 frames, the max reorder buffer size.
+        const auto thresh = std::abs(Frames[1].PTS - Frames[0].PTS) * 16; // A bad approximation of 16 frames, the max reorder buffer size.
         for (size_t i = 0; i < size(); i++) {
             if (Frames[i].PTS < lastPTS && (lastPTS - Frames[i].PTS) > thresh && i + 1 < size()) {
                 secs.push_back(i);
