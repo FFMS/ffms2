@@ -491,9 +491,9 @@ void FFMS_VideoSource::SetVideoProperties() {
         VP.ColorRange = AVCOL_RANGE_JPEG;
 
 
-    VP.FirstTime = ((Frames.front().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
-    VP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
-    VP.LastEndTime = (((Frames.back().PTS + Frames.LastDuration) * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+    VP.FirstTime = ((Frames[Frames.RealFrameNumber(0)].PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+    VP.LastTime = ((Frames[Frames.RealFrameNumber(Frames.VisibleFrameCount()-1)].PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
+    VP.LastEndTime = (((Frames[Frames.RealFrameNumber(Frames.VisibleFrameCount()-1)].PTS + Frames.LastDuration) * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
 
     if (CodecContext->width <= 0 || CodecContext->height <= 0)
         throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
