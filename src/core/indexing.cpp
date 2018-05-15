@@ -526,7 +526,8 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
                 StartSample, SampleCount, KeyFrame, Packet.pos, Packet.flags & AV_PKT_FLAG_DISCARD);
         }
 
-        TrackInfo.LastDuration = Packet.duration;
+        if (!(Packet.flags & AV_PKT_FLAG_DISCARD))
+            TrackInfo.LastDuration = Packet.duration;
 
         av_packet_unref(&Packet);
     }
