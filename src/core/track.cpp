@@ -249,7 +249,7 @@ void FFMS_Track::MaybeHideFrames() {
         FrameInfo const& prev = Frames[i - 1];
         FrameInfo& cur = Frames[i];
 
-        if (prev.FilePos >= 0 && (cur.FilePos == -1 || cur.FilePos == prev.FilePos))
+        if (prev.FilePos >= 0 && (cur.FilePos == -1 || cur.FilePos == prev.FilePos) && !prev.Hidden)
             cur.Hidden = true;
     }
 }
