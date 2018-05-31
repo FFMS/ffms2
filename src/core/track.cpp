@@ -155,6 +155,9 @@ int FFMS_Track::FrameFromPTS(int64_t PTS) const {
     F.PTS = PTS;
 
     auto Pos = std::lower_bound(begin(), end(), F, PTSComparison);
+    while (Pos != end() && Pos->Hidden && Pos->PTS == PTS)
+        Pos++;
+
     if (Pos == end() || Pos->PTS != PTS)
         return -1;
     return std::distance(begin(), Pos);
@@ -162,7 +165,7 @@ int FFMS_Track::FrameFromPTS(int64_t PTS) const {
 
 int FFMS_Track::FrameFromPos(int64_t Pos) const {
     for (size_t i = 0; i < size(); i++)
-        if (Data->Frames[i].FilePos == Pos)
+        if (Data->Frames[i].FilePos == Pos && !Data->Frames[i].Hidden)
             return static_cast<int>(i);
     return -1;
 }
@@ -172,6 +175,9 @@ int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) const {
     F.PTS = PTS;
 
     auto Pos = std::lower_bound(begin(), end(), F, PTSComparison);
+    while (Pos != end() && Pos->Hidden && Pos->PTS == PTS)
+        Pos++;
+
     if (Pos == end())
         return static_cast<int>(size() - 1);
     size_t Frame = std::distance(begin(), Pos);
