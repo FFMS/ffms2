@@ -536,6 +536,11 @@ bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
         std::swap(DecodeFrame, LastDecodedFrame);
         if (!(Packet->flags & AV_PKT_FLAG_DISCARD))
             DelayCounter++;
+    } else if (!!(Packet->flags & AV_PKT_FLAG_DISCARD)) {
+        // If sending discarded frame when the decode buffer is not empty, caller
+        // may still obtained bufferred decoded frames and the number of frames
+        // in the buffer decreases.
+        DelayCounter--;
     }
 
     if (Ret == 0 && InitialDecode == 1)
