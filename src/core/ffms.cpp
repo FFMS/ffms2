@@ -80,7 +80,7 @@ static void av_log_windebug_callback(void* ptr, int level, const char* fmt, va_l
 
 FFMS_API(void) FFMS_Init(int, int) {
     std::call_once(FFmpegOnce, []() {
-        av_register_all();
+        FFMS_REGISTER();
 #ifdef FFMS_WIN_DEBUG
         av_log_set_callback(av_log_windebug_callback);
         av_log_set_level(AV_LOG_INFO);
