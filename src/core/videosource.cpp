@@ -688,7 +688,7 @@ FFMS_Frame *FFMS_VideoSource::GetFrame(int n) {
 
         int64_t StartTime = AV_NOPTS_VALUE, FilePos = -1;
         bool Hidden = (((unsigned) CurrentFrame < Frames.size()) && Frames[CurrentFrame].Hidden);
-        if (HasSeeked || !Hidden)
+        if (PAFFAdjusted || HasSeeked || !Hidden)
             DecodeNextFrame(StartTime, FilePos);
 
         if (!HasSeeked)
