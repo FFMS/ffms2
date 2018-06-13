@@ -64,7 +64,7 @@ public:
     bool UseDTS = false;
     bool HasTS = false;
     bool HasDiscontTS = false;
-    int64_t LastDuration;
+    int64_t LastDuration = 0;
     int SampleRate = 0; // not persisted
 
     void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, bool Invisible = false);
