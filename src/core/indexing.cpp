@@ -67,11 +67,14 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
     av_sha_final(ctx.get(), Digest);
 }
 
-void FFMS_Index::Finalize(std::vector<SharedAVContext> const& video_contexts) {
+void FFMS_Index::Finalize(std::vector<SharedAVContext> const& video_contexts, const char *Format) {
     for (size_t i = 0, end = size(); i != end; ++i) {
         FFMS_Track& track = (*this)[i];
         // H.264 PAFF needs to have some frames hidden
-        if (video_contexts[i].CodecContext && video_contexts[i].CodecContext->codec_id == AV_CODEC_ID_H264)
+        //
+        // Don't send any WMV/ASF files, since they (as far as we know) cannot contain PAFF,
+        // but may also have valid, split packets, with pos equal to the previous pos.
+        if (video_contexts[i].CodecContext && video_contexts[i].CodecContext->codec_id == AV_CODEC_ID_H264 && !!strcmp(Format, "asf"))
             track.MaybeHideFrames();
         track.FinalizeTrack();
 
@@ -532,7 +535,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
         av_packet_unref(&Packet);
     }
 
-    TrackIndices->Finalize(AVContexts);
+    TrackIndices->Finalize(AVContexts, FormatContext->iformat->name);
     return TrackIndices.release();
 }
 
