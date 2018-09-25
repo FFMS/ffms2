@@ -54,7 +54,7 @@ public:
     int64_t Filesize;
     uint8_t Digest[20];
 
-    void Finalize(std::vector<SharedAVContext> const& video_contexts);
+    void Finalize(std::vector<SharedAVContext> const& video_contexts, const char *Format);
     bool CompareFileSignature(const char *Filename);
     void WriteIndexFile(const char *IndexFile);
     uint8_t *WriteIndexBuffer(size_t *Size);
