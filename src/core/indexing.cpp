@@ -73,7 +73,7 @@ void FFMS_Index::Finalize(std::vector<SharedAVContext> const& video_contexts, co
         // H.264 PAFF needs to have some frames hidden
         //
         // Don't send any WMV/ASF files, since they (as far as we know) cannot contain PAFF,
-        // but may also have valid, split packets, with pos equal to -1.
+        // but may also have valid, split packets, with pos equal to the previous pos.
         if (video_contexts[i].CodecContext && video_contexts[i].CodecContext->codec_id == AV_CODEC_ID_H264 && !!strcmp(Format, "asf"))
             track.MaybeHideFrames();
         track.FinalizeTrack();
