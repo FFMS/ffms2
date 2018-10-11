@@ -78,7 +78,7 @@ PKG_PROG_PKG_CONFIG([0.22])
 pkgconfigdir="\$(libdir)/pkgconfig"
 AC_SUBST(pkgconfigdir)
 
-PKG_CHECK_MODULES(FFMPEG, [libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 ])
+PKG_CHECK_MODULES(FFMPEG, [libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 libswresample >= 1.0.0])
 
 dnl As of 0eec06ed8747923faa6a98e474f224d922dc487d ffmpeg only adds -lrt to lavc's
 dnl LIBS, but lavu needs it, so move it to the end if it's present
@@ -107,17 +107,6 @@ AC_MSG_RESULT([$FFMPEG_WORKS])
 if test "$FFMPEG_WORKS" = no; then
 AC_MSG_FAILURE([cannot link with FFmpeg])
 fi
-
-PKG_CHECK_MODULES(SWRESAMPLE, [libswresample >= 1.0.0], [], [
-  AC_MSG_ERROR([swresample is required.])
-])
-
-dnl See similar thing for FFMPEG_LIBS
-SWRESAMPLE_LIBS=$(echo $SWRESAMPLE_LIBS | sed 's/\(.*\)-lrt \(.*\)/\1\2 -lrt/')
-
-AC_SUBST([SWRESAMPLE_CFLAGS])
-AC_SUBST([SWRESAMPLE_LIBS])
-AC_SUBST([libswresample])
 
 src_core_libffms2_la_LDFLAGS=""
 AC_MSG_CHECKING([whether -Wl,-Bsymbolic is needed])
