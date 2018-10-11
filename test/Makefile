@@ -77,7 +77,7 @@ gtest.a: gtest-all.o
 gtest_main.a: gtest-all.o gtest_main.o
 	$(AR) $(ARFLAGS) $@ $^
 
-tests.o: $(USER_DIR)/test/indexer.cpp $(USER_DIR)/include/ffms.h $(GTEST_HEADERS)
+tests.o: $(USER_DIR)/test/tests.cpp $(USER_DIR)/include/ffms.h $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/tests.cpp
 
 indexer.o: $(USER_DIR)/test/indexer.cpp $(USER_DIR)/include/ffms.h $(GTEST_HEADERS)
