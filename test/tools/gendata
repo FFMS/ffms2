@@ -35,7 +35,7 @@ print("#ifndef _FFMS_TEST_".uc($arrayname)."_H\n");
 print("#define _FFMS_TEST_".uc($arrayname)."_H\n\n");
 print("#include \"data.h\"\n\n");
 
-for (`ffmpeg -i $filename -map $track:0 -f framehash - 2>/dev/null`) {
+for (`ffmpeg -i $filename -map $track:0 -enc_time_base -1 -f framehash - 2>/dev/null`) {
     if (/^#/) {
         if (!/^#tb/) {
             next;
