@@ -9,6 +9,15 @@
 
 #include "data/test.mp4.cpp"
 #include "data/vp9_audfirst.webm.cpp"
+#include "data/qrvideo_24fps_1elist_1ctts.mov.cpp"
+#include "data/qrvideo_24fps_1elist_ends_last_bframe.mov.cpp"
+#include "data/qrvideo_24fps_1elist_noctts.mov.cpp"
+#include "data/qrvideo_24fps_2elist_elist1_dur_zero.mov.cpp"
+#include "data/qrvideo_24fps_2elist_elist1_ends_bframe.mov.cpp"
+#include "data/qrvideo_24fps_2s_3elist.mov.cpp"
+#include "data/qrvideo_24fps_3elist_1ctts.mov.cpp"
+#include "data/qrvideo_24fps_elist_starts_ctts_2ndsample.mov.cpp"
+#include "data/qrvideo_stream_shorter_than_movie.mov.cpp"
 #include "tests.h"
 
 
@@ -16,7 +25,16 @@ namespace {
 
 const TestDataMap TestFiles[] = {
     TEST_ENTRY("test.mp4", testmp4data),
-    TEST_ENTRY("vp9_audfirst.webm", vp9audfirst)
+    TEST_ENTRY("vp9_audfirst.webm", vp9audfirst),
+    TEST_ENTRY("qrvideo_24fps_1elist_1ctts.mov", qrvideo_24fps_1elist_1ctts),
+    TEST_ENTRY("qrvideo_24fps_1elist_ends_last_bframe.mov", qrvideo_24fps_1elist_ends_last_bframe),
+    TEST_ENTRY("qrvideo_24fps_1elist_noctts.mov", qrvideo_24fps_1elist_noctts),
+    TEST_ENTRY("qrvideo_24fps_2elist_elist1_dur_zero.mov", qrvideo_24fps_2elist_elist1_dur_zero),
+    TEST_ENTRY("qrvideo_24fps_2elist_elist1_ends_bframe.mov", qrvideo_24fps_2elist_elist1_ends_bframe),
+    TEST_ENTRY("qrvideo_24fps_2s_3elist.mov", qrvideo_24fps_2s_3elist),
+    TEST_ENTRY("qrvideo_24fps_3elist_1ctts.mov", qrvideo_24fps_3elist_1ctts),
+    TEST_ENTRY("qrvideo_24fps_elist_starts_ctts_2ndsample.mov", qrvideo_24fps_elist_starts_ctts_2ndsample),
+    TEST_ENTRY("qrvideo_stream_shorter_than_movie.mov", qrvideo_stream_shorter_than_movie),
 };
 
 class IndexerTest : public ::testing::TestWithParam<TestDataMap> {
