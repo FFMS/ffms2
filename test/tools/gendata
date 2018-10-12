@@ -49,29 +49,31 @@ for (`ffmpeg -i $filename -map $track:0 -f framehash - 2>/dev/null`) {
     chomp;
     s/\s//g;
     my @fields = split(',');
-    push(@timestamps, int($fields[1]) * $ticks);
-    push(@durations, int($fields[3]) * $ticks);
     push(@hashes, $fields[5]);
     $frames++;
 }
 
 for (`ffprobe -show_frames -select_streams $track $filename 2>/dev/null`) {
+    chomp;
+
     if (/^width/) {
-        chomp;
         my @w = split('=');
         push(@widths, int($w[1]));
     } elsif (/^height/) {
-        chomp;
         my @h = split('=');
         push(@heights, int($h[1]));
     } elsif (/^pix_fmt/) {
-        chomp;
         my @p = split('=');
         push(@pixfmts, $p[1]);
     } elsif (/^key_frame/) {
-        chomp;
         my @k = split('=');
         push(@keyframes, (int($k[1]) == 1 ? "true" : "false"));
+    } elsif (/^pkt_pts=/) {
+        my @t = split('=');
+        push(@timestamps, int($t[1]));
+    } elsif (/^pkt_duration=/) {
+        my @d = split('=');
+        push(@durations, int($d[1]));
     } else {
         next;
     }
