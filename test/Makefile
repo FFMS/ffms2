@@ -45,7 +45,7 @@ run: all
 	done
 
 sync:
-	@for i in "$(SAMPLES)"; do \
+	@for i in $(SAMPLES); do \
 		if [ ! -f "$(SAMPLES_DIR)/$$i" ]; then \
 			wget -O $(SAMPLES_DIR)/$$i $(SAMPLES_URL)/$$i; \
 		fi \
