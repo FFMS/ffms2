@@ -12,32 +12,29 @@ FFMS2 does not give you fine control over codec internals.
 FFMS2 does not let you demux raw compressed data, you get it decompressed or not at all.
 FFMS2 does not provide you with a good solution for realtime playback, since it needs to index the input file before you can retreive frames or audio samples.
 FFMS2 does not currently handle things like subtitles, file attachments or chapters.
-FFMS2's video frame and audio sample retrieval functions are not threadsafe; you may only have one request going at a time.
+FFMS2's video frame and audio sample retrieval functions are not threadsafe; you may only have one request going at a time, per source context.
 
 ## Compilation
 FFMS2 has the following dependencies:
 
  - **[FFmpeg][ffmpeg]**
-    - Further recommended configuration options: `--disable-debug --disable-muxers --disable-encoders --disable-filters --disable-hwaccels --disable-network --disable-devices --enable-runtime-cpudetect` (runtime cpudetect in particular is a good idea if you are planning on distributing the library; not disabling debug results in a gigantic dll).
+    - Further recommended configuration options: `--disable-debug --disable-muxers --disable-encoders --disable-filters --disable-hwaccels --disable-network --disable-devices
  - **[zlib][zlib]**
 
 Compiling the library on non-Windows is trivial; the usual `./configure && make && make install` will suffice if FFmpeg and zlib are installed to the default locations.
 
 ### Windows-specific compilation notes
 You have several options on how to build FFMS2 on Windows.
-You can build both FFmpeg and FFMS2 with MinGW, FFmpeg with MinGW and FFMS2 with VC++, or both with VC++.
-The standard Avisynth 2.5 plugin requires building FFMS2 with VC++, while the Avisynth C plugin (which supports Avisynth 2.6) requires building with MinGW (and using the `c_plugin` branch).
+
+You can build both FFmpeg and FFMS2 with MinGW-w64, FFmpeg with clang-cl and FFMS2 with VC++ (shared only), or both with VC++.
+The standard Avisynth 2.5 plugin requires building FFMS2 with VC++, while the Avisynth C plugin (which supports Avisynth 2.6) requires building with MinGW (and using the `c_plugin`branch). VapouSynth works as-is with MinGW-w64.
 
 These days building everything with MinGW works without doing anything unusual.
-Building FFmpeg with MinGW and FFMS2 with VC++ requires building FFmpeg with `--extra-cflags="-D_SYSCRT"`, and you'll probably want to build static libraries, not shared libraries.
-You'll have to manually add the location which you installed the headers and libraries to to VC++'s search paths (and if you're building both 32-bit and 64-bit, be sure to add the correct ones).
 
-To build everything with VC++, run `build-win-deps.sh` from a msys shell to build all of the dependencies, then open the solution and hit build.
-If you're using a pre-2013 version of Visual Studio, you'll need [c99-to-c89][c99-to-c89] on your msys path to be able to compile FFmpeg.
+You'll have to manually add the location which you installed the headers and libraries to to VC++'s search paths (and if you're building both 32-bit and 64-bit, be sure to add the correct ones).
 
 [ffmpeg]: http://www.ffmpeg.org
 [zlib]: http://www.zlib.net
-[c99-to-c89]: http://download.videolan.org/pub/contrib/c99-to-c89/
 
 ## Quickstart guide for impatient people
 If you don't want to know anything about anything and just want to open some video with FFMS2 in the absolutely simplest possible manner, without selective indexing, progress reporting, saved index files, keyframe or timecode reading or anything like that, here's how to do it with the absolutely bare minimum of code.
