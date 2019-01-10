@@ -245,11 +245,41 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         VP.Stereo3DFlags = 0;
 
         for (int i = 0; i < FormatContext->streams[VideoTrack]->nb_side_data; i++) {
-            if (FormatContext->streams[VideoTrack]->side_data->type == AV_PKT_DATA_STEREO3D) {
-                const AVStereo3D *StereoSideData = (const AVStereo3D *)FormatContext->streams[VideoTrack]->side_data->data;
+            if (FormatContext->streams[VideoTrack]->side_data[i].type == AV_PKT_DATA_STEREO3D) {
+                const AVStereo3D *StereoSideData = (const AVStereo3D *)FormatContext->streams[VideoTrack]->side_data[i].data;
                 VP.Stereo3DType = StereoSideData->type;
                 VP.Stereo3DFlags = StereoSideData->flags;
-                break;
+            } else if (FormatContext->streams[VideoTrack]->side_data[i].type == AV_PKT_DATA_MASTERING_DISPLAY_METADATA) {
+                const AVMasteringDisplayMetadata *MasteringDisplay = (const AVMasteringDisplayMetadata *)FormatContext->streams[VideoTrack]->side_data[i].data;
+                if (MasteringDisplay->has_primaries) {
+                    VP.HasMasteringDisplayPrimaries = MasteringDisplay->has_primaries;
+                    for (int i = 0; i < 3; i++) {
+                        VP.MasteringDisplayPrimariesX[i] = av_q2d(MasteringDisplay->display_primaries[i][0]);
+                        VP.MasteringDisplayPrimariesY[i] = av_q2d(MasteringDisplay->display_primaries[i][1]);
+                    }
+                    VP.MasteringDisplayWhitePointX = av_q2d(MasteringDisplay->white_point[0]);
+                    VP.MasteringDisplayWhitePointY = av_q2d(MasteringDisplay->white_point[1]);
+                }
+                if (MasteringDisplay->has_luminance) {
+                    VP.HasMasteringDisplayLuminance = MasteringDisplay->has_luminance;
+                    VP.MasteringDisplayMinLuminance = av_q2d(MasteringDisplay->min_luminance);
+                    VP.MasteringDisplayMaxLuminance = av_q2d(MasteringDisplay->max_luminance);
+                }
+
+                VP.HasMasteringDisplayPrimaries = !!VP.MasteringDisplayPrimariesX[0] && !!VP.MasteringDisplayPrimariesY[0] &&
+                                                  !!VP.MasteringDisplayPrimariesX[1] && !!VP.MasteringDisplayPrimariesY[1] &&
+                                                  !!VP.MasteringDisplayPrimariesX[2] && !!VP.MasteringDisplayPrimariesY[2] &&
+                                                  !!VP.MasteringDisplayWhitePointX   && !!VP.MasteringDisplayWhitePointY;
+                /* MasteringDisplayMinLuminance can be 0 */
+                VP.HasMasteringDisplayLuminance = !!VP.MasteringDisplayMaxLuminance;
+            } else if (FormatContext->streams[VideoTrack]->side_data[i].type == AV_PKT_DATA_CONTENT_LIGHT_LEVEL) {
+                const AVContentLightMetadata *ContentLightLevel = (const AVContentLightMetadata *)FormatContext->streams[VideoTrack]->side_data[i].data;
+
+                VP.ContentLightLevelMax = ContentLightLevel->MaxCLL;
+                VP.ContentLightLevelAverage = ContentLightLevel->MaxFALL;
+
+                /* Only check for either of them */
+                VP.HasContentLightLevel = !!VP.ContentLightLevelMax || !!VP.ContentLightLevelAverage;
             }
         }
 
@@ -278,21 +308,27 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         // This is the additional mess required for seekmode=-1 to work in a reasonable way
         OutputFrame(DecodeFrame);
 
-        VP.HasMasteringDisplayPrimaries = LocalFrame.HasMasteringDisplayPrimaries;
-        for (int i = 0; i < 3; i++) {
-            VP.MasteringDisplayPrimariesX[i] = LocalFrame.MasteringDisplayPrimariesX[i];
-            VP.MasteringDisplayPrimariesY[i] = LocalFrame.MasteringDisplayPrimariesY[i];
-        }
+        if (LocalFrame.HasMasteringDisplayPrimaries) {
+            VP.HasMasteringDisplayPrimaries = LocalFrame.HasMasteringDisplayPrimaries;
+            for (int i = 0; i < 3; i++) {
+                VP.MasteringDisplayPrimariesX[i] = LocalFrame.MasteringDisplayPrimariesX[i];
+                VP.MasteringDisplayPrimariesY[i] = LocalFrame.MasteringDisplayPrimariesY[i];
+            }
 
-        // Simply copy this from the first frame to make it easier to access
-        VP.MasteringDisplayWhitePointX = LocalFrame.MasteringDisplayWhitePointX;
-        VP.MasteringDisplayWhitePointY = LocalFrame.MasteringDisplayWhitePointY;
-        VP.HasMasteringDisplayLuminance = LocalFrame.HasMasteringDisplayLuminance;
-        VP.MasteringDisplayMinLuminance = LocalFrame.MasteringDisplayMinLuminance;
-        VP.MasteringDisplayMaxLuminance = LocalFrame.MasteringDisplayMaxLuminance;
-        VP.HasContentLightLevel = LocalFrame.HasContentLightLevel;
-        VP.ContentLightLevelMax = LocalFrame.ContentLightLevelMax;
-        VP.ContentLightLevelAverage = LocalFrame.ContentLightLevelAverage;
+            // Simply copy this from the first frame to make it easier to access
+            VP.MasteringDisplayWhitePointX = LocalFrame.MasteringDisplayWhitePointX;
+            VP.MasteringDisplayWhitePointY = LocalFrame.MasteringDisplayWhitePointY;
+        }
+        if (LocalFrame.HasMasteringDisplayLuminance) {
+            VP.HasMasteringDisplayLuminance = LocalFrame.HasMasteringDisplayLuminance;
+            VP.MasteringDisplayMinLuminance = LocalFrame.MasteringDisplayMinLuminance;
+            VP.MasteringDisplayMaxLuminance = LocalFrame.MasteringDisplayMaxLuminance;
+        }
+        if (LocalFrame.HasContentLightLevel) {
+            VP.HasContentLightLevel = LocalFrame.HasContentLightLevel;
+            VP.ContentLightLevelMax = LocalFrame.ContentLightLevelMax;
+            VP.ContentLightLevelAverage = LocalFrame.ContentLightLevelAverage;
+        }
     } catch (FFMS_Exception &) {
         Free();
         throw;
