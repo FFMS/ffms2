@@ -26,10 +26,10 @@ CXXFLAGS += -g -Wall -Wextra -pthread -std=c++11 -fvisibility=hidden
 
 # All tests produced by this Makefile. Remember to add new tests you
 # created to the list.
-TESTS = indexer
+TESTS = indexer hdr
 
 # All the sample files we need to sync
-SAMPLES = test.mp4
+SAMPLES = test.mp4 hdr10tags-both.mkv hdr10tags-container.mkv hdr10tags-stream.mp4
 
 # All Google Test headers. Usually you shouldn't change this
 # definition.
@@ -40,7 +40,7 @@ GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h $(GTEST_DIR)/include/gtest/intern
 all: $(TESTS)
 
 run: all
-	@for i in "$(TESTS)"; do \
+	@for i in $(TESTS); do \
 		./$$i; \
 	done
 
@@ -80,8 +80,14 @@ gtest_main.a: gtest-all.o gtest_main.o
 tests.o: $(USER_DIR)/test/tests.cpp $(USER_DIR)/include/ffms.h $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/tests.cpp
 
+hdr.o: $(USER_DIR)/test/hdr.cpp $(USER_DIR)/include/ffms.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/hdr.cpp
+
 indexer.o: $(USER_DIR)/test/indexer.cpp $(USER_DIR)/include/ffms.h $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/indexer.cpp
 
 indexer: indexer.o tests.o gtest_main.a ../src/core/libffms2.la
 	../libtool --tag=CXX --mode=link $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o indexer indexer.o tests.o gtest_main.a -lavutil ../src/core/libffms2.la
+
+hdr: hdr.o gtest_main.a ../src/core/libffms2.la
+	../libtool --tag=CXX --mode=link $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o hdr hdr.o gtest_main.a -lavutil ../src/core/libffms2.la
