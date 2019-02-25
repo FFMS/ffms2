@@ -285,12 +285,37 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 
         // Set rotation
         VP.Rotation = 0;
-        const int32_t *RotationMatrix = reinterpret_cast<const int32_t *>(av_stream_get_side_data(FormatContext->streams[VideoTrack], AV_PKT_DATA_DISPLAYMATRIX, nullptr));
+        VP.Flip = 0;
+        int32_t *RotationMatrix = reinterpret_cast<int32_t *>(av_stream_get_side_data(FormatContext->streams[VideoTrack], AV_PKT_DATA_DISPLAYMATRIX, nullptr));
         if (RotationMatrix) {
+            int64_t det = (int64_t)RotationMatrix[0] * RotationMatrix[4] - (int64_t)RotationMatrix[1] * RotationMatrix[3];
+            if (det < 0) {
+                /* Always assume an horizontal flip for simplicity, it can be changed later if rotation is 180. */
+                VP.Flip = 1;
+
+                /* Flip the matrix to decouple flip and rotation operations. */
+                av_display_matrix_flip(RotationMatrix, 1, 0);
+            }
+
             int rot = lround(av_display_rotation_get(RotationMatrix));
-            if (rot < 0)
-                rot += 360;
-            VP.Rotation = rot;
+
+            if (rot == 180 && det < 0) {
+                /* This is a vertical flip with no rotation. */
+                VP.Flip = -1;
+            } else {
+                /* It is possible to have a 90/270 rotation and a horizontal flip:
+                 * in this case, the rotation angle applies to the video frame
+                 * (rather than the rendering frame), so add this step to nullify
+                 * the conversion below. */
+                if (VP.Flip)
+                    rot *= -1;
+
+                /* Return a positive value, noting that this converts angles
+                 * from the rendering frame to the video frame. */
+                VP.Rotation = -rot;
+                if (VP.Rotation < 0)
+                    VP.Rotation += 360;
+            }
         }
 
         if (SeekMode >= 0 && Frames.size() > 1) {

@@ -1064,6 +1064,7 @@ typedef struct {
   int HasContentLightLevel;
   unsigned int ContentLightLevelMax;
   unsigned int ContentLightLevelAverage;
+  int Flip;
 } FFMS_VideoProperties;
 ```
 A struct containing metadata about a video track.
@@ -1105,6 +1106,7 @@ The fields are:
  - `int HasContentLightLevel;` - If this is non-zero, the following two properties are set.
  - `unsigned int ContentLightLevelMax;` - Maximum content luminance (cd/m^2).
  - `unsigned int ContentLightLevelAverage;` - Average content luminance (cd/m^2).
+ - `int Flip;` - Flip direction to be applied *before* rotation: 0 for no operation, >0 for horizontal flip, <0 for vertical flip.
 
 ### FFMS_AudioProperties
 
