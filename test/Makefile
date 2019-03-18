@@ -26,10 +26,18 @@ CXXFLAGS += -g -Wall -Wextra -pthread -std=c++11 -fvisibility=hidden
 
 # All tests produced by this Makefile. Remember to add new tests you
 # created to the list.
-TESTS = indexer hdr
+TESTS = indexer        \
+        hdr            \
+        display_matrix
 
 # All the sample files we need to sync
-SAMPLES = test.mp4 hdr10tags-both.mkv hdr10tags-container.mkv hdr10tags-stream.mp4
+SAMPLES = test.mp4                \
+          hdr10tags-both.mkv      \
+          hdr10tags-container.mkv \
+          hdr10tags-stream.mp4    \
+          qrvideo_hflip_90.mov    \
+          qrvideo_hflip_270.mov   \
+          qrvideo_vflip.mov
 
 # All Google Test headers. Usually you shouldn't change this
 # definition.
@@ -83,6 +91,9 @@ tests.o: $(USER_DIR)/test/tests.cpp $(USER_DIR)/include/ffms.h $(GTEST_HEADERS)
 hdr.o: $(USER_DIR)/test/hdr.cpp $(USER_DIR)/include/ffms.h $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/hdr.cpp
 
+display_matrix.o: $(USER_DIR)/test/display_matrix.cpp $(USER_DIR)/include/ffms.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/display_matrix.cpp
+
 indexer.o: $(USER_DIR)/test/indexer.cpp $(USER_DIR)/include/ffms.h $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/indexer.cpp
 
@@ -91,3 +102,6 @@ indexer: indexer.o tests.o gtest_main.a ../src/core/libffms2.la
 
 hdr: hdr.o gtest_main.a ../src/core/libffms2.la
 	../libtool --tag=CXX --mode=link $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o hdr hdr.o gtest_main.a -lavutil ../src/core/libffms2.la
+
+display_matrix: display_matrix.o gtest_main.a ../src/core/libffms2.la
+	../libtool --tag=CXX --mode=link $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o display_matrix display_matrix.o gtest_main.a -lavutil ../src/core/libffms2.la
