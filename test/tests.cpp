@@ -15,6 +15,7 @@ extern "C" {
 bool CheckFrame(const FFMS_Frame *Frame, const FFMS_FrameInfo *info, const TestFrameData *Data) {
     EQ_CHECK(info->PTS, Data->PTS);
     EQ_CHECK(!!info->KeyFrame, Data->Keyframe);
+    EQ_CHECK(!!Frame->KeyFrame, Data->Keyframe);
     EQ_CHECK(Frame->EncodedWidth, Data->Width);
     EQ_CHECK(Frame->EncodedHeight, Data->Height);
 
