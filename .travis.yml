@@ -36,6 +36,8 @@ install:
 script:
   - ./autogen.sh --enable-static --disable-shared || cat config.log
   - make V=1 CXXFLAGS='-Werror -Wno-error=deprecated-declarations' -j2 -k
+  - make test-sync
+  - make test -j2 -k
 notifications:
   email:
     - on_success: change
