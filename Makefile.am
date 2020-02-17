@@ -44,6 +44,13 @@ src_core_libffms2_la_SOURCES = \
 	src/vapoursynth/vapoursource.h \
 	src/vapoursynth/vapoursynth.cpp
 
+if AVISYNTH
+src_core_libffms2_la_SOURCES += \
+	src/avisynth/avssources.cpp \
+	src/avisynth/avssources.h \
+	src/avisynth/avisynth.cpp
+endif
+
 include_HEADERS = $(top_srcdir)/include/ffms.h $(top_srcdir)/include/ffmscompat.h
 
 bin_PROGRAMS = src/index/ffmsindex

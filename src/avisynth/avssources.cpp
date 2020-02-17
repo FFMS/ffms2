@@ -603,7 +603,7 @@ AvisynthAudioSource::~AvisynthAudioSource() {
     FFMS_DestroyAudioSource(A);
 }
 
-void AvisynthAudioSource::GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env) {
+void AvisynthAudioSource::GetAudio(void* Buf, int64_t Start, int64_t Count, IScriptEnvironment *Env) {
     ErrorInfo E;
     if (FFMS_GetAudio(A, Buf, Start, Count, &E))
         Env->ThrowError("FFAudioSource: %s", E.Buffer);
