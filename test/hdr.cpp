@@ -18,7 +18,9 @@ typedef struct HDR10Data {
     double MasteringDisplayMaxLuminance;
 } HDR10Data;
 
-#define TEST_DOUBLE(A, B) ((A == B) || (fabs(A - B) < DBL_EPSILON))
+// Tests relative error with an error of 1e-5, given the accuracy of
+// the hardcoded test values, and how it would affect HDR.
+#define TEST_DOUBLE(A, B) (fabs((A / B) - 1) < (double) 1e-5)
 
 const HDR10Data StreamHDR10Data = {
     { 35400.0 / 50000.0, 8500.0 / 50000.0, 6550.0 / 50000.0 },
