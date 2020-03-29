@@ -128,7 +128,7 @@ if test "$enable_shared" = yes; then
         LDFLAGS="$LDFLAGS -Wl,-Bsymbolic"
         TEST_FFMPEG([bsymbolic])
         if test "$bsymbolic" = "yes"; then
-            src_core_libffms2_la_LDFLAGS="$src_core_libffms2_la_LDFLAGS -Wl-Bsymbolic"
+            src_core_libffms2_la_LDFLAGS="$src_core_libffms2_la_LDFLAGS -Wl,-Bsymbolic"
         else
             AC_MSG_RESULT($bsymbolic)
             AC_MSG_FAILURE([cannot build ffms2 as a shared library])
