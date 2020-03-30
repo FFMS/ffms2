@@ -23,6 +23,12 @@
 #include "avssources.h"
 #include "../core/utils.h"
 
+#ifdef _WIN32
+#define AVS_EXPORT __declspec(dllexport)
+#else
+#define AVS_EXPORT __attribute__((visibility("default")))
+#endif
+
 static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
     if (!Args[0].Defined())
         Env->ThrowError("FFIndex: No source specified");
@@ -336,7 +342,7 @@ static AVSValue __cdecl FFGetVersion(AVSValue Args, void* UserData, IScriptEnvir
 
 const AVS_Linkage *AVS_linkage = nullptr;
 
-extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit3(IScriptEnvironment* Env, const AVS_Linkage* const vectors) {
+extern "C" AVS_EXPORT const char* __stdcall AvisynthPluginInit3(IScriptEnvironment* Env, const AVS_Linkage* const vectors) {
     AVS_linkage = vectors;
 
     Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[errorhandling]i[overwrite]b", CreateFFIndex, nullptr);

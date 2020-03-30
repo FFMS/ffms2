@@ -22,7 +22,9 @@
 #define FFAVSSOURCES_H
 
 #include <vector>
+#ifdef _WIN32
 #include <windows.h>
+#endif
 #include <avisynth.h>
 #include "ffms.h"
 
@@ -62,7 +64,7 @@ public:
     bool __stdcall GetParity(int n);
     int __stdcall SetCacheHints(int cachehints, int frame_range) { return 0; }
     const VideoInfo& __stdcall GetVideoInfo() { return VI; }
-    void __stdcall GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env) {}
+    void __stdcall GetAudio(void* Buf, int64_t Start, int64_t Count, IScriptEnvironment *Env) {}
     PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment *Env);
 };
 
@@ -76,7 +78,7 @@ public:
     bool __stdcall GetParity(int n) { return false; }
     int __stdcall SetCacheHints(int cachehints, int frame_range) { return 0; }
     const VideoInfo& __stdcall GetVideoInfo() { return VI; }
-    void __stdcall GetAudio(void* Buf, __int64 Start, __int64 Count, IScriptEnvironment *Env);
+    void __stdcall GetAudio(void* Buf, int64_t Start, int64_t Count, IScriptEnvironment *Env);
     PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment *Env) { return nullptr; };
 };
 

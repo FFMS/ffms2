@@ -33,6 +33,16 @@ if test -z "$CXXFLAGS"; then
     CXXFLAGS="$OPT_FLAGS -Wall -Wextra"
 fi
 
+AC_ARG_ENABLE([avisynth],
+        [AC_HELP_STRING([--enable-avisynth],
+            [Enable AviSynth+ plugin. [default=no]])],
+        [enable_avisynth=yes],
+        [enable_avisynth=no]
+        )
+
+AC_MSG_RESULT([$enable_avisynth])
+AM_CONDITIONAL([AVISYNTH], [test "x$enable_avisynth" != "xno"])
+
 AC_CONFIG_HEADERS([src/config/config.h])
 AC_PROG_CC
 AC_PROG_CXX
@@ -118,7 +128,7 @@ if test "$enable_shared" = yes; then
         LDFLAGS="$LDFLAGS -Wl,-Bsymbolic"
         TEST_FFMPEG([bsymbolic])
         if test "$bsymbolic" = "yes"; then
-            src_core_libffms2_la_LDFLAGS="$src_core_libffms2_la_LDFLAGS -Wl-Bsymbolic"
+            src_core_libffms2_la_LDFLAGS="$src_core_libffms2_la_LDFLAGS -Wl,-Bsymbolic"
         else
             AC_MSG_RESULT($bsymbolic)
             AC_MSG_FAILURE([cannot build ffms2 as a shared library])
