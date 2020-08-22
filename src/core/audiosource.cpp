@@ -285,31 +285,34 @@ FFMS_AudioSource::AudioBlock *FFMS_AudioSource::CacheBlock(CacheIterator &pos) {
 int FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
     CurrentFrame = &Frames[PacketNumber];
 
-    AVPacket Packet;
-    if (!ReadPacket(&Packet))
-        throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_UNKNOWN,
-            "ReadPacket unexpectedly failed to read a packet");
-
-    // ReadPacket may have changed the packet number
-    CurrentFrame = &Frames[PacketNumber];
-    CurrentSample = CurrentFrame->SampleStart;
-
     int NumberOfSamples = 0;
     AudioBlock *CachedBlock = nullptr;
-    
-    int Ret = avcodec_send_packet(CodecContext, &Packet);
-    av_packet_unref(&Packet);
+    int Ret = 0;
+    do {
+      AVPacket Packet;
+      if (!ReadPacket(&Packet))
+        throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_UNKNOWN,
+                             "ReadPacket unexpectedly failed to read a packet");
 
-    av_frame_unref(DecodeFrame);
-    Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
-    if (Ret == 0) {
-        //FIXME, is DecodeFrame->nb_samples > 0 always true for decoded frames? I can't be bothered to find out
+      // ReadPacket may have changed the packet number
+      CurrentFrame = &Frames[PacketNumber];
+      CurrentSample = CurrentFrame->SampleStart;
+
+      Ret = avcodec_send_packet(CodecContext, &Packet);
+      av_packet_unref(&Packet);
+
+      av_frame_unref(DecodeFrame);
+      Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
+      if (Ret == 0) {
+        // FIXME, is DecodeFrame->nb_samples > 0 always true for decoded frames?
+        // I can't be bothered to find out
         NumberOfSamples += DecodeFrame->nb_samples;
         if (DecodeFrame->nb_samples > 0) {
-            if (pos)
-                CachedBlock = CacheBlock(*pos);
+          if (pos)
+            CachedBlock = CacheBlock(*pos);
         }
-    }
+      }
+    } while (Ret == AVERROR(EAGAIN));
 
     // Zero sample packets aren't included in the index
     if (!NumberOfSamples)
@@ -535,4 +538,3 @@ bool FFMS_AudioSource::ReadPacket(AVPacket *Packet) {
     }
     return false;
 }
-

@@ -10,6 +10,10 @@
 /libtool
 /testing
 /todo.txt
+/.clangd/
+.projectile
+compile_commands.json
+
 
 # /build-msvc/
 /build-msvc/*.sdf
