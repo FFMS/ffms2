@@ -1,6 +1,7 @@
 # FFmpegSource2 Changelog
 
-- 2.2000
+- 2.40
+  - Avisynth+ linux support (qyot27)
   - Added LastEndTime track property to make it possible to take the last frame's duration into account (Myrsloik)
   - Removed several deprecated functions and enums from the API (Myrsloik)
   - No longer assumes sub 1 fps framerates are invalid (Myrsloik)
