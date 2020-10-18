@@ -35,4 +35,12 @@
 #       define FFMS_REGISTER()
 #endif
 
+// Compatibility with older/newer ffmpegs
+
+#define FFMS_CALCULATE_DELAY (CodecContext->has_b_frames + (CodecContext->thread_count - 1))
+
+#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 58, 6, 102)
+#       define OLD_VP9_PARSE
+#endif
+
 #endif // FFMSCOMPAT_H

@@ -25,7 +25,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
-#include <avisynth.h>
+#include "avisynth.h"
 #include "ffms.h"
 
 struct ErrorInfo : FFMS_ErrorInfo {
@@ -50,6 +50,9 @@ class AvisynthVideoSource : public IClip {
     int RFFMode;
     std::vector<FrameFields> FieldList;
     const char *VarPrefix;
+    bool has_at_least_v8;
+    int SARNum;
+    int SARDen;
 
     void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
         const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env);

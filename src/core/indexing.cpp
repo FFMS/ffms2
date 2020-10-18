@@ -358,7 +358,8 @@ void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt
 
     if (VideoContext.CodecContext->codec_id == AV_CODEC_ID_VP8)
         ParseVP8(pkt.data[0], Invisible, FrameType);
-    else if (VideoContext.CodecContext->codec_id == AV_CODEC_ID_VP9)
+    else if (VideoContext.CodecContext->codec_id == AV_CODEC_ID_VP9 ||
+             VideoContext.CodecContext->codec_id == AV_CODEC_ID_AV1)
         ParseVP9(pkt.data[0], Invisible, FrameType);
 }
 
@@ -398,7 +399,6 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
         TrackIndices->emplace_back((int64_t)FormatContext->streams[i]->time_base.num * 1000,
             FormatContext->streams[i]->time_base.den,
             static_cast<FFMS_TrackType>(FormatContext->streams[i]->codecpar->codec_type),
-            !!(FormatContext->iformat->flags & AVFMT_TS_DISCONT),
             UseDTS);
 
         if (IndexMask.count(i) && FormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {

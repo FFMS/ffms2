@@ -242,11 +242,14 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
         }
     }
 
+    SARNum = VP->SARNum;
+    SARDen = VP->SARDen;
+
     // Set AR variables
-    Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFSAR_NUM"), VP->SARNum);
-    Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFSAR_DEN"), VP->SARDen);
-    if (VP->SARNum > 0 && VP->SARDen > 0)
-        Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFSAR"), VP->SARNum / (double)VP->SARDen);
+    Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFSAR_NUM"), SARNum);
+    Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFSAR_DEN"), SARDen);
+    if (SARNum > 0 && SARDen > 0)
+        Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFSAR"), SARNum / (double)SARDen);
 
     // Set crop variables
     Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCROP_LEFT"), VP->CropLeft);
@@ -255,6 +258,10 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
     Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCROP_BOTTOM"), VP->CropBottom);
 
     Env->SetGlobalVar("FFVAR_PREFIX", this->VarPrefix);
+
+    has_at_least_v8 = true;
+    try { Env->CheckVersion(8); }
+    catch (const AvisynthError&) { has_at_least_v8 = false; }
 }
 
 AvisynthVideoSource::~AvisynthVideoSource() {
@@ -521,19 +528,47 @@ void AvisynthVideoSource::OutputField(const FFMS_Frame *Frame, PVideoFrame &Dst,
     }
 }
 
-PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
+/* multiplies and divides a rational number, such as a frame duration, in place and reduces the result */
+static inline void muldivRational(int64_t* num, int64_t* den, int64_t mul, int64_t div) {
+    /* do nothing if the rational number is invalid */
+    if (!*den)
+        return;
+
+    /* nobody wants to accidentally divide by zero */
+    assert(div);
+
+    int64_t a, b;
+    *num *= mul;
+    *den *= div;
+    a = *num;
+    b = *den;
+    while (b != 0) {
+        int64_t t = a;
+        a = b;
+        b = t % b;
+    }
+    if (a < 0)
+        a = -a;
+    *num /= a;
+    *den /= a;
+}
+
+PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment* Env) {
     n = std::min(std::max(n, 0), VI.num_frames - 1);
 
     PVideoFrame Dst = Env->NewVideoFrame(VI);
+    AVSMap* props = has_at_least_v8 ? Env->getFramePropsRW(Dst) : 0;
 
     ErrorInfo E;
+    const FFMS_Frame* Frame;
     if (RFFMode > 0) {
-        const FFMS_Frame *Frame = FFMS_GetFrame(V, std::min(FieldList[n].Top, FieldList[n].Bottom), &E);
+        Frame = FFMS_GetFrame(V, std::min(FieldList[n].Top, FieldList[n].Bottom), &E);
         if (Frame == nullptr)
             Env->ThrowError("FFVideoSource: %s", E.Buffer);
         if (FieldList[n].Top == FieldList[n].Bottom) {
             OutputFrame(Frame, Dst, Env);
-        } else {
+        }
+        else {
             int FirstField = std::min(FieldList[n].Top, FieldList[n].Bottom) == FieldList[n].Bottom;
             OutputField(Frame, Dst, FirstField, Env);
             Frame = FFMS_GetFrame(V, std::max(FieldList[n].Top, FieldList[n].Bottom), &E);
@@ -543,18 +578,43 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
         }
         Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
         Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>('U'));
-    } else {
-        const FFMS_Frame *Frame;
-
+        if (has_at_least_v8) {
+            Env->propSetInt(props, "_DurationNum", FPSNum, 0);
+            Env->propSetInt(props, "_DurationDen", FPSDen, 0);
+            Env->propSetFloat(props, "_AbsoluteTime", *(reinterpret_cast<double*>(const_cast<FFMS_Frame*>(Frame))), 0);
+        }
+    }
+    else {
         if (FPSNum > 0 && FPSDen > 0) {
             Frame = FFMS_GetFrameByTime(V, FFMS_GetVideoProperties(V)->FirstTime +
                 (double)(n * (int64_t)FPSDen) / FPSNum, &E);
             Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
-        } else {
+            if (has_at_least_v8) {
+                Env->propSetInt(props, "_DurationNum", FPSNum, 0);
+                Env->propSetInt(props, "_DurationDen", FPSDen, 0);
+                Env->propSetFloat(props, "_AbsoluteTime", *(reinterpret_cast<double*>(const_cast<FFMS_Frame*>(Frame))), 0);
+            }
+        }
+        else {
             Frame = FFMS_GetFrame(V, n, &E);
-            FFMS_Track *T = FFMS_GetTrackFromVideo(V);
-            const FFMS_TrackTimeBase *TB = FFMS_GetTimeBase(T);
+            FFMS_Track* T = FFMS_GetTrackFromVideo(V);
+            const FFMS_TrackTimeBase* TB = FFMS_GetTimeBase(T);
             Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), static_cast<int>(FFMS_GetFrameInfo(T, n)->PTS * static_cast<double>(TB->Num) / TB->Den));
+            if (has_at_least_v8) {
+                int64_t num;
+                if (n + 1 < VI.num_frames)
+                    num = FFMS_GetFrameInfo(T, n + 1)->PTS - FFMS_GetFrameInfo(T, n)->PTS;
+                else if (n > 0) // simply use the second to last frame's duration for the last one, should be good enough
+                    num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
+                else // just make it one timebase if it's a single frame clip
+                    num = 1;
+                int64_t DurNum = TB->Num * num;
+                int64_t DurDen = TB->Den * 1000;
+                muldivRational(&DurNum, &DurDen, 1, 1);
+                Env->propSetInt(props, "_DurationNum", DurNum, 0);
+                Env->propSetInt(props, "_DurationDen", DurDen, 0);
+                Env->propSetFloat(props, "_AbsoluteTime", ((static_cast<double>(TB->Num) / 1000) * FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, 0);
+            }
         }
 
         if (Frame == nullptr)
@@ -562,6 +622,48 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
 
         Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>(Frame->PictType));
         OutputFrame(Frame, Dst, Env);
+    }
+
+    if (has_at_least_v8) {
+        if (SARNum > 0 && SARDen > 0) {
+            Env->propSetInt(props, "_SARNum", SARNum, 0);
+            Env->propSetInt(props, "_SARDen", SARDen, 0);
+        }
+
+        Env->propSetInt(props, "_Matrix", Frame->ColorSpace, 0);
+        Env->propSetInt(props, "_Primaries", Frame->ColorPrimaries, 0);
+        Env->propSetInt(props, "_Transfer", Frame->TransferCharateristics, 0);
+        if (Frame->ChromaLocation > 0)
+            Env->propSetInt(props, "_ChromaLocation", Frame->ChromaLocation - 1, 0);
+
+        if (Frame->ColorRange == FFMS_CR_MPEG)
+            Env->propSetInt(props, "_ColorRange", 1, 0);
+        else if (Frame->ColorRange == FFMS_CR_JPEG)
+            Env->propSetInt(props, "_ColorRange", 0, 0);
+        Env->propSetData(props, "_PictType", &Frame->PictType, 1, 0);
+
+        // Set field information
+        int FieldBased = 0;
+        if (Frame->InterlacedFrame)
+            FieldBased = (Frame->TopFieldFirst ? 2 : 1);
+        Env->propSetInt(props, "_FieldBased", FieldBased, 0);
+
+        if (Frame->HasMasteringDisplayPrimaries) {
+            Env->propSetFloatArray(props, "MasteringDisplayPrimariesX", Frame->MasteringDisplayPrimariesX, 3);
+            Env->propSetFloatArray(props, "MasteringDisplayPrimariesY", Frame->MasteringDisplayPrimariesY, 3);
+            Env->propSetFloat(props, "MasteringDisplayWhitePointX", Frame->MasteringDisplayWhitePointX, 0);
+            Env->propSetFloat(props, "MasteringDisplayWhitePointY", Frame->MasteringDisplayWhitePointY, 0);
+        }
+
+        if (Frame->HasMasteringDisplayLuminance) {
+            Env->propSetFloat(props, "MasteringDisplayMinLuminance", Frame->MasteringDisplayMinLuminance, 0);
+            Env->propSetFloat(props, "MasteringDisplayMaxLuminance", Frame->MasteringDisplayMaxLuminance, 0);
+        }
+
+        if (Frame->HasContentLightLevel) {
+            Env->propSetFloat(props, "ContentLightLevelMax", Frame->ContentLightLevelMax, 0);
+            Env->propSetFloat(props, "ContentLightLevelAverage", Frame->ContentLightLevelAverage, 0);
+        }
     }
 
     return Dst;
