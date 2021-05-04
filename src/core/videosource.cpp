@@ -673,30 +673,34 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
     if (HasPendingDelayedFrames())
         return;
 
-    AVPacket Packet;
-    InitNullPacket(Packet);
+    AVPacket *Packet = av_packet_alloc();
+    if (!Packet)
+        throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
+            "Could not allocate packet.");
 
-    while (ReadFrame(&Packet) >= 0) {
-        if (Packet.stream_index != VideoTrack) {
-            av_packet_unref(&Packet);
+    while (ReadFrame(Packet) >= 0) {
+        if (Packet->stream_index != VideoTrack) {
+            av_packet_unref(Packet);
             continue;
         }
 
         if (AStartTime < 0)
-            AStartTime = Frames.UseDTS ? Packet.dts : Packet.pts;
+            AStartTime = Frames.UseDTS ? Packet->dts : Packet->pts;
 
         if (Pos < 0)
-            Pos = Packet.pos;
+            Pos = Packet->pos;
 
-        bool FrameFinished = DecodePacket(&Packet);
-        av_packet_unref(&Packet);
-        if (FrameFinished)
+        bool FrameFinished = DecodePacket(Packet);
+        av_packet_unref(Packet);
+        if (FrameFinished) {
+            av_packet_free(&Packet);
             return;
+        }
     }
 
     // Flush final frames
-    InitNullPacket(Packet);
-    DecodePacket(&Packet);
+    DecodePacket(Packet);
+    av_packet_free(&Packet);
 }
 
 bool FFMS_VideoSource::SeekTo(int n, int SeekOffset) {

@@ -58,7 +58,6 @@ std::unique_ptr<T> make_unique(Args&&... args) {
 }
 
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
-void InitNullPacket(AVPacket &pkt);
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);
 
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext, int Track);

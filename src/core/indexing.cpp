@@ -320,7 +320,7 @@ void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
     }
 }
 
-void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt, int *RepeatPict,
+void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket *pkt, int *RepeatPict,
                                     int *FrameType, bool *Invisible, enum AVPictureStructure *LastPicStruct) {
     if (VideoContext.Parser) {
         uint8_t *OB;
@@ -330,8 +330,8 @@ void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt
         av_parser_parse2(VideoContext.Parser,
             VideoContext.CodecContext,
             &OB, &OBSize,
-            pkt.data, pkt.size,
-            pkt.pts, pkt.dts, pkt.pos);
+            pkt->data, pkt->size,
+            pkt->pts, pkt->dts, pkt->pos);
 
         // H.264 (PAFF) and HEVC may have one field per packet, so we need to track
         // when we have a full or half frame available, and mark one of them as
@@ -351,15 +351,15 @@ void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt
 
         *RepeatPict = VideoContext.Parser->repeat_pict;
         *FrameType = VideoContext.Parser->pict_type;
-        *Invisible = (IncompleteFrame || VideoContext.Parser->repeat_pict < 0 || (pkt.flags & AV_PKT_FLAG_DISCARD));
+        *Invisible = (IncompleteFrame || VideoContext.Parser->repeat_pict < 0 || (pkt->flags & AV_PKT_FLAG_DISCARD));
     } else {
-        *Invisible = !!(pkt.flags & AV_PKT_FLAG_DISCARD);
+        *Invisible = !!(pkt->flags & AV_PKT_FLAG_DISCARD);
     }
 
     if (VideoContext.CodecContext->codec_id == AV_CODEC_ID_VP8)
-        ParseVP8(pkt.data[0], Invisible, FrameType);
+        ParseVP8(pkt->data[0], Invisible, FrameType);
     else if (VideoContext.CodecContext->codec_id == AV_CODEC_ID_VP9)
-        ParseVP9(pkt.data[0], Invisible, FrameType);
+        ParseVP9(pkt->data[0], Invisible, FrameType);
 }
 
 void FFMS_Indexer::Free() {
@@ -458,32 +458,36 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
         }
     }
 
-    AVPacket Packet;
-    InitNullPacket(Packet);
+    AVPacket *Packet = av_packet_alloc();
+    if (!Packet)
+        throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_ALLOCATION_FAILED,
+            "Could not allocate packet.");
     std::vector<int64_t> LastValidTS(FormatContext->nb_streams, AV_NOPTS_VALUE);
 
     int64_t filesize = avio_size(FormatContext->pb);
     enum AVPictureStructure LastPicStruct = AV_PICTURE_STRUCTURE_UNKNOWN;
-    while (av_read_frame(FormatContext, &Packet) >= 0) {
+    while (av_read_frame(FormatContext, Packet) >= 0) {
         // Update progress
         // FormatContext->pb can apparently be NULL when opening images.
         if (IC && FormatContext->pb) {
-            if ((*IC)(FormatContext->pb->pos, filesize, ICPrivate))
+            if ((*IC)(FormatContext->pb->pos, filesize, ICPrivate)) {
+                av_packet_free(&Packet);
                 throw FFMS_Exception(FFMS_ERROR_CANCELLED, FFMS_ERROR_USER,
                     "Cancelled by user");
+            }
         }
-        if (!IndexMask.count(Packet.stream_index)) {
-            av_packet_unref(&Packet);
+        if (!IndexMask.count(Packet->stream_index)) {
+            av_packet_unref(Packet);
             continue;
         }
 
-        int Track = Packet.stream_index;
+        int Track = Packet->stream_index;
         FFMS_Track &TrackInfo = (*TrackIndices)[Track];
-        bool KeyFrame = !!(Packet.flags & AV_PKT_FLAG_KEY);
+        bool KeyFrame = !!(Packet->flags & AV_PKT_FLAG_KEY);
         ReadTS(Packet, LastValidTS[Track], (*TrackIndices)[Track].UseDTS);
 
         if (FormatContext->streams[Track]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-            int64_t PTS = TrackInfo.UseDTS ? Packet.dts : Packet.pts;
+            int64_t PTS = TrackInfo.UseDTS ? Packet->dts : Packet->pts;
             if (PTS == AV_NOPTS_VALUE) {
                 // VPx alt-refs are output as packets which lack timestmps or durations, since
                 // they are invisible. Currently, the timestamp mangling code in libavformat
@@ -495,9 +499,11 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
                 // FFMS2 currently sorts packets by PTS, which will break decoding, otherwise.
                 bool HasAltRefs = (FormatContext->streams[Track]->codecpar->codec_id == AV_CODEC_ID_VP8 ||
                                    FormatContext->streams[Track]->codecpar->codec_id == AV_CODEC_ID_VP9);
-                if (Packet.duration == 0 && !HasAltRefs)
+                if (Packet->duration == 0 && !HasAltRefs) {
+                    av_packet_free(&Packet);
                     throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_PARSER,
                         "Invalid packet pts, dts, and duration");
+                }
 
                 if (TrackInfo.empty())
                     PTS = 0;
@@ -513,7 +519,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
             ParseVideoPacket(AVContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible, &LastPicStruct);
 
             TrackInfo.AddVideoFrame(PTS, RepeatPict, KeyFrame,
-                FrameType, Packet.pos, Invisible);
+                FrameType, Packet->pos, Invisible);
         } else if (FormatContext->streams[Track]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             // For video seeking timestamps are used only if all packets have
             // timestamps, while for audio they're used if any have timestamps,
@@ -522,28 +528,29 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
                 TrackInfo.HasTS = true;
 
             int64_t StartSample = AVContexts[Track].CurrentSample;
-            uint32_t SampleCount = IndexAudioPacket(Track, &Packet, AVContexts[Track], *TrackIndices);
+            uint32_t SampleCount = IndexAudioPacket(Track, Packet, AVContexts[Track], *TrackIndices);
             TrackInfo.SampleRate = AVContexts[Track].CodecContext->sample_rate;
 
             TrackInfo.AddAudioFrame(LastValidTS[Track],
-                StartSample, SampleCount, KeyFrame, Packet.pos, Packet.flags & AV_PKT_FLAG_DISCARD);
+                StartSample, SampleCount, KeyFrame, Packet->pos, Packet->flags & AV_PKT_FLAG_DISCARD);
         }
 
-        if (!(Packet.flags & AV_PKT_FLAG_DISCARD))
-            TrackInfo.LastDuration = Packet.duration;
+        if (!(Packet->flags & AV_PKT_FLAG_DISCARD))
+            TrackInfo.LastDuration = Packet->duration;
 
-        av_packet_unref(&Packet);
+        av_packet_unref(Packet);
     }
+    av_packet_free(&Packet);
 
     TrackIndices->Finalize(AVContexts, FormatContext->iformat->name);
     return TrackIndices.release();
 }
 
-void FFMS_Indexer::ReadTS(const AVPacket &Packet, int64_t &TS, bool &UseDTS) {
-    if (!UseDTS && Packet.pts != AV_NOPTS_VALUE)
-        TS = Packet.pts;
+void FFMS_Indexer::ReadTS(const AVPacket *Packet, int64_t &TS, bool &UseDTS) {
+    if (!UseDTS && Packet->pts != AV_NOPTS_VALUE)
+        TS = Packet->pts;
     if (TS == AV_NOPTS_VALUE)
         UseDTS = true;
-    if (UseDTS && Packet.dts != AV_NOPTS_VALUE)
-        TS = Packet.dts;
+    if (UseDTS && Packet->dts != AV_NOPTS_VALUE)
+        TS = Packet->dts;
 }

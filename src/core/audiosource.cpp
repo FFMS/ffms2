@@ -285,10 +285,15 @@ FFMS_AudioSource::AudioBlock *FFMS_AudioSource::CacheBlock(CacheIterator &pos) {
 int FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
     CurrentFrame = &Frames[PacketNumber];
 
-    AVPacket Packet;
-    if (!ReadPacket(&Packet))
+    AVPacket *Packet = av_packet_alloc();
+    if (!Packet)
+        throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
+            "Could not allocate packet.");
+    if (!ReadPacket(Packet)) {
+        av_packet_free(&Packet);
         throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_UNKNOWN,
             "ReadPacket unexpectedly failed to read a packet");
+    }
 
     // ReadPacket may have changed the packet number
     CurrentFrame = &Frames[PacketNumber];
@@ -297,8 +302,9 @@ int FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
     int NumberOfSamples = 0;
     AudioBlock *CachedBlock = nullptr;
     
-    int Ret = avcodec_send_packet(CodecContext, &Packet);
-    av_packet_unref(&Packet);
+    int Ret = avcodec_send_packet(CodecContext, Packet);
+    av_packet_unref(Packet);
+    av_packet_free(&Packet);
 
     av_frame_unref(DecodeFrame);
     Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
@@ -513,8 +519,6 @@ void FFMS_AudioSource::Seek() {
 }
 
 bool FFMS_AudioSource::ReadPacket(AVPacket *Packet) {
-    InitNullPacket(*Packet);
-
     while (av_read_frame(FormatContext, Packet) >= 0) {
         if (Packet->stream_index == TrackNumber) {
             // Required because not all audio packets, especially in ogg, have a pts. Use the previous valid packet's pts instead.

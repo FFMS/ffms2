@@ -62,12 +62,6 @@ void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo) {
     }
 }
 
-void InitNullPacket(AVPacket &pkt) {
-    av_init_packet(&pkt);
-    pkt.data = nullptr;
-    pkt.size = 0;
-}
-
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
     AP.SampleFormat = static_cast<FFMS_SampleFormat>(av_get_packed_sample_fmt(CTX->sample_fmt));
     AP.BitsPerSample = av_get_bytes_per_sample(CTX->sample_fmt) * 8;
