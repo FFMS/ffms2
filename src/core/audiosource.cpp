@@ -469,7 +469,7 @@ void FFMS_AudioSource::OpenFile() {
 
     LAVFOpenFile(SourceFile.c_str(), FormatContext, TrackNumber);
 
-    AVCodec *Codec = avcodec_find_decoder(FormatContext->streams[TrackNumber]->codecpar->codec_id);
+    auto *Codec = avcodec_find_decoder(FormatContext->streams[TrackNumber]->codecpar->codec_id);
     if (Codec == nullptr)
         throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
             "Audio codec not found");

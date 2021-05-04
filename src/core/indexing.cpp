@@ -384,7 +384,7 @@ FFMS_TrackType FFMS_Indexer::GetTrackType(int Track) {
 }
 
 const char *FFMS_Indexer::GetTrackCodec(int Track) {
-    AVCodec *codec = avcodec_find_decoder(FormatContext->streams[Track]->codecpar->codec_id);
+    auto *codec = avcodec_find_decoder(FormatContext->streams[Track]->codecpar->codec_id);
     return codec ? codec->name : nullptr;
 }
 
@@ -402,7 +402,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
             UseDTS);
 
         if (IndexMask.count(i) && FormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-            AVCodec *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codecpar->codec_id);
+            auto *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codecpar->codec_id);
             if (!VideoCodec) {
                 FormatContext->streams[i]->discard = AVDISCARD_ALL;
                 IndexMask.erase(i);
@@ -433,7 +433,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
                 IndexMask.insert(i);
             }
         } else if (IndexMask.count(i) && FormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-            AVCodec *AudioCodec = avcodec_find_decoder(FormatContext->streams[i]->codecpar->codec_id);
+            auto *AudioCodec = avcodec_find_decoder(FormatContext->streams[i]->codecpar->codec_id);
             if (AudioCodec == nullptr)
                 throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_UNSUPPORTED,
                     "Audio codec not found");
