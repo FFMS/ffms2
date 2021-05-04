@@ -80,10 +80,10 @@ private:
     int64_t Filesize;
     uint8_t Digest[20];
 
-    void ReadTS(const AVPacket &Packet, int64_t &TS, bool &UseDTS);
+    void ReadTS(const AVPacket *Packet, int64_t &TS, bool &UseDTS);
     void CheckAudioProperties(int Track, AVCodecContext *Context);
     uint32_t IndexAudioPacket(int Track, AVPacket *Packet, SharedAVContext &Context, FFMS_Index &TrackIndices);
-    void ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt, int *RepeatPict, int *FrameType, bool *Invisible, enum AVPictureStructure *LastPicStruct);
+    void ParseVideoPacket(SharedAVContext &VideoContext, AVPacket *pkt, int *RepeatPict, int *FrameType, bool *Invisible, enum AVPictureStructure *LastPicStruct);
     void Free();
 public:
     FFMS_Indexer(const char *Filename);
