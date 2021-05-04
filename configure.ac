@@ -102,10 +102,10 @@ CFLAGS="$_CFLAGS $FFMPEG_CFLAGS"
 
 AC_DEFUN([TEST_FFMPEG],
          [AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-            #include <libavcodec/avcodec.h>
+            #include <libavformat/avformat.h>
             #include <libswscale/swscale.h>
             ]],[[
-                avcodec_register_all();
+                avformat_network_init();
                 swscale_version();
             ]])], [eval $1=yes], [eval $1=no])
         ])
