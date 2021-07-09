@@ -9,13 +9,13 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-      strategy:
-        matrix:
-          os: [ubuntu-latest, macos-latest]
-          cc: [gcc, clang]
-          exclude:
-            - os: macos-latest
-              cc: gcc
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        cc: [gcc, clang]
+        exclude:
+          - os: macos-latest
+            cc: gcc
 
     steps:
     - uses: actions/checkout@v2
