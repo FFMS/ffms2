@@ -19,6 +19,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: install deps (ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
