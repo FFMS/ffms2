@@ -23,12 +23,12 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install autoconf automake wget ffmpeg
+        sudo apt-get install autoconf automake wget  ffmpeg libavformat-dev libavcodec-dev libswscale-dev libavutil-dev libswresample-dev
     - name: install deps (macOS)
       if: matrix.os == 'macos-latest'
       run: |
         brew update
-        brew install autoconf automake wget ffmpeg
+        brew install autoconf automake wget  ffmpeg
     - name: configure
       run: ./autogen.sh --enable-static --disable-shared
     - name: make
