@@ -9,7 +9,6 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-      name: build(${{ matrix.os }}, ${{ matrix.cc }})
       strategy:
         matrix:
           os: [ubuntu-latest, macos-latest]
