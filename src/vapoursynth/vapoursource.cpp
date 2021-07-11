@@ -110,103 +110,121 @@ static void FormatConversionToVS(VSVideoFormat &f, int id, VSCore *core, const V
         desc.log2_chroma_h, core);
 }
 
+const VSFrame *VS_CC VSVideoSource::GetVSFrame(int n, VSCore *core, const VSAPI *vsapi) {
+    char ErrorMsg[1024];
+    FFMS_ErrorInfo E;
+    E.Buffer = ErrorMsg;
+    E.BufferSize = sizeof(ErrorMsg);
+
+    VSFrame *Dst = vsapi->newVideoFrame(&VI[0].format, VI[0].width, VI[0].height, nullptr, core);
+    VSMap *Props = vsapi->getFramePropertiesRW(Dst);
+
+    const FFMS_Frame *Frame = nullptr;
+
+    if (FPSNum > 0 && FPSDen > 0) {
+        double currentTime = FFMS_GetVideoProperties(V)->FirstTime +
+            (double)(n * (int64_t)FPSDen) / FPSNum;
+        Frame = FFMS_GetFrameByTime(V, currentTime, &E);
+        vsapi->mapSetInt(Props, "_DurationNum", FPSDen, maReplace);
+        vsapi->mapSetInt(Props, "_DurationDen", FPSNum, maReplace);
+        vsapi->mapSetFloat(Props, "_AbsoluteTime", currentTime, maReplace);
+    } else {
+        Frame = FFMS_GetFrame(V, n, &E);
+        FFMS_Track *T = FFMS_GetTrackFromVideo(V);
+        const FFMS_TrackTimeBase *TB = FFMS_GetTimeBase(T);
+        int64_t num;
+        if (n + 1 < VI[0].numFrames)
+            num = FFMS_GetFrameInfo(T, n + 1)->PTS - FFMS_GetFrameInfo(T, n)->PTS;
+        else if (n > 0) // simply use the second to last frame's duration for the last one, should be good enough
+            num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
+        else // just make it one timebase if it's a single frame clip
+            num = 1;
+        int64_t DurNum = TB->Num * num;
+        int64_t DurDen = TB->Den * 1000;
+        vsh::muldivRational(&DurNum, &DurDen, 1, 1);
+        vsapi->mapSetInt(Props, "_DurationNum", DurNum, maReplace);
+        vsapi->mapSetInt(Props, "_DurationDen", DurDen, maReplace);
+        vsapi->mapSetFloat(Props, "_AbsoluteTime", ((static_cast<double>(TB->Num) / 1000) * FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, maReplace);
+    }
+
+    if (Frame == nullptr)
+        throw std::runtime_error(E.Buffer);
+
+    // Set AR variables
+    if (SARNum > 0 && SARDen > 0) {
+        vsapi->mapSetInt(Props, "_SARNum", SARNum, maReplace);
+        vsapi->mapSetInt(Props, "_SARDen", SARDen, maReplace);
+    }
+
+    vsapi->mapSetInt(Props, "_Matrix", Frame->ColorSpace, maReplace);
+    vsapi->mapSetInt(Props, "_Primaries", Frame->ColorPrimaries, maReplace);
+    vsapi->mapSetInt(Props, "_Transfer", Frame->TransferCharateristics, maReplace);
+    if (Frame->ChromaLocation > 0)
+        vsapi->mapSetInt(Props, "_ChromaLocation", Frame->ChromaLocation - 1, maReplace);
+
+    if (Frame->ColorRange == FFMS_CR_MPEG)
+        vsapi->mapSetInt(Props, "_ColorRange", 1, maReplace);
+    else if (Frame->ColorRange == FFMS_CR_JPEG)
+        vsapi->mapSetInt(Props, "_ColorRange", 0, maReplace);
+    vsapi->mapSetData(Props, "_PictType", &Frame->PictType, 1, dtUtf8, maReplace);
+
+    // Set field information
+    int FieldBased = 0;
+    if (Frame->InterlacedFrame)
+        FieldBased = (Frame->TopFieldFirst ? 2 : 1);
+    vsapi->mapSetInt(Props, "_FieldBased", FieldBased, maReplace);
+
+    if (Frame->HasMasteringDisplayPrimaries) {
+        vsapi->mapSetFloatArray(Props, "MasteringDisplayPrimariesX", Frame->MasteringDisplayPrimariesX, 3);
+        vsapi->mapSetFloatArray(Props, "MasteringDisplayPrimariesY", Frame->MasteringDisplayPrimariesY, 3);
+        vsapi->mapSetFloat(Props, "MasteringDisplayWhitePointX", Frame->MasteringDisplayWhitePointX, maReplace);
+        vsapi->mapSetFloat(Props, "MasteringDisplayWhitePointY", Frame->MasteringDisplayWhitePointY, maReplace);
+    }
+
+    if (Frame->HasMasteringDisplayLuminance) {
+        vsapi->mapSetFloat(Props, "MasteringDisplayMinLuminance", Frame->MasteringDisplayMinLuminance, maReplace);
+        vsapi->mapSetFloat(Props, "MasteringDisplayMaxLuminance", Frame->MasteringDisplayMaxLuminance, maReplace);
+    }
+
+    if (Frame->HasContentLightLevel) {
+        vsapi->mapSetFloat(Props, "ContentLightLevelMax", Frame->ContentLightLevelMax, maReplace);
+        vsapi->mapSetFloat(Props, "ContentLightLevelAverage", Frame->ContentLightLevelAverage, maReplace);
+    }
+
+
+    OutputFrame(Frame, Dst, vsapi);
+    if (OutputAlpha) {
+        VSFrame *AlphaDst = vsapi->newVideoFrame(&VI[1].format, VI[1].width, VI[1].height, nullptr, core);
+        OutputAlphaFrame(Frame, VI[0].format.numPlanes, AlphaDst, vsapi);
+        vsapi->mapConsumeFrame(Props, "_Alpha", AlphaDst, maReplace);
+    }
+
+    return Dst;
+}
+
 const VSFrame *VS_CC VSVideoSource::GetFrame(int n, int activationReason, void *instanceData, void **, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi) {
     VSVideoSource *vs = static_cast<VSVideoSource *>(instanceData);
     if (activationReason == arInitial) {
-
-        char ErrorMsg[1024];
-        FFMS_ErrorInfo E;
-        E.Buffer = ErrorMsg;
-        E.BufferSize = sizeof(ErrorMsg);
-        std::string buf = "Source: ";
-
-        VSFrame *Dst = vsapi->newVideoFrame(&vs->VI[0].format, vs->VI[0].width, vs->VI[0].height, nullptr, core);
-        VSMap *Props = vsapi->getFramePropertiesRW(Dst);
-
-        const FFMS_Frame *Frame = nullptr;
-
-        if (vs->FPSNum > 0 && vs->FPSDen > 0) {
-            double currentTime = FFMS_GetVideoProperties(vs->V)->FirstTime +
-                (double)(n * (int64_t)vs->FPSDen) / vs->FPSNum;
-            Frame = FFMS_GetFrameByTime(vs->V, currentTime, &E);
-            vsapi->mapSetInt(Props, "_DurationNum", vs->FPSDen, maReplace);
-            vsapi->mapSetInt(Props, "_DurationDen", vs->FPSNum, maReplace);
-            vsapi->mapSetFloat(Props, "_AbsoluteTime", currentTime, maReplace);
-        } else {
-            Frame = FFMS_GetFrame(vs->V, n, &E);
-            FFMS_Track *T = FFMS_GetTrackFromVideo(vs->V);
-            const FFMS_TrackTimeBase *TB = FFMS_GetTimeBase(T);
-            int64_t num;
-            if (n + 1 < vs->VI[0].numFrames)
-                num = FFMS_GetFrameInfo(T, n + 1)->PTS - FFMS_GetFrameInfo(T, n)->PTS;
-            else if (n > 0) // simply use the second to last frame's duration for the last one, should be good enough
-                num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
-            else // just make it one timebase if it's a single frame clip
-                num = 1;
-            int64_t DurNum = TB->Num * num;
-            int64_t DurDen = TB->Den * 1000;
-            vsh::muldivRational(&DurNum, &DurDen, 1, 1);
-            vsapi->mapSetInt(Props, "_DurationNum", DurNum, maReplace);
-            vsapi->mapSetInt(Props, "_DurationDen", DurDen, maReplace);
-            vsapi->mapSetFloat(Props, "_AbsoluteTime", ((static_cast<double>(TB->Num) / 1000) *  FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, maReplace);
+        if (vs->LastFrame < n && vs->LastFrame > n - vs->NumVSThreads - 15) {
+            for (int i = vs->LastFrame + 1; i < n; i++) {
+                try {
+                    const VSFrame *frame = vs->GetVSFrame(i, core, vsapi);
+                    vsapi->cacheFrame(frame, i, frameCtx);
+                    vsapi->freeFrame(frame);
+                } catch (std::runtime_error &) {
+                    // don't care if it errors out on frames we don't actually have to deliver
+                }
+            }
         }
 
-        if (Frame == nullptr) {
-            buf += E.Buffer;
-            vsapi->setFilterError(buf.c_str(), frameCtx);
-            return nullptr;
+        try {
+            const VSFrame *frame = vs->GetVSFrame(n, core, vsapi);
+            vs->LastFrame = n;
+            return frame;
+        } catch (std::runtime_error &e) {
+            vsapi->setFilterError(e.what(), frameCtx);
         }
 
-        // Set AR variables
-        if (vs->SARNum > 0 && vs->SARDen > 0) {
-            vsapi->mapSetInt(Props, "_SARNum", vs->SARNum, maReplace);
-            vsapi->mapSetInt(Props, "_SARDen", vs->SARDen, maReplace);
-        }
-
-        vsapi->mapSetInt(Props, "_Matrix", Frame->ColorSpace, maReplace);
-        vsapi->mapSetInt(Props, "_Primaries", Frame->ColorPrimaries, maReplace);
-        vsapi->mapSetInt(Props, "_Transfer", Frame->TransferCharateristics, maReplace);
-        if (Frame->ChromaLocation > 0)
-            vsapi->mapSetInt(Props, "_ChromaLocation", Frame->ChromaLocation - 1, maReplace);
-
-        if (Frame->ColorRange == FFMS_CR_MPEG)
-            vsapi->mapSetInt(Props, "_ColorRange", 1, maReplace);
-        else if (Frame->ColorRange == FFMS_CR_JPEG)
-            vsapi->mapSetInt(Props, "_ColorRange", 0, maReplace);
-        vsapi->mapSetData(Props, "_PictType", &Frame->PictType, 1, dtUtf8, maReplace);
-
-        // Set field information
-        int FieldBased = 0;
-        if (Frame->InterlacedFrame)
-            FieldBased = (Frame->TopFieldFirst ? 2 : 1);
-        vsapi->mapSetInt(Props, "_FieldBased", FieldBased, maReplace);
-
-        if (Frame->HasMasteringDisplayPrimaries) {
-            vsapi->mapSetFloatArray(Props, "MasteringDisplayPrimariesX", Frame->MasteringDisplayPrimariesX, 3);
-            vsapi->mapSetFloatArray(Props, "MasteringDisplayPrimariesY", Frame->MasteringDisplayPrimariesY, 3);
-            vsapi->mapSetFloat(Props, "MasteringDisplayWhitePointX", Frame->MasteringDisplayWhitePointX, maReplace);
-            vsapi->mapSetFloat(Props, "MasteringDisplayWhitePointY", Frame->MasteringDisplayWhitePointY, maReplace);
-        }
-
-        if (Frame->HasMasteringDisplayLuminance) {
-            vsapi->mapSetFloat(Props, "MasteringDisplayMinLuminance", Frame->MasteringDisplayMinLuminance, maReplace);
-            vsapi->mapSetFloat(Props, "MasteringDisplayMaxLuminance", Frame->MasteringDisplayMaxLuminance, maReplace);
-        }
-
-        if (Frame->HasContentLightLevel) {
-            vsapi->mapSetFloat(Props, "ContentLightLevelMax", Frame->ContentLightLevelMax, maReplace);
-            vsapi->mapSetFloat(Props, "ContentLightLevelAverage", Frame->ContentLightLevelAverage, maReplace);
-        }
-
- 
-        OutputFrame(Frame, Dst, vsapi);
-        if (vs->OutputAlpha) {
-            VSFrame *AlphaDst = vsapi->newVideoFrame(&vs->VI[1].format, vs->VI[1].width, vs->VI[1].height, nullptr, core);
-            OutputAlphaFrame(Frame, vs->VI[0].format.numPlanes, AlphaDst, vsapi);
-            vsapi->mapConsumeFrame(Props, "_Alpha", AlphaDst, maReplace);
-        }
-
-        return Dst;
     }
 
     return nullptr;
@@ -222,6 +240,10 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
     int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
     int Format, bool OutputAlpha, const VSAPI *vsapi, VSCore *core)
     : FPSNum(AFPSNum), FPSDen(AFPSDen), OutputAlpha(OutputAlpha) {
+
+    VSCoreInfo CoreInfo;
+    vsapi->getCoreInfo(core, &CoreInfo);
+    NumVSThreads = CoreInfo.numThreads;
 
     VI[0] = {};
     VI[1] = {};

@@ -43,6 +43,8 @@ private:
     int SARNum;
     int SARDen;
     bool OutputAlpha;
+    int LastFrame = -1;
+    int NumVSThreads;
 
     void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
         const char *ResizerName, int ConvertToFormat, const VSAPI *vsapi, VSCore *core);
@@ -58,6 +60,7 @@ public:
     const VSVideoInfo *GetVideoInfo();
 
     static void VS_CC Init(VSMap *in, VSMap *out, void **instanceData, VSNode *node, VSCore *core, const VSAPI *vsapi);
+    const VSFrame *VS_CC GetVSFrame(int n, VSCore *core, const VSAPI *vsapi);
     static const VSFrame *VS_CC GetFrame(int n, int activationReason, void *instanceData, void **frameData, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi);
     static void VS_CC Free(void *instanceData, VSCore *core, const VSAPI *vsapi);
 };
