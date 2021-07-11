@@ -205,7 +205,7 @@ const VSFrame *VS_CC VSVideoSource::GetVSFrame(int n, VSCore *core, const VSAPI 
 const VSFrame *VS_CC VSVideoSource::GetFrame(int n, int activationReason, void *instanceData, void **, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi) {
     VSVideoSource *vs = static_cast<VSVideoSource *>(instanceData);
     if (activationReason == arInitial) {
-        if (vs->LastFrame < n && vs->LastFrame > n - vs->NumVSThreads - 15) {
+        if (vs->LastFrame < n && vs->LastFrame > n - vs->CacheThreshold) {
             for (int i = vs->LastFrame + 1; i < n; i++) {
                 try {
                     const VSFrame *frame = vs->GetVSFrame(i, core, vsapi);
@@ -240,10 +240,6 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
     int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
     int Format, bool OutputAlpha, const VSAPI *vsapi, VSCore *core)
     : FPSNum(AFPSNum), FPSDen(AFPSDen), OutputAlpha(OutputAlpha) {
-
-    VSCoreInfo CoreInfo;
-    vsapi->getCoreInfo(core, &CoreInfo);
-    NumVSThreads = CoreInfo.numThreads;
 
     VI[0] = {};
     VI[1] = {};
@@ -297,8 +293,12 @@ VSVideoSource::~VSVideoSource() {
     FFMS_DestroyVideoSource(V);
 }
 
-const VSVideoInfo *VSVideoSource::GetVideoInfo() {
+const VSVideoInfo *VSVideoSource::GetVideoInfo() const {
     return &VI[0];
+}
+
+void VSVideoSource::SetCacheThreshold(int threshold) {
+    CacheThreshold = threshold;
 }
 
 void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,

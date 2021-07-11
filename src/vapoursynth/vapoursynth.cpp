@@ -209,7 +209,7 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
     }
 
     VSNode *node = vsapi->createVideoFilter2("Source", vs->GetVideoInfo(), VSVideoSource::GetFrame, VSVideoSource::Free, fmUnordered, nullptr, 0, vs, core);
-    vsapi->setLinearFilter(node);
+    vs->SetCacheThreshold(vsapi->setLinearFilter(node));
     vsapi->mapConsumeNode(out, "clip", node, maAppend);
 
     FFMS_DestroyIndex(Index);

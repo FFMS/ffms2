@@ -44,7 +44,7 @@ private:
     int SARDen;
     bool OutputAlpha;
     int LastFrame = -1;
-    int NumVSThreads;
+    int CacheThreshold = 0;
 
     void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
         const char *ResizerName, int ConvertToFormat, const VSAPI *vsapi, VSCore *core);
@@ -57,7 +57,8 @@ public:
         int Format, bool OutputAlpha, const VSAPI *vsapi, VSCore *core);
     ~VSVideoSource();
 
-    const VSVideoInfo *GetVideoInfo();
+    const VSVideoInfo *GetVideoInfo() const;
+    void SetCacheThreshold(int threshold);
 
     static void VS_CC Init(VSMap *in, VSMap *out, void **instanceData, VSNode *node, VSCore *core, const VSAPI *vsapi);
     const VSFrame *VS_CC GetVSFrame(int n, VSCore *core, const VSAPI *vsapi);
