@@ -30,7 +30,7 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-#include "VapourSynth.h"
+#include "VapourSynth4.h"
 #include "ffms.h"
 #include "ffmscompat.h"
 
@@ -46,8 +46,8 @@ private:
 
     void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
         const char *ResizerName, int ConvertToFormat, const VSAPI *vsapi, VSCore *core);
-    static void OutputFrame(const FFMS_Frame *Frame, VSFrameRef *Dst, const VSAPI *vsapi);
-    static void OutputAlphaFrame(const FFMS_Frame *Frame, int Plane, VSFrameRef *Dst, const VSAPI *vsapi);
+    static void OutputFrame(const FFMS_Frame *Frame, VSFrame *Dst, const VSAPI *vsapi);
+    static void OutputAlphaFrame(const FFMS_Frame *Frame, int Plane, VSFrame *Dst, const VSAPI *vsapi);
 public:
     VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
         int AFPSNum, int AFPSDen, int Threads, int SeekMode, int RFFMode,
@@ -55,8 +55,10 @@ public:
         int Format, bool OutputAlpha, const VSAPI *vsapi, VSCore *core);
     ~VSVideoSource();
 
+    const VSVideoInfo *GetVideoInfo();
+
     static void VS_CC Init(VSMap *in, VSMap *out, void **instanceData, VSNode *node, VSCore *core, const VSAPI *vsapi);
-    static const VSFrameRef *VS_CC GetFrame(int n, int activationReason, void **instanceData, void **frameData, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi);
+    static const VSFrame *VS_CC GetFrame(int n, int activationReason, void *instanceData, void **frameData, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi);
     static void VS_CC Free(void *instanceData, VSCore *core, const VSAPI *vsapi);
 };
 

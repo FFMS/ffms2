@@ -190,8 +190,6 @@
     <ClInclude Include="..\src\core\videoutils.h" />
     <ClInclude Include="..\src\core\zipfile.h" />
     <ClInclude Include="..\src\vapoursynth\vapoursource.h" />
-    <ClInclude Include="..\src\vapoursynth\VapourSynth.h" />
-    <ClInclude Include="..\src\vapoursynth\VSHelper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

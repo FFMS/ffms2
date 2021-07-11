@@ -89,12 +89,6 @@
     <ClInclude Include="..\src\vapoursynth\vapoursource.h">
       <Filter>Vapoursynth</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\vapoursynth\VapourSynth.h">
-      <Filter>Vapoursynth</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\vapoursynth\VSHelper.h">
-      <Filter>Vapoursynth</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\core\indexing.h">
       <Filter>Indexing</Filter>
     </ClInclude>

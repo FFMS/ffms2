@@ -20,7 +20,7 @@
 
 #include "vapoursource.h"
 #include "../core/utils.h"
-#include "VSHelper.h"
+#include "VSHelper4.h"
 
 #include <algorithm>
 #include <cmath>
@@ -62,26 +62,27 @@ static bool HasAlpha(const AVPixFmtDescriptor &desc) {
 
 static int GetColorFamily(const AVPixFmtDescriptor &desc) {
     if (desc.nb_components <= 2)
-        return cmGray;
+        return cfGray;
     else if (desc.flags & AV_PIX_FMT_FLAG_RGB)
-        return cmRGB;
+        return cfRGB;
     else
-        return cmYUV;
+        return cfYUV;
 }
 
 static int FormatConversionToPixelFormat(int id, bool alpha, VSCore *core, const VSAPI *vsapi) {
-    const VSFormat *f = vsapi->getFormatPreset(id, core);
+    VSVideoFormat f;
+    vsapi->getVideoFormatByID(&f, id, core);
     int npixfmt = GetNumPixFmts();
     // Look for a suitable format without alpha first to not waste memory
     if (!alpha) {
         for (int i = 0; i < npixfmt; i++) {
             const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat)i);
             if (IsRealNativeEndianPlanar(desc) && !HasAlpha(desc)
-                && GetColorFamily(desc) == f->colorFamily
-                && desc.comp[0].depth == f->bitsPerSample
-                && desc.log2_chroma_w == f->subSamplingW
-                && desc.log2_chroma_h == f->subSamplingH
-                && GetSampleType(desc) == f->sampleType)
+                && GetColorFamily(desc) == f.colorFamily
+                && desc.comp[0].depth == f.bitsPerSample
+                && desc.log2_chroma_w == f.subSamplingW
+                && desc.log2_chroma_h == f.subSamplingH
+                && GetSampleType(desc) == f.sampleType)
                 return i;
         }
     }
@@ -89,19 +90,19 @@ static int FormatConversionToPixelFormat(int id, bool alpha, VSCore *core, const
     for (int i = 0; i < npixfmt; i++) {
         const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat)i);
         if (IsRealNativeEndianPlanar(desc) && HasAlpha(desc)
-            && GetColorFamily(desc) == f->colorFamily
-            && desc.comp[0].depth == f->bitsPerSample
-            && desc.log2_chroma_w == f->subSamplingW
-            && desc.log2_chroma_h == f->subSamplingH
-            && GetSampleType(desc) == f->sampleType)
+            && GetColorFamily(desc) == f.colorFamily
+            && desc.comp[0].depth == f.bitsPerSample
+            && desc.log2_chroma_w == f.subSamplingW
+            && desc.log2_chroma_h == f.subSamplingH
+            && GetSampleType(desc) == f.sampleType)
             return i;
     }
     return AV_PIX_FMT_NONE;
 }
 
-static const VSFormat *FormatConversionToVS(int id, VSCore *core, const VSAPI *vsapi) {
+static void FormatConversionToVS(VSVideoFormat &f, int id, VSCore *core, const VSAPI *vsapi) {
     const AVPixFmtDescriptor &desc = *av_pix_fmt_desc_get((AVPixelFormat)id);
-    return vsapi->registerFormat(
+    vsapi->queryVideoFormat(&f,
         GetColorFamily(desc),
         GetSampleType(desc),
         desc.comp[0].depth,
@@ -109,13 +110,8 @@ static const VSFormat *FormatConversionToVS(int id, VSCore *core, const VSAPI *v
         desc.log2_chroma_h, core);
 }
 
-void VS_CC VSVideoSource::Init(VSMap *, VSMap *, void **instanceData, VSNode *node, VSCore *, const VSAPI *vsapi) {
-    VSVideoSource *Source = static_cast<VSVideoSource *>(*instanceData);
-    vsapi->setVideoInfo(Source->VI, Source->OutputAlpha ? 2 : 1, node);
-}
-
-const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, void **instanceData, void **, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi) {
-    VSVideoSource *vs = static_cast<VSVideoSource *>(*instanceData);
+const VSFrame *VS_CC VSVideoSource::GetFrame(int n, int activationReason, void *instanceData, void **, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi) {
+    VSVideoSource *vs = static_cast<VSVideoSource *>(instanceData);
     if (activationReason == arInitial) {
 
         char ErrorMsg[1024];
@@ -124,10 +120,8 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
         E.BufferSize = sizeof(ErrorMsg);
         std::string buf = "Source: ";
 
-        int OutputIndex = vs->OutputAlpha ? vsapi->getOutputIndex(frameCtx) : 0;
-
-        VSFrameRef *Dst = vsapi->newVideoFrame(vs->VI[OutputIndex].format, vs->VI[OutputIndex].width, vs->VI[OutputIndex].height, nullptr, core);
-        VSMap *Props = vsapi->getFramePropsRW(Dst);
+        VSFrame *Dst = vsapi->newVideoFrame(&vs->VI[0].format, vs->VI[0].width, vs->VI[0].height, nullptr, core);
+        VSMap *Props = vsapi->getFramePropertiesRW(Dst);
 
         const FFMS_Frame *Frame = nullptr;
 
@@ -135,9 +129,9 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
             double currentTime = FFMS_GetVideoProperties(vs->V)->FirstTime +
                 (double)(n * (int64_t)vs->FPSDen) / vs->FPSNum;
             Frame = FFMS_GetFrameByTime(vs->V, currentTime, &E);
-            vsapi->propSetInt(Props, "_DurationNum", vs->FPSDen, paReplace);
-            vsapi->propSetInt(Props, "_DurationDen", vs->FPSNum, paReplace);
-            vsapi->propSetFloat(Props, "_AbsoluteTime", currentTime, paReplace);
+            vsapi->mapSetInt(Props, "_DurationNum", vs->FPSDen, maReplace);
+            vsapi->mapSetInt(Props, "_DurationDen", vs->FPSNum, maReplace);
+            vsapi->mapSetFloat(Props, "_AbsoluteTime", currentTime, maReplace);
         } else {
             Frame = FFMS_GetFrame(vs->V, n, &E);
             FFMS_Track *T = FFMS_GetTrackFromVideo(vs->V);
@@ -151,10 +145,10 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
                 num = 1;
             int64_t DurNum = TB->Num * num;
             int64_t DurDen = TB->Den * 1000;
-            muldivRational(&DurNum, &DurDen, 1, 1);
-            vsapi->propSetInt(Props, "_DurationNum", DurNum, paReplace);
-            vsapi->propSetInt(Props, "_DurationDen", DurDen, paReplace);
-            vsapi->propSetFloat(Props, "_AbsoluteTime", ((static_cast<double>(TB->Num) / 1000) *  FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, paReplace);
+            vsh::muldivRational(&DurNum, &DurDen, 1, 1);
+            vsapi->mapSetInt(Props, "_DurationNum", DurNum, maReplace);
+            vsapi->mapSetInt(Props, "_DurationDen", DurDen, maReplace);
+            vsapi->mapSetFloat(Props, "_AbsoluteTime", ((static_cast<double>(TB->Num) / 1000) *  FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, maReplace);
         }
 
         if (Frame == nullptr) {
@@ -165,49 +159,52 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
 
         // Set AR variables
         if (vs->SARNum > 0 && vs->SARDen > 0) {
-            vsapi->propSetInt(Props, "_SARNum", vs->SARNum, paReplace);
-            vsapi->propSetInt(Props, "_SARDen", vs->SARDen, paReplace);
+            vsapi->mapSetInt(Props, "_SARNum", vs->SARNum, maReplace);
+            vsapi->mapSetInt(Props, "_SARDen", vs->SARDen, maReplace);
         }
 
-        vsapi->propSetInt(Props, "_Matrix", Frame->ColorSpace, paReplace);
-        vsapi->propSetInt(Props, "_Primaries", Frame->ColorPrimaries, paReplace);
-        vsapi->propSetInt(Props, "_Transfer", Frame->TransferCharateristics, paReplace);
+        vsapi->mapSetInt(Props, "_Matrix", Frame->ColorSpace, maReplace);
+        vsapi->mapSetInt(Props, "_Primaries", Frame->ColorPrimaries, maReplace);
+        vsapi->mapSetInt(Props, "_Transfer", Frame->TransferCharateristics, maReplace);
         if (Frame->ChromaLocation > 0)
-            vsapi->propSetInt(Props, "_ChromaLocation", Frame->ChromaLocation - 1, paReplace);
+            vsapi->mapSetInt(Props, "_ChromaLocation", Frame->ChromaLocation - 1, maReplace);
 
         if (Frame->ColorRange == FFMS_CR_MPEG)
-            vsapi->propSetInt(Props, "_ColorRange", 1, paReplace);
+            vsapi->mapSetInt(Props, "_ColorRange", 1, maReplace);
         else if (Frame->ColorRange == FFMS_CR_JPEG)
-            vsapi->propSetInt(Props, "_ColorRange", 0, paReplace);
-        vsapi->propSetData(Props, "_PictType", &Frame->PictType, 1, paReplace);
+            vsapi->mapSetInt(Props, "_ColorRange", 0, maReplace);
+        vsapi->mapSetData(Props, "_PictType", &Frame->PictType, 1, dtUtf8, maReplace);
 
         // Set field information
         int FieldBased = 0;
         if (Frame->InterlacedFrame)
             FieldBased = (Frame->TopFieldFirst ? 2 : 1);
-        vsapi->propSetInt(Props, "_FieldBased", FieldBased, paReplace);
+        vsapi->mapSetInt(Props, "_FieldBased", FieldBased, maReplace);
 
         if (Frame->HasMasteringDisplayPrimaries) {
-            vsapi->propSetFloatArray(Props, "MasteringDisplayPrimariesX", Frame->MasteringDisplayPrimariesX, 3);
-            vsapi->propSetFloatArray(Props, "MasteringDisplayPrimariesY", Frame->MasteringDisplayPrimariesY, 3);
-            vsapi->propSetFloat(Props, "MasteringDisplayWhitePointX", Frame->MasteringDisplayWhitePointX, paReplace);
-            vsapi->propSetFloat(Props, "MasteringDisplayWhitePointY", Frame->MasteringDisplayWhitePointY, paReplace);
+            vsapi->mapSetFloatArray(Props, "MasteringDisplayPrimariesX", Frame->MasteringDisplayPrimariesX, 3);
+            vsapi->mapSetFloatArray(Props, "MasteringDisplayPrimariesY", Frame->MasteringDisplayPrimariesY, 3);
+            vsapi->mapSetFloat(Props, "MasteringDisplayWhitePointX", Frame->MasteringDisplayWhitePointX, maReplace);
+            vsapi->mapSetFloat(Props, "MasteringDisplayWhitePointY", Frame->MasteringDisplayWhitePointY, maReplace);
         }
 
         if (Frame->HasMasteringDisplayLuminance) {
-            vsapi->propSetFloat(Props, "MasteringDisplayMinLuminance", Frame->MasteringDisplayMinLuminance, paReplace);
-            vsapi->propSetFloat(Props, "MasteringDisplayMaxLuminance", Frame->MasteringDisplayMaxLuminance, paReplace);
+            vsapi->mapSetFloat(Props, "MasteringDisplayMinLuminance", Frame->MasteringDisplayMinLuminance, maReplace);
+            vsapi->mapSetFloat(Props, "MasteringDisplayMaxLuminance", Frame->MasteringDisplayMaxLuminance, maReplace);
         }
 
         if (Frame->HasContentLightLevel) {
-            vsapi->propSetFloat(Props, "ContentLightLevelMax", Frame->ContentLightLevelMax, paReplace);
-            vsapi->propSetFloat(Props, "ContentLightLevelAverage", Frame->ContentLightLevelAverage, paReplace);
+            vsapi->mapSetFloat(Props, "ContentLightLevelMax", Frame->ContentLightLevelMax, maReplace);
+            vsapi->mapSetFloat(Props, "ContentLightLevelAverage", Frame->ContentLightLevelAverage, maReplace);
         }
 
-        if (OutputIndex == 0)
-            OutputFrame(Frame, Dst, vsapi);
-        else
-            OutputAlphaFrame(Frame, vs->VI[0].format->numPlanes, Dst, vsapi);
+ 
+        OutputFrame(Frame, Dst, vsapi);
+        if (vs->OutputAlpha) {
+            VSFrame *AlphaDst = vsapi->newVideoFrame(&vs->VI[1].format, vs->VI[1].width, vs->VI[1].height, nullptr, core);
+            OutputAlphaFrame(Frame, vs->VI[0].format.numPlanes, AlphaDst, vsapi);
+            vsapi->mapConsumeFrame(Props, "_Alpha", AlphaDst, maReplace);
+        }
 
         return Dst;
     }
@@ -248,7 +245,7 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
     const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
 
     if (FPSNum > 0 && FPSDen > 0) {
-        muldivRational(&FPSNum, &FPSDen, 1, 1);
+        vsh::muldivRational(&FPSNum, &FPSDen, 1, 1);
         VI[0].fpsDen = FPSDen;
         VI[0].fpsNum = FPSNum;
         if (VP->NumFrames > 1) {
@@ -262,12 +259,12 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
         VI[0].fpsDen = VP->FPSDenominator;
         VI[0].fpsNum = VP->FPSNumerator;
         VI[0].numFrames = VP->NumFrames;
-        muldivRational(&VI[0].fpsNum, &VI[0].fpsDen, 1, 1);
+        vsh::muldivRational(&VI[0].fpsNum, &VI[0].fpsDen, 1, 1);
     }
 
     if (OutputAlpha) {
         VI[1] = VI[0];
-        VI[1].format = vsapi->registerFormat(cmGray, VI[0].format->sampleType, VI[0].format->bitsPerSample, VI[0].format->subSamplingW, VI[0].format->subSamplingH, core);
+        vsapi->queryVideoFormat(&VI[1].format, cfGray, VI[0].format.sampleType, VI[0].format.bitsPerSample, 0, 0, core);
     }
 
     SARNum = VP->SARNum;
@@ -276,6 +273,10 @@ VSVideoSource::VSVideoSource(const char *SourceFile, int Track, FFMS_Index *Inde
 
 VSVideoSource::~VSVideoSource() {
     FFMS_DestroyVideoSource(V);
+}
+
+const VSVideoInfo *VSVideoSource::GetVideoInfo() {
+    return &VI[0];
 }
 
 void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
@@ -340,34 +341,34 @@ void VSVideoSource::InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
     if (!HasAlpha(*av_pix_fmt_desc_get((AVPixelFormat)F->ConvertedPixelFormat)))
         OutputAlpha = false;
 
-    VI[0].format = FormatConversionToVS(F->ConvertedPixelFormat, core, vsapi);
-    if (!VI[0].format)
+     FormatConversionToVS(VI[0].format, F->ConvertedPixelFormat, core, vsapi);
+    if (VI[0].format.colorFamily == cfUndefined)
         throw std::runtime_error(std::string("Source: No suitable output format found"));
 
     VI[0].width = F->ScaledWidth;
     VI[0].height = F->ScaledHeight;
 
     // Crop to obey subsampling width/height requirements
-    VI[0].width -= VI[0].width % (1 << VI[0].format->subSamplingW);
-    VI[0].height -= VI[0].height % (1 << VI[0].format->subSamplingH);
+    VI[0].width -= VI[0].width % (1 << VI[0].format.subSamplingW);
+    VI[0].height -= VI[0].height % (1 << VI[0].format.subSamplingH);
 }
 
-void VSVideoSource::OutputFrame(const FFMS_Frame *Frame, VSFrameRef *Dst, const VSAPI *vsapi) {
+void VSVideoSource::OutputFrame(const FFMS_Frame *Frame, VSFrame *Dst, const VSAPI *vsapi) {
     const int RGBPlaneOrder[3] = { 2, 0, 1 };
-    const VSFormat *fi = vsapi->getFrameFormat(Dst);
-    if (fi->colorFamily == cmRGB) {
+    const VSVideoFormat *fi = vsapi->getVideoFrameFormat(Dst);
+    if (fi->colorFamily == cfRGB) {
         for (int i = 0; i < fi->numPlanes; i++)
-            vs_bitblt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[RGBPlaneOrder[i]], Frame->Linesize[RGBPlaneOrder[i]],
+            vsh::bitblt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[RGBPlaneOrder[i]], Frame->Linesize[RGBPlaneOrder[i]],
                 vsapi->getFrameWidth(Dst, i) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, i));
     } else {
         for (int i = 0; i < fi->numPlanes; i++)
-            vs_bitblt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i],
+            vsh::bitblt(vsapi->getWritePtr(Dst, i), vsapi->getStride(Dst, i), Frame->Data[i], Frame->Linesize[i],
                 vsapi->getFrameWidth(Dst, i) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, i));
     }
 }
 
-void VSVideoSource::OutputAlphaFrame(const FFMS_Frame *Frame, int Plane, VSFrameRef *Dst, const VSAPI *vsapi) {
-    const VSFormat *fi = vsapi->getFrameFormat(Dst);
-    vs_bitblt(vsapi->getWritePtr(Dst, 0), vsapi->getStride(Dst, 0), Frame->Data[Plane], Frame->Linesize[Plane],
+void VSVideoSource::OutputAlphaFrame(const FFMS_Frame *Frame, int Plane, VSFrame *Dst, const VSAPI *vsapi) {
+    const VSVideoFormat *fi = vsapi->getVideoFrameFormat(Dst);
+    vsh::bitblt(vsapi->getWritePtr(Dst, 0), vsapi->getStride(Dst, 0), Frame->Data[Plane], Frame->Linesize[Plane],
         vsapi->getFrameWidth(Dst, 0) * fi->bytesPerSample, vsapi->getFrameHeight(Dst, 0));
 }
