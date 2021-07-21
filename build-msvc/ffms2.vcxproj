@@ -175,7 +175,9 @@
     <ClCompile Include="..\src\core\videoutils.cpp" />
     <ClCompile Include="..\src\core\zipfile.cpp" />
     <ClCompile Include="..\src\vapoursynth\vapoursource.cpp" />
+    <ClCompile Include="..\src\vapoursynth\vapoursource4.cpp" />
     <ClCompile Include="..\src\vapoursynth\vapoursynth.cpp" />
+    <ClCompile Include="..\src\vapoursynth\vapoursynth4.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\ffms.h" />
@@ -190,8 +192,11 @@
     <ClInclude Include="..\src\core\videoutils.h" />
     <ClInclude Include="..\src\core\zipfile.h" />
     <ClInclude Include="..\src\vapoursynth\vapoursource.h" />
+    <ClInclude Include="..\src\vapoursynth\vapoursource4.h" />
     <ClInclude Include="..\src\vapoursynth\VapourSynth.h" />
+    <ClInclude Include="..\src\vapoursynth\VapourSynth4.h" />
     <ClInclude Include="..\src\vapoursynth\VSHelper.h" />
+    <ClInclude Include="..\src\vapoursynth\VSHelper4.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

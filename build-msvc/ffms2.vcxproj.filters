@@ -63,6 +63,12 @@
     <ClCompile Include="..\src\avisynth\avssources.cpp">
       <Filter>Avisynth</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\vapoursynth\vapoursource4.cpp">
+      <Filter>Vapoursynth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vapoursynth\vapoursynth4.cpp">
+      <Filter>Vapoursynth</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\ffms.h">
@@ -106,6 +112,15 @@
     </ClInclude>
     <ClInclude Include="..\src\avisynth\avssources.h">
       <Filter>Avisynth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vapoursynth\vapoursource4.h">
+      <Filter>Vapoursynth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vapoursynth\VapourSynth4.h">
+      <Filter>Vapoursynth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vapoursynth\VSHelper4.h">
+      <Filter>Vapoursynth</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
