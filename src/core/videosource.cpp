@@ -113,6 +113,25 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
     /* MasteringDisplayMinLuminance can be 0 */
     LocalFrame.HasMasteringDisplayLuminance = !!LocalFrame.MasteringDisplayMaxLuminance;
 
+#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 57, 9, 100)
+    const AVFrameSideData *DolbyVisionRPUSideData = av_frame_get_side_data(Frame, AV_FRAME_DATA_DOVI_RPU_BUFFER);
+    if (DolbyVisionRPUSideData) {
+        if (DolbyVisionRPUSideData->size > RPUBufferSize) {
+            void *tmp = av_realloc(RPUBuffer, DolbyVisionRPUSideData->size);
+            if (!tmp)
+                throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
+                                     "Could not allocate RPU buffer.");
+            RPUBuffer = reinterpret_cast<uint8_t *>(tmp);
+            RPUBufferSize = DolbyVisionRPUSideData->size;
+        }
+
+        memcpy(RPUBuffer, DolbyVisionRPUSideData->data, DolbyVisionRPUSideData->size);
+
+        LocalFrame.DolbyVisionRPU = RPUBuffer;
+        LocalFrame.DolbyVisionRPUSize = DolbyVisionRPUSideData->size;
+    }
+#endif
+
     const AVFrameSideData *ContentLightSideData = av_frame_get_side_data(Frame, AV_FRAME_DATA_CONTENT_LIGHT_LEVEL);
     if (ContentLightSideData) {
         const AVContentLightMetadata *ContentLightLevel = reinterpret_cast<const AVContentLightMetadata *>(ContentLightSideData->data);
@@ -658,6 +677,7 @@ int FFMS_VideoSource::ReadFrame(AVPacket *pkt) {
 }
 
 void FFMS_VideoSource::Free() {
+    av_freep(&RPUBuffer);
     avcodec_free_context(&CodecContext);
     avformat_close_input(&FormatContext);
     if (SWS)

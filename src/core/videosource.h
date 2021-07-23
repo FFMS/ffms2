@@ -77,6 +77,8 @@ private:
 
     FFMS_VideoProperties VP = {};
     FFMS_Frame LocalFrame = {};
+    uint8_t *RPUBuffer = nullptr;
+    size_t RPUBufferSize = 0;
     AVFrame *DecodeFrame = nullptr;
     AVFrame *LastDecodedFrame = nullptr;
     int LastFrameNum = 0;
