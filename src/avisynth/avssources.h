@@ -50,6 +50,7 @@ class AvisynthVideoSource : public IClip {
     int RFFMode;
     std::vector<FrameFields> FieldList;
     const char *VarPrefix;
+    bool has_at_least_v8;
 
     void InitOutputFormat(int ResizeToWidth, int ResizeToHeight,
         const char *ResizerName, const char *ConvertToFormatName, IScriptEnvironment *Env);
