@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 
 extern "C" {
 #include <libavutil/avutil.h>

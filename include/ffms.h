@@ -364,7 +364,7 @@ typedef struct FFMS_VideoProperties {
     double FirstTime;
     double LastTime;
     /* Introduced in FFMS_VERSION ((2 << 24) | (24 << 16) | (0 << 8) | 0) */
-    int Rotation;
+    int Rotation; /* A positive number in degrees */
     int Stereo3DType;
     int Stereo3DFlags;
     /* Introduced in FFMS_VERSION ((2 << 24) | (30 << 16) | (0 << 8) | 0) */
@@ -381,7 +381,7 @@ typedef struct FFMS_VideoProperties {
     unsigned int ContentLightLevelMax;
     unsigned int ContentLightLevelAverage;
     /* Introduced in FFMS_VERSION ((2 << 24) | (31 << 16) | (0 << 8) | 0) */
-    int Flip;
+    int Flip; /* -1 = Vertical flip, 1 = Horizontal flip */
 } FFMS_VideoProperties;
 
 typedef struct FFMS_AudioProperties {
