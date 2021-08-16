@@ -166,6 +166,9 @@
       <Project>{2cf8c7d2-55e5-4861-a58a-a79b84d0d9ea}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="..\src\index\ffmsindex.manifest" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

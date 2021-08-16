@@ -9,6 +9,9 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="Manifests">
+      <UniqueIdentifier>{25d75b48-9985-40fd-be86-bd4ca73d5209}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\index\ffmsindex.cpp">
@@ -22,5 +25,10 @@
     <ClInclude Include="..\src\index\vsutf16.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="..\src\index\ffmsindex.manifest">
+      <Filter>Manifests</Filter>
+    </Manifest>
   </ItemGroup>
 </Project>
