@@ -53,8 +53,8 @@ namespace {
 #undef MAPPER
 }
 
-FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track, int DelayMode, int FillGaps)
-    : LastValidTS(AV_NOPTS_VALUE), SourceFile(SourceFile), ResampleContext{ swr_alloc() }, TrackNumber(Track) {
+FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track, int DelayMode, int FillGaps, double DrcScale)
+    : LastValidTS(AV_NOPTS_VALUE), SourceFile(SourceFile), ResampleContext{ swr_alloc() }, TrackNumber(Track), DrcScale(DrcScale) {
     try {
         if (FillGaps < 1 || FillGaps > 1)
             throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
@@ -76,6 +76,8 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
             throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_MISMATCH,
                 "The index does not match the source file");
 
+        EnableDrefs = Index.EnableDrefs;
+        UseAbsolutePaths = Index.UseAbsolutePaths;
         Frames = Index[Track];
 
         DecodeFrame = av_frame_alloc();
@@ -474,7 +476,7 @@ void FFMS_AudioSource::OpenFile() {
     avcodec_free_context(&CodecContext);
     avformat_close_input(&FormatContext);
 
-    LAVFOpenFile(SourceFile.c_str(), FormatContext, TrackNumber);
+    LAVFOpenFile(SourceFile.c_str(), FormatContext, TrackNumber, EnableDrefs, UseAbsolutePaths);
 
     auto *Codec = avcodec_find_decoder(FormatContext->streams[TrackNumber]->codecpar->codec_id);
     if (Codec == nullptr)
@@ -490,9 +492,15 @@ void FFMS_AudioSource::OpenFile() {
         throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
             "Could not copy audio codec parameters");
 
-    if (avcodec_open2(CodecContext, Codec, nullptr) < 0)
+    AVDictionary *CodecDict = nullptr;
+    if (Codec->id == AV_CODEC_ID_AC3 || Codec->id == AV_CODEC_ID_EAC3)
+        av_dict_set(&CodecDict, "drc_scale", std::to_string(DrcScale).c_str(), 0);
+
+    if (avcodec_open2(CodecContext, Codec, &CodecDict) < 0)
         throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
             "Could not open audio codec");
+
+    av_dict_free(&CodecDict);
 }
 
 void FFMS_AudioSource::Free() {

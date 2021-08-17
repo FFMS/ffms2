@@ -120,6 +120,8 @@ void FFMS_Index::WriteIndex(ZipFile &zf) {
     zf.Write<uint16_t>(INDEX_VERSION);
     zf.Write<uint32_t>(size());
     zf.Write<uint32_t>(ErrorHandling);
+    zf.Write<uint32_t>(EnableDrefs);
+    zf.Write<uint32_t>(UseAbsolutePaths);
     zf.Write<uint32_t>(avutil_version());
     zf.Write<uint32_t>(avformat_version());
     zf.Write<uint32_t>(avcodec_version());
@@ -163,6 +165,8 @@ void FFMS_Index::ReadIndex(ZipFile &zf, const char *IndexFile) {
 
     uint32_t Tracks = zf.Read<uint32_t>();
     ErrorHandling = zf.Read<uint32_t>();
+    EnableDrefs = !!zf.Read<uint32_t>();
+    UseAbsolutePaths = !!zf.Read<uint32_t>();
 
     if (zf.Read<uint32_t>() != avutil_version() ||
         zf.Read<uint32_t>() != avformat_version() ||
@@ -237,16 +241,19 @@ void FFMS_Indexer::SetProgressCallback(TIndexCallback IC_, void *ICPrivate_) {
     ICPrivate = ICPrivate_;
 }
 
-FFMS_Indexer *CreateIndexer(const char *Filename) {
-    return new FFMS_Indexer(Filename);
-}
-
-FFMS_Indexer::FFMS_Indexer(const char *Filename)
+FFMS_Indexer::FFMS_Indexer(const char *Filename, bool EnableDrefs, bool UseAbsolutePaths)
     : SourceFile(Filename) {
     try {
-        if (avformat_open_input(&FormatContext, Filename, nullptr, nullptr) != 0)
+        AVDictionary *Dict = nullptr;
+        av_dict_set_int(&Dict, "enable_drefs", EnableDrefs, 0);
+        av_dict_set_int(&Dict, "use_absolute_paths", UseAbsolutePaths, 0);
+        av_dict_set_int(&Dict, "advanced_editlist", 0, 0);
+
+        if (avformat_open_input(&FormatContext, Filename, nullptr, &Dict) != 0)
             throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
                 std::string("Can't open '") + Filename + "'");
+
+        av_dict_free(&Dict);
 
         FFMS_Index::CalculateFileSignature(Filename, &Filesize, Digest);
 

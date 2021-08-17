@@ -62,6 +62,9 @@ struct FFMS_AudioSource {
     typedef std::list<AudioBlock>::iterator CacheIterator;
 
     AVFormatContext *FormatContext = nullptr;
+    bool EnableDrefs;
+    bool UseAbsolutePaths;
+    double DrcScale;
     int64_t LastValidTS;
     std::string SourceFile;
 
@@ -133,7 +136,7 @@ struct FFMS_AudioSource {
 
     void Free();
 public:
-    FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track, int DelayMode, int FillGaps);
+    FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track, int DelayMode, int FillGaps, double DrcScale);
     ~FFMS_AudioSource();
     FFMS_Track *GetTrack() { return &Frames; }
     const FFMS_AudioProperties& GetAudioProperties() const { return AP; }

@@ -128,16 +128,16 @@ FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int 
 
 FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, int DelayMode, FFMS_ErrorInfo *ErrorInfo) {
     try {
-        return new FFMS_AudioSource(SourceFile, *Index, Track, DelayMode, -1);
+        return new FFMS_AudioSource(SourceFile, *Index, Track, DelayMode, -1, 0);
     } catch (FFMS_Exception &e) {
         e.CopyOut(ErrorInfo);
         return nullptr;
     }
 }
 
-FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource2(const char *SourceFile, int Track, FFMS_Index *Index, int DelayMode, int FillGaps, FFMS_ErrorInfo *ErrorInfo) {
+FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource2(const char *SourceFile, int Track, FFMS_Index *Index, int DelayMode, int FillGaps, double DrcScale, FFMS_ErrorInfo *ErrorInfo) {
     try {
-        return new FFMS_AudioSource(SourceFile, *Index, Track, DelayMode, FillGaps);
+        return new FFMS_AudioSource(SourceFile, *Index, Track, DelayMode, FillGaps, DrcScale);
     } catch (FFMS_Exception &e) {
         e.CopyOut(ErrorInfo);
         return nullptr;
@@ -330,7 +330,17 @@ FFMS_API(int) FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, FFMS_
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo) {
     ClearErrorInfo(ErrorInfo);
     try {
-        return new FFMS_Indexer(SourceFile);
+        return new FFMS_Indexer(SourceFile, false, false);
+    } catch (FFMS_Exception &e) {
+        e.CopyOut(ErrorInfo);
+        return nullptr;
+    }
+}
+
+FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer2(const char *SourceFile, int EnableDrefs, int UseAbsolutePaths, FFMS_ErrorInfo *ErrorInfo) {
+    ClearErrorInfo(ErrorInfo);
+    try {
+        return new FFMS_Indexer(SourceFile, !!EnableDrefs, !!UseAbsolutePaths);
     } catch (FFMS_Exception &e) {
         e.CopyOut(ErrorInfo);
         return nullptr;
