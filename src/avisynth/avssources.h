@@ -74,7 +74,7 @@ class AvisynthAudioSource : public IClip {
     FFMS_AudioSource *A;
 public:
     AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
-        int AdjustDelay, const char *VarPrefix, IScriptEnvironment* Env);
+        int AdjustDelay, int FillGaps, double DrcScale, const char *VarPrefix, IScriptEnvironment* Env);
     ~AvisynthAudioSource();
     bool __stdcall GetParity(int n) { return false; }
     int __stdcall SetCacheHints(int cachehints, int frame_range) { return 0; }

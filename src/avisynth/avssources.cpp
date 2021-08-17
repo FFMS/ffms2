@@ -650,11 +650,11 @@ bool AvisynthVideoSource::GetParity(int n) {
 }
 
 AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS_Index *Index,
-    int AdjustDelay, const char *VarPrefix, IScriptEnvironment* Env) {
+    int AdjustDelay, int FillGaps, double DrcScale, const char *VarPrefix, IScriptEnvironment* Env) {
     VI = {};
 
     ErrorInfo E;
-    A = FFMS_CreateAudioSource(SourceFile, Track, Index, AdjustDelay, &E);
+    A = FFMS_CreateAudioSource2(SourceFile, Track, Index, AdjustDelay, FillGaps, DrcScale, &E);
     if (!A)
         Env->ThrowError("FFAudioSource: %s", E.Buffer);
 

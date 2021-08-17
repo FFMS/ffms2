@@ -197,7 +197,9 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
     bool Cache = Args[2].AsBool(true);
     const char *CacheFile = Args[3].AsString("");
     int AdjustDelay = Args[4].AsInt(-1);
-    const char *VarPrefix = Args[5].AsString("");
+    int FillGaps = Args[5].AsInt(-1);
+    double DrcScale = Args[6].AsFloat(0);
+    const char *VarPrefix = Args[7].AsString("");
 
     if (Track <= -2)
         Env->ThrowError("FFAudioSource: No audio track selected");
@@ -275,7 +277,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
     AvisynthAudioSource *Filter;
 
     try {
-        Filter = new AvisynthAudioSource(Source, Track, Index, AdjustDelay, VarPrefix, Env);
+        Filter = new AvisynthAudioSource(Source, Track, Index, AdjustDelay, FillGaps, DrcScale, VarPrefix, Env);
     } catch (...) {
         FFMS_DestroyIndex(Index);
         throw;
@@ -349,7 +351,7 @@ extern "C" AVS_EXPORT const char* __stdcall AvisynthPluginInit3(IScriptEnvironme
 
     Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[errorhandling]i[overwrite]b[enable_drefs]b[use_absolute_paths]b", CreateFFIndex, nullptr);
     Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[varprefix]s", CreateFFVideoSource, nullptr);
-    Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[varprefix]s", CreateFFAudioSource, nullptr);
+    Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[fill_gaps]i[drc_scale]f[varprefix]s", CreateFFAudioSource, nullptr);
 
     Env->AddFunction("FFmpegSource2", "[source]s[vtrack]i[atrack]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[overwrite]b[width]i[height]i[resizer]s[colorspace]s[rffmode]i[adjustdelay]i[enable_drefs]b[use_absolute_paths]b[varprefix]s", CreateFFmpegSource2, nullptr);
     Env->AddFunction("FFMS2", "[source]s[vtrack]i[atrack]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[overwrite]b[width]i[height]i[resizer]s[colorspace]s[rffmode]i[adjustdelay]i[enable_drefs]b[use_absolute_paths]b[varprefix]s", CreateFFmpegSource2, nullptr);
