@@ -44,6 +44,8 @@ bool Overwrite = false;
 bool PrintProgress = true;
 bool WriteTC = false;
 bool WriteKF = false;
+bool EnableDrefs = false;
+bool UseAbsolutePaths = false;
 std::string InputFile;
 std::string CacheFile;
 
@@ -69,6 +71,10 @@ void PrintUsage() {
         "-k        Write keyframes for all video tracks to outputfile_track00.kf.txt (default: no)\n"
         "-t N      Set the audio indexing mask to N (-1 means index all tracks, 0 means index none, default: 0)\n"
         "-s N      Set audio decoding error handling. See the documentation for details. (default: 0)\n"
+        "\n"
+        "FFmpeg Demuxer Options:\n"
+        "--enable_drefs\n"
+        "--use_absolute_paths\n"
         << std::endl;
 }
 
@@ -91,6 +97,10 @@ void ParseCMDLine(int argc, const char *argv[]) {
             OPTION_ARG(IndexMask, "t", std::stoll);
         } else if (!strcmp(Option, "-s")) {
             OPTION_ARG(IgnoreErrors, "s", std::stoi);
+        } else if (!strcmp(Option, "--enable_drefs")) {
+            EnableDrefs = true;
+        } else if (!strcmp(Option, "--use_absolute_paths")) {
+            UseAbsolutePaths = true;
         } else if (InputFile.empty()) {
             InputFile = Option;
         } else if (CacheFile.empty()) {
@@ -154,7 +164,7 @@ void DoIndexing() {
     }
 
     UpdateProgress(0, 100, nullptr);
-    FFMS_Indexer *Indexer = FFMS_CreateIndexer(InputFile.c_str(), &E);
+    FFMS_Indexer *Indexer = FFMS_CreateIndexer2(InputFile.c_str(), EnableDrefs, UseAbsolutePaths, &E);
     if (Indexer == nullptr)
         throw Error("\nFailed to initialize indexing: ", E);
 

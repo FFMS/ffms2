@@ -62,9 +62,12 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
         CacheFile = DefaultCache.c_str();
     }
 
+    bool EnableDrefs = !!vsapi->mapGetInt(in, "enable_drefs", 0, &err);
+    bool UseAbsolutePaths = !!vsapi->mapGetInt(in, "use_absolute_paths", 0, &err);
+
     FFMS_Index *Index = FFMS_ReadIndex(CacheFile, &E);
     if (OverWrite || !Index || (Index && FFMS_IndexBelongsToFile(Index, Source, nullptr) != FFMS_ERROR_SUCCESS)) {
-        FFMS_Indexer *Indexer = FFMS_CreateIndexer(Source, &E);
+        FFMS_Indexer *Indexer = FFMS_CreateIndexer2(Source, EnableDrefs, UseAbsolutePaths, &E);
         if (!Indexer) {
             FFMS_DestroyIndex(Index);
             return vsapi->mapSetError(out, (std::string("Index: ") + E.Buffer).c_str());
@@ -133,8 +136,6 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
     int Format = vsapi->mapGetIntSaturated(in, "format", 0, &err);
 
     bool OutputAlpha = !!vsapi->mapGetInt(in, "alpha", 0, &err);
-    if (err)
-        OutputAlpha = false;
 
     if (FPSDen < 1)
         return vsapi->mapSetError(out, "Source: FPS denominator needs to be 1 or higher");
@@ -233,7 +234,7 @@ static void VS_CC GetVersion(const VSMap *, VSMap *out, void *, VSCore *, const 
 
 VS_EXTERNAL_API(void) VapourSynthPluginInit2(VSPlugin *plugin, const VSPLUGINAPI *vspapi) {
     vspapi->configPlugin("com.vapoursynth.ffms2", "ffms2", "FFmpegSource 2 for VapourSynth", FFMS_GetVersion(), VAPOURSYNTH_API_VERSION, 0, plugin);
-    vspapi->registerFunction("Index", "source:data;cachefile:data:opt;indextracks:int[]:opt;errorhandling:int:opt;overwrite:int:opt;", "result:data;", CreateIndex, nullptr, plugin);
+    vspapi->registerFunction("Index", "source:data;cachefile:data:opt;indextracks:int[]:opt;errorhandling:int:opt;overwrite:int:opt;enable_drefs:int:opt;use_absolute_paths:int:opt;", "result:data;", CreateIndex, nullptr, plugin);
     vspapi->registerFunction("Source", "source:data;track:int:opt;cache:int:opt;cachefile:data:opt;fpsnum:int:opt;fpsden:int:opt;threads:int:opt;timecodes:data:opt;seekmode:int:opt;width:int:opt;height:int:opt;resizer:data:opt;format:int:opt;alpha:int:opt;", "clip:vnode;", CreateSource, nullptr, plugin);
     vspapi->registerFunction("GetLogLevel", "", "level:int;", GetLogLevel, nullptr, plugin);
     vspapi->registerFunction("SetLogLevel", "level:int;", "level:int;", SetLogLevel, nullptr, plugin);
