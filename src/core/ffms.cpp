@@ -128,7 +128,16 @@ FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int 
 
 FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, int DelayMode, FFMS_ErrorInfo *ErrorInfo) {
     try {
-        return new FFMS_AudioSource(SourceFile, *Index, Track, DelayMode);
+        return new FFMS_AudioSource(SourceFile, *Index, Track, DelayMode, -1);
+    } catch (FFMS_Exception &e) {
+        e.CopyOut(ErrorInfo);
+        return nullptr;
+    }
+}
+
+FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource2(const char *SourceFile, int Track, FFMS_Index *Index, int DelayMode, int FillGaps, FFMS_ErrorInfo *ErrorInfo) {
+    try {
+        return new FFMS_AudioSource(SourceFile, *Index, Track, DelayMode, FillGaps);
     } catch (FFMS_Exception &e) {
         e.CopyOut(ErrorInfo);
         return nullptr;

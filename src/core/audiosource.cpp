@@ -53,9 +53,13 @@ namespace {
 #undef MAPPER
 }
 
-FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track, int DelayMode)
+FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track, int DelayMode, int FillGaps)
     : LastValidTS(AV_NOPTS_VALUE), SourceFile(SourceFile), ResampleContext{ swr_alloc() }, TrackNumber(Track) {
     try {
+        if (FillGaps < 1 || FillGaps > 1)
+            throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+                "Invalid gap fill mode");
+
         if (Track < 0 || Track >= static_cast<int>(Index.size()))
             throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
                 "Out of bounds track index selected");
@@ -79,6 +83,9 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
             throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
                 "Couldn't allocate frame");
         OpenFile();
+
+        if (FillGaps == 1 || (FillGaps == -1 && (!strcmp(FormatContext->iformat->name, "flv"))))
+            Frames.FillAudioGaps();
 
         if (Frames.back().PTS == Frames.front().PTS)
             SeekOffset = -1;

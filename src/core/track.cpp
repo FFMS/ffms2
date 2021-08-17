@@ -94,6 +94,7 @@ FFMS_Track::FFMS_Track(ZipFile &stream)
     MaxBFrames = stream.Read<int32_t>();
     UseDTS = !!stream.Read<uint8_t>();
     HasTS = !!stream.Read<uint8_t>();
+    HasDiscontTS = !!stream.Read<uint8_t>();
     size_t FrameCount = static_cast<size_t>(stream.Read<uint64_t>());
 
     if (!FrameCount) return;
@@ -116,6 +117,7 @@ void FFMS_Track::Write(ZipFile &stream) const {
     stream.Write<int32_t>(MaxBFrames);
     stream.Write<uint8_t>(UseDTS);
     stream.Write<uint8_t>(HasTS);
+    stream.Write<uint8_t>(HasDiscontTS);
     stream.Write<uint64_t>(size());
 
     if (empty()) return;
@@ -330,11 +332,6 @@ void FFMS_Track::FinalizeTrack() {
     // frame with PTS 0, which we don't want to sort to the beginning
     if (size() > 2 && front().PTS >= back().PTS)
         Frames.pop_back();
-
-    if (TT == FFMS_TYPE_AUDIO) {
-        FillAudioGaps();
-        return;
-    }
 
     if (TT != FFMS_TYPE_VIDEO)
         return;

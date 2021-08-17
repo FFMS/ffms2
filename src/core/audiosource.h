@@ -133,7 +133,7 @@ struct FFMS_AudioSource {
 
     void Free();
 public:
-    FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track, int DelayMode);
+    FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track, int DelayMode, int FillGaps);
     ~FFMS_AudioSource();
     FFMS_Track *GetTrack() { return &Frames; }
     const FFMS_AudioProperties& GetAudioProperties() const { return AP; }
