@@ -169,7 +169,7 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
             throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
                 "Could not allocate dummy frame.");
 
-        LAVFOpenFile(SourceFile, FormatContext, VideoTrack, Index.EnableDrefs, Index.UseAbsolutePaths);
+        LAVFOpenFile(SourceFile, FormatContext, VideoTrack, Index.EnableDrefs, Index.UseAbsolutePath);
 
         auto *Codec = avcodec_find_decoder(FormatContext->streams[VideoTrack]->codecpar->codec_id);
         if (Codec == nullptr)

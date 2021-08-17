@@ -63,7 +63,7 @@ struct FFMS_AudioSource {
 
     AVFormatContext *FormatContext = nullptr;
     bool EnableDrefs;
-    bool UseAbsolutePaths;
+    bool UseAbsolutePath;
     double DrcScale;
     int64_t LastValidTS;
     std::string SourceFile;

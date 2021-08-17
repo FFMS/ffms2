@@ -79,10 +79,10 @@ void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
         AP.ChannelLayout = av_get_default_channel_layout(AP.Channels);
 }
 
-void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext, int Track, bool EnableDrefs, bool UseAbsolutePaths) {
+void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext, int Track, bool EnableDrefs, bool UseAbsolutePath) {
     AVDictionary *Dict = nullptr;
     av_dict_set_int(&Dict, "enable_drefs", EnableDrefs, 0);
-    av_dict_set_int(&Dict, "use_absolute_paths", UseAbsolutePaths, 0);
+    av_dict_set_int(&Dict, "use_absolute_path", UseAbsolutePath, 0);
     av_dict_set_int(&Dict, "advanced_editlist", 0, 0);
 
     if (avformat_open_input(&FormatContext, SourceFile, nullptr, &Dict) != 0)

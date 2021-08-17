@@ -337,10 +337,10 @@ FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorIn
     }
 }
 
-FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer2(const char *SourceFile, int EnableDrefs, int UseAbsolutePaths, FFMS_ErrorInfo *ErrorInfo) {
+FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer2(const char *SourceFile, int EnableDrefs, int UseAbsolutePath, FFMS_ErrorInfo *ErrorInfo) {
     ClearErrorInfo(ErrorInfo);
     try {
-        return new FFMS_Indexer(SourceFile, !!EnableDrefs, !!UseAbsolutePaths);
+        return new FFMS_Indexer(SourceFile, !!EnableDrefs, !!UseAbsolutePath);
     } catch (FFMS_Exception &e) {
         e.CopyOut(ErrorInfo);
         return nullptr;

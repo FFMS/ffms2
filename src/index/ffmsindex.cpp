@@ -45,7 +45,7 @@ bool PrintProgress = true;
 bool WriteTC = false;
 bool WriteKF = false;
 bool EnableDrefs = false;
-bool UseAbsolutePaths = false;
+bool UseAbsolutePath = false;
 std::string InputFile;
 std::string CacheFile;
 
@@ -74,7 +74,7 @@ void PrintUsage() {
         "\n"
         "FFmpeg Demuxer Options:\n"
         "--enable_drefs\n"
-        "--use_absolute_paths\n"
+        "--use_absolute_path\n"
         << std::endl;
 }
 
@@ -99,8 +99,8 @@ void ParseCMDLine(int argc, const char *argv[]) {
             OPTION_ARG(IgnoreErrors, "s", std::stoi);
         } else if (!strcmp(Option, "--enable_drefs")) {
             EnableDrefs = true;
-        } else if (!strcmp(Option, "--use_absolute_paths")) {
-            UseAbsolutePaths = true;
+        } else if (!strcmp(Option, "--use_absolute_path")) {
+            UseAbsolutePath = true;
         } else if (InputFile.empty()) {
             InputFile = Option;
         } else if (CacheFile.empty()) {
@@ -164,7 +164,7 @@ void DoIndexing() {
     }
 
     UpdateProgress(0, 100, nullptr);
-    FFMS_Indexer *Indexer = FFMS_CreateIndexer2(InputFile.c_str(), EnableDrefs, UseAbsolutePaths, &E);
+    FFMS_Indexer *Indexer = FFMS_CreateIndexer2(InputFile.c_str(), EnableDrefs, UseAbsolutePath, &E);
     if (Indexer == nullptr)
         throw Error("\nFailed to initialize indexing: ", E);
 

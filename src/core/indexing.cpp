@@ -121,7 +121,7 @@ void FFMS_Index::WriteIndex(ZipFile &zf) {
     zf.Write<uint32_t>(size());
     zf.Write<uint32_t>(ErrorHandling);
     zf.Write<uint32_t>(EnableDrefs);
-    zf.Write<uint32_t>(UseAbsolutePaths);
+    zf.Write<uint32_t>(UseAbsolutePath);
     zf.Write<uint32_t>(avutil_version());
     zf.Write<uint32_t>(avformat_version());
     zf.Write<uint32_t>(avcodec_version());
@@ -166,7 +166,7 @@ void FFMS_Index::ReadIndex(ZipFile &zf, const char *IndexFile) {
     uint32_t Tracks = zf.Read<uint32_t>();
     ErrorHandling = zf.Read<uint32_t>();
     EnableDrefs = !!zf.Read<uint32_t>();
-    UseAbsolutePaths = !!zf.Read<uint32_t>();
+    UseAbsolutePath = !!zf.Read<uint32_t>();
 
     if (zf.Read<uint32_t>() != avutil_version() ||
         zf.Read<uint32_t>() != avformat_version() ||
@@ -241,12 +241,12 @@ void FFMS_Indexer::SetProgressCallback(TIndexCallback IC_, void *ICPrivate_) {
     ICPrivate = ICPrivate_;
 }
 
-FFMS_Indexer::FFMS_Indexer(const char *Filename, bool EnableDrefs, bool UseAbsolutePaths)
+FFMS_Indexer::FFMS_Indexer(const char *Filename, bool EnableDrefs, bool UseAbsolutePath)
     : SourceFile(Filename) {
     try {
         AVDictionary *Dict = nullptr;
         av_dict_set_int(&Dict, "enable_drefs", EnableDrefs, 0);
-        av_dict_set_int(&Dict, "use_absolute_paths", UseAbsolutePaths, 0);
+        av_dict_set_int(&Dict, "use_absolute_path", UseAbsolutePath, 0);
         av_dict_set_int(&Dict, "advanced_editlist", 0, 0);
 
         if (avformat_open_input(&FormatContext, Filename, nullptr, &Dict) != 0)

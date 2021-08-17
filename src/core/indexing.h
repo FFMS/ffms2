@@ -54,7 +54,7 @@ public:
     int64_t Filesize;
     uint8_t Digest[20];
     bool EnableDrefs;
-    bool UseAbsolutePaths;
+    bool UseAbsolutePath;
 
     void Finalize(std::vector<SharedAVContext> const& video_contexts, const char *Format);
     bool CompareFileSignature(const char *Filename);
@@ -88,7 +88,7 @@ private:
     void ParseVideoPacket(SharedAVContext &VideoContext, AVPacket *pkt, int *RepeatPict, int *FrameType, bool *Invisible, enum AVPictureStructure *LastPicStruct);
     void Free();
 public:
-    FFMS_Indexer(const char *Filename, bool EnableDrefs, bool UseAbsolutePaths);
+    FFMS_Indexer(const char *Filename, bool EnableDrefs, bool UseAbsolutePath);
     ~FFMS_Indexer();
 
     void SetIndexTrack(int Track, bool Index);

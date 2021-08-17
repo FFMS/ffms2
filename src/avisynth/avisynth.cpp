@@ -41,7 +41,7 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
     int ErrorHandling = Args[3].AsInt(FFMS_IEH_IGNORE);
     bool OverWrite = Args[4].AsBool(false);
     bool EnableDrefs = Args[5].AsBool(false);
-    bool UseAbsolutePaths = Args[6].AsBool(false);
+    bool UseAbsolutePath = Args[6].AsBool(false);
 
     std::string DefaultCache(Source);
     DefaultCache.append(".ffindex");
@@ -51,7 +51,7 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
     ErrorInfo E;
     FFMS_Index *Index = FFMS_ReadIndex(CacheFile, &E);
     if (OverWrite || !Index || (Index && FFMS_IndexBelongsToFile(Index, Source, 0) != FFMS_ERROR_SUCCESS)) {
-        FFMS_Indexer *Indexer = FFMS_CreateIndexer2(Source, EnableDrefs, UseAbsolutePaths, &E);
+        FFMS_Indexer *Indexer = FFMS_CreateIndexer2(Source, EnableDrefs, UseAbsolutePath, &E);
         if (!Indexer)
             Env->ThrowError("FFIndex: %s", E.Buffer);
 
@@ -288,7 +288,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 }
 
 static AVSValue __cdecl CreateFFmpegSource2(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
-    const char *FFIArgNames[] = { "source", "cachefile", "indexmask", "overwrite", "enable_drefs", "use_absolute_paths"};
+    const char *FFIArgNames[] = { "source", "cachefile", "indexmask", "overwrite", "enable_drefs", "use_absolute_path"};
     const char *FFVArgNames[] = { "source", "track", "cache", "cachefile", "fpsnum", "fpsden", "threads", "timecodes", "seekmode", "rffmode", "width", "height", "resizer", "colorspace", "varprefix" };
     const char *FFAArgNames[] = { "source", "track", "cache", "cachefile", "adjustdelay", "varprefix" };
 
@@ -349,12 +349,12 @@ const AVS_Linkage *AVS_linkage = nullptr;
 extern "C" AVS_EXPORT const char* __stdcall AvisynthPluginInit3(IScriptEnvironment* Env, const AVS_Linkage* const vectors) {
     AVS_linkage = vectors;
 
-    Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[errorhandling]i[overwrite]b[enable_drefs]b[use_absolute_paths]b", CreateFFIndex, nullptr);
+    Env->AddFunction("FFIndex", "[source]s[cachefile]s[indexmask]i[errorhandling]i[overwrite]b[enable_drefs]b[use_absolute_path]b", CreateFFIndex, nullptr);
     Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[varprefix]s", CreateFFVideoSource, nullptr);
     Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[fill_gaps]i[drc_scale]f[varprefix]s", CreateFFAudioSource, nullptr);
 
-    Env->AddFunction("FFmpegSource2", "[source]s[vtrack]i[atrack]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[overwrite]b[width]i[height]i[resizer]s[colorspace]s[rffmode]i[adjustdelay]i[enable_drefs]b[use_absolute_paths]b[varprefix]s", CreateFFmpegSource2, nullptr);
-    Env->AddFunction("FFMS2", "[source]s[vtrack]i[atrack]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[overwrite]b[width]i[height]i[resizer]s[colorspace]s[rffmode]i[adjustdelay]i[enable_drefs]b[use_absolute_paths]b[varprefix]s", CreateFFmpegSource2, nullptr);
+    Env->AddFunction("FFmpegSource2", "[source]s[vtrack]i[atrack]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[overwrite]b[width]i[height]i[resizer]s[colorspace]s[rffmode]i[adjustdelay]i[enable_drefs]b[use_absolute_path]b[varprefix]s", CreateFFmpegSource2, nullptr);
+    Env->AddFunction("FFMS2", "[source]s[vtrack]i[atrack]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[overwrite]b[width]i[height]i[resizer]s[colorspace]s[rffmode]i[adjustdelay]i[enable_drefs]b[use_absolute_path]b[varprefix]s", CreateFFmpegSource2, nullptr);
 
     Env->AddFunction("FFImageSource", "[source]s[width]i[height]i[resizer]s[colorspace]s[varprefix]s", CreateFFImageSource, nullptr);
     Env->AddFunction("FFCopyrightInfringement", "[source]s", CreateFFCopyrightInfringement, nullptr);
