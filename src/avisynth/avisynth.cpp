@@ -290,7 +290,7 @@ static AVSValue __cdecl CreateFFAudioSource(AVSValue Args, void* UserData, IScri
 static AVSValue __cdecl CreateFFmpegSource2(AVSValue Args, void* UserData, IScriptEnvironment* Env) {
     const char *FFIArgNames[] = { "source", "cachefile", "indexmask", "overwrite", "enable_drefs", "use_absolute_path"};
     const char *FFVArgNames[] = { "source", "track", "cache", "cachefile", "fpsnum", "fpsden", "threads", "timecodes", "seekmode", "rffmode", "width", "height", "resizer", "colorspace", "varprefix" };
-    const char *FFAArgNames[] = { "source", "track", "cache", "cachefile", "adjustdelay", "varprefix" };
+    const char *FFAArgNames[] = { "source", "track", "cache", "cachefile", "adjustdelay", "fill_gaps", "drc_scale", "varprefix"};
 
     bool Cache = Args[3].AsBool(true);
     bool WithAudio = Args[2].AsInt(-2) > -2;
@@ -300,13 +300,13 @@ static AVSValue __cdecl CreateFFmpegSource2(AVSValue Args, void* UserData, IScri
         Env->Invoke("FFIndex", AVSValue(FFIArgs, sizeof(FFIArgs) / sizeof(FFIArgs[0])), FFIArgNames);
     }
 
-    AVSValue FFVArgs[] = { Args[0], Args[1], Args[3], Args[4], Args[5], Args[6], Args[7], Args[8], Args[9], Args[15], Args[11], Args[12], Args[13], Args[14], Args[19] };
+    AVSValue FFVArgs[] = { Args[0], Args[1], Args[3], Args[4], Args[5], Args[6], Args[7], Args[8], Args[9], Args[15], Args[11], Args[12], Args[13], Args[14], Args[21] };
     static_assert((sizeof(FFVArgs) / sizeof(FFVArgs[0])) == (sizeof(FFVArgNames) / sizeof(FFVArgNames[0])), "Arg error");
     AVSValue Video = Env->Invoke("FFVideoSource", AVSValue(FFVArgs, sizeof(FFVArgs) / sizeof(FFVArgs[0])), FFVArgNames);
 
     AVSValue Audio;
     if (WithAudio) {
-        AVSValue FFAArgs[] = { Args[0], Args[2], Args[3], Args[4], Args[16], Args[19] };
+        AVSValue FFAArgs[] = { Args[0], Args[2], Args[3], Args[4], Args[16], Args[19], Args[20], Args[21] };
         static_assert((sizeof(FFAArgs) / sizeof(FFAArgs[0])) == (sizeof(FFAArgNames) / sizeof(FFAArgNames[0])), "Arg error");
         Audio = Env->Invoke("FFAudioSource", AVSValue(FFAArgs, sizeof(FFAArgs) / sizeof(FFAArgs[0])), FFAArgNames);
         AVSValue ADArgs[] = { Video, Audio };
@@ -353,8 +353,8 @@ extern "C" AVS_EXPORT const char* __stdcall AvisynthPluginInit3(IScriptEnvironme
     Env->AddFunction("FFVideoSource", "[source]s[track]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[rffmode]i[width]i[height]i[resizer]s[colorspace]s[varprefix]s", CreateFFVideoSource, nullptr);
     Env->AddFunction("FFAudioSource", "[source]s[track]i[cache]b[cachefile]s[adjustdelay]i[fill_gaps]i[drc_scale]f[varprefix]s", CreateFFAudioSource, nullptr);
 
-    Env->AddFunction("FFmpegSource2", "[source]s[vtrack]i[atrack]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[overwrite]b[width]i[height]i[resizer]s[colorspace]s[rffmode]i[adjustdelay]i[enable_drefs]b[use_absolute_path]b[varprefix]s", CreateFFmpegSource2, nullptr);
-    Env->AddFunction("FFMS2", "[source]s[vtrack]i[atrack]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[overwrite]b[width]i[height]i[resizer]s[colorspace]s[rffmode]i[adjustdelay]i[enable_drefs]b[use_absolute_path]b[varprefix]s", CreateFFmpegSource2, nullptr);
+    Env->AddFunction("FFmpegSource2", "[source]s[vtrack]i[atrack]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[overwrite]b[width]i[height]i[resizer]s[colorspace]s[rffmode]i[adjustdelay]i[enable_drefs]b[use_absolute_path]b[fill_gaps]i[drc_scale]f[varprefix]s", CreateFFmpegSource2, nullptr);
+    Env->AddFunction("FFMS2", "[source]s[vtrack]i[atrack]i[cache]b[cachefile]s[fpsnum]i[fpsden]i[threads]i[timecodes]s[seekmode]i[overwrite]b[width]i[height]i[resizer]s[colorspace]s[rffmode]i[adjustdelay]i[enable_drefs]b[use_absolute_path]b[fill_gaps]i[drc_scale]f[varprefix]s", CreateFFmpegSource2, nullptr);
 
     Env->AddFunction("FFImageSource", "[source]s[width]i[height]i[resizer]s[colorspace]s[varprefix]s", CreateFFImageSource, nullptr);
     Env->AddFunction("FFCopyrightInfringement", "[source]s", CreateFFCopyrightInfringement, nullptr);
