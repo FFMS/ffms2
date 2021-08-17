@@ -1,4 +1,12 @@
 # FFmpegSource2 Changelog
+- 2.3000
+  - Added support for VapourSynth API4 (Myrsloik)
+  - Added basic Avisynth+ frame property support (Myrsloik)
+  - Added Rotation and Flip properties for VapourSynth (Myrsloik)
+  - Added long path support for ffmsindex in windows (Myrsloik)
+  - The audio gap fill logic is now optional and usually disabled by default (Myrsloik)
+  - Allow the drc_scale option to be set when decoding audio (Myrsloik)
+  - Allow the enable_drefs and use_absolute_path demuxer options to be used when indexing (Myrsloik)
 
 - 2.40
   - Avisynth+ linux support (qyot27)

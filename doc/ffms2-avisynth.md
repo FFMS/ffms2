@@ -65,7 +65,7 @@ If you want a progress report on the indexing, you can use the supplied `ffmsind
 ### FFIndex
 ```
 FFIndex(string source, string cachefile = source + ".ffindex", int indexmask = -1,
-    int errorhandling = 3, bool overwrite = false)
+    int errorhandling = 3, bool overwrite = false, bool enable_drefs = false, bool use_absolute_path = false)
 ```
 Indexes a number of tracks in a given source file and writes the index file to disk, where it can be picked up and used by `FFVideoSource` or `FFAudioSource`.
 Normally you do not need to call this function manually; it's invoked automatically if necessary by `FFVideoSource`/`FFAudioSource`.
@@ -105,6 +105,12 @@ Possible values are:
 ##### bool overwrite = false
 If set to true, `FFIndex()` will reindex the source file and overwrite the index file even if the index file already exists and is valid.
 Mostly useful for trackmask changes and testing.
+
+##### bint enable_drefs = False
+Corresponds to the FFmpeg demuxer option of the same name. You will know if you need it.
+
+##### bint use_absolute_path = False
+Corresponds to the FFmpeg demuxer option of the same name. You will know if you need it.
 
 ### FFVideoSource
 ```
@@ -208,13 +214,14 @@ For convenience the last used FFMS function in a script sets the global variable
 ```
 FFAudioSource(string source, int track = -1, bool cache = true,
     string cachefile = source + ".ffindex", int adjustdelay = -1,
+    int fillgaps = -1, float drc_scale = 0,
 string varprefix = "")
 ```
 Opens audio.
 Invokes indexing of all tracks if no valid index file is found, or if the requested track isn't present in the index.
 
 #### Arguments
-Are exactly the same as to `FFVideoSource`, with one exception:
+Are exactly the same as to `FFVideoSource`, but with these additional options:
 
 ##### int adjustdelay = -1
 Controls how audio delay is handled, i.e. what happens if the first audio sample in the file doesn't have a timestamp of zero.
@@ -229,6 +236,15 @@ The following arguments are valid:
 -2 obviously does the same thing as -1 if the first video frame of the first video track starts at time zero.
 In some containers this will always be the case, in others (most notably 188-byte MPEG TS) it will almost never happen.
 
+##### int fillgaps = -1
+Determines how audio with discontinuous timestamps are handled. 
+ - **-1**: Apply zero filled gaps to audio in containers where it's usually necessary.
+ - **0**: Never zero fill gaps.
+ - **1**: Always zero fill gaps.
+ 
+##### float drc_scale = 0
+Controls the amount of DRC that's applied to (E)AC-3 audio. 0 means no DRC and 1 means fully applied DRC in accordance with how it's flagged in the stream.
+ 
 ### FFmpegSource2/FFMS2
 ```
 FFmpegSource2/FFMS2(string source, int vtrack = -1, int atrack = -2, bool cache = true,
