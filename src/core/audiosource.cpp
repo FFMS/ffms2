@@ -56,7 +56,7 @@ namespace {
 FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, int Track, int DelayMode, int FillGaps, double DrcScale)
     : LastValidTS(AV_NOPTS_VALUE), SourceFile(SourceFile), ResampleContext{ swr_alloc() }, TrackNumber(Track), DrcScale(DrcScale) {
     try {
-        if (FillGaps < 1 || FillGaps > 1)
+        if (FillGaps < -1 || FillGaps > 1)
             throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
                 "Invalid gap fill mode");
 
