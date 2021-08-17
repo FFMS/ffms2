@@ -70,6 +70,15 @@ void FFMS_Index::CalculateFileSignature(const char *Filename, int64_t *Filesize,
 void FFMS_Index::Finalize(std::vector<SharedAVContext> const& video_contexts, const char *Format) {
     for (size_t i = 0, end = size(); i != end; ++i) {
         FFMS_Track& track = (*this)[i];
+
+        // Some audio tracks are simply insane junk (seen with als) and will have a single(?) super long packet and
+        // apart from that look legit and be chosen instead of usable audio. This hopefully rejects some of it.
+        // Caused by sample in https://github.com/FFMS/ffms2/issues/351
+        if (track.TT == FFMS_TYPE_AUDIO) {
+            if (track.size() <= 10 && track.size() > 0 && track[0].SampleCount > 1000000)
+                track.clear();
+        }
+
         // H.264 PAFF needs to have some frames hidden
         //
         // Don't send any WMV/ASF files, since they (as far as we know) cannot contain PAFF,
