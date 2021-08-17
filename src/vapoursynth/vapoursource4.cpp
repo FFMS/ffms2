@@ -199,6 +199,10 @@ const VSFrame *VS_CC VSVideoSource4::GetVSFrame(int n, VSCore *core, const VSAPI
         vsapi->mapConsumeFrame(Props, "_Alpha", AlphaDst, maReplace);
     }
 
+    const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
+    vsapi->mapSetInt(Props, "Flip", VP->Flip, maReplace);
+    vsapi->mapSetInt(Props, "Rotation", VP->Rotation, maReplace);
+
     return Dst;
 }
 

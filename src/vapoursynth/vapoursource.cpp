@@ -204,6 +204,10 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
             vsapi->propSetFloat(Props, "ContentLightLevelAverage", Frame->ContentLightLevelAverage, paReplace);
         }
 
+        const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(vs->V);
+        vsapi->propSetInt(Props, "Flip", VP->Flip, paReplace);
+        vsapi->propSetInt(Props, "Rotation", VP->Rotation, paReplace);
+
         if (OutputIndex == 0)
             OutputFrame(Frame, Dst, vsapi);
         else
