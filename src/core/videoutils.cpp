@@ -248,21 +248,6 @@ void ParseVP8(const uint8_t Buf, bool *Invisible, int *PictType) {
     *Invisible = (*Invisible || !(Buf & 0x10));
 }
 
-#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, <, 58, 6, 102)
-void ParseVP9(const uint8_t Buf, bool *Invisible, int *PictType)
-{
-    int profile = ((Buf & 0x20) >> 5) | ((Buf & 0x10) >> 3);
-    int shift = (profile == 3);
-
-    if (Buf & (0x8 >> shift)) {
-        *Invisible = false;
-        *PictType = AV_PICTURE_TYPE_P;
-    } else {
-        *PictType = (Buf & (0x4 >> shift)) ? AV_PICTURE_TYPE_P : AV_PICTURE_TYPE_I;
-        *Invisible = !(Buf & (0x2 >> shift));
-    }
-}
-#else
 void ParseVP9(const uint8_t Buf, bool *Invisible, int *PictType)
 {
     int profile = ((Buf & 0x20) >> 5) | ((Buf & 0x10) >> 3);
@@ -273,4 +258,3 @@ void ParseVP9(const uint8_t Buf, bool *Invisible, int *PictType)
     else
         *PictType = (Buf & (0x4 >> shift)) ? AV_PICTURE_TYPE_P : AV_PICTURE_TYPE_I;
 }
-#endif
