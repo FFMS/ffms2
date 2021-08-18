@@ -21,12 +21,6 @@
 #ifndef FFMSCOMPAT_H
 #define	FFMSCOMPAT_H
 
-#ifdef __GNUC__
-#	define ffms_used __attribute__((used))
-#else
-#	define ffms_used
-#endif
-
 #define VERSION_CHECK(LIB, cmp, major, minor, micro) ((LIB) cmp (AV_VERSION_INT(major, minor, micro)))
 
 #endif // FFMSCOMPAT_H

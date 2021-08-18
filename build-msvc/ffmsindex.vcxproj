@@ -74,25 +74,29 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)ffmsindex\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>../include;$(IncludePath)</IncludePath>
+    <IncludePath>../include;../../AviSynthPlus/avs_core/include;../../ffmpeg32/include;../../zlib32;$(IncludePath)</IncludePath>
+    <LibraryPath>../../ffmpeg32/lib;../../zlib32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)ffmsindex\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>../include;$(IncludePath)</IncludePath>
+    <IncludePath>../include;../../AviSynthPlus/avs_core/include;../../ffmpeg64/include;../../zlib64;$(IncludePath)</IncludePath>
+    <LibraryPath>../../ffmpeg64/lib;../../zlib64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)ffmsindex\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>../include;$(IncludePath)</IncludePath>
+    <IncludePath>../include;../../AviSynthPlus/avs_core/include;../../ffmpeg32/include;../../zlib32;$(IncludePath)</IncludePath>
+    <LibraryPath>../../ffmpeg32/lib;../../zlib32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)ffmsindex\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>../include;$(IncludePath)</IncludePath>
+    <IncludePath>../include;../../AviSynthPlus/avs_core/include;../../ffmpeg64/include;../../zlib64;$(IncludePath)</IncludePath>
+    <LibraryPath>../../ffmpeg64/lib;../../zlib64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -105,6 +109,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>libavutil.a;libavcodec.a;libavformat.a;libswscale.a;libswresample.a;zlib.lib;ws2_32.lib;secur32.lib;bcrypt.lib;Mfplat.lib;Mfuuid.lib;Strmiids.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -118,6 +123,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>libavutil.a;libavcodec.a;libavformat.a;libswscale.a;libswresample.a;zlib.lib;ws2_32.lib;secur32.lib;bcrypt.lib;Mfplat.lib;Mfuuid.lib;Strmiids.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -135,6 +141,7 @@
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>libavutil.a;libavcodec.a;libavformat.a;libswscale.a;libswresample.a;zlib.lib;ws2_32.lib;secur32.lib;bcrypt.lib;Mfplat.lib;Mfuuid.lib;Strmiids.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -152,6 +159,7 @@
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>libavutil.a;libavcodec.a;libavformat.a;libswscale.a;libswresample.a;zlib.lib;ws2_32.lib;secur32.lib;bcrypt.lib;Mfplat.lib;Mfuuid.lib;Strmiids.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
