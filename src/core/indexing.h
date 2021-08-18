@@ -53,8 +53,7 @@ public:
     int ErrorHandling;
     int64_t Filesize;
     uint8_t Digest[20];
-    bool EnableDrefs;
-    bool UseAbsolutePath;
+    std::map<std::string, std::string> LAVFOpts;
 
     void Finalize(std::vector<SharedAVContext> const& video_contexts, const char *Format);
     bool CompareFileSignature(const char *Filename);
@@ -63,7 +62,7 @@ public:
 
     FFMS_Index(const char *IndexFile);
     FFMS_Index(const uint8_t *Buffer, size_t Size);
-    FFMS_Index(int64_t Filesize, uint8_t Digest[20], int ErrorHandling);
+    FFMS_Index(int64_t Filesize, uint8_t Digest[20], int ErrorHandling, const std::map<std::string, std::string> &LAVFOpts);
 };
 
 struct FFMS_Indexer {
@@ -73,6 +72,7 @@ private:
     FFMS_Indexer& operator=(FFMS_Indexer const&) = delete;
     AVFormatContext *FormatContext = nullptr;
     std::set<int> IndexMask;
+    std::map<std::string, std::string> LAVFOpts;
     int ErrorHandling = FFMS_IEH_CLEAR_TRACK;
     TIndexCallback IC = nullptr;
     void *ICPrivate = nullptr;
@@ -88,7 +88,7 @@ private:
     void ParseVideoPacket(SharedAVContext &VideoContext, AVPacket *pkt, int *RepeatPict, int *FrameType, bool *Invisible, enum AVPictureStructure *LastPicStruct);
     void Free();
 public:
-    FFMS_Indexer(const char *Filename, bool EnableDrefs, bool UseAbsolutePath);
+    FFMS_Indexer(const char *Filename, const FFMS_KeyValuePair *DemuxerOptions, int NumOptions);
     ~FFMS_Indexer();
 
     void SetIndexTrack(int Track, bool Index);

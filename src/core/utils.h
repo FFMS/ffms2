@@ -39,6 +39,7 @@ extern "C" {
 #include <memory>
 #include <string>
 #include <vector>
+#include <map>
 
 class FFMS_Exception {
     std::string _Message;
@@ -60,7 +61,7 @@ std::unique_ptr<T> make_unique(Args&&... args) {
 void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo);
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);
 
-void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext, int Track, bool EnableDrefs, bool UseAbsolutePath);
+void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext, int Track, const std::map<std::string, std::string> &LAVFOpts);
 
 namespace optdetail {
     template<typename T>

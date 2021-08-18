@@ -164,7 +164,10 @@ void DoIndexing() {
     }
 
     UpdateProgress(0, 100, nullptr);
-    FFMS_Indexer *Indexer = FFMS_CreateIndexer2(InputFile.c_str(), EnableDrefs, UseAbsolutePath, &E);
+
+    FFMS_KeyValuePair LAVFOpts[] = {{ "enable_drefs", EnableDrefs ? "1" : "0" }, { "use_absolute_path", UseAbsolutePath ? "1" : "0" }};
+
+    FFMS_Indexer *Indexer = FFMS_CreateIndexer2(InputFile.c_str(), LAVFOpts, 2, &E);
     if (Indexer == nullptr)
         throw Error("\nFailed to initialize indexing: ", E);
 

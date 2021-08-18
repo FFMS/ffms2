@@ -330,17 +330,17 @@ FFMS_API(int) FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, FFMS_
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo) {
     ClearErrorInfo(ErrorInfo);
     try {
-        return new FFMS_Indexer(SourceFile, false, false);
+        return new FFMS_Indexer(SourceFile, nullptr, 0);
     } catch (FFMS_Exception &e) {
         e.CopyOut(ErrorInfo);
         return nullptr;
     }
 }
 
-FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer2(const char *SourceFile, int EnableDrefs, int UseAbsolutePath, FFMS_ErrorInfo *ErrorInfo) {
+FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer2(const char *SourceFile, const FFMS_KeyValuePair *DemuxerOptions, int NumOptions, FFMS_ErrorInfo *ErrorInfo) {
     ClearErrorInfo(ErrorInfo);
     try {
-        return new FFMS_Indexer(SourceFile, !!EnableDrefs, !!UseAbsolutePath);
+        return new FFMS_Indexer(SourceFile, DemuxerOptions, NumOptions);
     } catch (FFMS_Exception &e) {
         e.CopyOut(ErrorInfo);
         return nullptr;

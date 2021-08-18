@@ -76,9 +76,8 @@ FFMS_AudioSource::FFMS_AudioSource(const char *SourceFile, FFMS_Index &Index, in
             throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_FILE_MISMATCH,
                 "The index does not match the source file");
 
-        EnableDrefs = Index.EnableDrefs;
-        UseAbsolutePath = Index.UseAbsolutePath;
         Frames = Index[Track];
+        LAVFOpts = Index.LAVFOpts;
 
         DecodeFrame = av_frame_alloc();
         if (!DecodeFrame)
@@ -476,7 +475,7 @@ void FFMS_AudioSource::OpenFile() {
     avcodec_free_context(&CodecContext);
     avformat_close_input(&FormatContext);
 
-    LAVFOpenFile(SourceFile.c_str(), FormatContext, TrackNumber, EnableDrefs, UseAbsolutePath);
+    LAVFOpenFile(SourceFile.c_str(), FormatContext, TrackNumber, LAVFOpts);
 
     auto *Codec = avcodec_find_decoder(FormatContext->streams[TrackNumber]->codecpar->codec_id);
     if (Codec == nullptr)

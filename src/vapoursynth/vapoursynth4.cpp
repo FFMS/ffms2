@@ -67,7 +67,8 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
 
     FFMS_Index *Index = FFMS_ReadIndex(CacheFile, &E);
     if (OverWrite || !Index || (Index && FFMS_IndexBelongsToFile(Index, Source, nullptr) != FFMS_ERROR_SUCCESS)) {
-        FFMS_Indexer *Indexer = FFMS_CreateIndexer2(Source, EnableDrefs, UseAbsolutePath, &E);
+        FFMS_KeyValuePair LAVFOpts[] = {{ "enable_drefs", EnableDrefs ? "1" : "0" }, { "use_absolute_path", UseAbsolutePath ? "1" : "0" }};
+        FFMS_Indexer *Indexer = FFMS_CreateIndexer2(Source, LAVFOpts, 2, &E);
         if (!Indexer) {
             FFMS_DestroyIndex(Index);
             return vsapi->mapSetError(out, (std::string("Index: ") + E.Buffer).c_str());

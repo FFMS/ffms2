@@ -35,7 +35,7 @@ extern "C" {
 }
 
 #define INDEXID 0x53920873
-#define INDEX_VERSION 6
+#define INDEX_VERSION 7
 
 SharedAVContext::~SharedAVContext() {
     avcodec_free_context(&CodecContext);
@@ -120,14 +120,20 @@ void FFMS_Index::WriteIndex(ZipFile &zf) {
     zf.Write<uint16_t>(INDEX_VERSION);
     zf.Write<uint32_t>(size());
     zf.Write<uint32_t>(ErrorHandling);
-    zf.Write<uint32_t>(EnableDrefs);
-    zf.Write<uint32_t>(UseAbsolutePath);
     zf.Write<uint32_t>(avutil_version());
     zf.Write<uint32_t>(avformat_version());
     zf.Write<uint32_t>(avcodec_version());
     zf.Write<uint32_t>(swscale_version());
     zf.Write<int64_t>(Filesize);
     zf.Write(Digest);
+
+    zf.Write<uint32_t>(LAVFOpts.size());
+    for (const auto &iter : LAVFOpts) {
+        zf.Write<uint32_t>(iter.first.length());
+        zf.Write(iter.first.data(), iter.first.length());
+        zf.Write<uint32_t>(iter.second.length());
+        zf.Write(iter.second.data(), iter.second.length());
+    }
 
     for (size_t i = 0; i < size(); ++i)
         at(i).Write(zf);
@@ -165,8 +171,6 @@ void FFMS_Index::ReadIndex(ZipFile &zf, const char *IndexFile) {
 
     uint32_t Tracks = zf.Read<uint32_t>();
     ErrorHandling = zf.Read<uint32_t>();
-    EnableDrefs = !!zf.Read<uint32_t>();
-    UseAbsolutePath = !!zf.Read<uint32_t>();
 
     if (zf.Read<uint32_t>() != avutil_version() ||
         zf.Read<uint32_t>() != avformat_version() ||
@@ -177,6 +181,21 @@ void FFMS_Index::ReadIndex(ZipFile &zf, const char *IndexFile) {
 
     Filesize = zf.Read<int64_t>();
     zf.Read(Digest, sizeof(Digest));
+
+    uint32_t NumOptions = zf.Read<uint32_t>();
+    std::vector<char> KeyBuffer;
+    std::vector<char> ValueBuffer;
+    for (uint32_t i = 0; i < NumOptions; i++) {
+        uint32_t KeyLength = zf.Read<uint32_t>();
+        KeyBuffer.resize(KeyLength);
+        zf.Read(KeyBuffer.data(), KeyLength);
+
+        uint32_t ValueLength = zf.Read<uint32_t>();
+        ValueBuffer.resize(ValueLength);
+        zf.Read(ValueBuffer.data(), ValueLength);
+
+        LAVFOpts[std::string(KeyBuffer.data(), KeyLength)] = std::string(ValueBuffer.data(), ValueLength);
+    }
 
     reserve(Tracks);
     try {
@@ -202,9 +221,9 @@ FFMS_Index::FFMS_Index(const uint8_t *Buffer, size_t Size) {
     ReadIndex(zf, "User supplied buffer");
 }
 
-FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20], int ErrorHandling)
+FFMS_Index::FFMS_Index(int64_t Filesize, uint8_t Digest[20], int ErrorHandling, const std::map<std::string, std::string> &LAVFOpts)
     : ErrorHandling(ErrorHandling)
-    , Filesize(Filesize) {
+    , Filesize(Filesize), LAVFOpts(LAVFOpts) {
     memcpy(this->Digest, Digest, sizeof(this->Digest));
 }
 
@@ -241,13 +260,17 @@ void FFMS_Indexer::SetProgressCallback(TIndexCallback IC_, void *ICPrivate_) {
     ICPrivate = ICPrivate_;
 }
 
-FFMS_Indexer::FFMS_Indexer(const char *Filename, bool EnableDrefs, bool UseAbsolutePath)
+FFMS_Indexer::FFMS_Indexer(const char *Filename, const FFMS_KeyValuePair *DemuxerOptions, int NumOptions)
     : SourceFile(Filename) {
     try {
         AVDictionary *Dict = nullptr;
-        av_dict_set_int(&Dict, "enable_drefs", EnableDrefs, 0);
-        av_dict_set_int(&Dict, "use_absolute_path", UseAbsolutePath, 0);
-        av_dict_set_int(&Dict, "advanced_editlist", 0, 0);
+        for (int i = 0; i < NumOptions; i++) {
+            if (!DemuxerOptions[i].Key && !DemuxerOptions[i].Value)
+                throw FFMS_Exception(FFMS_ERROR_INDEX, FFMS_ERROR_INVALID_ARGUMENT,
+                    "Demuxer key-value pairs can't have NULL strings");
+            LAVFOpts[DemuxerOptions[i].Key] = DemuxerOptions[i].Value;
+            av_dict_set(&Dict, DemuxerOptions[i].Key, DemuxerOptions[i].Value, 0);
+        }
 
         if (avformat_open_input(&FormatContext, Filename, nullptr, &Dict) != 0)
             throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_FILE_READ,
@@ -407,7 +430,7 @@ const char *FFMS_Indexer::GetTrackCodec(int Track) {
 FFMS_Index *FFMS_Indexer::DoIndexing() {
     std::vector<SharedAVContext> AVContexts(FormatContext->nb_streams);
 
-    auto TrackIndices = make_unique<FFMS_Index>(Filesize, Digest, ErrorHandling);
+    auto TrackIndices = std::unique_ptr<FFMS_Index>(new FFMS_Index(Filesize, Digest, ErrorHandling, LAVFOpts));
     bool UseDTS = !strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts") || !strcmp(FormatContext->iformat->name, "mpegtsraw") || !strcmp(FormatContext->iformat->name, "nuv");
 
     for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {

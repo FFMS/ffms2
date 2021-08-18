@@ -403,6 +403,11 @@ typedef struct FFMS_AudioProperties {
     double LastEndTime;
 } FFMS_AudioProperties;
 
+typedef struct FFMS_KeyValuePair {
+    const char *Key;
+    const char *Value;
+} FFMS_KeyValuePair;
+
 typedef int (FFMS_CC *TIndexCallback)(int64_t Current, int64_t Total, void *ICPrivate);
 
 /* Most functions return 0 on success */
@@ -447,7 +452,7 @@ FFMS_API(FFMS_Track *) FFMS_GetTrackFromAudio(FFMS_AudioSource *A);
 FFMS_API(const FFMS_TrackTimeBase *) FFMS_GetTimeBase(FFMS_Track *T);
 FFMS_API(int) FFMS_WriteTimecodes(FFMS_Track *T, const char *TimecodeFile, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer(const char *SourceFile, FFMS_ErrorInfo *ErrorInfo);
-FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer2(const char *SourceFile, int EnableDrefs, int UseAbsolutePath, FFMS_ErrorInfo *ErrorInfo);
+FFMS_API(FFMS_Indexer *) FFMS_CreateIndexer2(const char *SourceFile, const FFMS_KeyValuePair *DemuxerOptions, int NumOptions, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(void) FFMS_TrackIndexSettings(FFMS_Indexer *Indexer, int Track, int Index, int); /* Pass 0 to last argument, kapt to preserve abi. Introduced in FFMS_VERSION ((2 << 24) | (21 << 16) | (0 << 8) | 0) */
 FFMS_API(void) FFMS_TrackTypeIndexSettings(FFMS_Indexer *Indexer, int TrackType, int Index, int); /* Pass 0 to last argument, kapt to preserve abi. Introduced in FFMS_VERSION ((2 << 24) | (21 << 16) | (0 << 8) | 0) */
 FFMS_API(void) FFMS_SetProgressCallback(FFMS_Indexer *Indexer, TIndexCallback IC, void *ICPrivate); /* Introduced in FFMS_VERSION ((2 << 24) | (21 << 16) | (0 << 8) | 0) */

@@ -62,8 +62,7 @@ struct FFMS_AudioSource {
     typedef std::list<AudioBlock>::iterator CacheIterator;
 
     AVFormatContext *FormatContext = nullptr;
-    bool EnableDrefs;
-    bool UseAbsolutePath;
+    std::map<std::string, std::string> LAVFOpts;
     double DrcScale;
     int64_t LastValidTS;
     std::string SourceFile;

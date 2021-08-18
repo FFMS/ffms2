@@ -51,7 +51,8 @@ static AVSValue __cdecl CreateFFIndex(AVSValue Args, void* UserData, IScriptEnvi
     ErrorInfo E;
     FFMS_Index *Index = FFMS_ReadIndex(CacheFile, &E);
     if (OverWrite || !Index || (Index && FFMS_IndexBelongsToFile(Index, Source, 0) != FFMS_ERROR_SUCCESS)) {
-        FFMS_Indexer *Indexer = FFMS_CreateIndexer2(Source, EnableDrefs, UseAbsolutePath, &E);
+        FFMS_KeyValuePair LAVFOpts[] = {{ "enable_drefs", EnableDrefs ? "1" : "0" }, { "use_absolute_path", UseAbsolutePath ? "1" : "0" }};
+        FFMS_Indexer *Indexer = FFMS_CreateIndexer2(Source, LAVFOpts, 2, &E);
         if (!Indexer)
             Env->ThrowError("FFIndex: %s", E.Buffer);
 
