@@ -34,10 +34,7 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
-
-extern "C" {
-#include <libavutil/time.h>
-}
+#include <chrono>
 
 namespace {
 
@@ -87,6 +84,12 @@ void PrintUsage() {
         "--enable_drefs\n"
         "--use_absolute_path\n"
         << std::endl;
+}
+
+int64_t getTimeInMicroSeconds() {
+    static std::chrono::time_point<std::chrono::steady_clock> StartTime = std::chrono::steady_clock::now();
+    std::chrono::time_point<std::chrono::steady_clock> Now = std::chrono::steady_clock::now();
+    return std::chrono::duration_cast<std::chrono::microseconds>(Now - StartTime).count();
 }
 
 int64_t parseSecondsToMicroseconds(const char *str) {
@@ -148,7 +151,7 @@ int FFMS_CC UpdateProgress(int64_t Current, int64_t Total, void *Private) {
 
     if (Private) {
         Progress *LastProgress = (Progress *)Private;
-        int64_t CurTime = av_gettime();
+        int64_t CurTime = getTimeInMicroSeconds();
         if (Percentage <= LastProgress->Percent || (LastProgress->Time != 0 && (CurTime - LastProgress->Time) <= ProgressInterval))
             return 0;
         LastProgress->Percent = Percentage;
@@ -175,7 +178,7 @@ void DoIndexing() {
     E.Buffer = ErrorMsg;
     E.BufferSize = sizeof(ErrorMsg);
 
-    Progress ProgressTracker = { 0, av_gettime() };
+    Progress ProgressTracker = { 0, getTimeInMicroSeconds() };
 
     FFMS_Index *Index = FFMS_ReadIndex(CacheFile.c_str(), &E);
     if (Index) {
