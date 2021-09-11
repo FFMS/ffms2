@@ -1,7 +1,9 @@
-BUILD INSTRUCTIONS
+BUILD INSTRUCTIONS FOR WINDOWS
 
-The included projects require Visual Studio 2017.
+The included projects require Visual Studio 2019 with an integrated vcpkg.
 
-Libraries needed: recent FFmpeg, zlib, Avisynth+ (MT branch) headers.
+Run `vcpkg install ffmpeg:x64-windows-static` or `vcpkg install ffmpeg:x86-windows-static`
+depending on the configuration you want to build.
 
-All include and library paths are set to be relative to the ffms2 directory by default.
+In addition to this the Avisynth+ headers are also needed. The include path is set
+to be relative to the FFMS2 directory by default.
