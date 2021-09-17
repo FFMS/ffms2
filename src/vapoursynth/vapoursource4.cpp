@@ -195,6 +195,7 @@ const VSFrame *VS_CC VSVideoSource4::GetVSFrame(int n, VSCore *core, const VSAPI
     OutputFrame(Frame, Dst, vsapi);
     if (OutputAlpha) {
         VSFrame *AlphaDst = vsapi->newVideoFrame(&VI[1].format, VI[1].width, VI[1].height, nullptr, core);
+        vsapi->mapSetInt(vsapi->getFramePropertiesRW(AlphaDst), "_ColorRange", 0, maReplace);
         OutputAlphaFrame(Frame, VI[0].format.numPlanes, AlphaDst, vsapi);
         vsapi->mapConsumeFrame(Props, "_Alpha", AlphaDst, maReplace);
     }
