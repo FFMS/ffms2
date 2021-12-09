@@ -191,6 +191,9 @@ const VSFrame *VS_CC VSVideoSource4::GetVSFrame(int n, VSCore *core, const VSAPI
         vsapi->mapSetFloat(Props, "ContentLightLevelAverage", Frame->ContentLightLevelAverage, maReplace);
     }
 
+    if (Frame->DolbyVisionRPU && Frame->DolbyVisionRPUSize) {
+        vsapi->mapSetData(Props, "DolbyVisionRPU", (const char *) Frame->DolbyVisionRPU, Frame->DolbyVisionRPUSize, dtBinary, maReplace);
+    }
 
     OutputFrame(Frame, Dst, vsapi);
     if (OutputAlpha) {

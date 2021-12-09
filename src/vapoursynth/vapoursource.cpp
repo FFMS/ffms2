@@ -204,6 +204,10 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
             vsapi->propSetFloat(Props, "ContentLightLevelAverage", Frame->ContentLightLevelAverage, paReplace);
         }
 
+        if (Frame->DolbyVisionRPU && Frame->DolbyVisionRPUSize) {
+            vsapi->propSetData(Props, "DolbyVisionRPU", (const char *) Frame->DolbyVisionRPU, Frame->DolbyVisionRPUSize, paReplace);
+        }
+
         const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(vs->V);
         vsapi->propSetInt(Props, "Flip", VP->Flip, paReplace);
         vsapi->propSetInt(Props, "Rotation", VP->Rotation, paReplace);
