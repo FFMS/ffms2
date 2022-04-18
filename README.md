@@ -18,6 +18,107 @@ In addition to being able to open almost any common audio or video format, the A
   * It is the only general-purpose source filter that does not rely on external decoders.
   * It is (probably) the only source filter that supports mid-stream video resolution switches.
 
+### Installation in Debian and derivates (Ubuntu, Linux Mint, PopOS, etc.)
+
+Open a terminal and run:
+
+```
+sudo -i
+apt-get install build-essential autoconf git automake wget ffmpeg libavformat-dev libavcodec-dev libswscale-dev libavutil-dev libswresample-dev
+git clone https://github.com/FFMS/ffms2.git
+cd ffms2
+./autogen.sh --prefix=/usr/local
+make -j$(nproc) install
+```
+
+### Installation in Fedora and downstream (CentOS, RHEL, AlmaLinux, etc.)
+
+First, please see [rpmfusion.org](https://rpmfusion.org/Configuration/) for enabling free, nonfree, free tainted, and nonfree-tainted repos.
+
+Open a terminal and run:
+
+```
+su -
+dnf install ffms2 ffmpeg
+```
+
+### Installation in CentOS 7 (for CentOS 8+, see Fedora)
+
+Open a terminal and run:
+
+```
+su -
+yum install epel-release
+yum install ffms2 ffmpeg
+```
+
+### Installation in Alpine
+
+Enable community repos, then open a terminal and run:
+
+```
+su -
+apk add alpine-sdk autoconf git automake wget ffmpeg ffmpeg-libs ffmpeg-dev
+git clone https://github.com/FFMS/ffms2.git
+cd ffms2
+./autogen.sh --prefix=/usr/local
+make -j$(nproc) install
+```
+
+### Installation in OpenSUSE
+
+Open a terminal and run:
+
+```
+su -
+zypper install --type pattern devel_basis
+zypper install autoconf git automake wget ffmpeg libavformat-dev libavcodec-dev libswscale-dev libavutil-dev libswresample-dev
+git clone https://github.com/FFMS/ffms2.git
+cd ffms2
+./autogen.sh --prefix=/usr/local
+make -j$(nproc) install
+```
+
+### Installation in ArchLinux
+
+Open a terminal and run:
+
+```
+su -
+pacman -Sy ffmpeg ffms2
+```
+
+### Installation on MacOS
+
+First, open a terminal and install homebrew if you don't have it already:
+
+```
+# actual installation of brew:
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# add brew to path:
+test -d ~/.linuxbrew && eval "$(~/.linuxbrew/bin/brew shellenv)"
+test -d /home/linuxbrew/.linuxbrew && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+test -r ~/.bash_profile && echo "eval \"\$($(brew --prefix)/bin/brew shellenv)\"" >> ~/.bash_profile
+echo "eval \"\$($(brew --prefix)/bin/brew shellenv)\"" >> ~/.profile
+brew update
+```
+
+Then:
+
+```
+sudo -i
+brew install coreutils git autoconf automake wget ffmpeg
+git clone https://github.com/FFMS/ffms2.git
+cd ffms2
+mkdir -pm /usr/local/bin
+./autogen.sh --prefix=/usr/local
+make -j8 install
+update_dyld_shared_cache
+```
+
+Then, according to [opensource.apple.com](https://opensource.apple.com/source/dyld/dyld-635.2/doc/man/man1/update_dyld_shared_cache.1.auto.html), you might need to reboot in order for the new shared library cache to take effect.
+
 ### Versions and variants
 If you're confused by all the different variants, here's a small explanation:
 
