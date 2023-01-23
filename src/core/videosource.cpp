@@ -629,7 +629,9 @@ bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
     // H.264 (PAFF) and HEVC can have one field per packet, and decoding delay needs
     // to be adjusted accordingly.
     if (CodecContext->codec_id == AV_CODEC_ID_H264 || CodecContext->codec_id == AV_CODEC_ID_HEVC) {
-        if (!PAFFAdjusted && DelayCounter > Delay && LastDecodedFrame->interlaced_frame == 1 && LastDecodedFrame->repeat_pict == 0 && Ret != 0) {
+        if (LastDecodedFrame->interlaced_frame == 1)
+            HaveSeenInterlacedFrame = true;
+        if (!PAFFAdjusted && DelayCounter > Delay && HaveSeenInterlacedFrame && LastDecodedFrame->repeat_pict == 0 && Ret != 0) {
             int OldBFrameDelay = Delay - (CodecContext->thread_count - 1);
             Delay = 1 + OldBFrameDelay * 2 + (CodecContext->thread_count - 1);
             PAFFAdjusted = true;

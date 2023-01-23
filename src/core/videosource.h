@@ -92,6 +92,7 @@ private:
     int SeekMode;
     bool SeekByPos = false;
     int PosOffset = 0;
+    bool HaveSeenInterlacedFrame = false;
 
     void ReAdjustOutputFormat(AVFrame *Frame);
     FFMS_Frame *OutputFrame(AVFrame *Frame);
