@@ -387,6 +387,14 @@ void FFMS_Track::FinalizeTrack() {
         Frames[ReorderTemp[i]].OriginalPos = i;
 
     GeneratePublicInfo();
+
+    // If the last packet in the file did not have a duration set,
+    // fudge one based on the previous frame's duration.
+    if (LastDuration == 0) {
+        size_t last = Data->PublicFrameInfo.size() - 1;
+        if (last >= 2)
+            LastDuration = Data->PublicFrameInfo[last - 1].PTS - Data->PublicFrameInfo[last - 2].PTS;
+    }
 }
 
 void FFMS_Track::GeneratePublicInfo() {
