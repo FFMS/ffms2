@@ -391,9 +391,9 @@ void FFMS_Track::FinalizeTrack() {
     // If the last packet in the file did not have a duration set,
     // fudge one based on the previous frame's duration.
     if (LastDuration == 0) {
-        size_t last = Data->PublicFrameInfo.size() - 1;
-        if (last >= 2)
-            LastDuration = Data->PublicFrameInfo[last - 1].PTS - Data->PublicFrameInfo[last - 2].PTS;
+        size_t InfoSize = Data->PublicFrameInfo.size();
+        if (InfoSize >= 2)
+            LastDuration = Data->PublicFrameInfo[InfoSize - 1].PTS - Data->PublicFrameInfo[InfoSize - 2].PTS;
     }
 }
 
