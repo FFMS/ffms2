@@ -132,6 +132,32 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
     }
 #endif
 
+#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 58, 5, 100)
+    AVFrameSideData *HDR10PlusSideData = av_frame_get_side_data(Frame, AV_FRAME_DATA_DYNAMIC_HDR_PLUS);
+    if (HDR10PlusSideData) {
+        uint8_t *T35Buffer;
+        size_t T35Size;
+        int ret = av_dynamic_hdr_plus_to_t35(reinterpret_cast<const AVDynamicHDRPlus *>(HDR10PlusSideData->data), &T35Buffer, &T35Size);
+        if (ret < 0)
+            throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_INVALID_ARGUMENT,
+                                     "HDR10+ dynamic metadata could not be serialized.");
+        if (T35Size > HDR10PlusBufferSize) {
+            void *tmp = av_realloc(HDR10PlusBuffer, T35Size);
+            if (!tmp)
+                throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
+                                     "Could not allocate HDR10+ buffer.");
+            HDR10PlusBuffer = reinterpret_cast<uint8_t *>(tmp);
+            HDR10PlusBufferSize = T35Size;
+        }
+
+        memcpy(HDR10PlusBuffer, T35Buffer, T35Size);
+        av_free(T35Buffer);
+
+        LocalFrame.HDR10Plus = HDR10PlusBuffer;
+        LocalFrame.HDR10PlusSize = T35Size;
+    }
+#endif
+
     const AVFrameSideData *ContentLightSideData = av_frame_get_side_data(Frame, AV_FRAME_DATA_CONTENT_LIGHT_LEVEL);
     if (ContentLightSideData) {
         const AVContentLightMetadata *ContentLightLevel = reinterpret_cast<const AVContentLightMetadata *>(ContentLightSideData->data);
@@ -680,6 +706,7 @@ int FFMS_VideoSource::ReadFrame(AVPacket *pkt) {
 
 void FFMS_VideoSource::Free() {
     av_freep(&RPUBuffer);
+    av_freep(&HDR10PlusBuffer);
     avcodec_free_context(&CodecContext);
     avformat_close_input(&FormatContext);
     if (SWS)
