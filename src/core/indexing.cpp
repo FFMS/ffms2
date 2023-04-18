@@ -505,7 +505,8 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
 
     int64_t filesize = avio_size(FormatContext->pb);
     enum AVPictureStructure LastPicStruct = AV_PICTURE_STRUCTURE_UNKNOWN;
-    while (av_read_frame(FormatContext, Packet) >= 0) {
+    int ret;
+    while ((ret = av_read_frame(FormatContext, Packet)) >= 0) {
         // Update progress
         // FormatContext->pb can apparently be NULL when opening images.
         if (IC && FormatContext->pb) {
@@ -580,6 +581,13 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
         av_packet_unref(Packet);
     }
     av_packet_free(&Packet);
+    if (IsIOError(ret)) {
+        char error[1024];
+        av_strerror(ret, error, 1024);
+        std::string cerr(error);
+        throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_FILE_READ,
+            "Indexing failed: " + cerr);
+    }
 
     TrackIndices->Finalize(AVContexts, FormatContext->iformat->name);
     return TrackIndices.release();
