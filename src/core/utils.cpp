@@ -140,3 +140,25 @@ bool IsSamePath(const char *p1, const char *p2) {
     return !_stricmp(p1, p2);
 #endif
 }
+
+bool IsIOError(int error) {
+    switch (error) {
+    case AVERROR(EIO):
+    case AVERROR(ETIMEDOUT):
+    case AVERROR(EPROTO):
+    case AVERROR(EADDRINUSE):
+    case AVERROR(EADDRNOTAVAIL):
+    case AVERROR(ENETDOWN):
+    case AVERROR(ENETUNREACH):
+    case AVERROR(ENETRESET):
+    case AVERROR(ECONNABORTED):
+    case AVERROR(ECONNRESET):
+    case AVERROR(ESHUTDOWN):
+    case AVERROR(ECONNREFUSED):
+    case AVERROR(EHOSTDOWN):
+    case AVERROR(EHOSTUNREACH):
+        return true;
+    default:
+        return false;
+    }
+}

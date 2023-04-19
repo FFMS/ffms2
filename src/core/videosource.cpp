@@ -727,7 +727,8 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
         throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
             "Could not allocate packet.");
 
-    while (ReadFrame(Packet) >= 0) {
+    int ret;
+    while ((ret = ReadFrame(Packet)) >= 0) {
         if (Packet->stream_index != VideoTrack) {
             av_packet_unref(Packet);
             continue;
@@ -745,6 +746,13 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
             av_packet_free(&Packet);
             return;
         }
+    }
+    if (IsIOError(ret)) {
+        char err[1024];
+        av_strerror(ret, err, 1024);
+        std::string serr(err);
+        throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_FILE_READ,
+            "Failed to read packet: " + serr);
     }
 
     // Flush final frames

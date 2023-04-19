@@ -134,5 +134,6 @@ void SetOptions(T const& src, void *opt, OptionMapper<T>(&options)[N]) {
 
 int ResizerNameToSWSResizer(const char *ResizerName);
 bool IsSamePath(const char *p1, const char *p2);
+bool IsIOError(int error);
 
 #endif
