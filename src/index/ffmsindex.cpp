@@ -36,6 +36,10 @@
 #include <stdexcept>
 #include <chrono>
 
+extern "C" {
+#include <libavutil/dict.h>
+}
+
 namespace {
 
 long long IndexMask = 0;
@@ -45,9 +49,8 @@ bool Overwrite = false;
 bool PrintProgress = true;
 bool WriteTC = false;
 bool WriteKF = false;
-bool EnableDrefs = false;
-bool UseAbsolutePath = false;
 int64_t ProgressInterval = 1000000; // One second
+std::vector<FFMS_KeyValuePair> LAVFOpts;
 std::string InputFile;
 std::string CacheFile;
 
@@ -79,6 +82,7 @@ void PrintUsage() {
         "-t N      Set the audio indexing mask to N (-1 means index all tracks, 0 means index none, default: 0)\n"
         "-s N      Set audio decoding error handling. See the documentation for details. (default: 0)\n"
         "-u N      Set the progress update frequency in seconds. Set to 0 for every percent. (default: 1)\n"
+        "-o string Set demuxer options to be used in the form of 'key=val:key=val'. (default: none)\n"
         "\n"
         "FFmpeg Demuxer Options:\n"
         "--enable_drefs\n"
@@ -96,6 +100,39 @@ int64_t parseSecondsToMicroseconds(const char *str) {
     double val = std::strtod(str, nullptr);
     int64_t ret = (int64_t) (val * 1000000.0);
     return ret;
+}
+
+void freeDemuxerOpts() {
+    for (FFMS_KeyValuePair pair : LAVFOpts) {
+        free(const_cast<char *>(pair.Key));
+        free(const_cast<char *>(pair.Value));
+    }
+    LAVFOpts.clear();
+}
+
+std::vector<FFMS_KeyValuePair> parseDemuxerOpts(const char *str) {
+    AVDictionary *dict;
+    int ret = av_dict_parse_string(&dict, str, "=", ":", 0);
+    if (ret < 0)
+        throw Error("Cannot parse demuxer options.");
+
+    AVDictionaryEntry *en = nullptr;
+    while ((en = av_dict_get(dict, "", en, AV_DICT_IGNORE_SUFFIX)) != NULL) {
+        FFMS_KeyValuePair pair;
+        pair.Key = strdup(en->key);
+        if (!pair.Key)
+            goto fail;
+        pair.Value = strdup(en->value);
+        if (!pair.Value) {
+            free(const_cast<char *>(pair.Key));
+            goto fail;
+        }
+        LAVFOpts.push_back(pair);
+    }
+    return LAVFOpts;
+fail:
+    freeDemuxerOpts();
+    throw Error("Could not allocate key/value pair.");
 }
 
 void ParseCMDLine(int argc, const char *argv[]) {
@@ -119,10 +156,12 @@ void ParseCMDLine(int argc, const char *argv[]) {
             OPTION_ARG(IgnoreErrors, "s", std::stoi);
         } else if (!strcmp(Option, "-u")) {
             OPTION_ARG(ProgressInterval, "u", parseSecondsToMicroseconds);
+        } else if (!strcmp(Option, "-o")) {
+            OPTION_ARG(LAVFOpts, "o", parseDemuxerOpts);
         } else if (!strcmp(Option, "--enable_drefs")) {
-            EnableDrefs = true;
+            parseDemuxerOpts("enable_drefs=1");
         } else if (!strcmp(Option, "--use_absolute_path")) {
-            UseAbsolutePath = true;
+            parseDemuxerOpts("use_absolute_path=1");
         } else if (InputFile.empty()) {
             InputFile = Option;
         } else if (CacheFile.empty()) {
@@ -189,9 +228,7 @@ void DoIndexing() {
 
     UpdateProgress(0, 100, nullptr);
 
-    FFMS_KeyValuePair LAVFOpts[] = {{ "enable_drefs", EnableDrefs ? "1" : "0" }, { "use_absolute_path", UseAbsolutePath ? "1" : "0" }};
-
-    FFMS_Indexer *Indexer = FFMS_CreateIndexer2(InputFile.c_str(), LAVFOpts, 2, &E);
+    FFMS_Indexer *Indexer = FFMS_CreateIndexer2(InputFile.c_str(), LAVFOpts.data(), LAVFOpts.size(), &E);
     if (Indexer == nullptr)
         throw Error("\nFailed to initialize indexing: ", E);
 
@@ -211,6 +248,8 @@ void DoIndexing() {
 
     // The indexer is always freed
     Indexer = nullptr;
+
+    freeDemuxerOpts();
 
     if (Index == nullptr)
         throw Error("\nIndexing error: ", E);
