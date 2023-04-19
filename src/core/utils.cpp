@@ -153,10 +153,12 @@ bool IsIOError(int error) {
     case AVERROR(ENETRESET):
     case AVERROR(ECONNABORTED):
     case AVERROR(ECONNRESET):
-    case AVERROR(ESHUTDOWN):
     case AVERROR(ECONNREFUSED):
-    case AVERROR(EHOSTDOWN):
     case AVERROR(EHOSTUNREACH):
+#ifndef _WIN32
+    case AVERROR(ESHUTDOWN):
+    case AVERROR(EHOSTDOWN):
+#endif
         return true;
     default:
         return false;
