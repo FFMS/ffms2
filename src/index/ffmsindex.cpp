@@ -111,7 +111,7 @@ void freeDemuxerOpts() {
 }
 
 std::vector<FFMS_KeyValuePair> parseDemuxerOpts(const char *str) {
-    AVDictionary *dict;
+    AVDictionary *dict = nullptr;
     int ret = av_dict_parse_string(&dict, str, "=", ":", 0);
     if (ret < 0)
         throw Error("Cannot parse demuxer options.");
