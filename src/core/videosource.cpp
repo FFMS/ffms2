@@ -135,7 +135,7 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
 #if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 58, 5, 100)
     AVFrameSideData *HDR10PlusSideData = av_frame_get_side_data(Frame, AV_FRAME_DATA_DYNAMIC_HDR_PLUS);
     if (HDR10PlusSideData) {
-        uint8_t *T35Buffer;
+        uint8_t *T35Buffer = nullptr;
         size_t T35Size;
         int ret = av_dynamic_hdr_plus_to_t35(reinterpret_cast<const AVDynamicHDRPlus *>(HDR10PlusSideData->data), &T35Buffer, &T35Size);
         if (ret < 0)
