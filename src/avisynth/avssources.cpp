@@ -660,6 +660,8 @@ AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS
 
     const FFMS_AudioProperties *AP = FFMS_GetAudioProperties(A);
     VI.nchannels = AP->Channels;
+    if(Env->FunctionExists("SetChannelMask"))
+        VI.SetChannelMask(true,AP->ChannelLayout);
     VI.num_audio_samples = AP->NumSamples;
     VI.audio_samples_per_second = AP->SampleRate;
 
