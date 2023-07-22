@@ -662,6 +662,7 @@ AvisynthAudioSource::AvisynthAudioSource(const char *SourceFile, int Track, FFMS
     VI.nchannels = AP->Channels;
     VI.num_audio_samples = AP->NumSamples;
     VI.audio_samples_per_second = AP->SampleRate;
+    VI.SetChannelMask(true, AP->ChannelLayout);
 
     // casting to int should be safe; none of the channel constants are greater than INT_MAX
     Env->SetVar(Env->Sprintf("%s%s", VarPrefix, "FFCHANNEL_LAYOUT"), static_cast<int>(AP->ChannelLayout));
