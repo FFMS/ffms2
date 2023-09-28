@@ -203,6 +203,16 @@ void FFMS_AudioSource::CacheBeginning() {
     --CacheNoDelete;
 }
 
+static int PopCount(int64_t v) {
+    int c = 0;
+    for (size_t i = 0; i < 64; i++) {
+        if (v & 1)
+            c++;
+        v >>= 1;
+    }
+    return c;
+}
+
 void FFMS_AudioSource::SetOutputFormat(FFMS_ResampleOptions const& opt) {
     if (opt.SampleRate != AP.SampleRate)
         throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNSUPPORTED,
@@ -214,7 +224,7 @@ void FFMS_AudioSource::SetOutputFormat(FFMS_ResampleOptions const& opt) {
     OpenFile();
     avcodec_flush_buffers(CodecContext);
 
-    BytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(opt.SampleFormat)) * av_get_channel_layout_nb_channels(opt.ChannelLayout);
+    BytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(opt.SampleFormat)) * PopCount(opt.ChannelLayout);
     NeedsResample =
         opt.SampleFormat != (int)CodecContext->sample_fmt ||
         opt.SampleRate != AP.SampleRate ||
@@ -223,15 +233,15 @@ void FFMS_AudioSource::SetOutputFormat(FFMS_ResampleOptions const& opt) {
 
     if (!NeedsResample) return;
 
-    FFResampleContext newContext{ swr_alloc() };
-    SetOptions(opt, newContext.get(), resample_options);
-    av_opt_set_int(newContext.get(), "in_sample_rate", AP.SampleRate, 0);
-    av_opt_set_int(newContext.get(), "in_sample_fmt", CodecContext->sample_fmt, 0);
-    av_opt_set_int(newContext.get(), "in_channel_layout", AP.ChannelLayout, 0);
+    SwrContext *rawCtx = swr_alloc();
 
-    av_opt_set_int(newContext.get(), "out_sample_rate", opt.SampleRate, 0);
-    av_opt_set_channel_layout(newContext.get(), "out_channel_layout", opt.ChannelLayout, 0);
-    av_opt_set_sample_fmt(newContext.get(), "out_sample_fmt", (AVSampleFormat)opt.SampleFormat, 0);
+    AVChannelLayout ChLayoutOut = { AV_CHANNEL_ORDER_NATIVE, PopCount(opt.ChannelLayout), static_cast<uint64_t>(opt.ChannelLayout) };
+    AVChannelLayout ChLayoutIn = { AV_CHANNEL_ORDER_NATIVE, PopCount(AP.ChannelLayout), static_cast<uint64_t>(AP.ChannelLayout) };
+    swr_alloc_set_opts2(&rawCtx, &ChLayoutOut, (AVSampleFormat)opt.SampleFormat, opt.SampleRate, &ChLayoutIn, CodecContext->sample_fmt, AP.SampleRate, 0, nullptr);
+
+    FFResampleContext newContext{ rawCtx };
+
+    SetOptions(opt, newContext.get(), resample_options);
 
     if (swr_init(newContext.get()))
         throw FFMS_Exception(FFMS_ERROR_RESAMPLING, FFMS_ERROR_UNKNOWN,

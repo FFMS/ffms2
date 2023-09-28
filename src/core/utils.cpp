@@ -65,8 +65,18 @@ void ClearErrorInfo(FFMS_ErrorInfo *ErrorInfo) {
 void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
     AP.SampleFormat = static_cast<FFMS_SampleFormat>(av_get_packed_sample_fmt(CTX->sample_fmt));
     AP.BitsPerSample = av_get_bytes_per_sample(CTX->sample_fmt) * 8;
-    AP.Channels = CTX->channels;
-    AP.ChannelLayout = CTX->channel_layout;
+    AP.Channels = CTX->ch_layout.nb_channels;
+
+    if (CTX->ch_layout.order == AV_CHANNEL_ORDER_NATIVE) {
+        AP.ChannelLayout = CTX->ch_layout.u.mask;
+    } else if (CTX->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC) {
+        AVChannelLayout ch = {};
+        av_channel_layout_default(&ch, CTX->ch_layout.nb_channels);
+        AP.ChannelLayout = ch.u.mask;
+    } else {
+        throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_UNSUPPORTED, "Ambisonics and custom channel orders not supported");
+    }
+
     AP.SampleRate = CTX->sample_rate;
     if (!Frames.empty()) {
         AP.NumSamples = (Frames.back()).SampleStart + (Frames.back()).SampleCount;
@@ -74,9 +84,6 @@ void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames) {
         AP.LastTime = ((Frames.back().PTS * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
         AP.LastEndTime = (((Frames.back().PTS + Frames.LastDuration) * Frames.TB.Num) / (double)Frames.TB.Den) / 1000;
     }
-
-    if (AP.ChannelLayout == 0)
-        AP.ChannelLayout = av_get_default_channel_layout(AP.Channels);
 }
 
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext, int Track, const std::map<std::string, std::string> &LAVFOpts) {

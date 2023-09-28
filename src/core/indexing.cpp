@@ -344,14 +344,14 @@ void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
         FFMS_AudioProperties &AP = LastAudioProperties[Track];
         AP.SampleRate = Context->sample_rate;
         AP.SampleFormat = Context->sample_fmt;
-        AP.Channels = Context->channels;
+        AP.Channels = Context->ch_layout.nb_channels;
     } else if (it->second.SampleRate != Context->sample_rate ||
         it->second.SampleFormat != Context->sample_fmt ||
-        it->second.Channels != Context->channels) {
-        std::ostringstream buf;
+        it->second.Channels != Context->ch_layout.nb_channels) {
+        std::ostringstream buf; // fixme, dodgy comparison and maybe wrong since it skips layout comp
         buf <<
             "Audio format change detected. This is currently unsupported."
-            << " Channels: " << it->second.Channels << " -> " << Context->channels << ";"
+            << " Channels: " << it->second.Channels << " -> " << Context->ch_layout.nb_channels << ";"
             << " Sample rate: " << it->second.SampleRate << " -> " << Context->sample_rate << ";"
             << " Sample format: " << av_get_sample_fmt_name((AVSampleFormat)it->second.SampleFormat) << " -> "
             << av_get_sample_fmt_name(Context->sample_fmt);
