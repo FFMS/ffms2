@@ -565,8 +565,8 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
             Frame = FFMS_GetFrameByTime(V, currentTime, &E);
             Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
             if (has_at_least_v8) {
-                Env->propSetInt(props, "_DurationNum", FPSNum, 0);
-                Env->propSetInt(props, "_DurationDen", FPSDen, 0);
+                Env->propSetInt(props, "_DurationNum", FPSDen, 0);
+                Env->propSetInt(props, "_DurationDen", FPSNum, 0);
                 Env->propSetFloat(props, "_AbsoluteTime", currentTime, 0);
             }
         } else {
