@@ -642,11 +642,11 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
         }
 
         if (Frame->DolbyVisionRPU && Frame->DolbyVisionRPUSize > 0) {
-            Env->propSetData(props, "DolbyVisionRPU", (const char *)Frame->DolbyVisionRPU, Frame->DolbyVisionRPUSize, 0);
+            Env->propSetData(props, "DolbyVisionRPU", reinterpret_cast<const char *>(Frame->DolbyVisionRPU), Frame->DolbyVisionRPUSize, 0);
         }
 
-        if (Frame->DolbyVisionRPU && Frame->HDR10Plus > 0) {
-            Env->propSetData(props, "HDR10Plus", (const char *)Frame->HDR10Plus, Frame->HDR10PlusSize, 0);
+        if (Frame->HDR10Plus && Frame->HDR10PlusSize > 0) {
+            Env->propSetData(props, "HDR10Plus", reinterpret_cast<const char *>(Frame->HDR10Plus), Frame->HDR10PlusSize, 0);
         }
     }
 
