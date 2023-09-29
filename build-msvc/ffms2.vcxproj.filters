@@ -42,12 +42,6 @@
     <ClCompile Include="..\src\core\videoutils.cpp">
       <Filter>Video</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vapoursynth\vapoursource.cpp">
-      <Filter>Vapoursynth</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\vapoursynth\vapoursynth.cpp">
-      <Filter>Vapoursynth</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\core\indexing.cpp">
       <Filter>Indexing</Filter>
     </ClCompile>
@@ -91,15 +85,6 @@
     </ClInclude>
     <ClInclude Include="..\src\core\videoutils.h">
       <Filter>Video</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\vapoursynth\vapoursource.h">
-      <Filter>Vapoursynth</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\vapoursynth\VapourSynth.h">
-      <Filter>Vapoursynth</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\vapoursynth\VSHelper.h">
-      <Filter>Vapoursynth</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\indexing.h">
       <Filter>Indexing</Filter>
