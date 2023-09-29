@@ -664,7 +664,7 @@ bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
         }
     }
 
-    return (Ret == 0) || (DelayCounter > Delay && !InitialDecode);;
+    return (Ret == 0) || (DelayCounter > Delay && !InitialDecode);
 }
 
 int FFMS_VideoSource::Seek(int n) {

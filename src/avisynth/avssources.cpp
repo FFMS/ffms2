@@ -152,7 +152,7 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
             Env->ThrowError("FFVideoSource: No RFF flags present");
         }
 
-        int RepeatMin = FFMS_GetFrameInfo(VTrack, 0)->RepeatPict;;
+        int RepeatMin = FFMS_GetFrameInfo(VTrack, 0)->RepeatPict;
         int NumFields = 0;
 
         for (int i = 0; i < VP->NumFrames; i++) {
