@@ -301,8 +301,6 @@ FFMS_AudioSource::AudioBlock *FFMS_AudioSource::CacheBlock(CacheIterator &pos) {
 }
 
 int FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
-    CurrentFrame = &Frames[PacketNumber];
-
     AVPacket *Packet = av_packet_alloc();
     if (!Packet)
         throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
@@ -313,27 +311,40 @@ int FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
             "ReadPacket unexpectedly failed to read a packet");
     }
 
-    // ReadPacket may have changed the packet number
     CurrentFrame = &Frames[PacketNumber];
     CurrentSample = CurrentFrame->SampleStart;
 
+    // Value code intentionally ignored, combined with the checks when indexing this mostly gives the expected behavior
+    avcodec_send_packet(CodecContext, Packet);
+
     int NumberOfSamples = 0;
     AudioBlock *CachedBlock = nullptr;
-    
-    int Ret = avcodec_send_packet(CodecContext, Packet);
-    av_packet_unref(Packet);
-    av_packet_free(&Packet);
 
-    av_frame_unref(DecodeFrame);
-    Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
-    if (Ret == 0) {
-        //FIXME, is DecodeFrame->nb_samples > 0 always true for decoded frames? I can't be bothered to find out
-        NumberOfSamples += DecodeFrame->nb_samples;
-        if (DecodeFrame->nb_samples > 0) {
-            if (pos)
-                CachedBlock = CacheBlock(*pos);
+    while (true) {
+        av_frame_unref(DecodeFrame);
+        int Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
+        if (Ret == 0) {
+            NumberOfSamples += DecodeFrame->nb_samples;
+            if (DecodeFrame->nb_samples > 0) {
+                if (pos)
+                    CachedBlock = CacheBlock(*pos);
+            }
+            break;
+        } else if (Ret == AVERROR(EAGAIN)) {
+            if (!ReadPacket(Packet)) {
+                av_packet_free(&Packet);
+                throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_UNKNOWN,
+                    "ReadPacket unexpectedly failed to read a packet");
+            }
+            avcodec_send_packet(CodecContext, Packet);
+        } else if (Ret == AVERROR_EOF) {
+            break;
+        } else {
+            throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING, "Audio decoding error");
         }
     }
+
+    av_packet_free(&Packet);
 
     // Zero sample packets aren't included in the index
     if (!NumberOfSamples)
