@@ -329,7 +329,15 @@ int FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
                 if (pos)
                     CachedBlock = CacheBlock(*pos);
             }
-        } else if (Ret == AVERROR_EOF || Ret == AVERROR(EAGAIN)) {
+            break;
+        } else if (Ret == AVERROR(EAGAIN)) {
+            if (!ReadPacket(Packet)) {
+                av_packet_free(&Packet);
+                throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_UNKNOWN,
+                    "ReadPacket unexpectedly failed to read a packet");
+            }
+            avcodec_send_packet(CodecContext, Packet);
+        } else if (Ret == AVERROR_EOF) {
             break;
         } else {
             throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING, "Audio decoding error");
