@@ -191,8 +191,12 @@ const VSFrame *VS_CC VSVideoSource4::GetVSFrame(int n, VSCore *core, const VSAPI
         vsapi->mapSetFloat(Props, "ContentLightLevelAverage", Frame->ContentLightLevelAverage, maReplace);
     }
 
-    if (Frame->DolbyVisionRPU && Frame->DolbyVisionRPUSize) {
+    if (Frame->DolbyVisionRPU && Frame->DolbyVisionRPUSize > 0) {
         vsapi->mapSetData(Props, "DolbyVisionRPU", (const char *) Frame->DolbyVisionRPU, Frame->DolbyVisionRPUSize, dtBinary, maReplace);
+    }
+
+    if (Frame->HDR10Plus && Frame->HDR10PlusSize > 0) {
+        vsapi->mapSetData(Props, "HDR10Plus", (const char *)Frame->HDR10Plus, Frame->HDR10PlusSize, dtBinary, maReplace);
     }
 
     OutputFrame(Frame, Dst, vsapi);

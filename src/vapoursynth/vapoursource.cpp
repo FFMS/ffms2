@@ -204,8 +204,12 @@ const VSFrameRef *VS_CC VSVideoSource::GetFrame(int n, int activationReason, voi
             vsapi->propSetFloat(Props, "ContentLightLevelAverage", Frame->ContentLightLevelAverage, paReplace);
         }
 
-        if (Frame->DolbyVisionRPU && Frame->DolbyVisionRPUSize) {
+        if (Frame->DolbyVisionRPU && Frame->DolbyVisionRPUSize > 0) {
             vsapi->propSetData(Props, "DolbyVisionRPU", (const char *) Frame->DolbyVisionRPU, Frame->DolbyVisionRPUSize, paReplace);
+        }
+
+        if (Frame->HDR10Plus && Frame->HDR10PlusSize > 0) {
+            vsapi->propSetData(Props, "HDR10Plus", (const char *)Frame->HDR10Plus, Frame->HDR10PlusSize, paReplace);
         }
 
         const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(vs->V);
