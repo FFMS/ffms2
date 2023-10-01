@@ -1,4 +1,15 @@
 # FFmpegSource2 Changelog
+- 2.xxx
+  - Fixed all issues with FFmpeg 6.0 which is now the minimum requirement
+  - Added HDR10+ and DolbyVision metadata
+  - Fixed audio decoding that could otherwise get stuck in an infinite loop on certain files
+  - Fixed framerate in Avisynth when using VFR=>CFR mode
+  - Dropped VapourSynth API3 support
+  - Indexer now has a configurable progress update interval
+  - Alpha planes are now correctly marked as being full range
+  - The full set of demuxer options can now be passed using the FFMS2 API
+  - Now sets channel layout in Avisynth+
+  
 - 2.3000
   - Added support for VapourSynth API4 (Myrsloik)
   - Added basic Avisynth+ frame property support (Myrsloik)
