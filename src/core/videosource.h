@@ -77,6 +77,9 @@ private:
     uint8_t *SWSFrameData[4] = {};
     int SWSFrameLinesize[4] = {};
 
+    AVPacket *StashedPacket = nullptr;
+    bool ResendPacket = false;
+
     void DetectInputFormat();
     bool HasPendingDelayedFrames();
 

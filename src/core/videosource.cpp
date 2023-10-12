@@ -202,10 +202,11 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 
         DecodeFrame = av_frame_alloc();
         LastDecodedFrame = av_frame_alloc();
+        StashedPacket = av_packet_alloc();
 
-        if (!DecodeFrame || !LastDecodedFrame)
+        if (!DecodeFrame || !LastDecodedFrame || !StashedPacket)
             throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
-                "Could not allocate dummy frame.");
+                "Could not allocate dummy frame / stashed packet.");
 
         // Dummy allocations so the unallocated case doesn't have to be handled later
         if (av_image_alloc(SWSFrameData, SWSFrameLinesize, 16, 16, AV_PIX_FMT_GRAY8, 4) < 0)
@@ -251,7 +252,7 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
             Delay = 0; // Welp, nothing we can do.
 #endif
         } else {
-            // In theory we can move this to CodecCodentext->delay, sort of, one day, maybe. Not now.
+            // In theory we can move this to CodecContext->delay, sort of, one day, maybe. Not now.
             Delay = CodecContext->has_b_frames + (CodecContext->thread_count - 1); // Normal decoder delay
         }
 
@@ -642,12 +643,19 @@ bool FFMS_VideoSource::HasPendingDelayedFrames() {
 
 bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
     std::swap(DecodeFrame, LastDecodedFrame);
-    avcodec_send_packet(CodecContext, Packet);
+    ResendPacket = false;
 
-    int Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
+    int Ret = avcodec_send_packet(CodecContext, Packet);
+    if (Ret == AVERROR(EAGAIN)) {
+        // Send queue is full, so stash packet to resend on the next call.
+        DelayCounter--;
+        ResendPacket = true;
+    }
+
+    Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
     if (Ret != 0) {
         std::swap(DecodeFrame, LastDecodedFrame);
-        if (!(Packet->flags & AV_PKT_FLAG_DISCARD))
+        if (!(Packet->flags & AV_PKT_FLAG_DISCARD) || Ret == AVERROR(EAGAIN))
             DelayCounter++;
     } else if (!!(Packet->flags & AV_PKT_FLAG_DISCARD)) {
         // If sending discarded frame when the decode buffer is not empty, caller
@@ -721,6 +729,7 @@ void FFMS_VideoSource::Free() {
     av_freep(&SWSFrameData[0]);
     av_frame_free(&DecodeFrame);
     av_frame_free(&LastDecodedFrame);
+    av_packet_free(&StashedPacket);
 }
 
 void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
@@ -735,9 +744,19 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
             "Could not allocate packet.");
 
     int ret;
-    while ((ret = ReadFrame(Packet)) >= 0) {
+    if (ResendPacket) {
+        // If we have a packet previously stashed due to a full input queue,
+        // send it again.
+        ret = 0;
+        av_packet_ref(Packet, StashedPacket);
+        av_packet_unref(StashedPacket);
+    } else {
+        ret = ReadFrame(Packet);
+    }
+    while (ret >= 0) {
         if (Packet->stream_index != VideoTrack) {
             av_packet_unref(Packet);
+            ret = ReadFrame(Packet);
             continue;
         }
 
@@ -748,10 +767,20 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
             Pos = Packet->pos;
 
         bool FrameFinished = DecodePacket(Packet);
+        if (ResendPacket)
+            av_packet_ref(StashedPacket, Packet);
         av_packet_unref(Packet);
         if (FrameFinished) {
             av_packet_free(&Packet);
             return;
+        }
+
+        if (ResendPacket) {
+            ret = 0;
+            av_packet_ref(Packet, StashedPacket);
+            av_packet_unref(StashedPacket);
+        } else {
+            ret = ReadFrame(Packet);
         }
     }
     if (IsIOError(ret)) {
