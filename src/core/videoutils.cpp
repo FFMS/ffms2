@@ -248,7 +248,7 @@ void ParseVP8(const uint8_t Buf, bool *Invisible, int *PictType) {
     *Invisible = (*Invisible || !(Buf & 0x10));
 }
 
-void ParseVP9(const uint8_t Buf, bool *Invisible, int *PictType)
+void ParseVP9(const uint8_t Buf, int *PictType)
 {
     int profile = ((Buf & 0x20) >> 5) | ((Buf & 0x10) >> 3);
     int shift = (profile == 3);

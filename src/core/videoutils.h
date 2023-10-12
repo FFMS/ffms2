@@ -52,4 +52,4 @@ AVPixelFormat FindBestPixelFormat(const std::vector<AVPixelFormat> &Dsts, AVPixe
 
 // handling of alt-refs in VP8 and VP9
 void ParseVP8(const uint8_t Buf, bool *Invisible, int *PictType);
-void ParseVP9(const uint8_t Buf, bool *Invisible, int *PictType);
+void ParseVP9(const uint8_t Buf, int *PictType);
