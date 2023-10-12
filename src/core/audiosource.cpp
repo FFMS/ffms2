@@ -235,8 +235,8 @@ void FFMS_AudioSource::SetOutputFormat(FFMS_ResampleOptions const& opt) {
 
     SwrContext *rawCtx = swr_alloc();
 
-    AVChannelLayout ChLayoutOut = { AV_CHANNEL_ORDER_NATIVE, PopCount(opt.ChannelLayout), static_cast<uint64_t>(opt.ChannelLayout) };
-    AVChannelLayout ChLayoutIn = { AV_CHANNEL_ORDER_NATIVE, PopCount(AP.ChannelLayout), static_cast<uint64_t>(AP.ChannelLayout) };
+    AVChannelLayout ChLayoutOut = { AV_CHANNEL_ORDER_NATIVE, PopCount(opt.ChannelLayout), static_cast<uint64_t>(opt.ChannelLayout), nullptr };
+    AVChannelLayout ChLayoutIn = { AV_CHANNEL_ORDER_NATIVE, PopCount(AP.ChannelLayout), static_cast<uint64_t>(AP.ChannelLayout), nullptr };
     swr_alloc_set_opts2(&rawCtx, &ChLayoutOut, (AVSampleFormat)opt.SampleFormat, opt.SampleRate, &ChLayoutIn, CodecContext->sample_fmt, AP.SampleRate, 0, nullptr);
 
     FFResampleContext newContext{ rawCtx };
