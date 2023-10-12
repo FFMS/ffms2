@@ -241,10 +241,19 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         // vc1 simply sets has_b_frames to 1 no matter how many there are so instead we set it to the max value
         // in order to not confuse our own delay guesses later
         // Doesn't affect actual vc1 reordering unlike h264
-        if (CodecContext->codec_id == AV_CODEC_ID_VC1 && CodecContext->has_b_frames)
+        if (CodecContext->codec_id == AV_CODEC_ID_VC1 && CodecContext->has_b_frames) {
             Delay = 7 + (CodecContext->thread_count - 1); // the maximum possible value for vc1
-        else
+        } else if (CodecContext->codec_id == AV_CODEC_ID_AV1) {
+#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >=, 60, 14, 101)
+            // libdav1d.c exports delay like this.
+            Delay = CodecContext->delay;
+#else
+            Delay = 0; // Welp, nothing we can do.
+#endif
+        } else {
+            // In theory we can move this to CodecCodentext->delay, sort of, one day, maybe. Not now.
             Delay = CodecContext->has_b_frames + (CodecContext->thread_count - 1); // Normal decoder delay
+        }
 
         // Always try to decode a frame to make sure all required parameters are known
         int64_t DummyPTS = 0, DummyPos = 0;
