@@ -8,13 +8,15 @@
 #include <gtest/gtest.h>
 
 #include "data/test.mp4.cpp"
+#include "data/vp9_audfirst.webm.cpp"
 #include "tests.h"
 
 
 namespace {
 
 const TestDataMap TestFiles[] = {
-    TEST_ENTRY("test.mp4", testmp4data)
+    TEST_ENTRY("test.mp4", testmp4data),
+    TEST_ENTRY("vp9_audfirst.webm", vp9audfirst)
 };
 
 class IndexerTest : public ::testing::TestWithParam<TestDataMap> {
