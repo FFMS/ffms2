@@ -39,7 +39,8 @@ SAMPLES = test.mp4                \
           hdr10tags-stream.mp4    \
           qrvideo_hflip_90.mov    \
           qrvideo_hflip_270.mov   \
-          qrvideo_vflip.mov
+          qrvideo_vflip.mov       \
+          vp9_audfirst.webm
 
 # All Google Test headers. Usually you shouldn't change this
 # definition.
