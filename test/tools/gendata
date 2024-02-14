@@ -68,7 +68,7 @@ for (`ffprobe -show_frames -select_streams $track $filename 2>/dev/null`) {
     } elsif (/^key_frame/) {
         my @k = split('=');
         push(@keyframes, (int($k[1]) == 1 ? "true" : "false"));
-    } elsif (/^pkt_pts=/) {
+    } elsif (/^pts=/) {
         my @t = split('=');
         push(@timestamps, int($t[1]));
     } elsif (/^pkt_duration=/) {
