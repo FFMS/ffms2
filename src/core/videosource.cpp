@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <thread>
 
+#include "ffmscompat.h"
 
 void FFMS_VideoSource::SanityCheckFrameForData(AVFrame *Frame) {
     for (int i = 0; i < 4; i++) {
@@ -77,11 +78,11 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
     LocalFrame.ScaledWidth = TargetWidth;
     LocalFrame.ScaledHeight = TargetHeight;
     LocalFrame.ConvertedPixelFormat = OutputFormat;
-    LocalFrame.KeyFrame = Frame->key_frame;
+    LocalFrame.KeyFrame = FFMS_IS_KEY_FRAME(Frame);
     LocalFrame.PictType = av_get_picture_type_char(Frame->pict_type);
     LocalFrame.RepeatPict = Frame->repeat_pict;
-    LocalFrame.InterlacedFrame = Frame->interlaced_frame;
-    LocalFrame.TopFieldFirst = Frame->top_field_first;
+    LocalFrame.InterlacedFrame = FFMS_INTERLACED_FRAME(Frame);
+    LocalFrame.TopFieldFirst = FFMS_TOP_FIELD_FIRST(Frame);
     LocalFrame.ColorSpace = OutputColorSpaceSet ? OutputColorSpace : Frame->colorspace;
     LocalFrame.ColorRange = OutputColorRangeSet ? OutputColorRange : Frame->color_range;
     LocalFrame.ColorPrimaries = (OutputColorPrimaries >= 0) ? OutputColorPrimaries : Frame->color_primaries;
@@ -594,7 +595,7 @@ void FFMS_VideoSource::SetVideoProperties() {
             VP.RFFNumerator /= 2;
     }
     VP.NumFrames = Frames.VisibleFrameCount();
-    VP.TopFieldFirst = DecodeFrame->top_field_first;
+    VP.TopFieldFirst = FFMS_TOP_FIELD_FIRST(DecodeFrame);
     VP.ColorSpace = CodecContext->colorspace;
     VP.ColorRange = CodecContext->color_range;
     // these pixfmt's are deprecated but still used
@@ -670,7 +671,7 @@ bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
     // H.264 (PAFF) and HEVC can have one field per packet, and decoding delay needs
     // to be adjusted accordingly.
     if (CodecContext->codec_id == AV_CODEC_ID_H264 || CodecContext->codec_id == AV_CODEC_ID_HEVC) {
-        if (LastDecodedFrame->interlaced_frame == 1)
+        if (FFMS_INTERLACED_FRAME(LastDecodedFrame) == 1)
             HaveSeenInterlacedFrame = true;
         if (!PAFFAdjusted && DelayCounter > Delay && HaveSeenInterlacedFrame && LastDecodedFrame->repeat_pict == 0 && Ret != 0) {
             int OldBFrameDelay = Delay - (CodecContext->thread_count - 1);

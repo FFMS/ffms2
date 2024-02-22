@@ -23,4 +23,14 @@
 
 #define VERSION_CHECK(LIB, cmp, major, minor, micro) ((LIB) cmp (AV_VERSION_INT(major, minor, micro)))
 
+#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 58, 7, 100)
+#define FFMS_TOP_FIELD_FIRST(frame) (!!(frame->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST))
+#define FFMS_INTERLACED_FRAME(frame) (!!(frame->flags & AV_FRAME_FLAG_INTERLACED))
+#define FFMS_IS_KEY_FRAME(frame) (!!(frame->flags & AV_FRAME_FLAG_KEY))
+#else
+#define FFMS_TOP_FIELD_FIRST(frame) (frame->top_field_first)
+#define FFMS_INTERLACED_FRAME(frame) (frame->interlaced_frame)
+#define FFMS_IS_KEY_FRAME(frame) (frame->key_frame)
+#endif
+
 #endif // FFMSCOMPAT_H
