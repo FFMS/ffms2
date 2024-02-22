@@ -33,4 +33,20 @@
 #define FFMS_IS_KEY_FRAME(frame) (frame->key_frame)
 #endif
 
+#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >=, 60, 30, 101)
+#define FFMS_STREAM_SIDE_DATA(stream) (stream->codecpar->coded_side_data)
+#define FFMS_STREAM_NB_SIDE_DATA(stream) (stream->codecpar->nb_coded_side_data)
+static inline uint8_t *ffms_get_stream_side_data(const AVPacketSideData *sd, int nb_sd, enum AVPacketSideDataType type) {
+    const AVPacketSideData *side_data = av_packet_side_data_get(sd, nb_sd, type);
+    if (!side_data)
+        return nullptr;
+    return side_data->data;
+}
+#define FFMS_GET_STREAM_SIDE_DATA(stream, type) ffms_get_stream_side_data(stream->codecpar->coded_side_data, stream->codecpar->nb_coded_side_data, type)
+#else
+#define FFMS_STREAM_SIDE_DATA(stream) (stream->side_data)
+#define FFMS_STREAM_NB_SIDE_DATA(stream) (stream->nb_side_data)
+#define FFMS_GET_STREAM_SIDE_DATA(stream, type) av_stream_get_side_data(stream, type, nullptr)
+#endif
+
 #endif // FFMSCOMPAT_H
