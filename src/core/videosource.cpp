@@ -130,7 +130,6 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
         LocalFrame.DolbyVisionRPUSize = DolbyVisionRPUSideData->size;
     }
 
-#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 58, 5, 100)
     AVFrameSideData *HDR10PlusSideData = av_frame_get_side_data(Frame, AV_FRAME_DATA_DYNAMIC_HDR_PLUS);
     if (HDR10PlusSideData) {
         uint8_t *T35Buffer = nullptr;
@@ -154,7 +153,6 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
         LocalFrame.HDR10Plus = HDR10PlusBuffer;
         LocalFrame.HDR10PlusSize = T35Size;
     }
-#endif
 
     const AVFrameSideData *ContentLightSideData = av_frame_get_side_data(Frame, AV_FRAME_DATA_CONTENT_LIGHT_LEVEL);
     if (ContentLightSideData) {
@@ -245,12 +243,8 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         if (CodecContext->codec_id == AV_CODEC_ID_VC1 && CodecContext->has_b_frames) {
             Delay = 7 + (CodecContext->thread_count - 1); // the maximum possible value for vc1
         } else if (CodecContext->codec_id == AV_CODEC_ID_AV1) {
-#if VERSION_CHECK(LIBAVCODEC_VERSION_INT, >=, 60, 14, 101)
             // libdav1d.c exports delay like this.
             Delay = CodecContext->delay;
-#else
-            Delay = 0; // Welp, nothing we can do.
-#endif
         } else {
             // In theory we can move this to CodecContext->delay, sort of, one day, maybe. Not now.
             Delay = CodecContext->has_b_frames + (CodecContext->thread_count - 1); // Normal decoder delay

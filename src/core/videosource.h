@@ -31,9 +31,7 @@ extern "C" {
 #include <libavutil/mastering_display_metadata.h>
 
 #include "ffmscompat.h"
-#if VERSION_CHECK(LIBAVUTIL_VERSION_INT, >=, 58, 5, 100)
 #include <libavutil/hdr_dynamic_metadata.h>
-#endif
 }
 
 #include <vector>
