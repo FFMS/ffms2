@@ -77,11 +77,11 @@ FFMS_Frame *FFMS_VideoSource::OutputFrame(AVFrame *Frame) {
     LocalFrame.ScaledWidth = TargetWidth;
     LocalFrame.ScaledHeight = TargetHeight;
     LocalFrame.ConvertedPixelFormat = OutputFormat;
-    LocalFrame.KeyFrame = Frame->key_frame;
+    LocalFrame.KeyFrame = !!(Frame->flags & AV_FRAME_FLAG_KEY);
     LocalFrame.PictType = av_get_picture_type_char(Frame->pict_type);
     LocalFrame.RepeatPict = Frame->repeat_pict;
-    LocalFrame.InterlacedFrame = Frame->interlaced_frame;
-    LocalFrame.TopFieldFirst = Frame->top_field_first;
+    LocalFrame.InterlacedFrame = !!(Frame->flags & AV_FRAME_FLAG_INTERLACED);
+    LocalFrame.TopFieldFirst = !!(Frame->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST);
     LocalFrame.ColorSpace = OutputColorSpaceSet ? OutputColorSpace : Frame->colorspace;
     LocalFrame.ColorRange = OutputColorRangeSet ? OutputColorRange : Frame->color_range;
     LocalFrame.ColorPrimaries = (OutputColorPrimaries >= 0) ? OutputColorPrimaries : Frame->color_primaries;
@@ -594,7 +594,7 @@ void FFMS_VideoSource::SetVideoProperties() {
             VP.RFFNumerator /= 2;
     }
     VP.NumFrames = Frames.VisibleFrameCount();
-    VP.TopFieldFirst = DecodeFrame->top_field_first;
+    VP.TopFieldFirst = !!(DecodeFrame->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST);
     VP.ColorSpace = CodecContext->colorspace;
     VP.ColorRange = CodecContext->color_range;
     // these pixfmt's are deprecated but still used
@@ -670,7 +670,7 @@ bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
     // H.264 (PAFF) and HEVC can have one field per packet, and decoding delay needs
     // to be adjusted accordingly.
     if (CodecContext->codec_id == AV_CODEC_ID_H264 || CodecContext->codec_id == AV_CODEC_ID_HEVC) {
-        if (LastDecodedFrame->interlaced_frame == 1)
+        if (!!(LastDecodedFrame->flags & AV_FRAME_FLAG_INTERLACED))
             HaveSeenInterlacedFrame = true;
         if (!PAFFAdjusted && DelayCounter > Delay && HaveSeenInterlacedFrame && LastDecodedFrame->repeat_pict == 0 && Ret != 0) {
             int OldBFrameDelay = Delay - (CodecContext->thread_count - 1);
