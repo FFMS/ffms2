@@ -88,7 +88,7 @@ PKG_PROG_PKG_CONFIG([0.22])
 pkgconfigdir="\$(libdir)/pkgconfig"
 AC_SUBST(pkgconfigdir)
 
-PKG_CHECK_MODULES(FFMPEG, [libavformat >= 53.20.0 libavcodec >= 53.24.0 libswscale >= 0.7.0 libavutil >= 51.21.0 libswresample >= 1.0.0])
+PKG_CHECK_MODULES(FFMPEG, [libavformat >= 60.16.0 libavcodec >= 60.31.0 libswscale >= 7.5.0 libavutil >= 58.29.0 libswresample >= 4.12.0])
 
 dnl As of 0eec06ed8747923faa6a98e474f224d922dc487d ffmpeg only adds -lrt to lavc's
 dnl LIBS, but lavu needs it, so move it to the end if it's present
