@@ -291,13 +291,13 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         VP.Stereo3DType = FFMS_S3D_TYPE_2D;
         VP.Stereo3DFlags = 0;
 
-        for (int i = 0; i < FormatContext->streams[VideoTrack]->nb_side_data; i++) {
-            if (FormatContext->streams[VideoTrack]->side_data[i].type == AV_PKT_DATA_STEREO3D) {
-                const AVStereo3D *StereoSideData = (const AVStereo3D *)FormatContext->streams[VideoTrack]->side_data[i].data;
+        for (int i = 0; i < FormatContext->streams[VideoTrack]->codecpar->nb_coded_side_data; i++) {
+            if (FormatContext->streams[VideoTrack]->codecpar->coded_side_data[i].type == AV_PKT_DATA_STEREO3D) {
+                const AVStereo3D *StereoSideData = (const AVStereo3D *)FormatContext->streams[VideoTrack]->codecpar->coded_side_data[i].data;
                 VP.Stereo3DType = StereoSideData->type;
                 VP.Stereo3DFlags = StereoSideData->flags;
-            } else if (FormatContext->streams[VideoTrack]->side_data[i].type == AV_PKT_DATA_MASTERING_DISPLAY_METADATA) {
-                const AVMasteringDisplayMetadata *MasteringDisplay = (const AVMasteringDisplayMetadata *)FormatContext->streams[VideoTrack]->side_data[i].data;
+            } else if (FormatContext->streams[VideoTrack]->codecpar->coded_side_data[i].type == AV_PKT_DATA_MASTERING_DISPLAY_METADATA) {
+                const AVMasteringDisplayMetadata *MasteringDisplay = (const AVMasteringDisplayMetadata *)FormatContext->streams[VideoTrack]->codecpar->coded_side_data[i].data;
                 if (MasteringDisplay->has_primaries) {
                     VP.HasMasteringDisplayPrimaries = MasteringDisplay->has_primaries;
                     for (int i = 0; i < 3; i++) {
@@ -319,8 +319,8 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
                                                   !!VP.MasteringDisplayWhitePointX   && !!VP.MasteringDisplayWhitePointY;
                 /* MasteringDisplayMinLuminance can be 0 */
                 VP.HasMasteringDisplayLuminance = !!VP.MasteringDisplayMaxLuminance;
-            } else if (FormatContext->streams[VideoTrack]->side_data[i].type == AV_PKT_DATA_CONTENT_LIGHT_LEVEL) {
-                const AVContentLightMetadata *ContentLightLevel = (const AVContentLightMetadata *)FormatContext->streams[VideoTrack]->side_data[i].data;
+            } else if (FormatContext->streams[VideoTrack]->codecpar->coded_side_data[i].type == AV_PKT_DATA_CONTENT_LIGHT_LEVEL) {
+                const AVContentLightMetadata *ContentLightLevel = (const AVContentLightMetadata *)FormatContext->streams[VideoTrack]->codecpar->coded_side_data[i].data;
 
                 VP.ContentLightLevelMax = ContentLightLevel->MaxCLL;
                 VP.ContentLightLevelAverage = ContentLightLevel->MaxFALL;
@@ -333,8 +333,11 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         // Set rotation
         VP.Rotation = 0;
         VP.Flip = 0;
-        int32_t *RotationMatrix = reinterpret_cast<int32_t *>(av_stream_get_side_data(FormatContext->streams[VideoTrack], AV_PKT_DATA_DISPLAYMATRIX, nullptr));
-        if (RotationMatrix) {
+        const AVPacketSideData *SideData = av_packet_side_data_get(FormatContext->streams[VideoTrack]->codecpar->coded_side_data, FormatContext->streams[VideoTrack]->codecpar->nb_coded_side_data, AV_PKT_DATA_DISPLAYMATRIX);
+        const int32_t *RotationMatrixSrc = reinterpret_cast<const int32_t *>(SideData ? SideData->data : nullptr);
+        if (RotationMatrixSrc) {
+            int32_t RotationMatrix[9];
+            memcpy(RotationMatrix, RotationMatrixSrc, sizeof(RotationMatrix));
             int64_t det = (int64_t)RotationMatrix[0] * RotationMatrix[4] - (int64_t)RotationMatrix[1] * RotationMatrix[3];
             if (det < 0) {
                 /* Always assume an horizontal flip for simplicity, it can be changed later if rotation is 180. */
