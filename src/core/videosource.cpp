@@ -278,7 +278,7 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
             double TN = (double)(Frames.TB.Num);
             VP.FPSDenominator = (unsigned int)(PTSDiff * TN / TD * 1000.0 / (TotalFrames - 1));
             VP.FPSNumerator = 1000000;
-        } else if (TotalFrames == 1) {
+        } else if (TotalFrames == 1 && Frames.LastDuration > 0) {
             VP.FPSDenominator *= Frames.LastDuration;
         }
 
