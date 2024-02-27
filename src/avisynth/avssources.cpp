@@ -550,7 +550,7 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
         if (FieldList[n].Top == FieldList[n].Bottom) {
             OutputFrame(Frame, Dst, Env);
         } else {
-            int FirstField = std::min(FieldList[n].Top, FieldList[n].Bottom) == FieldList[n].Bottom;
+            int FirstField = std::min(FieldList[n].Top, FieldList[n].Bottom) == (FFMS_GetVideoProperties(V)->TopFieldFirst ? FieldList[n].Top : FieldList[n].Bottom);
             OutputField(Frame, Dst, FirstField, Env);
             Frame = FFMS_GetFrame(V, std::max(FieldList[n].Top, FieldList[n].Bottom), &E);
             if (Frame == nullptr)
