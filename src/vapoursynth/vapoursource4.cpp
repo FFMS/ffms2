@@ -141,7 +141,7 @@ const VSFrame *VS_CC VSVideoSource4::GetVSFrame(int n, VSCore *core, const VSAPI
             num = 1;
         int64_t DurNum = TB->Num * num;
         int64_t DurDen = TB->Den * 1000;
-        vsh::muldivRational(&DurNum, &DurDen, 1, 1);
+        vsh::reduceRational(&DurNum, &DurDen);
         vsapi->mapSetInt(Props, "_DurationNum", DurNum, maReplace);
         vsapi->mapSetInt(Props, "_DurationDen", DurDen, maReplace);
         vsapi->mapSetFloat(Props, "_AbsoluteTime", ((static_cast<double>(TB->Num) / 1000) * FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, maReplace);
@@ -274,22 +274,27 @@ VSVideoSource4::VSVideoSource4(const char *SourceFile, int Track, FFMS_Index *In
 
     const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
 
+    VI[0].fpsDen = VP->FPSDenominator;
+    VI[0].fpsNum = VP->FPSNumerator;
+    VI[0].numFrames = VP->NumFrames;
+    vsh::reduceRational(&VI[0].fpsNum, &VI[0].fpsDen);
+
     if (FPSNum > 0 && FPSDen > 0) {
-        vsh::muldivRational(&FPSNum, &FPSDen, 1, 1);
-        VI[0].fpsDen = FPSDen;
-        VI[0].fpsNum = FPSNum;
-        if (VP->NumFrames > 1) {
-            VI[0].numFrames = static_cast<int>((VP->LastTime - VP->FirstTime) * (1 + 1. / (VP->NumFrames - 1)) * FPSNum / FPSDen + 0.5);
-            if (VI[0].numFrames < 1)
+        vsh::reduceRational(&FPSNum, &FPSDen);
+        if (VI[0].fpsDen != FPSDen || VI[0].fpsNum != FPSNum) {
+            VI[0].fpsDen = FPSDen;
+            VI[0].fpsNum = FPSNum;
+            if (VP->NumFrames > 1) {
+                VI[0].numFrames = static_cast<int>((VP->LastTime - VP->FirstTime) * (1 + 1. / (VP->NumFrames - 1)) * FPSNum / FPSDen + 0.5);
+                if (VI[0].numFrames < 1)
+                    VI[0].numFrames = 1;
+            } else {
                 VI[0].numFrames = 1;
+            }
         } else {
-            VI[0].numFrames = 1;
+            FPSNum = 0;
+            FPSDen = 0;
         }
-    } else {
-        VI[0].fpsDen = VP->FPSDenominator;
-        VI[0].fpsNum = VP->FPSNumerator;
-        VI[0].numFrames = VP->NumFrames;
-        vsh::muldivRational(&VI[0].fpsNum, &VI[0].fpsDen, 1, 1);
     }
 
     if (OutputAlpha) {

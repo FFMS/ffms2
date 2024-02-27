@@ -45,8 +45,8 @@ class AvisynthVideoSource : public IClip {
     VideoInfo VI;
     bool HighBitDepth;
     FFMS_VideoSource *V;
-    int FPSNum;
-    int FPSDen;
+    int64_t FPSNum;
+    int64_t FPSDen;
     int RFFMode;
     std::vector<FrameFields> FieldList;
     const char *VarPrefix;
