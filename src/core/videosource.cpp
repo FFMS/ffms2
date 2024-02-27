@@ -582,8 +582,8 @@ void FFMS_VideoSource::ResetInputFormat() {
 }
 
 void FFMS_VideoSource::SetVideoProperties() {
-    VP.RFFDenominator = CodecContext->time_base.num;
-    VP.RFFNumerator = CodecContext->time_base.den;
+    VP.RFFDenominator = FormatContext->streams[VideoTrack]->time_base.num;
+    VP.RFFNumerator = FormatContext->streams[VideoTrack]->time_base.den;
     if (CodecContext->codec_id == AV_CODEC_ID_H264) {
         if (VP.RFFNumerator & 1)
             VP.RFFDenominator *= 2;
