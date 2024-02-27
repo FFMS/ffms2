@@ -247,7 +247,9 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
             Delay = CodecContext->delay;
         } else {
             // In theory we can move this to CodecContext->delay, sort of, one day, maybe. Not now.
-            Delay = CodecContext->has_b_frames + (CodecContext->thread_count - 1); // Normal decoder delay
+            Delay = CodecContext->has_b_frames; // Normal decoder delay
+            if (CodecContext->active_thread_type & FF_THREAD_FRAME) // Adjust for frame based threading
+                Delay += CodecContext->thread_count - 1;
         }
 
         // Always try to decode a frame to make sure all required parameters are known
