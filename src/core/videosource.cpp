@@ -372,10 +372,6 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
             if (Seek(0) < 0) {
                 throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_CODEC,
                     "Video track is unseekable");
-            } else {
-                avcodec_flush_buffers(CodecContext);
-                // Since we seeked to frame 0 we need to specify that frame 0 is once again the next frame that wil be decoded
-                CurrentFrame = 0;
             }
         }
 
@@ -689,15 +685,23 @@ int FFMS_VideoSource::Seek(int n) {
 
     if (!SeekByPos || Frames[n].FilePos < 0) {
         ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].PTS, AVSEEK_FLAG_BACKWARD);
-        if (ret >= 0)
-            return ret;
     }
 
-    if (Frames[n].FilePos >= 0) {
+    if (ret < 0 && Frames[n].FilePos >= 0) {
         ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].FilePos + PosOffset, AVSEEK_FLAG_BYTE);
         if (ret >= 0)
             SeekByPos = true;
     }
+
+    // We always assume seeking is possible if the first seek succeeds
+    avcodec_flush_buffers(CodecContext);
+    ResendPacket = false;
+    av_packet_unref(StashedPacket);
+
+    // When it's 0 we always know what the next frame is (or more exactly should be)
+    if (n == 0)
+        CurrentFrame = 0;
+
     return ret;
 }
 
@@ -796,6 +800,7 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
 }
 
 bool FFMS_VideoSource::SeekTo(int n, int SeekOffset) {
+    // The semantics here are basically "return true if we don't know exactly where our seek ended up (destination isn't frame 0)"
     if (SeekMode >= 0) {
         int TargetFrame = n + SeekOffset;
         if (TargetFrame < 0)
@@ -808,14 +813,11 @@ bool FFMS_VideoSource::SeekTo(int n, int SeekOffset) {
         if (SeekMode == 0) {
             if (n < CurrentFrame) {
                 Seek(0);
-                avcodec_flush_buffers(CodecContext);
-                CurrentFrame = 0;
             }
         } else {
             // 10 frames is used as a margin to prevent excessive seeking since the predicted best keyframe isn't always selected by avformat
             if (n < CurrentFrame || TargetFrame > CurrentFrame + 10 || (SeekMode == 3 && n > CurrentFrame + 10)) {
                 Seek(TargetFrame);
-                avcodec_flush_buffers(CodecContext);
                 return true;
             }
         }
