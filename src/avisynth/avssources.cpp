@@ -190,6 +190,11 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
         }
 
         if (RFFMode == 2) {
+            if (VP->TopFieldFirst) {
+                for (auto &iter : FieldList)
+                    std::swap(iter.Top, iter.Bottom);
+            }
+
             VI.num_frames = (VI.num_frames * 4) / 5;
             VI.fps_denominator *= 5;
             VI.fps_numerator *= 4;
