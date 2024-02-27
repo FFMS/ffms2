@@ -500,7 +500,7 @@ Resets the input format for the given `FFMS_VideoSource` object to the values sp
 
 [DestroyIndex]: #ffms_destroyindex---deallocates-an-index-object
 ```c++
-void FFMS_DestroyFFMS_Index(FFMS_Index *Index);
+void FFMS_DestroyIndex(FFMS_Index *Index);
 ```
 Deallocates the given `FFMS_Index` object and frees the memory that was allocated when it was created.
 
