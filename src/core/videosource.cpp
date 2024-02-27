@@ -415,7 +415,9 @@ FFMS_VideoSource::~FFMS_VideoSource() {
 }
 
 FFMS_Frame *FFMS_VideoSource::GetFrameByTime(double Time) {
-    int Frame = Frames.ClosestFrameFromPTS(static_cast<int64_t>((Time * 1000 * Frames.TB.Den) / Frames.TB.Num));
+    // The final 1/1000th of a PTS is added to avoid frame duplication due to floating point math inexactness
+    // Basically only a problem when the fps is externally set to the same or a multiple of the input clip fps
+    int Frame = Frames.ClosestFrameFromPTS(static_cast<int64_t>(((Time * 1000 * Frames.TB.Den) / Frames.TB.Num) + .001));
     return GetFrame(Frame);
 }
 
