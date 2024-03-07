@@ -48,6 +48,7 @@ FrameInfo ReadFrame(ZipFile &stream, FrameInfo const& prev, const FFMS_TrackType
         f.SampleCount = stream.Read<uint32_t>() + prev.SampleCount;
     } else if (TT == FFMS_TYPE_VIDEO) {
         f.OriginalPos = static_cast<size_t>(stream.Read<uint64_t>() + prev.OriginalPos + 1);
+        f.FieldOrder = stream.Read<int32_t>();
         f.RepeatPict = stream.Read<int32_t>();
     }
     return f;
@@ -64,6 +65,7 @@ static void WriteFrame(ZipFile &stream, FrameInfo const& f, FrameInfo const& pre
         stream.Write(f.SampleCount - prev.SampleCount);
     else if (TT == FFMS_TYPE_VIDEO) {
         stream.Write(static_cast<uint64_t>(f.OriginalPos) - prev.OriginalPos - 1);
+        stream.Write<int32_t>(f.FieldOrder);
         stream.Write<int32_t>(f.RepeatPict);
     }
 }
@@ -127,8 +129,8 @@ void FFMS_Track::Write(ZipFile &stream) const {
         WriteFrame(stream, Frames[i], i == 0 ? temp : Frames[i - 1], TT);
 }
 
-void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, bool Hidden) {
-    Data->Frames.push_back({ PTS, 0, FilePos, 0, 0, 0, FrameType, RepeatPict, KeyFrame, Hidden });
+void FFMS_Track::AddVideoFrame(int64_t PTS, int FieldOrder, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, bool Hidden) {
+    Data->Frames.push_back({ PTS, 0, FilePos, 0, 0, 0, FrameType, FieldOrder, RepeatPict, KeyFrame, Hidden });
 }
 
 void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos, bool Hidden) {
@@ -408,7 +410,7 @@ void FFMS_Track::GeneratePublicInfo() {
             continue;
         RealFrameNumbers.push_back(static_cast<int>(i));
 
-        FFMS_FrameInfo info = { Frames[i].PTS, Frames[i].RepeatPict, Frames[i].KeyFrame, Frames[i].OriginalPTS };
+        FFMS_FrameInfo info = { Frames[i].PTS, Frames[i].FieldOrder, Frames[i].RepeatPict, Frames[i].KeyFrame, Frames[i].OriginalPTS };
         PublicFrameInfo.push_back(info);
     }
 }
