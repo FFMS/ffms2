@@ -37,7 +37,6 @@ struct FrameInfo {
     uint32_t SampleCount;
     size_t OriginalPos;
     int FrameType;
-    int FieldOrder;
     int RepeatPict;
     bool KeyFrame;
     bool Hidden;
@@ -67,7 +66,7 @@ public:
     int64_t LastDuration = 0;
     int SampleRate = 0; // not persisted
 
-    void AddVideoFrame(int64_t PTS, int FieldOrder, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, bool Invisible = false);
+    void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, bool Invisible = false);
     void AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0, bool Invisible = false);
 
     void MaybeHideFrames();
