@@ -115,11 +115,8 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
     if (SeekMode < -1 || SeekMode > 3)
         Env->ThrowError("FFVideoSource: Invalid seekmode selected");
 
-    if (RFFMode < 0 || RFFMode > 2)
+    if (RFFMode != 0)
         Env->ThrowError("FFVideoSource: Invalid RFF mode selected");
-
-    if (RFFMode > 0 && FPSNum > 0)
-        Env->ThrowError("FFVideoSource: RFF modes may not be combined with CFR conversion");
 
     if (IsSamePath(Source, Timecodes))
         Env->ThrowError("FFVideoSource: Timecodes will overwrite the source");
@@ -177,7 +174,7 @@ static AVSValue __cdecl CreateFFVideoSource(AVSValue Args, void* UserData, IScri
     AvisynthVideoSource *Filter;
 
     try {
-        Filter = new AvisynthVideoSource(Source, Track, Index, FPSNum, FPSDen, Threads, SeekMode, RFFMode, Width, Height, Resizer, ColorSpace, VarPrefix, Env);
+        Filter = new AvisynthVideoSource(Source, Track, Index, FPSNum, FPSDen, Threads, SeekMode, Width, Height, Resizer, ColorSpace, VarPrefix, Env);
     } catch (...) {
         FFMS_DestroyIndex(Index);
         throw;

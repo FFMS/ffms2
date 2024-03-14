@@ -52,7 +52,7 @@ private:
     static void OutputAlphaFrame(const FFMS_Frame *Frame, int Plane, VSFrame *Dst, const VSAPI *vsapi);
 public:
     VSVideoSource4(const char *SourceFile, int Track, FFMS_Index *Index,
-        int AFPSNum, int AFPSDen, int Threads, int SeekMode, int RFFMode,
+        int AFPSNum, int AFPSDen, int Threads, int SeekMode,
         int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
         int Format, bool OutputAlpha, const VSAPI *vsapi, VSCore *core);
     ~VSVideoSource4();

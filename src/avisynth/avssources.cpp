@@ -114,12 +114,11 @@ static AVPixelFormat CSNameToPIXFMT(const char *CSName, AVPixelFormat Default, b
 }
 
 AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS_Index *Index,
-    int AFPSNum, int AFPSDen, int Threads, int SeekMode, int RFFMode,
+    int AFPSNum, int AFPSDen, int Threads, int SeekMode,
     int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
     const char *ConvertToFormatName, const char *VarPrefix, IScriptEnvironment* Env)
     : FPSNum(AFPSNum)
     , FPSDen(AFPSDen)
-    , RFFMode(RFFMode)
     , VarPrefix(VarPrefix) {
     VI = {};
 
@@ -142,115 +141,24 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
 
     const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
 
-    if (RFFMode > 0) {
-        // This part assumes things, and so should you
-
-        FFMS_Track *VTrack = FFMS_GetTrackFromVideo(V);
-
-        if (FFMS_GetFrameInfo(VTrack, 0)->RepeatPict < 0) {
-            FFMS_DestroyVideoSource(V);
-            Env->ThrowError("FFVideoSource: No RFF flags present");
-        }
-
-        int RepeatMin = FFMS_GetFrameInfo(VTrack, 0)->RepeatPict;
-        int NumFields = 0;
-
-        for (int i = 0; i < VP->NumFrames; i++) {
-            int RepeatPict = FFMS_GetFrameInfo(VTrack, i)->RepeatPict;
-            NumFields += RepeatPict + 1;
-            RepeatMin = std::min(RepeatMin, RepeatPict);
-        }
-
-        for (int i = 0; i < VP->NumFrames; i++) {
-            int RepeatPict = FFMS_GetFrameInfo(VTrack, i)->RepeatPict;
-
-            if (((RepeatPict + 1) * 2) % (RepeatMin + 1)) {
-                FFMS_DestroyVideoSource(V);
-                Env->ThrowError("FFVideoSource: Unsupported RFF flag pattern");
-            }
-        }
-
-        VI.fps_denominator = VP->RFFDenominator * (RepeatMin + 1);
-        VI.fps_numerator = VP->RFFNumerator;
-        VI.num_frames = (NumFields + RepeatMin) / (RepeatMin + 1);
-
-        int DestField = 0;
-        FieldList.resize(VI.num_frames);
-        for (int i = 0; i < VP->NumFrames; i++) {
-            int RepeatPict = FFMS_GetFrameInfo(VTrack, i)->RepeatPict;
-            int RepeatFields = ((RepeatPict + 1) * 2) / (RepeatMin + 1);
-
-            for (int j = 0; j < RepeatFields; j++) {
-                if ((DestField + (VP->TopFieldFirst ? 0 : 1)) & 1)
-                    FieldList[DestField / 2].Top = i;
-                else
-                    FieldList[DestField / 2].Bottom = i;
-                DestField++;
-            }
-        }
-
-        if (RFFMode == 2) {
-            if (VP->TopFieldFirst) {
-                for (auto &iter : FieldList)
-                    std::swap(iter.Top, iter.Bottom);
-            }
-
-            VI.num_frames = (VI.num_frames * 4) / 5;
-            VI.fps_denominator *= 5;
-            VI.fps_numerator *= 4;
-
-            int OutputFrames = 0;
-
-            for (int i = 0; i < VI.num_frames / 4; i++) {
-                bool HasDropped = false;
-
-                FieldList[OutputFrames].Top = FieldList[i * 5].Top;
-                FieldList[OutputFrames].Bottom = FieldList[i * 5].Top;
-                OutputFrames++;
-
-                for (int j = 1; j < 5; j++) {
-                    if (!HasDropped && FieldList[i * 5 + j - 1].Top == FieldList[i * 5 + j].Top) {
-                        HasDropped = true;
-                        continue;
-                    }
-
-                    FieldList[OutputFrames].Top = FieldList[i * 5 + j].Top;
-                    FieldList[OutputFrames].Bottom = FieldList[i * 5 + j].Top;
-                    OutputFrames++;
-                }
-
-                if (!HasDropped)
-                    OutputFrames--;
-            }
-
-            if (OutputFrames > 0)
-                for (int i = OutputFrames - 1; i < static_cast<int>(FieldList.size()); i++) {
-                    FieldList[i].Top = FieldList[OutputFrames - 1].Top;
-                    FieldList[i].Bottom = FieldList[OutputFrames - 1].Top;
-                }
-
-            FieldList.resize(VI.num_frames);
-        }
-    } else {
-        VI.fps_denominator = VP->FPSDenominator;
-        VI.fps_numerator = VP->FPSNumerator;
-        VI.num_frames = VP->NumFrames;
-        if (FPSNum > 0 && FPSDen > 0) {
-            vsh::reduceRational(&FPSNum, &FPSDen);
-            if (VI.fps_denominator != FPSDen || VI.fps_numerator != FPSNum) {
-                VI.fps_denominator = FPSDen;
-                VI.fps_numerator = FPSNum;
-                if (VP->NumFrames > 1) {
-                    VI.num_frames = static_cast<int>((VP->LastTime - VP->FirstTime) * (1 + 1. / (VP->NumFrames - 1)) * FPSNum / FPSDen + 0.5);
-                    if (VI.num_frames < 1)
-                        VI.num_frames = 1;
-                } else {
+    VI.fps_denominator = VP->FPSDenominator;
+    VI.fps_numerator = VP->FPSNumerator;
+    VI.num_frames = VP->NumFrames;
+    if (FPSNum > 0 && FPSDen > 0) {
+        vsh::reduceRational(&FPSNum, &FPSDen);
+        if (VI.fps_denominator != FPSDen || VI.fps_numerator != FPSNum) {
+            VI.fps_denominator = FPSDen;
+            VI.fps_numerator = FPSNum;
+            if (VP->NumFrames > 1) {
+                VI.num_frames = static_cast<int>((VP->LastTime - VP->FirstTime) * (1 + 1. / (VP->NumFrames - 1)) * FPSNum / FPSDen + 0.5);
+                if (VI.num_frames < 1)
                     VI.num_frames = 1;
-                }
             } else {
-                FPSNum = 0;
-                FPSDen = 0;
+                VI.num_frames = 1;
             }
+        } else {
+            FPSNum = 0;
+            FPSDen = 0;
         }
     }
 
@@ -461,12 +369,6 @@ void AvisynthVideoSource::InitOutputFormat(
     else
         Env->ThrowError("FFVideoSource: No suitable output format found");
 
-    if (RFFMode > 0 && ResizeToHeight != F->EncodedHeight)
-        Env->ThrowError("FFVideoSource: Vertical scaling not allowed in RFF mode");
-
-    if (RFFMode > 0 && TargetPixelFormat != AV_PIX_FMT_NV21)
-        Env->ThrowError("FFVideoSource: Only the default output colorspace can be used in RFF mode");
-
     // set color information variables
     Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCOLOR_SPACE"), F->ColorSpace);
     Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFCOLOR_RANGE"), F->ColorRange);
@@ -481,7 +383,7 @@ void AvisynthVideoSource::InitOutputFormat(
 
     // Crop to obey subsampling width/height requirements
     VI.width -= VI.width % (1 << GetSubSamplingW(VI));
-    VI.height -= VI.height % (1 << (GetSubSamplingH(VI) + (RFFMode > 0 ? 1 : 0)));
+    VI.height -= VI.height % (1 << (GetSubSamplingH(VI)));
 }
 
 static void BlitPlane(const FFMS_Frame *Frame, PVideoFrame &Dst, IScriptEnvironment *Env, int Plane, int PlaneId) {
@@ -547,67 +449,45 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
     AVSMap *props = has_at_least_v8 ? Env->getFramePropsRW(Dst) : nullptr;
 
     ErrorInfo E;
-    const FFMS_Frame *Frame;
-    if (RFFMode > 0) {
-        Frame = FFMS_GetFrame(V, std::min(FieldList[n].Top, FieldList[n].Bottom), &E);
-        if (Frame == nullptr)
-            Env->ThrowError("FFVideoSource: %s", E.Buffer);
-        if (FieldList[n].Top == FieldList[n].Bottom) {
-            OutputFrame(Frame, Dst, Env);
-        } else {
-            int FirstField = std::min(FieldList[n].Top, FieldList[n].Bottom) == (FFMS_GetVideoProperties(V)->TopFieldFirst ? FieldList[n].Top : FieldList[n].Bottom);
-            OutputField(Frame, Dst, FirstField, Env);
-            Frame = FFMS_GetFrame(V, std::max(FieldList[n].Top, FieldList[n].Bottom), &E);
-            if (Frame == nullptr)
-                Env->ThrowError("FFVideoSource: %s", E.Buffer);
-            OutputField(Frame, Dst, !FirstField, Env);
-        }
+    const FFMS_Frame *Frame = nullptr;
+
+    if (FPSNum > 0 && FPSDen > 0) {
+        double currentTime = FFMS_GetVideoProperties(V)->FirstTime +
+            (double)(n * (int64_t)FPSDen) / FPSNum;
+        Frame = FFMS_GetFrameByTime(V, currentTime, &E);
         Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
-        Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>('U'));
         if (has_at_least_v8) {
-            Env->propSetInt(props, "_DurationNum", FPSNum, 0);
-            Env->propSetInt(props, "_DurationDen", FPSDen, 0);
-            // don't set absolute time since it's ill-defined
+            Env->propSetInt(props, "_DurationNum", FPSDen, 0);
+            Env->propSetInt(props, "_DurationDen", FPSNum, 0);
+            Env->propSetFloat(props, "_AbsoluteTime", currentTime, 0);
         }
     } else {
-        if (FPSNum > 0 && FPSDen > 0) {
-            double currentTime = FFMS_GetVideoProperties(V)->FirstTime +
-                (double)(n * (int64_t)FPSDen) / FPSNum;
-            Frame = FFMS_GetFrameByTime(V, currentTime, &E);
-            Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), -1);
-            if (has_at_least_v8) {
-                Env->propSetInt(props, "_DurationNum", FPSDen, 0);
-                Env->propSetInt(props, "_DurationDen", FPSNum, 0);
-                Env->propSetFloat(props, "_AbsoluteTime", currentTime, 0);
-            }
-        } else {
-            Frame = FFMS_GetFrame(V, n, &E);
-            FFMS_Track *T = FFMS_GetTrackFromVideo(V);
-            const FFMS_TrackTimeBase *TB = FFMS_GetTimeBase(T);
-            Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), static_cast<int>(FFMS_GetFrameInfo(T, n)->PTS * static_cast<double>(TB->Num) / TB->Den));
-            if (has_at_least_v8) {
-                int64_t num;
-                if (n + 1 < VI.num_frames)
-                    num = FFMS_GetFrameInfo(T, n + 1)->PTS - FFMS_GetFrameInfo(T, n)->PTS;
-                else if (n > 0) // simply use the second to last frame's duration for the last one, should be good enough
-                    num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
-                else // just make it one timebase if it's a single frame clip
-                    num = 1;
-                int64_t DurNum = TB->Num * num;
-                int64_t DurDen = TB->Den * 1000;
-                vsh::reduceRational(&DurNum, &DurDen);
-                Env->propSetInt(props, "_DurationNum", DurNum, 0);
-                Env->propSetInt(props, "_DurationDen", DurDen, 0);
-                Env->propSetFloat(props, "_AbsoluteTime", ((static_cast<double>(TB->Num) / 1000) * FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, 0);
-            }
+        Frame = FFMS_GetFrame(V, n, &E);
+        FFMS_Track *T = FFMS_GetTrackFromVideo(V);
+        const FFMS_TrackTimeBase *TB = FFMS_GetTimeBase(T);
+        Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFVFR_TIME"), static_cast<int>(FFMS_GetFrameInfo(T, n)->PTS * static_cast<double>(TB->Num) / TB->Den));
+        if (has_at_least_v8) {
+            int64_t num;
+            if (n + 1 < VI.num_frames)
+                num = FFMS_GetFrameInfo(T, n + 1)->PTS - FFMS_GetFrameInfo(T, n)->PTS;
+            else if (n > 0) // simply use the second to last frame's duration for the last one, should be good enough
+                num = FFMS_GetFrameInfo(T, n)->PTS - FFMS_GetFrameInfo(T, n - 1)->PTS;
+            else // just make it one timebase if it's a single frame clip
+                num = 1;
+            int64_t DurNum = TB->Num * num;
+            int64_t DurDen = TB->Den * 1000;
+            vsh::reduceRational(&DurNum, &DurDen);
+            Env->propSetInt(props, "_DurationNum", DurNum, 0);
+            Env->propSetInt(props, "_DurationDen", DurDen, 0);
+            Env->propSetFloat(props, "_AbsoluteTime", ((static_cast<double>(TB->Num) / 1000) * FFMS_GetFrameInfo(T, n)->PTS) / TB->Den, 0);
         }
-
-        if (Frame == nullptr)
-            Env->ThrowError("FFVideoSource: %s", E.Buffer);
-
-        Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>(Frame->PictType));
-        OutputFrame(Frame, Dst, Env);
     }
+
+    if (Frame == nullptr)
+        Env->ThrowError("FFVideoSource: %s", E.Buffer);
+
+    Env->SetVar(Env->Sprintf("%s%s", this->VarPrefix, "FFPICT_TYPE"), static_cast<int>(Frame->PictType));
+    OutputFrame(Frame, Dst, Env);
 
     if (has_at_least_v8) {
         const FFMS_VideoProperties *VP = FFMS_GetVideoProperties(V);
@@ -626,8 +506,7 @@ PVideoFrame AvisynthVideoSource::GetFrame(int n, IScriptEnvironment *Env) {
             Env->propSetInt(props, "_ColorRange", 1, 0);
         else if (Frame->ColorRange == FFMS_CR_JPEG)
             Env->propSetInt(props, "_ColorRange", 0, 0);
-        if (RFFMode == 0)
-            Env->propSetData(props, "_PictType", &Frame->PictType, 1, 0);
+        Env->propSetData(props, "_PictType", &Frame->PictType, 1, 0);
 
         // Set field information
         int FieldBased = 0;

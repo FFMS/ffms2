@@ -11,6 +11,7 @@
   - Alpha planes are now correctly marked as being full range
   - The full set of demuxer options can now be passed using the FFMS2 API
   - Now sets channel layout in Avisynth+
+  - Removed the unfixable and always broken rffmode from Avisynth source
   
 - 2.3000
   - Added support for VapourSynth API4 (Myrsloik)

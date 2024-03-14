@@ -116,7 +116,7 @@ Corresponds to the FFmpeg demuxer option of the same name. You will know if you 
 ```
 FFVideoSource(string source, int track = -1, bool cache = true,
     string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1,
-    int threads = -1, string timecodes = "", int seekmode = 1, int rffmode = 0,
+    int threads = -1, string timecodes = "", int seekmode = 1,
     int width = -1, int height = -1, string resizer = "BICUBIC",
     string colorspace = "", string varprefix = "")
 ```
@@ -172,21 +172,6 @@ Valid modes are:
  - **1**: Safe normal. Bases seeking decisions on the keyframe positions reported by libavformat.
  - **2**: Unsafe normal. Same as mode 1, but no error will be thrown if the exact seek destination has to be guessed.
  - **3**: Aggressive. Seeks in the forward direction even if no closer keyframe is known to exist. Only useful for testing and containers where libavformat doesn't report keyframes properly.
-
-##### int rffmode = 0
-Controls how RFF flags in the video stream are treated; in other words it's equivalent to the "field operation" mode switch in DVD2AVI/DGIndex.
-Valid modes are:
-
- - **0**: Ignore all flags (the default mode).
- - **1**: Honor all pulldown flags.
- - **2**: Equivalent to DVD2AVI's "force film" mode.
-
-Note that using modes 1 or 2 will make `FFVideoSource` throw an error if the video stream has no RFF flags at all.
-When using either of those modes, it will also make the output be assumed as CFR, disallow vertical scaling and disallow setting the output colorspace.
-`FFPICT_TYPE` will also not be set as the output is a combination of several frames.
-Other subtle behavior changes may also exist.
-
-Also note that "force film" is mostly useless and only here for completeness' sake, since if your source really is safe to force film on, using mode 0 will have the exact same effect while being considerably more efficient.
 
 ##### int width = -1, int height = -1
 Sets the resolution of the output video, in pixels.
@@ -251,7 +236,7 @@ FFmpegSource2/FFMS2(string source, int vtrack = -1, int atrack = -2, bool cache 
     string cachefile = source + ".ffindex", int fpsnum = -1, int fpsden = 1,
     int threads = -1, string timecodes = "", int seekmode = 1,
     bool overwrite = false, int width = -1, int height = -1,
-    string resizer = "BICUBIC", string colorspace = "", int rffmode = 0,
+    string resizer = "BICUBIC", string colorspace = "",
     int adjustdelay = -1, string varprefix = "")
 ```
 A convenience function that combines the functionality of `FFVideoSource` and `FFAudioSource`.
@@ -379,7 +364,6 @@ Note that using the width/height/colorspace parameters to FFVideoSource may unde
 ##### FFPICT_TYPE
 The picture type of the most recently requested frame as the ASCII number of the character listed below.
 Use `Chr()` to convert it to an actual letter in Avisynth. Use after_frame=true in Avisynth's conditional scripting for proper results.
-Only set when rffmode=0.
 The FFmpeg source definition of the characters:
 ```
 I: Intra
@@ -394,7 +378,7 @@ b: FF_BI_TYPE (no good explanation available)
 
 ##### FFVFR_TIME
 The actual time of the source frame in milliseconds.
-Only set when no type of CFR conversion is being done (`rffmode` and `fpsnum` left at their defaults).
+Only set when no type of CFR conversion is being done (`fpsnum` and `fpsden` left at their defaults).
 
 ##### FFCHANNEL_LAYOUT
 The audio channel layout of the audio stream.

@@ -128,7 +128,6 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
     int SeekMode = vsapi->mapGetIntSaturated(in, "seekmode", 0, &err);
     if (err)
         SeekMode = FFMS_SEEK_NORMAL;
-    int RFFMode = vsapi->mapGetIntSaturated(in, "rffmode", 0, &err);
     int Width = vsapi->mapGetIntSaturated(in, "width", 0, &err);
     int Height = vsapi->mapGetIntSaturated(in, "height", 0, &err);
     const char *Resizer = vsapi->mapGetData(in, "resizer", 0, &err);
@@ -144,10 +143,6 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
         return vsapi->mapSetError(out, "Source: No video track selected");
     if (SeekMode < -1 || SeekMode > 3)
         return vsapi->mapSetError(out, "Source: Invalid seekmode selected");
-    if (RFFMode < 0 || RFFMode > 2)
-        return vsapi->mapSetError(out, "Source: Invalid RFF mode selected");
-    if (RFFMode > 0 && FPSNum > 0)
-        return vsapi->mapSetError(out, "Source: RFF modes may not be combined with CFR conversion");
     if (Timecodes && IsSamePath(Source, Timecodes))
         return vsapi->mapSetError(out, "Source: Timecodes will overwrite the source");
 
@@ -204,7 +199,7 @@ static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core
 
     VSVideoSource4 *vs;
     try {
-        vs = new VSVideoSource4(Source, Track, Index, FPSNum, FPSDen, Threads, SeekMode, RFFMode, Width, Height, Resizer, Format, OutputAlpha, vsapi, core);
+        vs = new VSVideoSource4(Source, Track, Index, FPSNum, FPSDen, Threads, SeekMode, Width, Height, Resizer, Format, OutputAlpha, vsapi, core);
     } catch (std::exception const& e) {
         FFMS_DestroyIndex(Index);
         return vsapi->mapSetError(out, e.what());

@@ -248,7 +248,7 @@ void VS_CC VSVideoSource4::Free(void *instanceData, VSCore *, const VSAPI *) {
 }
 
 VSVideoSource4::VSVideoSource4(const char *SourceFile, int Track, FFMS_Index *Index,
-    int AFPSNum, int AFPSDen, int Threads, int SeekMode, int /*RFFMode*/,
+    int AFPSNum, int AFPSDen, int Threads, int SeekMode,
     int ResizeToWidth, int ResizeToHeight, const char *ResizerName,
     int Format, bool OutputAlpha, const VSAPI *vsapi, VSCore *core)
     : FPSNum(AFPSNum), FPSDen(AFPSDen), OutputAlpha(OutputAlpha) {
