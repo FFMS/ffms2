@@ -11,8 +11,6 @@ If you are religious you may consider this the second coming.
 Donate if you like this software.
 Collecting weird clips from the internet and making them play takes more time than you'd think.
 
-[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=fredrik%2emellbin%40gmail%2ecom&lc=US&item_name=IVTC%2eORG&no_note=0&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHostedGuest)
-
 ## Limitations
 
  - Because of LAVF's demuxer, most raw streams (such as elementary h264 and other mpeg video streams) will fail to work properly.
