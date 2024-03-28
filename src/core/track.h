@@ -35,7 +35,8 @@ struct FrameInfo {
     int64_t FilePos;
     int64_t SampleStart;
     uint32_t SampleCount;
-    size_t OriginalPos;
+    size_t OriginalPos;         // Frames[Frames[n].OriginalPos] will be the n-th frame in decoding order
+    size_t PosInDecodingOrder;
     int FrameType;
     int RepeatPict;
     bool KeyFrame;

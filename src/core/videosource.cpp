@@ -816,7 +816,7 @@ bool FFMS_VideoSource::SeekTo(int n, int SeekOffset) {
 
         if (SeekMode == 0) {
             if (n < CurrentFrame) {
-                Seek(0);
+                Seek(Frames[0].OriginalPos);
             }
         } else {
             // 10 frames is used as a margin to prevent excessive seeking since the predicted best keyframe isn't always selected by avformat

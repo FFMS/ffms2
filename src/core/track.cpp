@@ -104,8 +104,16 @@ FFMS_Track::FFMS_Track(ZipFile &stream)
     for (size_t i = 0; i < FrameCount; ++i)
         Frames.push_back(ReadFrame(stream, i == 0 ? temp : Frames.back(), TT));
 
-    if (TT == FFMS_TYPE_VIDEO)
+    if (TT == FFMS_TYPE_VIDEO) {
         GeneratePublicInfo();
+
+        // PosInDecodingOrder is currently not stored in the index for backwards compatibility, so
+        // derive it here (the asserts in FinalizeTrack guarantee that this matches the original values).
+        // FIXME store OriginalPos in the index the next time the format changes
+        for (size_t i = 0; i < Frames.size(); i++) {
+            Frames[Frames[i].OriginalPos].PosInDecodingOrder = i;
+        }
+    }
 }
 
 void FFMS_Track::Write(ZipFile &stream) const {
@@ -128,13 +136,13 @@ void FFMS_Track::Write(ZipFile &stream) const {
 }
 
 void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, bool Hidden) {
-    Data->Frames.push_back({ PTS, 0, FilePos, 0, 0, 0, FrameType, RepeatPict, KeyFrame, Hidden });
+    Data->Frames.push_back({ PTS, 0, FilePos, 0, 0, 0, 0, FrameType, RepeatPict, KeyFrame, Hidden });
 }
 
 void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos, bool Hidden) {
     if (SampleCount > 0) {
         Data->Frames.push_back({ PTS, 0, FilePos, SampleStart, SampleCount,
-            0, 0, 0, KeyFrame, Hidden });
+            0, 0, 0, 0, KeyFrame, Hidden });
     }
 }
 
@@ -192,9 +200,10 @@ int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) const {
 int FFMS_Track::FindClosestVideoKeyFrame(int Frame) const {
     frame_vec &Frames = Data->Frames;
     Frame = std::min(std::max(Frame, 0), static_cast<int>(size()) - 1);
-    for (; Frame > 0 && !Frames[Frame].KeyFrame; Frame--);
-    for (; Frame > 0 && !Frames[Frames[Frame].OriginalPos].KeyFrame; Frame--);
-    return Frame;
+    size_t PosInDecodingOrder = Frames[Frame].PosInDecodingOrder;
+    for (; PosInDecodingOrder > 0 && !(Frames[Frames[PosInDecodingOrder].OriginalPos].KeyFrame && Frames[Frames[PosInDecodingOrder].OriginalPos].PTS <= Frames[Frame].PTS); PosInDecodingOrder--);
+
+    return Frames[PosInDecodingOrder].OriginalPos;
 }
 
 int FFMS_Track::RealFrameNumber(int Frame) const {
@@ -337,7 +346,7 @@ void FFMS_Track::FinalizeTrack() {
         return;
 
     for (size_t i = 0; i < size(); i++) {
-        Frames[i].OriginalPos = i;
+        Frames[i].PosInDecodingOrder = i;
         Frames[i].OriginalPTS = Frames[i].PTS;
     }
 
@@ -381,10 +390,16 @@ void FFMS_Track::FinalizeTrack() {
     ReorderTemp.reserve(size());
 
     for (size_t i = 0; i < size(); i++)
-        ReorderTemp.push_back(Frames[i].OriginalPos);
+        ReorderTemp.push_back(Frames[i].PosInDecodingOrder);
 
     for (size_t i = 0; i < size(); i++)
         Frames[ReorderTemp[i]].OriginalPos = i;
+
+    for (size_t i = 0; i < size(); i++) {
+        if (Frames[Frames[i].OriginalPos].PosInDecodingOrder != i ||
+            Frames[Frames[i].PosInDecodingOrder].OriginalPos != i)
+            throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_CODEC, "Insanity detected when tracking frame reordering");
+    }
 
     GeneratePublicInfo();
 
