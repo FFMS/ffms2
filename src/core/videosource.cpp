@@ -644,41 +644,27 @@ bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
     std::swap(DecodeFrame, LastDecodedFrame);
     ResendPacket = false;
 
+    int PacketNum = Frames.FrameFromPTS(Frames.UseDTS ? Packet->dts : Packet->pts, true);
+    bool PacketHidden = !!(Packet->flags & AV_PKT_FLAG_DISCARD) || (PacketNum != -1 && Frames[PacketNum].Hidden);
+
     int Ret = avcodec_send_packet(CodecContext, Packet);
     if (Ret == AVERROR(EAGAIN)) {
         // Send queue is full, so stash packet to resend on the next call.
-        DelayCounter--;
         ResendPacket = true;
+    } else if (Ret == 0 && !PacketHidden) {
+        DelayCounter++;
     }
 
     Ret = avcodec_receive_frame(CodecContext, DecodeFrame);
-    if (Ret != 0) {
-        std::swap(DecodeFrame, LastDecodedFrame);
-        if (!(Packet->flags & AV_PKT_FLAG_DISCARD) || Ret == AVERROR(EAGAIN))
-            DelayCounter++;
-    } else if (!!(Packet->flags & AV_PKT_FLAG_DISCARD)) {
-        // If sending discarded frame when the decode buffer is not empty, caller
-        // may still obtained bufferred decoded frames and the number of frames
-        // in the buffer decreases.
+    if (Ret == 0)
         DelayCounter--;
-    }
+    else
+        std::swap(DecodeFrame, LastDecodedFrame);
 
     if (Ret == 0 && Stage == DecodeStage::INITIALIZE)
         Stage = DecodeStage::APPLY_DELAY;
 
-    // H.264 (PAFF) and HEVC can have one field per packet, and decoding delay needs
-    // to be adjusted accordingly.
-    if (CodecContext->codec_id == AV_CODEC_ID_H264 || CodecContext->codec_id == AV_CODEC_ID_HEVC) {
-        if (!!(LastDecodedFrame->flags & AV_FRAME_FLAG_INTERLACED))
-            HaveSeenInterlacedFrame = true;
-        if (!PAFFAdjusted && DelayCounter > Delay && HaveSeenInterlacedFrame && LastDecodedFrame->repeat_pict == 0 && Ret != 0) {
-            int OldBFrameDelay = Delay - (CodecContext->thread_count - 1);
-            Delay = 1 + OldBFrameDelay * 2 + (CodecContext->thread_count - 1);
-            PAFFAdjusted = true;
-        }
-    }
-
-    return (Ret == 0) || (DelayCounter > Delay && Stage == DecodeStage::DECODE_LOOP);
+    return Ret == 0;
 }
 
 int FFMS_VideoSource::Seek(int n) {
@@ -863,7 +849,7 @@ FFMS_Frame *FFMS_VideoSource::GetFrame(int n) {
 
         int64_t StartTime = AV_NOPTS_VALUE, FilePos = -1;
         bool Hidden = (((unsigned) CurrentFrame < Frames.size()) && Frames[CurrentFrame].Hidden);
-        if (HasSeeked || !Hidden || PAFFAdjusted)
+        if (HasSeeked || !Hidden)
             DecodeNextFrame(StartTime, FilePos);
 
         if (!HasSeeked)

@@ -52,7 +52,6 @@ private:
     int Delay = 0;
     int DelayCounter = 0;
     DecodeStage Stage = DecodeStage::INITIALIZE;
-    bool PAFFAdjusted = false;
 
     int LastFrameHeight = -1;
     int LastFrameWidth = -1;

@@ -161,12 +161,12 @@ static bool PTSComparison(FrameInfo FI1, FrameInfo FI2) {
     return FI1.PTS < FI2.PTS;
 }
 
-int FFMS_Track::FrameFromPTS(int64_t PTS) const {
+int FFMS_Track::FrameFromPTS(int64_t PTS, bool AllowHidden) const {
     FrameInfo F;
     F.PTS = PTS;
 
     auto Pos = std::lower_bound(begin(), end(), F, PTSComparison);
-    while (Pos != end() && Pos->Hidden && Pos->PTS == PTS)
+    while (Pos != end() && (!AllowHidden && Pos->Hidden) && Pos->PTS == PTS)
         Pos++;
 
     if (Pos == end() || Pos->PTS != PTS)
@@ -174,9 +174,9 @@ int FFMS_Track::FrameFromPTS(int64_t PTS) const {
     return std::distance(begin(), Pos);
 }
 
-int FFMS_Track::FrameFromPos(int64_t Pos) const {
+int FFMS_Track::FrameFromPos(int64_t Pos, bool AllowHidden) const {
     for (size_t i = 0; i < size(); i++)
-        if (Data->Frames[i].FilePos == Pos && !Data->Frames[i].Hidden)
+        if (Data->Frames[i].FilePos == Pos && (AllowHidden || !Data->Frames[i].Hidden))
             return static_cast<int>(i);
     return -1;
 }
