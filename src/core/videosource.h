@@ -39,13 +39,19 @@ extern "C" {
 #include "track.h"
 #include "utils.h"
 
+enum class DecodeStage {
+    INITIALIZE,
+    APPLY_DELAY,
+    DECODE_LOOP,
+};
+
 struct FFMS_VideoSource {
 private:
     SwsContext *SWS = nullptr;
 
     int Delay = 0;
     int DelayCounter = 0;
-    int InitialDecode = 1;
+    DecodeStage Stage = DecodeStage::INITIALIZE;
     bool PAFFAdjusted = false;
 
     int LastFrameHeight = -1;

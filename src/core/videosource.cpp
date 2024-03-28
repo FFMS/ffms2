@@ -630,12 +630,12 @@ void FFMS_VideoSource::SetVideoProperties() {
 }
 
 bool FFMS_VideoSource::HasPendingDelayedFrames() {
-    if (InitialDecode == -1) {
+    if (Stage == DecodeStage::APPLY_DELAY) {
         if (DelayCounter > Delay) {
             --DelayCounter;
             return true;
         }
-        InitialDecode = 0;
+        Stage = DecodeStage::DECODE_LOOP;
     }
     return false;
 }
@@ -663,8 +663,8 @@ bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
         DelayCounter--;
     }
 
-    if (Ret == 0 && InitialDecode == 1)
-        InitialDecode = -1;
+    if (Ret == 0 && Stage == DecodeStage::INITIALIZE)
+        Stage = DecodeStage::APPLY_DELAY;
 
     // H.264 (PAFF) and HEVC can have one field per packet, and decoding delay needs
     // to be adjusted accordingly.
@@ -678,14 +678,14 @@ bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
         }
     }
 
-    return (Ret == 0) || (DelayCounter > Delay && !InitialDecode);
+    return (Ret == 0) || (DelayCounter > Delay && Stage == DecodeStage::DECODE_LOOP);
 }
 
 int FFMS_VideoSource::Seek(int n) {
     int ret = -1;
 
     DelayCounter = 0;
-    InitialDecode = 1;
+    Stage = DecodeStage::INITIALIZE;
 
     if (!SeekByPos || Frames[n].FilePos < 0) {
         ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].PTS, AVSEEK_FLAG_BACKWARD);
