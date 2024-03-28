@@ -811,6 +811,13 @@ bool FFMS_VideoSource::SeekTo(int n, int SeekOffset) {
             throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_UNKNOWN,
                 "Frame accurate seeking is not possible in this file");
 
+        // Seeking too close to the end of the stream can result in a different decoder delay since
+        // frames are returned as soon as draining starts, so avoid this to keep the delay predictable.
+        // Is the +1 necessary here? Not sure, but let's keep it to be safe.
+        int EndOfStreamDist = CodecContext->has_b_frames + 1;
+
+        TargetFrame = std::min(TargetFrame, Frames.RealFrameNumber(std::max(0, VP.NumFrames - 1 - EndOfStreamDist)));
+
         if (SeekMode < 3)
             TargetFrame = Frames.FindClosestVideoKeyFrame(TargetFrame);
 
