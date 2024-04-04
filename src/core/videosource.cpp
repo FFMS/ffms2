@@ -839,18 +839,24 @@ FFMS_Frame *FFMS_VideoSource::GetFrame(int n) {
 
     int SeekOffset = 0;
     bool Seek = true;
+    bool WasHidden = false;
 
     do {
         bool HasSeeked = false;
         if (Seek) {
             HasSeeked = SeekTo(n, SeekOffset);
             Seek = false;
+            WasHidden = false;
         }
 
         int64_t StartTime = AV_NOPTS_VALUE, FilePos = -1;
         bool Hidden = (((unsigned) CurrentFrame < Frames.size()) && Frames[CurrentFrame].Hidden);
-        if (HasSeeked || !Hidden)
-            DecodeNextFrame(StartTime, FilePos);
+        if (HasSeeked || !Hidden) {
+            if (WasHidden)
+                WasHidden = false;
+            else
+                DecodeNextFrame(StartTime, FilePos);
+        }
 
         if (!HasSeeked)
             continue;
@@ -893,6 +899,21 @@ FFMS_Frame *FFMS_VideoSource::GetFrame(int n) {
             while (Prev >= 0 && Frames[Prev].FilePos != -1 && Frames[Prev].FilePos > Pos)
                 --Prev;
             CurrentFrame = Prev + 1;
+        }
+
+        if (Frames[CurrentFrame].Hidden) {
+            // The frame number we seeked to was hidden.
+            // (This is not the same as the first packet we got being marked as hidden,
+            // it happens in cases like when the timestamps in decoding order are
+            //      0   -2   -1   1   2  ...
+            // and the frames with negative timestamps are hidden. Then, the first packet
+            // we get is the packet with timestamp 0, but Frames[CurrentFrame] corresponds
+            // to the frame with PTS -2. This can happen for open-gop files that have
+            // been cut at a non-IDR recovery point.)
+            // We should have skipped this frame at the start of this loop iteration, but
+            // we didn't know CurrentFrame at that point we and had to decode a frame to know
+            // the current frame. So now we need to remember to skip an extra frame.
+            WasHidden = true;
         }
     } while (++CurrentFrame <= n);
 
