@@ -40,7 +40,11 @@ struct FrameInfo {
     int FrameType;
     int RepeatPict;
     bool KeyFrame;
-    bool Hidden;
+    bool MarkedHidden;
+    bool SecondField;
+
+    // If true, no frame corresponding to this packet will be output
+    constexpr bool Skipped() const { return MarkedHidden || SecondField; }
 };
 
 struct FFMS_Track {
@@ -67,7 +71,7 @@ public:
     int64_t LastDuration = 0;
     int SampleRate = 0; // not persisted
 
-    void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, bool Invisible = false);
+    void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, bool Invisible = false, bool SecondField = false);
     void AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0, bool Invisible = false);
 
     void MaybeHideFrames();

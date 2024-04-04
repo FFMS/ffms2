@@ -41,7 +41,7 @@ FrameInfo ReadFrame(ZipFile &stream, FrameInfo const& prev, const FFMS_TrackType
     f.OriginalPTS = stream.Read<int64_t>() + prev.OriginalPTS;
     f.KeyFrame = !!stream.Read<int8_t>();
     f.FilePos = stream.Read<int64_t>() + prev.FilePos;
-    f.Hidden = !!stream.Read<int8_t>();
+    f.MarkedHidden = !!stream.Read<int8_t>();
 
     if (TT == FFMS_TYPE_AUDIO) {
         f.SampleStart = prev.SampleStart + prev.SampleCount;
@@ -49,6 +49,7 @@ FrameInfo ReadFrame(ZipFile &stream, FrameInfo const& prev, const FFMS_TrackType
     } else if (TT == FFMS_TYPE_VIDEO) {
         f.OriginalPos = static_cast<size_t>(stream.Read<uint64_t>() + prev.OriginalPos + 1);
         f.RepeatPict = stream.Read<int32_t>();
+        f.SecondField = !!stream.Read<int8_t>();
     }
     return f;
 }
@@ -58,13 +59,14 @@ static void WriteFrame(ZipFile &stream, FrameInfo const& f, FrameInfo const& pre
     stream.Write(f.OriginalPTS - prev.OriginalPTS);
     stream.Write<int8_t>(f.KeyFrame);
     stream.Write(f.FilePos - prev.FilePos);
-    stream.Write<uint8_t>(f.Hidden);
+    stream.Write<uint8_t>(f.MarkedHidden);
 
     if (TT == FFMS_TYPE_AUDIO)
         stream.Write(f.SampleCount - prev.SampleCount);
     else if (TT == FFMS_TYPE_VIDEO) {
         stream.Write(static_cast<uint64_t>(f.OriginalPos) - prev.OriginalPos - 1);
         stream.Write<int32_t>(f.RepeatPict);
+        stream.Write<uint8_t>(f.SecondField);
     }
 }
 }
@@ -135,14 +137,14 @@ void FFMS_Track::Write(ZipFile &stream) const {
         WriteFrame(stream, Frames[i], i == 0 ? temp : Frames[i - 1], TT);
 }
 
-void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, bool Hidden) {
-    Data->Frames.push_back({ PTS, 0, FilePos, 0, 0, 0, 0, FrameType, RepeatPict, KeyFrame, Hidden });
+void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, bool MarkedHidden, bool SecondField) {
+    Data->Frames.push_back({ PTS, 0, FilePos, 0, 0, 0, 0, FrameType, RepeatPict, KeyFrame, MarkedHidden, SecondField });
 }
 
-void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos, bool Hidden) {
+void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos, bool MarkedHidden) {
     if (SampleCount > 0) {
         Data->Frames.push_back({ PTS, 0, FilePos, SampleStart, SampleCount,
-            0, 0, 0, 0, KeyFrame, Hidden });
+            0, 0, 0, 0, KeyFrame, MarkedHidden, false });
     }
 }
 
@@ -152,7 +154,7 @@ void FFMS_Track::WriteTimecodes(const char *TimecodeFile) const {
 
     file.Printf("# timecode format v2\n");
     for (size_t i = 0; i < size(); ++i) {
-        if (!Frames[i].Hidden)
+        if (!Frames[i].Skipped())
             file.Printf("%.02f\n", (Frames[i].PTS * TB.Num) / (double)TB.Den);
     }
 }
@@ -166,7 +168,7 @@ int FFMS_Track::FrameFromPTS(int64_t PTS, bool AllowHidden) const {
     F.PTS = PTS;
 
     auto Pos = std::lower_bound(begin(), end(), F, PTSComparison);
-    while (Pos != end() && (!AllowHidden && Pos->Hidden) && Pos->PTS == PTS)
+    while (Pos != end() && (!AllowHidden && Pos->Skipped()) && Pos->PTS == PTS)
         Pos++;
 
     if (Pos == end() || Pos->PTS != PTS)
@@ -176,7 +178,7 @@ int FFMS_Track::FrameFromPTS(int64_t PTS, bool AllowHidden) const {
 
 int FFMS_Track::FrameFromPos(int64_t Pos, bool AllowHidden) const {
     for (size_t i = 0; i < size(); i++)
-        if (Data->Frames[i].FilePos == Pos && (AllowHidden || !Data->Frames[i].Hidden))
+        if (Data->Frames[i].FilePos == Pos && (AllowHidden || !Data->Frames[i].Skipped()))
             return static_cast<int>(i);
     return -1;
 }
@@ -186,7 +188,7 @@ int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) const {
     F.PTS = PTS;
 
     auto Pos = std::lower_bound(begin(), end(), F, PTSComparison);
-    while (Pos != end() && Pos->Hidden && Pos->PTS == PTS)
+    while (Pos != end() && Pos->Skipped() && Pos->PTS == PTS)
         Pos++;
 
     if (Pos == end())
@@ -261,8 +263,8 @@ void FFMS_Track::MaybeHideFrames() {
         FrameInfo const& prev = Frames[i - 1];
         FrameInfo& cur = Frames[i];
 
-        if (prev.FilePos >= 0 && (cur.FilePos == -1 || cur.FilePos == prev.FilePos) && !prev.Hidden)
-            cur.Hidden = true;
+        if (prev.FilePos >= 0 && (cur.FilePos == -1 || cur.FilePos == prev.FilePos) && !prev.Skipped())
+            cur.MarkedHidden = true;
     }
 }
 
@@ -419,7 +421,7 @@ void FFMS_Track::GeneratePublicInfo() {
     RealFrameNumbers.reserve(size());
     PublicFrameInfo.reserve(size());
     for (size_t i = 0; i < size(); ++i) {
-        if (Frames[i].Hidden)
+        if (Frames[i].Skipped())
             continue;
         RealFrameNumbers.push_back(static_cast<int>(i));
 

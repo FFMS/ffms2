@@ -35,7 +35,7 @@ extern "C" {
 }
 
 #define INDEXID 0x53920873
-#define INDEX_VERSION 7
+#define INDEX_VERSION 8
 
 SharedAVContext::~SharedAVContext() {
     avcodec_free_context(&CodecContext);
@@ -360,11 +360,10 @@ void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
 }
 
 void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket *pkt, int *RepeatPict,
-                                    int *FrameType, bool *Invisible, enum AVPictureStructure *LastPicStruct) {
+                                    int *FrameType, bool *Invisible, bool *SecondField, enum AVPictureStructure *LastPicStruct) {
     if (VideoContext.Parser) {
         uint8_t *OB;
         int OBSize;
-        bool IncompleteFrame = false;
 
         av_parser_parse2(VideoContext.Parser,
             VideoContext.CodecContext,
@@ -381,7 +380,7 @@ void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket *pkt
                  *LastPicStruct == AV_PICTURE_STRUCTURE_BOTTOM_FIELD) ||
                 (VideoContext.Parser->picture_structure == AV_PICTURE_STRUCTURE_BOTTOM_FIELD &&
                  *LastPicStruct == AV_PICTURE_STRUCTURE_TOP_FIELD)) {
-                IncompleteFrame = true;
+                *SecondField = true;
                 *LastPicStruct = AV_PICTURE_STRUCTURE_UNKNOWN;
             } else {
                 *LastPicStruct = VideoContext.Parser->picture_structure;
@@ -390,7 +389,7 @@ void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket *pkt
 
         *RepeatPict = VideoContext.Parser->repeat_pict;
         *FrameType = VideoContext.Parser->pict_type;
-        *Invisible = (IncompleteFrame || VideoContext.Parser->repeat_pict < 0 || (pkt->flags & AV_PKT_FLAG_DISCARD));
+        *Invisible = (VideoContext.Parser->repeat_pict < 0 || (pkt->flags & AV_PKT_FLAG_DISCARD));
     } else {
         *Invisible = !!(pkt->flags & AV_PKT_FLAG_DISCARD);
     }
@@ -556,10 +555,11 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
             int RepeatPict = -1;
             int FrameType = 0;
             bool Invisible = false;
-            ParseVideoPacket(AVContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible, &LastPicStruct);
+            bool SecondField = false;
+            ParseVideoPacket(AVContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible, &SecondField, &LastPicStruct);
 
             TrackInfo.AddVideoFrame(PTS, RepeatPict, KeyFrame,
-                FrameType, Packet->pos, Invisible);
+                FrameType, Packet->pos, Invisible, SecondField);
         } else if (FormatContext->streams[Track]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             // For video seeking timestamps are used only if all packets have
             // timestamps, while for audio they're used if any have timestamps,

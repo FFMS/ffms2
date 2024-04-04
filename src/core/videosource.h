@@ -45,12 +45,24 @@ enum class DecodeStage {
     DECODE_LOOP,
 };
 
+struct DecoderDelay {
+    int ThreadDelay = 0;
+    int ReorderDelay = 0;
+
+    int ThreadDelayCounter = 0;
+    int ReorderDelayCounter = 0;
+
+    void Reset();
+    void Increment(bool Hidden, bool SecondField);
+    void Decrement();
+    bool IsExceeded();
+};
+
 struct FFMS_VideoSource {
 private:
     SwsContext *SWS = nullptr;
 
-    int Delay = 0;
-    int DelayCounter = 0;
+    DecoderDelay Delay;
     DecodeStage Stage = DecodeStage::INITIALIZE;
 
     int LastFrameHeight = -1;
