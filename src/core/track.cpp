@@ -48,6 +48,7 @@ FrameInfo ReadFrame(ZipFile &stream, FrameInfo const& prev, const FFMS_TrackType
         f.SampleCount = stream.Read<uint32_t>() + prev.SampleCount;
     } else if (TT == FFMS_TYPE_VIDEO) {
         f.OriginalPos = static_cast<size_t>(stream.Read<uint64_t>() + prev.OriginalPos + 1);
+        f.PosInDecodingOrder = static_cast<size_t>(stream.Read<uint64_t>() + prev.PosInDecodingOrder + 1);
         f.RepeatPict = stream.Read<int32_t>();
         f.SecondField = !!stream.Read<int8_t>();
     }
@@ -65,6 +66,7 @@ static void WriteFrame(ZipFile &stream, FrameInfo const& f, FrameInfo const& pre
         stream.Write(f.SampleCount - prev.SampleCount);
     else if (TT == FFMS_TYPE_VIDEO) {
         stream.Write(static_cast<uint64_t>(f.OriginalPos) - prev.OriginalPos - 1);
+        stream.Write(static_cast<uint64_t>(f.PosInDecodingOrder) - prev.PosInDecodingOrder - 1);
         stream.Write<int32_t>(f.RepeatPict);
         stream.Write<uint8_t>(f.SecondField);
     }
@@ -106,16 +108,8 @@ FFMS_Track::FFMS_Track(ZipFile &stream)
     for (size_t i = 0; i < FrameCount; ++i)
         Frames.push_back(ReadFrame(stream, i == 0 ? temp : Frames.back(), TT));
 
-    if (TT == FFMS_TYPE_VIDEO) {
+    if (TT == FFMS_TYPE_VIDEO)
         GeneratePublicInfo();
-
-        // PosInDecodingOrder is currently not stored in the index for backwards compatibility, so
-        // derive it here (the asserts in FinalizeTrack guarantee that this matches the original values).
-        // FIXME store OriginalPos in the index the next time the format changes
-        for (size_t i = 0; i < Frames.size(); i++) {
-            Frames[Frames[i].OriginalPos].PosInDecodingOrder = i;
-        }
-    }
 }
 
 void FFMS_Track::Write(ZipFile &stream) const {
