@@ -43,6 +43,8 @@ struct FrameInfo {
     bool MarkedHidden;
     bool SecondField;
 
+    int64_t DTS;        // Only used during indexing and not stored in the index file. (If UseDTS is true, the PTS values will be DTS)
+
     // If true, no frame corresponding to this packet will be output
     constexpr bool Skipped() const { return MarkedHidden || SecondField; }
 };
@@ -71,9 +73,10 @@ public:
     int64_t LastDuration = 0;
     int SampleRate = 0; // not persisted
 
-    void AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, bool Invisible = false, bool SecondField = false);
-    void AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0, bool Invisible = false);
+    void AddVideoFrame(int64_t PTS, int64_t DTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, bool Invisible = false, bool SecondField = false);
+    void AddAudioFrame(int64_t PTS, int64_t DTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0, bool Invisible = false);
 
+    void RevertToDTS();
     void MaybeHideFrames();
     void FinalizeTrack();
     void FillAudioGaps();

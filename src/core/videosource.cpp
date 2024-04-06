@@ -279,6 +279,8 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
                 Delay.ThreadDelay = CodecContext->thread_count - 1;
         }
 
+        SeekByPos = !strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts") || !strcmp(FormatContext->iformat->name, "mpegtsraw");
+
         // Always try to decode a frame to make sure all required parameters are known
         int64_t DummyPTS = 0, DummyPos = 0;
         DecodeNextFrame(DummyPTS, DummyPos);

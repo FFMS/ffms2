@@ -71,6 +71,10 @@ void FFMS_Index::Finalize(std::vector<SharedAVContext> const& video_contexts, co
     for (size_t i = 0, end = size(); i != end; ++i) {
         FFMS_Track& track = (*this)[i];
 
+        if (!strcmp(Format, "mpeg") || !strcmp(Format, "mpegts") || !strcmp(Format, "mpegtsraw"))
+            if (std::any_of(track.begin(), track.end(), [](FrameInfo F) { return F.PTS == AV_NOPTS_VALUE; }))
+                track.RevertToDTS();
+
         // Some audio tracks are simply insane junk (seen with als) and will have a single(?) super long packet and
         // apart from that look legit and be chosen instead of usable audio. This hopefully rejects some of it.
         // Caused by sample in https://github.com/FFMS/ffms2/issues/351
@@ -85,6 +89,7 @@ void FFMS_Index::Finalize(std::vector<SharedAVContext> const& video_contexts, co
         // but may also have valid, split packets, with pos equal to the previous pos.
         if (video_contexts[i].CodecContext && video_contexts[i].CodecContext->codec_id == AV_CODEC_ID_H264 && !!strcmp(Format, "asf"))
             track.MaybeHideFrames();
+
         track.FinalizeTrack();
 
         if (track.TT != FFMS_TYPE_VIDEO) continue;
@@ -430,7 +435,8 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
     std::vector<SharedAVContext> AVContexts(FormatContext->nb_streams);
 
     auto TrackIndices = std::unique_ptr<FFMS_Index>(new FFMS_Index(Filesize, Digest, ErrorHandling, LAVFOpts));
-    bool UseDTS = !strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts") || !strcmp(FormatContext->iformat->name, "mpegtsraw") || !strcmp(FormatContext->iformat->name, "nuv");
+    bool UseDTS = !strcmp(FormatContext->iformat->name, "nuv");
+    bool IsMpegLike = !strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts") || !strcmp(FormatContext->iformat->name, "mpegtsraw");
 
     for (unsigned int i = 0; i < FormatContext->nb_streams; i++) {
         TrackIndices->emplace_back((int64_t)FormatContext->streams[i]->time_base.num * 1000,
@@ -527,7 +533,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
 
         if (FormatContext->streams[Track]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             int64_t PTS = TrackInfo.UseDTS ? Packet->dts : Packet->pts;
-            if (PTS == AV_NOPTS_VALUE) {
+            if (PTS == AV_NOPTS_VALUE && !IsMpegLike) {
                 // VPx alt-refs are output as packets which lack timestmps or durations, since
                 // they are invisible. Currently, the timestamp mangling code in libavformat
                 // will sometimes add a bogus timestamp and duration, if the webm in question
@@ -558,7 +564,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
             bool SecondField = false;
             ParseVideoPacket(AVContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible, &SecondField, &LastPicStruct);
 
-            TrackInfo.AddVideoFrame(PTS, RepeatPict, KeyFrame,
+            TrackInfo.AddVideoFrame(PTS, Packet->dts, RepeatPict, KeyFrame,
                 FrameType, Packet->pos, Invisible, SecondField);
         } else if (FormatContext->streams[Track]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             // For video seeking timestamps are used only if all packets have
@@ -571,7 +577,7 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
             uint32_t SampleCount = IndexAudioPacket(Track, Packet, AVContexts[Track], *TrackIndices);
             TrackInfo.SampleRate = AVContexts[Track].CodecContext->sample_rate;
 
-            TrackInfo.AddAudioFrame(LastValidTS[Track],
+            TrackInfo.AddAudioFrame(LastValidTS[Track], Packet->dts,
                 StartSample, SampleCount, KeyFrame, Packet->pos, Packet->flags & AV_PKT_FLAG_DISCARD);
         }
 

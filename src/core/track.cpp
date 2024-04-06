@@ -131,14 +131,14 @@ void FFMS_Track::Write(ZipFile &stream) const {
         WriteFrame(stream, Frames[i], i == 0 ? temp : Frames[i - 1], TT);
 }
 
-void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, bool MarkedHidden, bool SecondField) {
-    Data->Frames.push_back({ PTS, 0, FilePos, 0, 0, 0, 0, FrameType, RepeatPict, KeyFrame, MarkedHidden, SecondField });
+void FFMS_Track::AddVideoFrame(int64_t PTS, int64_t DTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, bool MarkedHidden, bool SecondField) {
+    Data->Frames.push_back({ PTS, 0, FilePos, 0, 0, 0, 0, FrameType, RepeatPict, KeyFrame, MarkedHidden, SecondField, DTS });
 }
 
-void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos, bool MarkedHidden) {
+void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t DTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos, bool MarkedHidden) {
     if (SampleCount > 0) {
         Data->Frames.push_back({ PTS, 0, FilePos, SampleStart, SampleCount,
-            0, 0, 0, 0, KeyFrame, MarkedHidden, false });
+            0, 0, 0, 0, KeyFrame, MarkedHidden, false, DTS });
     }
 }
 
@@ -246,6 +246,14 @@ void FFMS_Track::MaybeReorderFrames() {
         if (Frames[i].FrameType == AV_PICTURE_TYPE_B)
             std::swap(Frames[i].PTS, Frames[i - 1].PTS);
     }
+}
+
+void FFMS_Track::RevertToDTS() {
+    frame_vec &Frames = Data->Frames;
+    for (size_t i = 0; i < size(); ++i)
+        Frames[i].PTS = Frames[i].DTS;
+
+    UseDTS = true;
 }
 
 void FFMS_Track::MaybeHideFrames() {
