@@ -931,10 +931,16 @@ FFMS_Frame *FFMS_VideoSource::GetFrame(int n) {
         // aggressive (non-keyframe) seeking.
         int64_t Pos = Frames[CurrentFrame].FilePos;
         if (CurrentFrame > 0 && Pos != -1) {
-            int Prev = CurrentFrame - 1;
-            while (Prev >= 0 && Frames[Prev].FilePos != -1 && Frames[Prev].FilePos > Pos)
-                --Prev;
-            CurrentFrame = Prev + 1;
+            while (true) {
+                int Prev = CurrentFrame - 1;
+                if (Prev >= 0 && Frames[Prev].SecondField)
+                    --Prev;
+
+                if (Prev >= 0 && (Frames[Prev].FilePos != -1 && Frames[Prev].FilePos > Pos))
+                    CurrentFrame = Prev;
+                else
+                    break;
+            }
         }
 
         if (Frames[CurrentFrame].Skipped()) {
