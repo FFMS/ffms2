@@ -40,6 +40,7 @@ extern "C" {
 #include "utils.h"
 
 enum class DecodeStage {
+    INITIALIZE_SOURCE,
     INITIALIZE,
     APPLY_DELAY,
     DECODE_LOOP,
@@ -63,7 +64,7 @@ private:
     SwsContext *SWS = nullptr;
 
     DecoderDelay Delay;
-    DecodeStage Stage = DecodeStage::INITIALIZE;
+    DecodeStage Stage = DecodeStage::INITIALIZE_SOURCE;
 
     int LastFrameHeight = -1;
     int LastFrameWidth = -1;

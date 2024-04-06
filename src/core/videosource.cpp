@@ -700,7 +700,8 @@ int FFMS_VideoSource::Seek(int n) {
     int ret = -1;
 
     Delay.Reset();
-    Stage = DecodeStage::INITIALIZE;
+    if (Stage != DecodeStage::INITIALIZE_SOURCE)
+        Stage = DecodeStage::INITIALIZE;
 
     if (!SeekByPos || Frames[n].FilePos < 0) {
         ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].PTS, AVSEEK_FLAG_BACKWARD);
@@ -819,6 +820,12 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
 }
 
 bool FFMS_VideoSource::SeekTo(int n, int SeekOffset) {
+    bool ForceSeek = false;
+    if (Stage == DecodeStage::INITIALIZE_SOURCE) {
+        ForceSeek = true;
+        Stage = DecodeStage::INITIALIZE;
+    }
+
     // The semantics here are basically "return true if we don't know exactly where our seek ended up (destination isn't frame 0)"
     if (SeekMode >= 0) {
         int TargetFrame = n + SeekOffset;
@@ -847,7 +854,7 @@ bool FFMS_VideoSource::SeekTo(int n, int SeekOffset) {
             }
         } else {
             // 10 frames is used as a margin to prevent excessive seeking since the predicted best keyframe isn't always selected by avformat
-            if (n < CurrentFrame || TargetFrame > CurrentFrame + 10 || (SeekMode == 3 && n > CurrentFrame + 10)) {
+            if (ForceSeek || n < CurrentFrame || TargetFrame > CurrentFrame + 10 || (SeekMode == 3 && n > CurrentFrame + 10)) {
                 Seek(TargetFrame);
                 return true;
             }
@@ -863,7 +870,7 @@ FFMS_Frame *FFMS_VideoSource::GetFrame(int n) {
     GetFrameCheck(n);
     n = Frames.RealFrameNumber(n);
 
-    if (LastFrameNum == n)
+    if (Stage != DecodeStage::INITIALIZE_SOURCE && LastFrameNum == n)
         return &LocalFrame;
 
     int SeekOffset = 0;
