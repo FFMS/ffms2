@@ -816,6 +816,11 @@ bool FFMS_VideoSource::SeekTo(int n, int SeekOffset) {
         // Is the +1 necessary here? Not sure, but let's keep it to be safe.
         int EndOfStreamDist = CodecContext->has_b_frames + 1;
 
+        if (CodecContext->codec_id == AV_CODEC_ID_H264)
+            // Work around a bug in ffmpeg's h264 decoder where frames are skipped when seeking too
+            // close to the end in open-gop files: https://trac.ffmpeg.org/ticket/10936
+            EndOfStreamDist *= 2;
+
         TargetFrame = std::min(TargetFrame, Frames.RealFrameNumber(std::max(0, VP.NumFrames - 1 - EndOfStreamDist)));
 
         if (SeekMode < 3)
