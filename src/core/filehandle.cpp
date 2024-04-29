@@ -73,9 +73,16 @@ int64_t FileHandle::Tell() {
 
 size_t FileHandle::Read(char *buffer, size_t size) {
     int count = avio_read(avio, (unsigned char *)buffer, size);
-    if (count < 0)
+    if (count < 0) {
         throw FFMS_Exception(error_source, FFMS_ERROR_FILE_READ,
             "Failed to read from '" + filename + "': " + AVErrorToString(count));
+    } else if (avio_feof(avio)) {
+        // "Similar to feof() but also returns nonzero on read errors" -- FFmpeg docs
+        if (avio->error != 0 && avio->error != AVERROR_EOF) {
+            throw FFMS_Exception(error_source, FFMS_ERROR_FILE_READ,
+                "Failed to read from '" + filename + "': " + AVErrorToString(avio->error));
+        }
+    }
     return (size_t)count;
 }
 
