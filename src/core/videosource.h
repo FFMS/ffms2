@@ -117,7 +117,6 @@ private:
     AVFormatContext *FormatContext = nullptr;
     int SeekMode;
     bool SeekByPos = false;
-    int PosOffset = 0;
     bool HaveSeenInterlacedFrame = false;
 
     void ReAdjustOutputFormat(AVFrame *Frame);
@@ -127,7 +126,6 @@ private:
     void DecodeNextFrame(int64_t &PTS, int64_t &Pos);
     bool SeekTo(int n, int SeekOffset);
     int Seek(int n);
-    int ReadFrame(AVPacket *pkt);
     void Free();
     static void SanityCheckFrameForData(AVFrame *Frame);
 public:

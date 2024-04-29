@@ -710,7 +710,7 @@ int FFMS_VideoSource::Seek(int n) {
     }
 
     if (ret < 0 && Frames[n].FilePos >= 0) {
-        ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].FilePos + PosOffset, AVSEEK_FLAG_BYTE);
+        ret = av_seek_frame(FormatContext, VideoTrack, Frames[n].FilePos, AVSEEK_FLAG_BYTE);
         if (ret >= 0)
             SeekByPos = true;
     }
@@ -724,23 +724,6 @@ int FFMS_VideoSource::Seek(int n) {
     if (n == 0)
         CurrentFrame = 0;
 
-    return ret;
-}
-
-int FFMS_VideoSource::ReadFrame(AVPacket *pkt) {
-    int ret = av_read_frame(FormatContext, pkt);
-    if (ret >= 0 || ret == AVERROR(EOF)) return ret;
-
-    // Lavf reports the beginning of the actual video data as the packet's
-    // position, but the reader requires the header, so we end up seeking
-    // to the wrong position. Wait until a read actual fails to adjust the
-    // seek targets, so that if this ever gets fixed upstream our workaround
-    // doesn't re-break it.
-    if (strcmp(FormatContext->iformat->name, "yuv4mpegpipe") == 0) {
-        PosOffset = -6;
-        Seek(CurrentFrame);
-        return av_read_frame(FormatContext, pkt);
-    }
     return ret;
 }
 
@@ -776,12 +759,12 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
         av_packet_ref(Packet, StashedPacket);
         av_packet_unref(StashedPacket);
     } else {
-        ret = ReadFrame(Packet);
+        ret = av_read_frame(FormatContext, Packet);
     }
     while (ret >= 0) {
         if (Packet->stream_index != VideoTrack) {
             av_packet_unref(Packet);
-            ret = ReadFrame(Packet);
+            ret = av_read_frame(FormatContext, Packet);
             continue;
         }
 
@@ -805,7 +788,7 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
             av_packet_ref(Packet, StashedPacket);
             av_packet_unref(StashedPacket);
         } else {
-            ret = ReadFrame(Packet);
+            ret = av_read_frame(FormatContext, Packet);
         }
     }
     if (IsIOError(ret)) {
