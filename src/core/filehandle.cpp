@@ -60,14 +60,14 @@ void FileHandle::Seek(int64_t offset, int origin) {
     int64_t ret = avio_seek(avio, offset, origin);
     if (ret < 0)
         throw FFMS_Exception(error_source, error_cause,
-            "Failed to seek in '" + filename + "'");
+            "Failed to seek in '" + filename + "': " + AVErrorToString(ret));
 }
 
 int64_t FileHandle::Tell() {
     int64_t ret = avio_tell(avio);
     if (ret < 0)
         throw FFMS_Exception(error_source, error_cause,
-            "Failed to read position in '" + filename + "'");
+            "Failed to read position in '" + filename + "': " + AVErrorToString(ret));
     return ret;
 }
 
@@ -75,7 +75,7 @@ size_t FileHandle::Read(char *buffer, size_t size) {
     int count = avio_read(avio, (unsigned char *)buffer, size);
     if (count < 0)
         throw FFMS_Exception(error_source, FFMS_ERROR_FILE_READ,
-            "Failed to read from '" + filename + "'");
+            "Failed to read from '" + filename + "': " + AVErrorToString(count));
     return (size_t)count;
 }
 
@@ -84,7 +84,7 @@ size_t FileHandle::Write(const char *buffer, size_t size) {
     avio_flush(avio);
     if (avio->error < 0)
         throw FFMS_Exception(error_source, FFMS_ERROR_FILE_WRITE,
-            "Failed to write to '" + filename + "'");
+            "Failed to write to '" + filename + "': " + AVErrorToString(avio->error));
     return size;
 }
 
@@ -92,7 +92,7 @@ int64_t FileHandle::Size() {
     int64_t size = avio_size(avio);
     if (size < 0)
         throw FFMS_Exception(error_source, FFMS_ERROR_FILE_READ,
-            "Failed to get file size for '" + filename + "'");
+            "Failed to get file size for '" + filename + "': " + AVErrorToString(size));
     return size;
 }
 
