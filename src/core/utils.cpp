@@ -171,3 +171,10 @@ bool IsIOError(int error) {
         return false;
     }
 }
+
+std::string AVErrorToString(int ret) {
+    char error[1024];
+    av_strerror(ret, error, 1024);
+    std::string cerr(error);
+    return cerr;
+}

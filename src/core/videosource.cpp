@@ -791,13 +791,9 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
             ret = av_read_frame(FormatContext, Packet);
         }
     }
-    if (IsIOError(ret)) {
-        char err[1024];
-        av_strerror(ret, err, 1024);
-        std::string serr(err);
+    if (IsIOError(ret))
         throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_FILE_READ,
-            "Failed to read packet: " + serr);
-    }
+            "Failed to read packet: " + AVErrorToString(ret));
 
     // Flush final frames
     DecodePacket(Packet);

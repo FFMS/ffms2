@@ -587,13 +587,9 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
         av_packet_unref(Packet);
     }
     av_packet_free(&Packet);
-    if (IsIOError(ret)) {
-        char error[1024];
-        av_strerror(ret, error, 1024);
-        std::string cerr(error);
+    if (IsIOError(ret))
         throw FFMS_Exception(FFMS_ERROR_INDEXING, FFMS_ERROR_FILE_READ,
-            "Indexing failed: " + cerr);
-    }
+            "Indexing failed: " + AVErrorToString(ret));
 
     TrackIndices->Finalize(AVContexts, FormatContext->iformat->name);
     return TrackIndices.release();
