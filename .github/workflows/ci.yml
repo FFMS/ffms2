@@ -75,10 +75,8 @@ jobs:
           cd ..
           git clone https://github.com/AviSynth/AviSynthPlus.git --branch "${{ env.AVS_TAG }}" --depth 1
           cd ffms2
-          vcpkg install zlib:x86-windows-static
-          vcpkg install zlib:x64-windows-static
-          vcpkg install ffmpeg:x86-windows-static
-          vcpkg install ffmpeg:x64-windows-static
+          vcpkg install ffmpeg[avcodec,avdevice,avfilter,avformat,swresample,swscale,zlib,bzip2,core,dav1d,gpl,version3,lzma,openssl,xml2]:x86-windows-static
+          vcpkg install ffmpeg[avcodec,avdevice,avfilter,avformat,swresample,swscale,zlib,bzip2,core,dav1d,gpl,version3,lzma,openssl,xml2]:x64-windows-static
           vcpkg integrate install
           MSBuild.exe /t:Rebuild /p:PlatformToolset=v143 /m /p:Configuration=Release /p:Platform=x86 "./build-msvc/ffms2.sln"
           MSBuild.exe /t:Rebuild /p:PlatformToolset=v143 /m /p:Configuration=Release /p:Platform=x64 "./build-msvc/ffms2.sln"
