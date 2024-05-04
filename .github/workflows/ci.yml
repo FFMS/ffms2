@@ -21,7 +21,7 @@ jobs:
             cc: gcc
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: install deps (ubuntu)
@@ -42,3 +42,56 @@ jobs:
       run: |
         make test-sync
         make test -j2 -k
+  build-win:
+    runs-on: windows-latest
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Parse AviSynth+ release metadata
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const req = await github.request('https://api.github.com/repos/avisynth/avisynthplus/releases');
+            const data = req.data;
+            let avstag = '';
+            for(let rel of data){
+                if(rel.prerelease||rel.draft){
+                    continue;
+                }
+                avstag = rel.tag_name;
+                if(avstag != ''){
+                    break;
+                }
+            }
+            core.exportVariable('AVS_TAG', avstag);
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+      - name: Make builds...
+        run: |
+          cd ..
+          git clone https://github.com/AviSynth/AviSynthPlus.git --branch "${{ env.AVS_TAG }}" --depth 1
+          cd ffms2
+          vcpkg install zlib:x86-windows-static
+          vcpkg install zlib:x64-windows-static
+          vcpkg install ffmpeg:x86-windows-static
+          vcpkg install ffmpeg:x64-windows-static
+          vcpkg integrate install
+          MSBuild.exe /t:Rebuild /p:PlatformToolset=v143 /m /p:Configuration=Release /p:Platform=x86 "./build-msvc/ffms2.sln"
+          MSBuild.exe /t:Rebuild /p:PlatformToolset=v143 /m /p:Configuration=Release /p:Platform=x64 "./build-msvc/ffms2.sln"
+          cmake -E copy "build-msvc\bin\Win32\Release\ffms2.dll" "dist\x86\ffms2.dll"
+          cmake -E copy "build-msvc\bin\Win32\Release\ffms2.lib" "dist\x86\ffms2.lib"
+          cmake -E copy "build-msvc\bin\Win32\Release\ffmsindex.exe" "dist\x86\ffmsindex.exe"
+          cmake -E copy "build-msvc\bin\x64\Release\ffms2.dll" "dist\x64\ffms2.dll"
+          cmake -E copy "build-msvc\bin\x64\Release\ffms2.lib" "dist\x64\ffms2.lib"
+          cmake -E copy "build-msvc\bin\x64\Release\ffmsindex.exe" "dist\x64\ffmsindex.exe"
+          cmake -E copy_directory "include" "dist\include"
+          cmake -E copy_directory "doc" "dist\doc"
+          cmake -E copy "FFMS2.avsi" "dist\FFMS2.avsi"
+          cmake -E copy "COPYING" "dist\COPYING"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffms2_build_win
+          path: dist

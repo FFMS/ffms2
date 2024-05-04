@@ -3,6 +3,7 @@
 /deps
 /testing
 /todo.txt
+/dist
 
 # /build-msvc/
 /build-msvc/*.sdf
