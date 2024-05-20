@@ -71,7 +71,6 @@ void IndexerTest::SetUp() {
 void IndexerTest::TearDown() {
     FFMS_DestroyIndex(index);
     FFMS_DestroyVideoSource(video_source);
-    FFMS_Deinit();
 }
 
 bool IndexerTest::DoIndexing(std::string file_name) {

@@ -97,7 +97,6 @@ static void VS_CC CreateIndex(const VSMap *in, VSMap *out, void *, VSCore *, con
         FFMS_DestroyIndex(Index);
         vsapi->mapSetData(out, "result", "Valid index already exists", -1, dtUtf8, maReplace);
     }
-    FFMS_Deinit();
 }
 
 static void VS_CC CreateSource(const VSMap *in, VSMap *out, void *, VSCore *core, const VSAPI *vsapi) {

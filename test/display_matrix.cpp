@@ -45,7 +45,6 @@ void DisplayMatrixTest::SetUp() {
 void DisplayMatrixTest::TearDown() {
     FFMS_DestroyIndex(index);
     FFMS_DestroyVideoSource(video_source);
-    FFMS_Deinit();
 }
 
 bool DisplayMatrixTest::DoIndexing(std::string file_name) {

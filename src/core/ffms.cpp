@@ -87,10 +87,6 @@ FFMS_API(void) FFMS_Init(int, int) {
     });
 }
 
-FFMS_API(void) FFMS_Deinit() {
-
-}
-
 FFMS_API(int) FFMS_GetVersion() {
     return FFMS_VERSION;
 }

@@ -76,7 +76,6 @@ void HDR10Test::SetUp() {
 void HDR10Test::TearDown() {
     FFMS_DestroyIndex(index);
     FFMS_DestroyVideoSource(video_source);
-    FFMS_Deinit();
 }
 
 bool HDR10Test::DoIndexing(std::string file_name) {
