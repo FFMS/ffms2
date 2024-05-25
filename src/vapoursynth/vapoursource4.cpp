@@ -281,19 +281,14 @@ VSVideoSource4::VSVideoSource4(const char *SourceFile, int Track, FFMS_Index *In
 
     if (FPSNum > 0 && FPSDen > 0) {
         vsh::reduceRational(&FPSNum, &FPSDen);
-        if (VI[0].fpsDen != FPSDen || VI[0].fpsNum != FPSNum) {
-            VI[0].fpsDen = FPSDen;
-            VI[0].fpsNum = FPSNum;
-            if (VP->NumFrames > 1) {
-                VI[0].numFrames = static_cast<int>((VP->LastTime - VP->FirstTime) * (1 + 1. / (VP->NumFrames - 1)) * FPSNum / FPSDen + 0.5);
-                if (VI[0].numFrames < 1)
-                    VI[0].numFrames = 1;
-            } else {
+        VI[0].fpsDen = FPSDen;
+        VI[0].fpsNum = FPSNum;
+        if (VP->NumFrames > 1) {
+            VI[0].numFrames = static_cast<int>((VP->LastTime - VP->FirstTime) * (1 + 1. / (VP->NumFrames - 1)) * FPSNum / FPSDen + 0.5);
+            if (VI[0].numFrames < 1)
                 VI[0].numFrames = 1;
-            }
         } else {
-            FPSNum = 0;
-            FPSDen = 0;
+            VI[0].numFrames = 1;
         }
     }
 

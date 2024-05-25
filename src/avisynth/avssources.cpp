@@ -146,19 +146,14 @@ AvisynthVideoSource::AvisynthVideoSource(const char *SourceFile, int Track, FFMS
     VI.num_frames = VP->NumFrames;
     if (FPSNum > 0 && FPSDen > 0) {
         vsh::reduceRational(&FPSNum, &FPSDen);
-        if (VI.fps_denominator != FPSDen || VI.fps_numerator != FPSNum) {
-            VI.fps_denominator = FPSDen;
-            VI.fps_numerator = FPSNum;
-            if (VP->NumFrames > 1) {
-                VI.num_frames = static_cast<int>((VP->LastTime - VP->FirstTime) * (1 + 1. / (VP->NumFrames - 1)) * FPSNum / FPSDen + 0.5);
-                if (VI.num_frames < 1)
-                    VI.num_frames = 1;
-            } else {
+        VI.fps_denominator = FPSDen;
+        VI.fps_numerator = FPSNum;
+        if (VP->NumFrames > 1) {
+            VI.num_frames = static_cast<int>((VP->LastTime - VP->FirstTime) * (1 + 1. / (VP->NumFrames - 1)) * FPSNum / FPSDen + 0.5);
+            if (VI.num_frames < 1)
                 VI.num_frames = 1;
-            }
         } else {
-            FPSNum = 0;
-            FPSDen = 0;
+            VI.num_frames = 1;
         }
     }
 
