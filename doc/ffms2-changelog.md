@@ -1,4 +1,7 @@
 # FFmpegSource2 Changelog
+- 5.1
+  - FFmpeg 7.1 is now the minimum requirement.
+
 - 5.0
   - Fixed all issues with FFmpeg 6.1 which is now the minimum requirement
   - Fixed av1 decoding
