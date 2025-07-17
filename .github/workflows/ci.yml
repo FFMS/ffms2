@@ -23,12 +23,18 @@ jobs:
           - os: macos-latest
             cc: clang
             cxx: clang++
+          - os: windows-latest
+            cc: gcc
+            cxx: g++
 
     name: "Test (${{ matrix.os }}, ${{ matrix.cc }})"
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.cc }}
       CXX: ${{ matrix.cxx }}
+    defaults:
+      run:
+        shell: ${{ matrix.os == 'windows-latest' && 'msys2 {0}' || 'bash' }}
 
     steps:
     - uses: actions/checkout@v4
@@ -45,6 +51,15 @@ jobs:
       run: |
         brew update
         brew install autoconf automake libtool wget  ffmpeg
+    - name: Setup msys2
+      if: matrix.os == 'windows-latest'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        install: >-
+          mingw-w64-x86_64-autotools
+          mingw-w64-x86_64-ffmpeg
+          mingw-w64-x86_64-toolchain
     - name: configure
       run: ./autogen.sh --enable-static --disable-shared
     - name: make
