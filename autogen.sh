@@ -2,5 +2,7 @@
 mkdir -p src/config
 echo Running autoreconf...
 autoreconf -ivf
-echo Running configure...
-./configure "$@"
+if [ -z "$NOCONFIGURE" ]; then
+    echo Running configure...
+    ./configure "$@"
+fi
