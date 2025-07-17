@@ -58,6 +58,8 @@ AS_CASE([$host],
             AC_ENABLE_SHARED
             AC_DISABLE_STATIC])
 
+AM_CONDITIONAL([WINDOWS], [case "$host_os" in mingw* | cygwin*) true ;; *) false ;; esac])
+
 AC_PROG_LIBTOOL
 
 if echo "$host" | $GREP "cygwin" >/dev/null 2>&1 && test "$enable_shared" = "yes"; then
