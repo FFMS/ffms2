@@ -11,14 +11,24 @@ permissions:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        cc: [gcc, clang]
-        exclude:
-          - os: macos-latest
+        include:
+          - os: ubuntu-latest
             cc: gcc
+            cxx: g++
+          - os: ubuntu-latest
+            cc: clang
+            cxx: clang++
+          - os: macos-latest
+            cc: clang
+            cxx: clang++
+
+    name: "Test (${{ matrix.os }}, ${{ matrix.cc }})"
+    runs-on: ${{ matrix.os }}
+    env:
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
 
     steps:
     - uses: actions/checkout@v4
