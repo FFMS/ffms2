@@ -27,6 +27,7 @@ jobs:
     - name: install deps (ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
+        sudo add-apt-repository ppa:ubuntuhandbook1/ffmpeg7 -y
         sudo apt-get update
         sudo apt-get install autoconf automake wget  ffmpeg libavformat-dev libavcodec-dev libswscale-dev libavutil-dev libswresample-dev
     - name: install deps (macOS)
