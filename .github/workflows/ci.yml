@@ -34,7 +34,7 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         brew update
-        brew install autoconf automake wget  ffmpeg
+        brew install autoconf automake libtool wget  ffmpeg
     - name: configure
       run: ./autogen.sh --enable-static --disable-shared
     - name: make
