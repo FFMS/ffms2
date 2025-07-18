@@ -41,6 +41,9 @@ jobs:
       run: make V=1 CXXFLAGS='-Werror -Wno-error=deprecated-declarations' -j2 -k
     - name: make test
       run: |
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          export CPATH=/opt/homebrew/include
+        fi
         make test-sync
         make test -j2 -k
   build-win:
