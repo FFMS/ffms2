@@ -11,14 +11,24 @@ permissions:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        cc: [gcc, clang]
-        exclude:
-          - os: macos-latest
+        include:
+          - os: ubuntu-latest
             cc: gcc
+            cxx: g++
+          - os: ubuntu-latest
+            cc: clang
+            cxx: clang++
+          - os: macos-latest
+            cc: clang
+            cxx: clang++
+
+    name: "Test (${{ matrix.os }}, ${{ matrix.cc }})"
+    runs-on: ${{ matrix.os }}
+    env:
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
 
     steps:
     - uses: actions/checkout@v4
@@ -27,19 +37,23 @@ jobs:
     - name: install deps (ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
+        sudo add-apt-repository ppa:ubuntuhandbook1/ffmpeg7 -y
         sudo apt-get update
         sudo apt-get install autoconf automake wget  ffmpeg libavformat-dev libavcodec-dev libswscale-dev libavutil-dev libswresample-dev
     - name: install deps (macOS)
       if: matrix.os == 'macos-latest'
       run: |
         brew update
-        brew install autoconf automake wget  ffmpeg
+        brew install autoconf automake libtool wget  ffmpeg
     - name: configure
       run: ./autogen.sh --enable-static --disable-shared
     - name: make
       run: make V=1 CXXFLAGS='-Werror -Wno-error=deprecated-declarations' -j2 -k
     - name: make test
       run: |
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          export CPATH=/opt/homebrew/include
+        fi
         make test-sync
         make test -j2 -k
   build-win:
