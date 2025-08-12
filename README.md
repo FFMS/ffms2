@@ -1,4 +1,4 @@
-[![Build Status](https://api.travis-ci.org/FFMS/ffms2.svg?branch=master)](https://travis-ci.org/FFMS/ffms2)
+[![Build Status](https://github.com/FFMS/ffms2/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/FFMS/ffms2/actions/workflows/ci.yml?query=branch:master)
 
 **FFmpegSource** (usually known as **FFMS** or **FFMS2**) is a cross-platform wrapper library around [FFmpeg](http://ffmpeg.org). It gives you an easy, convenient way to say "open and decompress this media file for me, I don't care how you do it" and get frame- and sample-accurate access (usually), without having to bother with the sometimes less than straightforward and less than perfectly documented FFmpeg API.
 
