@@ -7,7 +7,7 @@ strip_echo () {
 echo_maybe () {
     if test -n "$2"; then
         strip_echo "$1$2"
-        exit 1
+        exit 0
     fi
 }
 
