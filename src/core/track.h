@@ -82,9 +82,9 @@ public:
     void FillAudioGaps();
 
     int FindClosestVideoKeyFrame(int Frame) const;
-    int FrameFromPTS(int64_t PTS, bool AllowHidden = false) const;
-    int FrameFromPos(int64_t Pos, bool AllowHidden = false) const;
-    int ClosestFrameFromPTS(int64_t PTS) const;
+    int FrameFromPTS(int64_t PTS, bool AllowHidden = true) const;
+    int FrameFromPos(int64_t Pos, bool AllowHidden = true) const;
+    int ClosestFrameFromPTS(int64_t PTS, bool AllowHidden = true) const;
     int RealFrameNumber(int Frame) const;
     int VisibleFrameCount() const;
 

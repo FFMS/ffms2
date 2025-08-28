@@ -177,12 +177,12 @@ int FFMS_Track::FrameFromPos(int64_t Pos, bool AllowHidden) const {
     return -1;
 }
 
-int FFMS_Track::ClosestFrameFromPTS(int64_t PTS) const {
+int FFMS_Track::ClosestFrameFromPTS(int64_t PTS, bool AllowHidden) const {
     FrameInfo F;
     F.PTS = PTS;
 
     auto Pos = std::lower_bound(begin(), end(), F, PTSComparison);
-    while (Pos != end() && Pos->Skipped() && Pos->PTS == PTS)
+    while (Pos != end() && (!AllowHidden && Pos->Skipped()) && Pos->PTS == PTS)
         Pos++;
 
     if (Pos == end())
