@@ -1052,6 +1052,7 @@ typedef struct {
   unsigned int ContentLightLevelMax;
   unsigned int ContentLightLevelAverage;
   int Flip;
+  int64_t LastEndPTS;
 } FFMS_VideoProperties;
 ```
 A struct containing metadata about a video track.
@@ -1094,6 +1095,7 @@ The fields are:
  - `unsigned int ContentLightLevelMax;` - Maximum content luminance (cd/m^2).
  - `unsigned int ContentLightLevelAverage;` - Average content luminance (cd/m^2).
  - `int Flip;` - Flip direction to be applied *before* rotation: 0 for no operation, >0 for horizontal flip, <0 for vertical flip.
+ - `int64_t LastEndPTS;` - The end PTS of the last packet of the stream.
 
 ### FFMS_AudioProperties
 
