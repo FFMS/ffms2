@@ -1081,7 +1081,7 @@ The fields are:
  - `int Rotation;` - The rotation of the video, in degrees.
  - `int Stereo3DType;` - The type of stereo 3D the video is. Corresponts to entries in [FFMS_Stereo3DType][Stereo3DType].
  - `int Stereo3DFlags;` - Stereo 3D flags. Corresponds to entries in [FFMS_Stereo3DFlags][Stereo3DFlags].
- - `double LastEndTime;` - The end time of the last packet of the stream, in milliseconds.
+ - `double LastEndTime;` - The end time of the last packet of the stream, in seconds.
  - `int HasMasteringDisplayPrimaries;` - If this is non-zero, the following four properties are set.
  - `double MasteringDisplayPrimariesX[3];` - RGB chromaticy coordinates of the mastering display (x coord).
  - `double MasteringDisplayPrimariesY[3];` - RGB chromaticy coordinates of the mastering display (y coord).
