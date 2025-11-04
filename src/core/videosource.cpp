@@ -328,8 +328,7 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
         SeekByPos = !strcmp(FormatContext->iformat->name, "mpeg") || !strcmp(FormatContext->iformat->name, "mpegts") || !strcmp(FormatContext->iformat->name, "mpegtsraw");
 
         // Always try to decode a frame to make sure all required parameters are known
-        int64_t DummyPTS = 0, DummyPos = 0;
-        DecodeNextFrame(DummyPTS, DummyPos);
+        DecodeNextFrame();
 
         //VP.image_type = VideoInfo::IT_TFF;
         VP.FPSDenominator = FormatContext->streams[VideoTrack]->time_base.num;
@@ -840,13 +839,11 @@ void FFMS_VideoSource::Free() {
     av_frame_free(&LastDecodedFrame);
 }
 
-void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
-    AStartTime = -1;
+SmartAVPacket FFMS_VideoSource::DecodeNextFrame() {
+    SmartAVPacket Packet, FirstPacket;
 
     if (HasPendingDelayedFrames())
-        return;
-
-    SmartAVPacket Packet;
+        return FirstPacket;
 
     int ret;
     if (ResendPacket) {
@@ -865,18 +862,17 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
             continue;
         }
 
-        if (AStartTime < 0)
-            AStartTime = Frames.UseDTS ? Packet->dts : Packet->pts;
-
-        if (Pos < 0)
-            Pos = Packet->pos;
+        if (!FirstPacket->data || (Frames.UseDTS ? FirstPacket->dts : FirstPacket->pts) < 0) {
+            av_packet_unref(FirstPacket.get());
+            av_packet_ref(FirstPacket.get(), Packet.get());
+        }
 
         bool FrameFinished = DecodePacket(*Packet);
         if (ResendPacket)
             av_packet_ref(StashedPacket.get(), Packet.get());
         av_packet_unref(Packet.get());
         if (FrameFinished) {
-            return;
+            return FirstPacket;
         }
 
         if (ResendPacket) {
@@ -893,6 +889,7 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
 
     // Flush final frames
     DecodePacket(*Packet);
+    return FirstPacket;
 }
 
 bool FFMS_VideoSource::SeekTo(int n, int SeekOffset) {
@@ -961,21 +958,23 @@ FFMS_Frame *FFMS_VideoSource::GetFrame(int n) {
             WasSkipped = false;
         }
 
-        int64_t StartTime = AV_NOPTS_VALUE, FilePos = -1;
+        SmartAVPacket FirstPacket;
         bool Skipped = (((unsigned) CurrentFrame < Frames.size()) && Frames[CurrentFrame].Skipped());
         if (HasSeeked || !Skipped) {
             if (WasSkipped)
                 WasSkipped = false;
             else
-                DecodeNextFrame(StartTime, FilePos);
+                FirstPacket = DecodeNextFrame();
         }
 
         if (!HasSeeked)
             continue;
 
+        int64_t StartTime = FirstPacket->data == nullptr ? AV_NOPTS_VALUE : (Frames.UseDTS ? FirstPacket->dts : FirstPacket->pts);
+
         if (StartTime == AV_NOPTS_VALUE && !Frames.HasTS) {
-            if (FilePos >= 0) {
-                CurrentFrame = Frames.FrameFromPos(FilePos);
+            if (FirstPacket->data) {
+                CurrentFrame = Frames.FrameFromPos(FirstPacket->pos);
                 if (CurrentFrame >= 0)
                     continue;
             }
