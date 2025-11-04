@@ -301,12 +301,9 @@ FFMS_AudioSource::AudioBlock *FFMS_AudioSource::CacheBlock(CacheIterator &pos) {
 }
 
 int FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
-    AVPacket *Packet = av_packet_alloc();
-    if (!Packet)
-        throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_ALLOCATION_FAILED,
-            "Could not allocate packet.");
-    if (!ReadPacket(Packet)) {
-        av_packet_free(&Packet);
+    SmartAVPacket Packet;
+
+    if (!ReadPacket(*Packet)) {
         throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_UNKNOWN,
             "ReadPacket unexpectedly failed to read a packet");
     }
@@ -315,7 +312,7 @@ int FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
     CurrentSample = CurrentFrame->SampleStart;
 
     // Value code intentionally ignored, combined with the checks when indexing this mostly gives the expected behavior
-    avcodec_send_packet(CodecContext, Packet);
+    avcodec_send_packet(CodecContext, Packet.get());
 
     int NumberOfSamples = 0;
     AudioBlock *CachedBlock = nullptr;
@@ -331,20 +328,17 @@ int FFMS_AudioSource::DecodeNextBlock(CacheIterator *pos) {
             }
             break;
         } else if (Ret == AVERROR(EAGAIN)) {
-            if (!ReadPacket(Packet)) {
-                av_packet_free(&Packet);
+            if (!ReadPacket(*Packet)) {
                 throw FFMS_Exception(FFMS_ERROR_PARSER, FFMS_ERROR_UNKNOWN,
                     "ReadPacket unexpectedly failed to read a packet");
             }
-            avcodec_send_packet(CodecContext, Packet);
+            avcodec_send_packet(CodecContext, Packet.get());
         } else if (Ret == AVERROR_EOF) {
             break;
         } else {
             throw FFMS_Exception(FFMS_ERROR_CODEC, FFMS_ERROR_DECODING, "Audio decoding error");
         }
     }
-
-    av_packet_free(&Packet);
 
     // Zero sample packets aren't included in the index
     if (!NumberOfSamples)
@@ -553,24 +547,24 @@ void FFMS_AudioSource::Seek() {
     }
 }
 
-bool FFMS_AudioSource::ReadPacket(AVPacket *Packet) {
-    while (av_read_frame(FormatContext, Packet) >= 0) {
-        if (Packet->stream_index == TrackNumber) {
+bool FFMS_AudioSource::ReadPacket(AVPacket &Packet) {
+    while (av_read_frame(FormatContext, &Packet) >= 0) {
+        if (Packet.stream_index == TrackNumber) {
             // Required because not all audio packets, especially in ogg, have a pts. Use the previous valid packet's pts instead.
-            if (Packet->pts == AV_NOPTS_VALUE)
-                Packet->pts = LastValidTS;
+            if (Packet.pts == AV_NOPTS_VALUE)
+                Packet.pts = LastValidTS;
             else
-                LastValidTS = Packet->pts;
+                LastValidTS = Packet.pts;
 
             // This only happens if a really shitty demuxer seeks to a packet without pts *hrm* ogg *hrm* so read until a valid pts is reached
-            int64_t PacketTS = Frames.HasTS ? Packet->pts : Packet->pos;
+            int64_t PacketTS = Frames.HasTS ? Packet.pts : Packet.pos;
             if (PacketTS != AV_NOPTS_VALUE) {
                 while (PacketNumber > 0 && FrameTS(PacketNumber) > PacketTS) --PacketNumber;
                 while (FrameTS(PacketNumber) < PacketTS) ++PacketNumber;
                 return true;
             }
         }
-        av_packet_unref(Packet);
+        av_packet_unref(&Packet);
     }
     return false;
 }

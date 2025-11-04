@@ -101,7 +101,7 @@ struct FFMS_AudioSource {
     // Called after seeking
     void Seek();
     // Read the next packet from the file
-    bool ReadPacket(AVPacket *);
+    bool ReadPacket(AVPacket &);
 
     // Close and reopen the source file to seek back to the beginning. Only
     // needs to do anything for formats that can't seek to the beginning otherwise.

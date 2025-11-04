@@ -63,6 +63,18 @@ void FillAP(FFMS_AudioProperties &AP, AVCodecContext *CTX, FFMS_Track &Frames);
 
 void LAVFOpenFile(const char *SourceFile, AVFormatContext *&FormatContext, int Track, const std::map<std::string, std::string> &LAVFOpts);
 
+// RAII wrapper for AVPacket * that handles av_packet_alloc and av_packet_free.
+// av_packet_ref and av_packet_unref still need to be handled by user code.
+class SmartAVPacket : public std::unique_ptr<AVPacket, void(*)(AVPacket *)> {
+public:
+    SmartAVPacket() : std::unique_ptr<AVPacket, void(*)(AVPacket *)>(av_packet_alloc(), [](AVPacket *packet) { av_packet_free(&packet); }) {
+        if (!*this) {
+            throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
+                "Could not allocate packet.");
+        }
+    }
+};
+
 namespace optdetail {
     template<typename T>
     T get_av_opt(void *v, const char *name) {

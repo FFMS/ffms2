@@ -252,7 +252,6 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 
         DecodeFrame = av_frame_alloc();
         LastDecodedFrame = av_frame_alloc();
-        StashedPacket = av_packet_alloc();
 
         if (!DecodeFrame || !LastDecodedFrame || !StashedPacket)
             throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
@@ -742,15 +741,15 @@ void FFMS_VideoSource::CopyEye(AVStereo3DView view) {
     }
 }
 
-bool FFMS_VideoSource::DecodePacket(AVPacket *Packet) {
+bool FFMS_VideoSource::DecodePacket(const AVPacket &Packet) {
     std::swap(DecodeFrame, LastDecodedFrame);
     ResendPacket = false;
 
-    int PacketNum = Frames.FrameFromPTS(Frames.UseDTS ? Packet->dts : Packet->pts, true);
-    bool PacketHidden = !!(Packet->flags & AV_PKT_FLAG_DISCARD) || (PacketNum != -1 && Frames[PacketNum].MarkedHidden);
+    int PacketNum = Frames.FrameFromPTS(Frames.UseDTS ? Packet.dts : Packet.pts, true);
+    bool PacketHidden = !!(Packet.flags & AV_PKT_FLAG_DISCARD) || (PacketNum != -1 && Frames[PacketNum].MarkedHidden);
     bool SecondField = PacketNum != -1 && Frames[PacketNum].SecondField;
 
-    int Ret = avcodec_send_packet(CodecContext, Packet);
+    int Ret = avcodec_send_packet(CodecContext, &Packet);
     if (Ret == AVERROR(EAGAIN)) {
         // Send queue is full, so stash packet to resend on the next call.
         ResendPacket = true;
@@ -818,7 +817,7 @@ int FFMS_VideoSource::Seek(int n) {
     // We always assume seeking is possible if the first seek succeeds
     avcodec_flush_buffers(CodecContext);
     ResendPacket = false;
-    av_packet_unref(StashedPacket);
+    av_packet_unref(StashedPacket.get());
 
     // When it's 0 we always know what the next frame is (or more exactly should be)
     if (n == 0)
@@ -839,7 +838,6 @@ void FFMS_VideoSource::Free() {
     av_freep(&RightEyeFrameData[0]);
     av_frame_free(&DecodeFrame);
     av_frame_free(&LastDecodedFrame);
-    av_packet_free(&StashedPacket);
 }
 
 void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
@@ -848,25 +846,22 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
     if (HasPendingDelayedFrames())
         return;
 
-    AVPacket *Packet = av_packet_alloc();
-    if (!Packet)
-        throw FFMS_Exception(FFMS_ERROR_DECODING, FFMS_ERROR_ALLOCATION_FAILED,
-            "Could not allocate packet.");
+    SmartAVPacket Packet;
 
     int ret;
     if (ResendPacket) {
         // If we have a packet previously stashed due to a full input queue,
         // send it again.
         ret = 0;
-        av_packet_ref(Packet, StashedPacket);
-        av_packet_unref(StashedPacket);
+        av_packet_ref(Packet.get(), StashedPacket.get());
+        av_packet_unref(StashedPacket.get());
     } else {
-        ret = av_read_frame(FormatContext, Packet);
+        ret = av_read_frame(FormatContext, Packet.get());
     }
     while (ret >= 0) {
         if (Packet->stream_index != VideoTrack) {
-            av_packet_unref(Packet);
-            ret = av_read_frame(FormatContext, Packet);
+            av_packet_unref(Packet.get());
+            ret = av_read_frame(FormatContext, Packet.get());
             continue;
         }
 
@@ -876,21 +871,20 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
         if (Pos < 0)
             Pos = Packet->pos;
 
-        bool FrameFinished = DecodePacket(Packet);
+        bool FrameFinished = DecodePacket(*Packet);
         if (ResendPacket)
-            av_packet_ref(StashedPacket, Packet);
-        av_packet_unref(Packet);
+            av_packet_ref(StashedPacket.get(), Packet.get());
+        av_packet_unref(Packet.get());
         if (FrameFinished) {
-            av_packet_free(&Packet);
             return;
         }
 
         if (ResendPacket) {
             ret = 0;
-            av_packet_ref(Packet, StashedPacket);
-            av_packet_unref(StashedPacket);
+            av_packet_ref(Packet.get(), StashedPacket.get());
+            av_packet_unref(StashedPacket.get());
         } else {
-            ret = av_read_frame(FormatContext, Packet);
+            ret = av_read_frame(FormatContext, Packet.get());
         }
     }
     if (IsIOError(ret))
@@ -898,8 +892,7 @@ void FFMS_VideoSource::DecodeNextFrame(int64_t &AStartTime, int64_t &Pos) {
             "Failed to read packet: " + AVErrorToString(ret));
 
     // Flush final frames
-    DecodePacket(Packet);
-    av_packet_free(&Packet);
+    DecodePacket(*Packet);
 }
 
 bool FFMS_VideoSource::SeekTo(int n, int SeekOffset) {
