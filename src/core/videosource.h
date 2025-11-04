@@ -130,7 +130,9 @@ private:
     FFMS_Frame *OutputFrame(AVFrame *Frame);
     void SetVideoProperties();
     bool DecodePacket(const AVPacket &Packet);
-    void DecodeNextFrame(int64_t &PTS, int64_t &Pos);
+
+    // Returns the first packet read that has nonzero PTS/DTS (depending on Frames.UseDTS)
+    SmartAVPacket DecodeNextFrame();
     bool SeekTo(int n, int SeekOffset);
     int Seek(int n);
     void Free();
