@@ -12,3 +12,4 @@ Version: @FFMS_VERSION@
 Libs.private: @ZLIB_LDFLAGS@ -lz
 Libs: -L${libdir} -lffms2
 Cflags: -I${includedir}
+Cflags.private: -DFFMS_STATIC
