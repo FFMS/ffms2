@@ -99,6 +99,12 @@ FFMS_Track::FFMS_Track(ZipFile &stream)
     UseDTS = !!stream.Read<uint8_t>();
     HasTS = !!stream.Read<uint8_t>();
     HasDiscontTS = !!stream.Read<uint8_t>();
+    uint32_t TitleLen = stream.Read<uint32_t>();
+    if (TitleLen) {
+        std::vector<char> TitleBuf(TitleLen);
+        stream.Read(TitleBuf.data(), TitleLen);
+        Title.assign(TitleBuf.data(), TitleLen);
+    }
     size_t FrameCount = static_cast<size_t>(stream.Read<uint64_t>());
 
     if (!FrameCount) return;
@@ -122,6 +128,9 @@ void FFMS_Track::Write(ZipFile &stream) const {
     stream.Write<uint8_t>(UseDTS);
     stream.Write<uint8_t>(HasTS);
     stream.Write<uint8_t>(HasDiscontTS);
+    stream.Write<uint32_t>(static_cast<uint32_t>(Title.size()));
+    if (!Title.empty())
+        stream.Write(Title.data(), Title.size());
     stream.Write<uint64_t>(size());
 
     if (empty()) return;
