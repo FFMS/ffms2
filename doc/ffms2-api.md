@@ -567,6 +567,14 @@ In other words, does the same thing as [FFMS_GetTrackType][GetTrackType], but do
 If you have indexed the file, use [FFMS_GetTrackType][GetTrackType] instead since the `FFMS_Indexer` object is destructed when the index is created.
 Note that specifying an invalid track number may lead to undefined behavior.
 
+### FFMS_GetTrackTitle - gets the title of a given track
+
+[GetTrackTitle]: #ffms-gettracktitle---gets-the-title-of-a-given-track
+```c++
+const char *FFMS_GetTrackTitle(FFMS_Track *T);
+```
+Returns the track title.
+
 ### FFMS_GetCodecNameI - gets the name of the codec used for a given track
 
 [GetCodecNameI]: #ffms_getcodecnamei---gets-the-name-of-the-codec-used-for-a-given-track

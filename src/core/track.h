@@ -26,6 +26,7 @@
 #include <cstddef>
 #include <vector>
 #include <memory>
+#include <string>
 
 class ZipFile;
 
@@ -72,6 +73,7 @@ public:
     bool HasDiscontTS = false;
     int64_t LastDuration = 0;
     int SampleRate = 0; // not persisted
+    std::string Title;
 
     void AddVideoFrame(int64_t PTS, int64_t DTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos = 0, bool Invisible = false, bool SecondField = false);
     void AddAudioFrame(int64_t PTS, int64_t DTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos = 0, bool Invisible = false);

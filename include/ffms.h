@@ -458,6 +458,7 @@ FFMS_API(int) FFMS_GetNumTracks(FFMS_Index *Index);
 FFMS_API(int) FFMS_GetNumTracksI(FFMS_Indexer *Indexer);
 FFMS_API(int) FFMS_GetTrackType(FFMS_Track *T);
 FFMS_API(int) FFMS_GetTrackTypeI(FFMS_Indexer *Indexer, int Track);
+FFMS_API(const char *) FFMS_GetTrackTitle(FFMS_Track *T);
 FFMS_API(FFMS_IndexErrorHandling) FFMS_GetErrorHandling(FFMS_Index *Index);
 FFMS_API(const char *) FFMS_GetCodecNameI(FFMS_Indexer *Indexer, int Track);
 FFMS_API(const char *) FFMS_GetFormatNameI(FFMS_Indexer *Indexer);

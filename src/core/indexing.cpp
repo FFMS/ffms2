@@ -32,10 +32,11 @@
 extern "C" {
 #include <libavutil/avutil.h>
 #include <libavutil/sha.h>
+#include <libavutil/dict.h>
 }
 
 #define INDEXID 0x53920873
-#define INDEX_VERSION 8
+#define INDEX_VERSION 9
 
 SharedAVContext::~SharedAVContext() {
     avcodec_free_context(&CodecContext);
@@ -444,6 +445,13 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
             static_cast<FFMS_TrackType>(FormatContext->streams[i]->codecpar->codec_type),
             !!(FormatContext->iformat->flags & AVFMT_TS_DISCONT),
             UseDTS);
+
+        AVDictionary *StreamMetadata = FormatContext->streams[i]->metadata;
+        if (StreamMetadata) {
+            AVDictionaryEntry *TitleEntry = av_dict_get(StreamMetadata, "title", nullptr, 0);
+            if (TitleEntry)
+                (*TrackIndices)[i].Title = TitleEntry->value;
+        }
 
         if (IndexMask.count(i) && FormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             auto *VideoCodec = avcodec_find_decoder(FormatContext->streams[i]->codecpar->codec_id);

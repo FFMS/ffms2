@@ -2,6 +2,7 @@
 - 5.1
   - FFmpeg 7.1 is now the minimum requirement.
   - Added layered decoding support, for e.g. spatial MV-HEVC.
+  - Add FFMS_GetTrackTitle.
 
 - 5.0
   - Fixed all issues with FFmpeg 6.1 which is now the minimum requirement

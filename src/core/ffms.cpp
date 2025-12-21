@@ -262,6 +262,10 @@ FFMS_API(int) FFMS_GetTrackType(FFMS_Track *T) {
     return T->TT;
 }
 
+FFMS_API(const char *) FFMS_GetTrackTitle(FFMS_Track *T) {
+    return T->Title.empty() ? NULL : T->Title.c_str();
+}
+
 FFMS_API(int) FFMS_GetTrackTypeI(FFMS_Indexer *Indexer, int Track) {
     return Indexer->GetTrackType(Track);
 }
