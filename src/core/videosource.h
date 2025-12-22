@@ -131,7 +131,7 @@ private:
     void SetVideoProperties();
     bool DecodePacket(const AVPacket &Packet);
 
-    // Returns the first packet read that has nonzero PTS/DTS (depending on Frames.UseDTS)
+    // Returns the first packet read
     SmartAVPacket DecodeNextFrame();
     bool SeekTo(int n, int SeekOffset);
     int Seek(int n);
