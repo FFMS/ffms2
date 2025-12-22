@@ -27,6 +27,7 @@
 #include <vector>
 #include <memory>
 
+struct AVPacket;
 class ZipFile;
 
 struct FrameInfo {
@@ -82,8 +83,7 @@ public:
     void FillAudioGaps();
 
     int FindClosestVideoKeyFrame(int Frame) const;
-    int FrameFromPTS(int64_t PTS, bool AllowHidden = false) const;
-    int FrameFromPos(int64_t Pos, bool AllowHidden = false) const;
+    int FindPacket(const AVPacket &packet) const;
     int ClosestFrameFromPTS(int64_t PTS) const;
     int RealFrameNumber(int Frame) const;
     int VisibleFrameCount() const;
