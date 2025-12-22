@@ -744,7 +744,7 @@ bool FFMS_VideoSource::DecodePacket(const AVPacket &Packet) {
     std::swap(DecodeFrame, LastDecodedFrame);
     ResendPacket = false;
 
-    int PacketNum = Frames.FrameFromPTS(Frames.UseDTS ? Packet.dts : Packet.pts, true);
+    int PacketNum = Frames.FindPacket(Packet);
     bool PacketHidden = !!(Packet.flags & AV_PKT_FLAG_DISCARD) || (PacketNum != -1 && Frames[PacketNum].MarkedHidden);
     bool SecondField = PacketNum != -1 && Frames[PacketNum].SecondField;
 
@@ -862,10 +862,8 @@ SmartAVPacket FFMS_VideoSource::DecodeNextFrame() {
             continue;
         }
 
-        if (!FirstPacket->data || (Frames.UseDTS ? FirstPacket->dts : FirstPacket->pts) < 0) {
-            av_packet_unref(FirstPacket.get());
+        if (!FirstPacket->data)
             av_packet_ref(FirstPacket.get(), Packet.get());
-        }
 
         bool FrameFinished = DecodePacket(*Packet);
         if (ResendPacket)
@@ -971,23 +969,7 @@ FFMS_Frame *FFMS_VideoSource::GetFrame(int n) {
             continue;
 
         int64_t StartTime = FirstPacket->data == nullptr ? AV_NOPTS_VALUE : (Frames.UseDTS ? FirstPacket->dts : FirstPacket->pts);
-
-        if (StartTime == AV_NOPTS_VALUE && !Frames.HasTS) {
-            if (FirstPacket->data) {
-                CurrentFrame = Frames.FrameFromPos(FirstPacket->pos);
-                if (CurrentFrame >= 0)
-                    continue;
-            }
-            // If the track doesn't have timestamps or file positions then
-            // just trust that we got to the right place, since we have no
-            // way to tell where we are
-            else {
-                CurrentFrame = n;
-                continue;
-            }
-        }
-
-        CurrentFrame = Frames.FrameFromPTS(StartTime);
+        CurrentFrame = Frames.FindPacket(*FirstPacket);
 
         // Is the seek destination time known? Does it belong to a frame?
         if (CurrentFrame < 0) {

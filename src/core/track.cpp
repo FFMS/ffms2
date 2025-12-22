@@ -25,6 +25,7 @@
 #include "indexing.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdlib>
 
@@ -157,23 +158,79 @@ static bool PTSComparison(FrameInfo FI1, FrameInfo FI2) {
     return FI1.PTS < FI2.PTS;
 }
 
-int FFMS_Track::FrameFromPTS(int64_t PTS, bool AllowHidden) const {
+enum class AVPacketProp {
+    TS,     // can be PTS or DTS depending on UseDTS
+    Pos,
+    Hidden,
+    Key,
+};
+
+const std::array<std::vector<AVPacketProp>, 5> FindPacketCheckSequence = {{
+    {AVPacketProp::TS, AVPacketProp::Pos, AVPacketProp::Hidden, AVPacketProp::Key},
+    {AVPacketProp::TS, AVPacketProp::Pos, AVPacketProp::Hidden},
+    {AVPacketProp::TS, AVPacketProp::Pos},
+    {AVPacketProp::TS},
+    {AVPacketProp::Pos},
+}};
+
+// Attempts to find the given AVPacket in the track's list of FrameInfos,
+// returning the FrameInfo's index if one was found and -1 if not.
+//
+// The finding logic begins by trying to find a *unique* FrameInfo whose
+// PTS, Pos, and flags match the given packet.
+// If no such packet exists, it tries a fallback sequence of comparing fewer fields.
+//
+// The current fallback sequence is mostly chosen based on intuition - for
+// well-behaved files simply checking all fields should work fine.
+// If examples come up where this fallback sequence becomes relevant, it can
+// be adjusted.
+int FFMS_Track::FindPacket(const AVPacket &packet) const {
     FrameInfo F;
-    F.PTS = PTS;
+    F.PTS = UseDTS ? packet.dts : packet.pts;
 
-    auto Pos = std::lower_bound(begin(), end(), F, PTSComparison);
-    while (Pos != end() && (!AllowHidden && Pos->Skipped()) && Pos->PTS == PTS)
-        Pos++;
+    auto SameTSRange = std::equal_range(begin(), end(), F, PTSComparison);;
 
-    if (Pos == end() || Pos->PTS != PTS)
-        return -1;
-    return std::distance(begin(), Pos);
-}
+    for (auto const& checks : FindPacketCheckSequence) {
+        // If the check sequence includes the timestamp, we can begin with a binary search
+        // since the FrameInfos are sorted by their timestamp, and then do a linear search in the found interval.
+        // If the check sequence does not include the timestamp, we have to do a full linear search.
+        auto Begin = begin();
+        auto End = end();
 
-int FFMS_Track::FrameFromPos(int64_t Pos, bool AllowHidden) const {
-    for (size_t i = 0; i < size(); i++)
-        if (Data->Frames[i].FilePos == Pos && (AllowHidden || !Data->Frames[i].Skipped()))
-            return static_cast<int>(i);
+        if (checks[0] == AVPacketProp::TS) {
+            Begin = SameTSRange.first;
+            End = SameTSRange.second;
+        }
+
+        int found = 0;
+        int result = -1;
+
+        for (auto it = Begin; it < End; it++) {
+            bool match = std::all_of(checks.cbegin(), checks.cend(), [&](AVPacketProp check) {
+                    switch (check) {
+                        case AVPacketProp::TS:
+                            return it->PTS == F.PTS;
+                        case AVPacketProp::Pos:
+                            return it->FilePos == packet.pos;
+                        case AVPacketProp::Hidden:
+                            return it->MarkedHidden == (packet.flags & AV_PKT_FLAG_DISCARD);
+                        case AVPacketProp::Key:
+                            return it->KeyFrame == (packet.flags & AV_PKT_FLAG_KEY);
+                    }
+                    return false;
+                });
+
+            if (match) {
+                found++;
+                result = std::distance(begin(), it);
+            }
+        }
+
+        if (found == 1) {
+            return result;
+        }
+    }
+
     return -1;
 }
 
