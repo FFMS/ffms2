@@ -911,17 +911,12 @@ bool FFMS_VideoSource::SeekTo(int n, int SeekOffset) {
 
     // The semantics here are basically "return true if we don't know exactly where our seek ended up (destination isn't frame 0)"
     if (SeekMode >= 0) {
-        int TargetFrame = n + SeekOffset;
-        if (TargetFrame < 0)
-            throw FFMS_Exception(FFMS_ERROR_SEEKING, FFMS_ERROR_UNKNOWN,
-                "Frame accurate seeking is not possible in this file");
-
         // Seeking too close to the end of the stream can result in a different decoder delay since
         // frames are returned as soon as draining starts, so avoid this to keep the delay predictable.
         // Is the +1 necessary here? Not sure, but let's keep it to be safe.
         int EndOfStreamDist = Delay.ReorderDelay + Delay.ThreadDelay + 1;
 
-        TargetFrame = std::min(TargetFrame, Frames.RealFrameNumber(std::max(0, VP.NumFrames - 1 - EndOfStreamDist)));
+        int TargetFrame = std::min(std::max(0, n + SeekOffset), Frames.RealFrameNumber(std::max(0, VP.NumFrames - 1 - EndOfStreamDist)));
 
         if (SeekMode < 3)
             TargetFrame = Frames.FindClosestVideoKeyFrame(TargetFrame);
@@ -995,7 +990,6 @@ FFMS_Frame *FFMS_VideoSource::GetFrame(int n) {
         // Is the seek destination time known? Does it belong to a frame?
         if (CurrentFrame < 0) {
             if (SeekMode == 1 || StartTime < 0) {
-                // No idea where we are so go back a bit further
                 SeekOffset -= 10;
                 Seek = true;
                 continue;
