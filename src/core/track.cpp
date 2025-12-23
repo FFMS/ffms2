@@ -157,23 +157,68 @@ static bool PTSComparison(FrameInfo FI1, FrameInfo FI2) {
     return FI1.PTS < FI2.PTS;
 }
 
-int FFMS_Track::FrameFromPTS(int64_t PTS, bool AllowHidden) const {
+enum class AVPacketProp {
+    TS,     // can be PTS or DTS depending on UseDTS
+    Pos,
+    Hidden,
+    Key,
+};
+
+std::vector<AVPacketProp> FindPacketCheckSequence[] = {
+    {AVPacketProp::TS, AVPacketProp::Pos, AVPacketProp::Hidden, AVPacketProp::Key},
+    {AVPacketProp::TS, AVPacketProp::Pos, AVPacketProp::Hidden},
+    {AVPacketProp::TS, AVPacketProp::Pos},
+    {AVPacketProp::TS},
+    {AVPacketProp::Pos},
+};
+
+int FFMS_Track::FindPacket(const AVPacket &packet) const {
     FrameInfo F;
-    F.PTS = PTS;
+    F.PTS = UseDTS ? packet.dts : packet.pts;
 
-    auto Pos = std::lower_bound(begin(), end(), F, PTSComparison);
-    while (Pos != end() && (!AllowHidden && Pos->Skipped()) && Pos->PTS == PTS)
-        Pos++;
+    auto SameTSBegin = std::lower_bound(begin(), end(), F, PTSComparison);;
+    auto SameTSEnd = SameTSBegin;
+    while (SameTSEnd != end() && SameTSEnd->PTS == F.PTS)
+        SameTSEnd++;
 
-    if (Pos == end() || Pos->PTS != PTS)
-        return -1;
-    return std::distance(begin(), Pos);
-}
+    for (auto const& checks : FindPacketCheckSequence) {
+        auto Begin = begin();
+        auto End = end();
 
-int FFMS_Track::FrameFromPos(int64_t Pos, bool AllowHidden) const {
-    for (size_t i = 0; i < size(); i++)
-        if (Data->Frames[i].FilePos == Pos && (AllowHidden || !Data->Frames[i].Skipped()))
-            return static_cast<int>(i);
+        if (checks[0] == AVPacketProp::TS) {
+            Begin = SameTSBegin;
+            End = SameTSEnd;
+        }
+
+        int found = 0;
+        int result = -1;
+
+        for (auto it = Begin; it < End; it++) {
+            bool match = std::all_of(checks.cbegin(), checks.cend(), [&](AVPacketProp check) {
+                    switch (check) {
+                        case AVPacketProp::TS:
+                            return it->PTS == F.PTS;
+                        case AVPacketProp::Pos:
+                            return it->FilePos == packet.pos;
+                        case AVPacketProp::Hidden:
+                            return it->MarkedHidden == (packet.flags & AV_PKT_FLAG_DISCARD);
+                        case AVPacketProp::Key:
+                            return it->KeyFrame == (packet.flags & AV_PKT_FLAG_KEY);
+                    }
+                    return false;
+                });
+
+            if (match) {
+                found++;
+                result = std::distance(begin(), it);
+            }
+        }
+
+        if (found == 1) {
+            return result;
+        }
+    }
+
     return -1;
 }
 

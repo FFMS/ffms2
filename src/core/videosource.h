@@ -99,7 +99,7 @@ private:
     uint8_t *RightEyeFrameData[4] = {};
     int RightEyeLinesize[4] = {};
 
-    AVPacket *StashedPacket = nullptr;
+    SmartAVPacket StashedPacket;
     bool ResendPacket = false;
 
     void DetectInputFormat();
@@ -129,8 +129,10 @@ private:
     void ReAdjustOutputFormat(AVFrame *Frame);
     FFMS_Frame *OutputFrame(AVFrame *Frame);
     void SetVideoProperties();
-    bool DecodePacket(AVPacket *Packet);
-    void DecodeNextFrame(int64_t &PTS, int64_t &Pos);
+    bool DecodePacket(const AVPacket &Packet);
+
+    // Returns the first packet read
+    SmartAVPacket DecodeNextFrame();
     bool SeekTo(int n, int SeekOffset);
     int Seek(int n);
     void Free();
