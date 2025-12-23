@@ -59,7 +59,7 @@ src_index_ffmsindex_SOURCES = src/index/ffmsindex.cpp
 if WINDOWS
 src_index_ffmsindex_LDFLAGS = -municode
 endif
-src_index_ffmsindex_LDADD = -lavutil src/core/libffms2.la
+src_index_ffmsindex_LDADD = @AVUTIL_LIBS@ src/core/libffms2.la
 
 .PHONY: test test-build test-clean test-sync test-run
 clean-local: test-clean
