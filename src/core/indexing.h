@@ -100,6 +100,7 @@ public:
     int GetNumberOfTracks();
     FFMS_TrackType GetTrackType(int Track);
     const char *GetTrackCodec(int Track);
+    const char *GetTrackMetadata(int Track, const char *Key);
     const char *GetFormatName();
 };
 

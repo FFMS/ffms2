@@ -431,6 +431,12 @@ const char *FFMS_Indexer::GetTrackCodec(int Track) {
     return codec ? codec->name : nullptr;
 }
 
+const char *FFMS_Indexer::GetTrackMetadata(int Track, const char *Key) {
+    AVStream *stream = FormatContext->streams[Track];
+    AVDictionaryEntry *Entry = av_dict_get(stream->metadata, Key, NULL, 0);
+    return Entry ? Entry->value : nullptr;
+}
+
 FFMS_Index *FFMS_Indexer::DoIndexing() {
     std::vector<SharedAVContext> AVContexts(FormatContext->nb_streams);
 

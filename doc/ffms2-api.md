@@ -577,6 +577,15 @@ Returns the human-readable name ("long name" in FFmpeg terms) of the codec used 
 Useful if you want to, say, pop up a menu asking the user which tracks he or she wishes to index.
 Note that specifying an invalid track number may lead to undefined behavior.
 
+### FFMS_GetTrackMetadataI - gets the metadata of a given track
+
+[GetTrackMetadataI]: #ffms_gettrackmetadatai---gets-the-metadata-of-a-given-track
+```c++
+const char *FFMS_GetTrackMetadataI(FFMS_Indexer *Indexer, int Track, const char *Key);
+```
+Returns the value of the metadata entry associated with `Key` for the given track number in the media file represented by the given `FFMS_Indexer` object.
+For the list of commonly used metadata keys, see the `metadata_api Public Metadata API` comment in [avformat.h](https://code.ffmpeg.org/FFmpeg/FFmpeg/src/branch/master/libavformat/avformat.h).
+
 ### FFMS_GetFormatNameI - gets the name of the container format used in the given indexer
 
 [GetFormatNameI]: #ffms_getformatnamei---gets-the-name-of-the-container-format-used-in-the-given-indexer
