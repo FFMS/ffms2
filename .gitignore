@@ -92,3 +92,7 @@ m4/lt~obsolete.m4
 
 # Generated Makefile
 Makefile
+
+# Meson
+/subprojects/*
+!/subprojects/*.wrap
