@@ -1,0 +1,51 @@
+name: On Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  call-build-win:
+    uses: ./.github/workflows/ci-windows.yml
+
+  release-win:
+    name: Release Windows artifacts
+    runs-on: windows-latest
+    needs: call-build-win
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Download wheel artifact
+        uses: actions/download-artifact@v7
+
+      - name: Set RELEASE_TAG environment variable
+        run: |
+          $release_tag = "ffms2-${{ github.event.release.tag_name }}-msvc"
+          echo "RELEASE_TAG=$release_tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Create package
+        run: |
+          mkdir $env:RELEASE_TAG
+          cd $env:RELEASE_TAG
+          Copy-Item -Path "..\ffms2_windows_x64\share\doc\ffms2" -Destination "doc" -Recurse
+          Copy-Item -Path "..\ffms2_windows_x64\include" -Destination "include" -Recurse
+          Copy-Item -Path "..\etc\*" -Destination "."
+          mkdir x86
+          Copy-Item -Path "..\ffms2_windows_x86\bin\ffms2.dll" -Destination "x86"
+          Copy-Item -Path "..\ffms2_windows_x86\bin\ffmsindex.exe" -Destination "x86"
+          Copy-Item -Path "..\ffms2_windows_x86\lib\ffms2.lib" -Destination "x86"
+          mkdir x64
+          Copy-Item -Path "..\ffms2_windows_x64\bin\ffms2.dll" -Destination "x64"
+          Copy-Item -Path "..\ffms2_windows_x64\bin\ffmsindex.exe" -Destination "x64"
+          Copy-Item -Path "..\ffms2_windows_x64\lib\ffms2.lib" -Destination "x64"
+          cd ..
+          7z a "$env:RELEASE_TAG.7z" $env:RELEASE_TAG
+
+      - name: Upload artifact to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: gh release upload '${{ github.ref_name }}' "$env:RELEASE_TAG.7z"
