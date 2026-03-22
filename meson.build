@@ -5,7 +5,7 @@ project(
         'buildtype=release',
         'warning_level=2',
         'b_ndebug=if-release',
-        'cpp_std=c++11'
+        'cpp_std=gnu++11,c++11'
     ],
     license : 'MIT',
     license_files : 'COPYING',
