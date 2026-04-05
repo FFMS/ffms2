@@ -577,6 +577,16 @@ Returns the human-readable name ("long name" in FFmpeg terms) of the codec used 
 Useful if you want to, say, pop up a menu asking the user which tracks he or she wishes to index.
 Note that specifying an invalid track number may lead to undefined behavior.
 
+### FFMS_GetContainerFirstTimeI - gets the container first time
+
+[GetContainerFirstTimeI]: #ffms_getcontainerfirsttimei---gets-the-container-first-time
+```c++
+bool FFMS_GetContainerFirstTimeI(FFMS_Indexer *Indexer, int64_t *pts, int *timebase);
+```
+Returns the container start time of the media file represented by the given `FFMS_Indexer` object.
+On success, *pts* is set to the container start timestamps (which correspond to `AVFormatContext::start_time` in FFmpeg).
+Return true on success, otherwise, false.
+
 ### FFMS_GetFormatNameI - gets the name of the container format used in the given indexer
 
 [GetFormatNameI]: #ffms_getformatnamei---gets-the-name-of-the-container-format-used-in-the-given-indexer

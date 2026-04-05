@@ -22,7 +22,7 @@
 #define FFMS_H
 
 // Version format: major - minor - micro - bump
-#define FFMS_VERSION ((5 << 24) | (1 << 16) | (1 << 8) | 0)
+#define FFMS_VERSION ((5 << 24) | (1 << 16) | (2 << 8) | 0)
 
 #include <stdint.h>
 #include <stddef.h>
@@ -462,6 +462,7 @@ FFMS_API(int) FFMS_GetTrackType(FFMS_Track *T);
 FFMS_API(int) FFMS_GetTrackTypeI(FFMS_Indexer *Indexer, int Track);
 FFMS_API(FFMS_IndexErrorHandling) FFMS_GetErrorHandling(FFMS_Index *Index);
 FFMS_API(const char *) FFMS_GetCodecNameI(FFMS_Indexer *Indexer, int Track);
+FFMS_API(bool) FFMS_GetContainerFirstTimeI(FFMS_Indexer *Indexer, int64_t *pts, int *timebase); /* Introduced in FFMS_VERSION ((5 << 24) | (1 << 16) | (2 << 8) | 0) */
 FFMS_API(const char *) FFMS_GetFormatNameI(FFMS_Indexer *Indexer);
 FFMS_API(int) FFMS_GetNumFrames(FFMS_Track *T);
 FFMS_API(const FFMS_FrameInfo *) FFMS_GetFrameInfo(FFMS_Track *T, int Frame);
