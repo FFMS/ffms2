@@ -88,11 +88,8 @@ if get_option('avisynth').enabled()
     if avisynth_dep.found()
         avisynth_dep = avisynth_dep.partial_dependency(compile_args: true, includes: true)
     else
-        cmake = import('cmake')
-        opt_var = cmake.subproject_options()
-        opt_var.add_cmake_defines({'HEADERS_ONLY' : true})
-        avisynth_subproject = cmake.subproject('AviSynth+', options : opt_var)
-        avisynth_dep = avisynth_subproject.dependency('AviSynth-Headers')
+        avisynth_subproject = subproject('AviSynth+')
+        avisynth_dep = avisynth_subproject.get_variable('avisynth_headers_dep')
     endif
 
     ffms2_deps += avisynth_dep
