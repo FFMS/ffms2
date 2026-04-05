@@ -2,3 +2,4 @@
 url = https://github.com/AviSynth/AviSynthPlus
 revision = v3.7.5
 depth = 1
+patch_directory = AviSynth+
