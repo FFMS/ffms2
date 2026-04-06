@@ -44,3 +44,15 @@ display_matrix = executable(
     ],
 )
 test('display_matrix', display_matrix)
+
+
+# Test that the header are indeed compatible with c99
+add_languages('c', native : false)
+c_compiler = meson.get_compiler('c')
+c99_header = executable(
+    'c99_header',
+    files('test.c'),
+    dependencies : ffms2_dep,
+    override_options : {'c_std' : 'c99', 'werror' : true, 'warning_level' : '3'},
+)
+test('c99_header', c99_header)
