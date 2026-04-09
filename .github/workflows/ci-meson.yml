@@ -1,0 +1,116 @@
+name: Meson Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-meson:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            cc: gcc
+            cxx: g++
+          - os: ubuntu-latest
+            cc: clang
+            cxx: clang++
+          - os: macos-latest
+            cc: clang
+            cxx: clang++
+          - os: windows-latest
+            cc: gcc
+            cxx: g++
+            windows_env: msys2
+          - os: windows-latest
+            cc: gcc
+            cxx: g++
+            windows_env: cygwin
+
+    name: "Test (${{ matrix.os }}, ${{ matrix.cc }}${{ matrix.windows_env && format(', {0}', matrix.windows_env) || '' }})"
+    runs-on: ${{ matrix.os }}
+    env:
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
+    defaults:
+      run:
+        shell: ${{ matrix.windows_env == 'cygwin' && 'bash -o igncr ''{0}''' || (matrix.os == 'windows-latest' && 'msys2 {0}' || 'bash') }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install deps (ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo add-apt-repository ppa:ubuntuhandbook1/ffmpeg7 -y
+          sudo apt-get update
+          sudo apt-get install autoconf automake wget ffmpeg libavformat-dev libavcodec-dev libswscale-dev libavutil-dev libswresample-dev meson
+
+      - name: Install deps (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update
+          brew install autoconf automake libtool wget ffmpeg meson
+
+      - name: Setup MSYS2 (MINGW64)
+        if: matrix.windows_env == 'msys2'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: >-
+            mingw-w64-x86_64-ca-certificates
+            mingw-w64-x86_64-ffmpeg
+            mingw-w64-x86_64-meson
+            mingw-w64-x86_64-toolchain
+
+      - name: Setup Cygwin
+        if: matrix.windows_env == 'cygwin'
+        uses: cygwin/cygwin-install-action@v6
+        with:
+          packages: |
+            git
+            meson
+            pkg-config
+            gcc-g++
+            make
+            ninja
+            zlib-devel
+            nasm
+
+      # We need to build ffmpeg on Cygwin since the packaged version doesn't include an HEVC decoder
+      - name: Clone ffmpeg (Cygwin)
+        if: matrix.windows_env == 'cygwin'
+        run: git clone https://git.ffmpeg.org/ffmpeg.git --depth 1
+
+      - name: Configure ffmpeg (Cygwin)
+        if: matrix.windows_env == 'cygwin'
+        working-directory: ffmpeg
+        run: ./configure --disable-programs --disable-doc --disable-avdevice --disable-avfilter --disable-encoders --disable-muxers --disable-debug --disable-hwaccels --disable-network --disable-autodetect
+
+      - name: Build ffmpeg (Cygwin)
+        if: matrix.windows_env == 'cygwin'
+        working-directory: ffmpeg
+        run: make
+
+      - name: Install ffmpeg (Cygwin)
+        if: matrix.windows_env == 'cygwin'
+        working-directory: ffmpeg
+        run: make install
+
+      - name: Configure with Meson
+        run: |
+          if [ "${{ matrix.windows_env }}" = "cygwin" ]; then
+            meson setup builddir -Dtest=enabled --pkg-config-path="/usr/local/lib/pkgconfig"
+          else
+            meson setup builddir -Dtest=enabled
+          fi
+
+      - name: Build
+        run: meson compile -C builddir --verbose
+
+      - name: Run tests
+        run: meson test -C builddir --verbose

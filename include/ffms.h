@@ -433,8 +433,8 @@ typedef int (FFMS_CC *TIndexCallback)(int64_t Current, int64_t Total, void *ICPr
 /* Most functions return 0 on success */
 /* Functions without error message output can be assumed to never fail in a graceful way */
 FFMS_API(void) FFMS_Init(int, int); /* Pass 0 to both arguments, kept to partially preserve abi */
-FFMS_API(int) FFMS_GetVersion();
-FFMS_API(int) FFMS_GetLogLevel();
+FFMS_API(int) FFMS_GetVersion(void);
+FFMS_API(int) FFMS_GetLogLevel(void);
 FFMS_API(void) FFMS_SetLogLevel(int Level);
 FFMS_API(FFMS_VideoSource *) FFMS_CreateVideoSource(const char *SourceFile, int Track, FFMS_Index *Index, int Threads, int SeekMode, FFMS_ErrorInfo *ErrorInfo);
 FFMS_API(FFMS_AudioSource *) FFMS_CreateAudioSource(const char *SourceFile, int Track, FFMS_Index *Index, int DelayMode, FFMS_ErrorInfo *ErrorInfo);

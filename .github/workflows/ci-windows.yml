@@ -1,0 +1,73 @@
+name: Build on Windows
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_call:
+
+jobs:
+  build-win:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86, x64]
+
+    name: "Test Windows MSVC (${{ matrix.arch }})"
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Meson
+        run: pip install meson
+
+      - name: Install ffmpeg
+        run: vcpkg install ffmpeg[avcodec,avdevice,avfilter,avformat,swresample,swscale,zlib,bzip2,core,dav1d,gpl,version3,lzma,openssl,xml2]:${{ matrix.arch }}-windows-static
+
+      - name: Set VCPKG_PATH environment variable
+        run: |
+          $vcpkg_path = Split-Path (Get-Command vcpkg).Source -Parent
+          echo "VCPKG_PATH=$vcpkg_path" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install pkgconf
+        uses: msys2/setup-msys2@v2
+        id: msys2
+        with:
+          msystem: MINGW64
+          install: mingw-w64-x86_64-pkgconf
+
+      - name: Setup MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+
+      - name: Configure with Meson
+        env:
+          PKG_CONFIG: "${{ steps.msys2.outputs.msys2-location }}\\mingw64\\bin\\pkg-config.EXE"
+        run: >
+          meson setup builddir
+          --buildtype=release
+          --vsenv
+          -Dtest=enabled
+          -Davisynth=enabled
+          --pkg-config-path="$env:VCPKG_PATH\installed\${{ matrix.arch }}-windows-static\lib\pkgconfig"
+          -Db_vscrt=mt
+        # Use "-Db_vscrt=mt" to avoid this warning: LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
+
+      - name: Build
+        run: meson compile -C builddir --verbose
+
+      - name: Run tests
+        run: meson test -C builddir --verbose
+
+      - name: Install
+        run: meson install -C builddir --destdir install
+
+      - name: Upload Build
+        uses: actions/upload-artifact@v6
+        with:
+          name: ffms2_windows_${{ matrix.arch }}
+          path: builddir/install

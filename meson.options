@@ -1,0 +1,2 @@
+option('avisynth', type: 'feature', value : 'disabled', description: 'Enable avisynth')
+option('test', type: 'feature', value : 'disabled', description: 'Enable test')
