@@ -185,6 +185,11 @@ const std::array<std::vector<AVPacketProp>, 5> FindPacketCheckSequence = {{
 // If examples come up where this fallback sequence becomes relevant, it can
 // be adjusted.
 int FFMS_Track::FindPacket(const AVPacket &packet) const {
+    if (!packet.data && !packet.side_data_elems) {
+        // Empty packet signaling EOF
+        return -1;
+    }
+
     FrameInfo F;
     F.PTS = UseDTS ? packet.dts : packet.pts;
 
