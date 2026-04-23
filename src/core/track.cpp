@@ -213,9 +213,9 @@ int FFMS_Track::FindPacket(const AVPacket &packet) const {
                         case AVPacketProp::Pos:
                             return it->FilePos == packet.pos;
                         case AVPacketProp::Hidden:
-                            return it->MarkedHidden == (packet.flags & AV_PKT_FLAG_DISCARD);
+                            return it->MarkedHidden == !!(packet.flags & AV_PKT_FLAG_DISCARD);
                         case AVPacketProp::Key:
-                            return it->KeyFrame == (packet.flags & AV_PKT_FLAG_KEY);
+                            return it->KeyFrame == !!(packet.flags & AV_PKT_FLAG_KEY);
                     }
                     return false;
                 });
