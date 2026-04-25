@@ -36,8 +36,8 @@ jobs:
         uses: msys2/setup-msys2@v2
         id: msys2
         with:
-          msystem: MINGW64
-          install: mingw-w64-x86_64-pkgconf
+          msystem: UCRT64
+          install: mingw-w64-ucrt-x86_64-pkgconf
 
       - name: Setup MSVC Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1
@@ -46,7 +46,7 @@ jobs:
 
       - name: Configure with Meson
         env:
-          PKG_CONFIG: "${{ steps.msys2.outputs.msys2-location }}\\mingw64\\bin\\pkg-config.EXE"
+          PKG_CONFIG: "${{ steps.msys2.outputs.msys2-location }}\\ucrt64\\bin\\pkg-config.EXE"
         run: >
           meson setup builddir
           --buildtype=release

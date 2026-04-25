@@ -56,16 +56,16 @@ jobs:
           brew update
           brew install autoconf automake libtool wget ffmpeg meson
 
-      - name: Setup MSYS2 (MINGW64)
+      - name: Setup MSYS2 (UCRT64)
         if: matrix.windows_env == 'msys2'
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: UCRT64
           install: >-
-            mingw-w64-x86_64-ca-certificates
-            mingw-w64-x86_64-ffmpeg
-            mingw-w64-x86_64-meson
-            mingw-w64-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-ca-certificates
+            mingw-w64-ucrt-x86_64-ffmpeg
+            mingw-w64-ucrt-x86_64-meson
+            mingw-w64-ucrt-x86_64-toolchain
 
       - name: Setup Cygwin
         if: matrix.windows_env == 'cygwin'
