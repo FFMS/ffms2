@@ -87,11 +87,11 @@ FFMS_API(void) FFMS_Init(int, int) {
     });
 }
 
-FFMS_API(int) FFMS_GetVersion() {
+FFMS_API(int) FFMS_GetVersion(void) {
     return FFMS_VERSION;
 }
 
-FFMS_API(int) FFMS_GetLogLevel() {
+FFMS_API(int) FFMS_GetLogLevel(void) {
     return av_log_get_level();
 }
 
