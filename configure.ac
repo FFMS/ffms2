@@ -91,6 +91,7 @@ pkgconfigdir="\$(libdir)/pkgconfig"
 AC_SUBST(pkgconfigdir)
 
 PKG_CHECK_MODULES(FFMPEG, [libavformat >= 61.7.0 libavcodec >= 61.19.0 libswscale >= 8.3.0 libavutil >= 59.39.0 libswresample >= 5.3.0])
+PKG_CHECK_MODULES([AVUTIL], [libavutil >= 59.39.0])
 
 dnl As of 0eec06ed8747923faa6a98e474f224d922dc487d ffmpeg only adds -lrt to lavc's
 dnl LIBS, but lavu needs it, so move it to the end if it's present
@@ -102,53 +103,19 @@ AC_SUBST([FFMPEG_LIBS])
 CPPFLAGS="$CPPFLAGS -D__STDC_CONSTANT_MACROS"
 CFLAGS="$_CFLAGS $FFMPEG_CFLAGS"
 
-AC_DEFUN([TEST_FFMPEG],
-         [AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-            #include <libavformat/avformat.h>
-            #include <libswscale/swscale.h>
-            ]],[[
-                avformat_network_init();
-                swscale_version();
-            ]])], [eval $1=yes], [eval $1=no])
-        ])
-
-AC_MSG_CHECKING([whether FFmpeg works])
-LIBS="$_LIBS $FFMPEG_LIBS"
-TEST_FFMPEG([FFMPEG_WORKS])
-AC_MSG_RESULT([$FFMPEG_WORKS])
-if test "$FFMPEG_WORKS" = no; then
-AC_MSG_FAILURE([cannot link with FFmpeg])
-fi
-
+dnl The -Wl,-Bsymbolic flag is required only when building ffms2 as a shared library against a static build of FFmpeg.
+dnl Unfortunately, there is no reliable way to detect whether FFmpeg is static at configure time (especially when using *-uninstalled.pc files).
+dnl To avoid unexpected link errors, we always enable it when building shared.
+dnl For details, see FFmpeg’s advanced linking notes:https://ffmpeg.org/platform.html#Advanced-linking-configuration
 src_core_libffms2_la_LDFLAGS=""
-AC_MSG_CHECKING([whether -Wl,-Bsymbolic is needed])
 if test "$enable_shared" = yes; then
-    _LDFLAGS="$LDFLAGS"
-    LDFLAGS="$LDFLAGS -shared $lt_prog_compiler_pic"
-    TEST_FFMPEG([no_bsymbolic])
-    if test "$no_bsymbolic" = "no"; then
-        LDFLAGS="$LDFLAGS -Wl,-Bsymbolic"
-        TEST_FFMPEG([bsymbolic])
-        if test "$bsymbolic" = "yes"; then
-            src_core_libffms2_la_LDFLAGS="$src_core_libffms2_la_LDFLAGS -Wl,-Bsymbolic"
-        else
-            AC_MSG_RESULT($bsymbolic)
-            AC_MSG_FAILURE([cannot build ffms2 as a shared library])
-        fi
-    else
-        bsymbolic=no
-    fi
-    LDFLAGS="$_LDFLAGS"
-    src_core_libffms2_la_LDFLAGS="$src_core_libffms2_la_LDFLAGS -version-info $VERSION_INFO"
-else
-    bsymbolic=no
+    AX_CHECK_LINK_FLAG([-Wl,-Bsymbolic], [src_core_libffms2_la_LDFLAGS="$src_core_libffms2_la_LDFLAGS -Wl,-Bsymbolic -version-info $VERSION_INFO"])
 fi
 AC_SUBST([src_core_libffms2_la_LDFLAGS])
 
 CFLAGS="$_CFLAGS"
 CPPFLAGS="$_CPPFLAGS"
 LIBS="$_LIBS"
-AC_MSG_RESULT($bsymbolic)
 
 if echo "$host" | $GREP "mingw" >/dev/null 2>&1; then
     LTUNDEF="-no-undefined"
